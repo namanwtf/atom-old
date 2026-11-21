@@ -1,0 +1,79 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # project targets Java 25 toolchain (see app/build.gradle.kts)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Accept SDK licenses
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      # compileSdk 37 (minorApiLevel 2) needs a recent platform; fail early with a clear log
+      - name: Check installed platforms
+        run: sdkmanager --list_installed | sed -n '1,40p'
+
+      - name: Assemble release
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+
+      - name: Sign APK
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -e
+          BT=$(ls build-tools | sort -V | tail -1)
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          APK=$(find app/build/outputs/apk/release -name '*-unsigned.apk' | head -1)
+          [ -z "$APK" ] && APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          UNSIGNED="$RUNNER_TEMP/unsigned.apk"
+          cp "$APK" "$UNSIGNED"
+          "$ANDROID_HOME/build-tools/$BT/zipalign" -f -p 4 "$UNSIGNED" "$RUNNER_TEMP/aligned.apk"
+          "$ANDROID_HOME/build-tools/$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/release.jks" \
+            --ks-pass "pass:$KEYSTORE_PASSWORD" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --key-pass "pass:$KEY_PASSWORD" \
+            --out "$RUNNER_TEMP/eta-en.apk" "$RUNNER_TEMP/aligned.apk"
+          cp "$RUNNER_TEMP/eta-en.apk" "eta-en-${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: '*.apk'
+          if-no-files-found: warn
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v') && secrets.KEYSTORE_BASE64 != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.apk'
+          generate_release_notes: true
