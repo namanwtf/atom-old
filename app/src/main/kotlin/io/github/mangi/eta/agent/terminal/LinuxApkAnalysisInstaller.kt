@@ -392,9 +392,6 @@ internal class LinuxApkAnalysisInstaller(
         internal const val MIN_AVAILABLE_BYTES = 768L * 1024L * 1024L
 
         private val installMutex = Mutex()
-        private val GITHUB_PROXY_PREFIXES = listOf(
-            "https://gh-proxy.com/",
-        )
 
         internal val JADX_ARTIFACT = githubReleaseArtifact(
             id = "jadx",
@@ -456,7 +453,7 @@ internal class LinuxApkAnalysisInstaller(
                 url = officialUrl,
                 sha256 = sha256,
                 sizeBytes = sizeBytes,
-                preferredUrls = GITHUB_PROXY_PREFIXES.map { prefix -> prefix + officialUrl },
+                preferredUrls = listOf(officialUrl),
             )
         }
 

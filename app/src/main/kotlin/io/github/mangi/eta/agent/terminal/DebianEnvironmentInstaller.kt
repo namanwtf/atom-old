@@ -326,7 +326,7 @@ internal class DebianEnvironmentInstaller(
         internal val APT_MIRRORS = listOf(
             DebianAptMirror(
                 id = "tuna",
-                archiveBaseUrl = "https://mirrors.tuna.tsinghua.edu.cn/debian",
+                archiveBaseUrl = "https://deb.debian.org/debian",
                 securityBaseUrl = "https://security.debian.org/debian-security",
             ),
             DebianAptMirror(
@@ -428,12 +428,9 @@ internal class DebianEnvironmentInstaller(
                 url = officialUrl,
                 sha256 = sha256,
                 sizeBytes = sizeBytes,
-                preferredUrls = GITHUB_PROXY_PREFIXES.map { prefix -> prefix + officialUrl },
+                preferredUrls = listOf(officialUrl),
             )
         }
 
-        private val GITHUB_PROXY_PREFIXES = listOf(
-            "https://gh-proxy.com/",
-        )
     }
 }

@@ -103,7 +103,7 @@ fun AgentAppTheme(
 
     MiuixTheme(controller = controller) {
         val baseMiuixColors = MiuixTheme.colorScheme
-        val pureBlack = appearance.monetEnabled && appearance.pureBlackEnabled && isDark
+        val pureBlack = appearance.pureBlackEnabled && isDark
         val couiNative = remember(isDark) { if (isDark) darkColorScheme() else lightColorScheme() }
         val themedMiuixColors = remember(
             baseMiuixColors,
@@ -123,8 +123,8 @@ fun AgentAppTheme(
                         onSecondaryContainer = couiNative.labelPrimary,
                         tertiaryContainer = accentContainer,
                         onTertiaryContainer = couiNative.primary,
-                        background = couiNative.backgroundWithCard,
-                        surface = couiNative.backgroundWithCard,
+                        background = if (pureBlack) Color.Black else couiNative.backgroundWithCard,
+                        surface = if (pureBlack) Color.Black else couiNative.backgroundWithCard,
                         surfaceContainer = couiNative.cardBackground,
                         surfaceContainerHigh = couiNative.cardPressed,
                         surfaceContainerHighest = couiNative.containerSolid,

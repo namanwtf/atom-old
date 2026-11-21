@@ -349,9 +349,8 @@ internal class AlpineEnvironmentInstaller(
             "zstd",
         )
 
-        /** 真机链路只保留一个国内镜像，避免可访问但过慢的源阻塞后续尝试。 */
+        /** Upstream mirror only: no third-party redirectors see download requests. */
         internal val APK_MIRROR_BASE_URLS = listOf(
-            "https://mirrors.aliyun.com/alpine",
             "https://dl-cdn.alpinelinux.org/alpine",
         )
 
@@ -384,7 +383,7 @@ internal class AlpineEnvironmentInstaller(
                         sha256 = "f55a90f69052c5bd6f92cb09a8f47065970830b194c917a006fb94028e721259",
                         sizeBytes = 4_023_732L,
                         preferredUrls = listOf(
-                            "https://mirrors.aliyun.com/alpine/v3.24/releases/aarch64/" +
+                            "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/aarch64/" +
                                 "alpine-minirootfs-$ALPINE_VERSION-aarch64.tar.gz",
                         ),
                     )
@@ -397,7 +396,7 @@ internal class AlpineEnvironmentInstaller(
                         sha256 = "41f73e3cf5fa919b8aa5ca6b30dc48f0da2720776d7423e2a7748211456fe081",
                         sizeBytes = 3_698_422L,
                         preferredUrls = listOf(
-                            "https://mirrors.aliyun.com/alpine/v3.24/releases/x86_64/" +
+                            "https://dl-cdn.alpinelinux.org/alpine/v3.24/releases/x86_64/" +
                                 "alpine-minirootfs-$ALPINE_VERSION-x86_64.tar.gz",
                         ),
                     )

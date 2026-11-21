@@ -29,6 +29,9 @@ require(buildMetadata == null || buildMetadata.matches(Regex("[0-9A-Za-z.-]+")))
 }
 val buildMetadataSuffix = buildMetadata?.let { "+$it" }.orEmpty()
 
+// Fork update channel: override with -Peta.updateRepo=owner/repo (defaults to upstream)
+val updateRepo = providers.gradleProperty("eta.updateRepo").getOrElse("Mangi-11/Eta")
+
 android {
     namespace = "io.github.mangi.eta"
     compileSdk {
@@ -45,6 +48,7 @@ android {
         // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时随 versionName 一起手动递增。
         versionCode = 2026111302
         versionName = "3.4.4"
+        buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
 
         ndk {
             // 同时过滤本地与依赖 AAR 的原生库，确保 APK 仅包含 ARM64。
@@ -94,7 +98,7 @@ android {
     }
 
     androidResources {
-        localeFilters += listOf("en", "b+zh+Hans", "b+zh+Hant")
+        localeFilters += listOf("en")
     }
 
     packaging {

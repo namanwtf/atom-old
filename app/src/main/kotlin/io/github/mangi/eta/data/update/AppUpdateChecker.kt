@@ -1,5 +1,6 @@
 package io.github.mangi.eta.data.update
 
+import io.github.mangi.eta.BuildConfig
 import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 import java.io.IOException
@@ -87,6 +88,7 @@ internal object AppUpdateChecker {
         .readTimeout(8, TimeUnit.SECONDS)
         .build()
 
-    private const val LATEST_RELEASE_URL = "https://api.github.com/repos/Mangi-11/Eta/releases/latest"
+    private val LATEST_RELEASE_URL =
+        "https://api.github.com/repos/" + BuildConfig.UPDATE_REPO + "/releases/latest"
     private const val USER_AGENT = "Eta-Update-Checker"
 }
