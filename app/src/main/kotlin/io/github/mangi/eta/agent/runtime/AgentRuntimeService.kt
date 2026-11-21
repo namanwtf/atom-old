@@ -49,7 +49,11 @@ import io.github.mangi.eta.agent.media.AgentImageCodec
 import io.github.mangi.eta.agent.overlay.AgentHapticFeedback
 import io.github.mangi.eta.agent.overlay.AgentOverlayGlow
 import io.github.mangi.eta.agent.overlay.ScreenCornerRadii
+import io.github.mangi.eta.agent.overlay.AgentOverlayBubble
 import io.github.mangi.eta.agent.overlay.AgentOverlayCapsule
+import io.github.mangi.eta.agent.voice.EtaAssistantOverlayService
+import io.github.mangi.eta.agent.overlay.AgentOrbAction
+import io.github.mangi.eta.agent.overlay.AgentOrbLabels
 import io.github.mangi.eta.agent.overlay.AgentOverlayClearance
 import io.github.mangi.eta.agent.overlay.AgentResultCard
 import io.github.mangi.eta.agent.overlay.AgentOverlayPhase
@@ -110,6 +114,9 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private var windowManager: WindowManager? = null
     private var glowView: ComposeView? = null
     private var capsuleView: ComposeView? = null
+    private var bubbleView: ComposeView? = null
+    private var bubbleParams: WindowManager.LayoutParams? = null
+    private val bubbleExpanded = mutableStateOf(false)
     private var resultCardView: ComposeView? = null
     private var glowParams: WindowManager.LayoutParams? = null
     private var capsuleParams: WindowManager.LayoutParams? = null
@@ -226,9 +233,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         resultCardView?.let { view -> runCatching { windowManager?.removeView(view) } }
         capsuleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         glowView?.let { view -> runCatching { windowManager?.removeView(view) } }
+        bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         resultCardView = null
         capsuleView = null
         glowView = null
+        bubbleView = null
+        bubbleParams = null
         resultCardParams = null
         capsuleParams = null
         glowParams = null
@@ -1261,6 +1271,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         }
         capsuleView = capsule
         capsuleParams = capsuleLp
+
+        showBubble(wm)
     }
 
     /**
@@ -1445,6 +1457,96 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         resultCardBack = null
         runCatching { dispatcher.unregisterOnBackInvokedCallback(callback) }
     }
+
+    // ── Orb window: draggable bubble that expands into Hide / Open chat / Talk ──
+    private fun showBubble(wm: WindowManager) {
+        if (bubbleView != null) return
+        val labels = AgentOrbLabels(
+            hide = getString(R.string.bubble_hide),
+            openChat = getString(R.string.bubble_open_chat),
+            talk = getString(R.string.bubble_talk),
+        )
+        val view = createOverlayComposeView {
+            AgentOverlayBubble(
+                state = state.value,
+                expanded = bubbleExpanded.value,
+                labels = labels,
+                onToggleExpanded = { bubbleExpanded.value = !bubbleExpanded.value },
+                onAction = { action ->
+                    when (action) {
+                        AgentOrbAction.HIDE -> {
+                            bubbleExpanded.value = false
+                            hideBubble()
+                        }
+                        AgentOrbAction.OPEN_CHAT -> {
+                            bubbleExpanded.value = false
+                            openEtaFromResult(displayedRun)
+                        }
+                        AgentOrbAction.TALK -> {
+                            bubbleExpanded.value = false
+                            startAssistantVoice()
+                        }
+                    }
+                },
+                onDrag = { dx, dy -> moveBubble(dx, dy) },
+            )
+        }
+        val lp = bubbleLayoutParams()
+        runCatching { wm.addView(view, lp) }.onFailure { throwable ->
+            AndroidAgentLogger.warnThrottled("runtime_bubble_add_view_failed") {
+                "Agent runtime bubble addView failed: type=${throwable.safeLogType()}"
+            }
+            return
+        }
+        bubbleView = view
+        bubbleParams = lp
+    }
+
+    private fun hideBubble() {
+        bubbleExpanded.value = false
+        bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
+        bubbleView = null
+        bubbleParams = null
+    }
+
+    private fun moveBubble(dx: Float, dy: Float) {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        lp.x += dx.toInt()
+        lp.y += dy.toInt()
+        runCatching { wm.updateViewLayout(view, lp) }
+    }
+
+    /** Talk hands off to the assistant voice overlay; chat is the fallback when it cannot start. */
+    private fun startAssistantVoice() {
+        val intent = Intent(this, EtaAssistantOverlayService::class.java)
+            .setAction(EtaAssistantOverlayService.ACTION_SHOW)
+        runCatching { startForegroundService(intent) }
+            .onFailure { openEtaFromResult(displayedRun) }
+    }
+
+    private fun bubbleLayoutParams(): WindowManager.LayoutParams =
+        WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            overlayType(),
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            // Top|Start with explicit offsets: dragging only mutates x/y, so the
+            // window never re-centres mid-gesture.
+            gravity = Gravity.TOP or Gravity.START
+            val metrics = (overlayContext().getSystemService(Context.WINDOW_SERVICE) as? WindowManager)
+                ?.currentWindowMetrics
+            x = ((metrics?.bounds?.width() ?: dpToPx(1080)) - dpToPx(232)).coerceAtLeast(0)
+            y = ((metrics?.bounds?.height() ?: dpToPx(2400)) * 0.62f).toInt()
+            windowAnimations = 0
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
+        }
 
     private fun createOverlayComposeView(content: @Composable () -> Unit): ComposeView =
         ComposeView(overlayContext()).apply {
@@ -1661,9 +1763,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         resultCardView?.let { view -> runCatching { windowManager?.removeView(view) } }
         capsuleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         glowView?.let { view -> runCatching { windowManager?.removeView(view) } }
+        bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         resultCardView = null
         capsuleView = null
         glowView = null
+        bubbleView = null
+        bubbleParams = null
         resultCardParams = null
         capsuleParams = null
         glowParams = null
