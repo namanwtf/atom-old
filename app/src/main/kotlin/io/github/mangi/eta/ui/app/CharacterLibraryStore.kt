@@ -249,7 +249,7 @@ internal class CharacterLibraryStore(
 
     fun startConversation(id: String, onReady: (RoleplayBinding, String) -> Unit) = runOperation(
         R.string.character_error_start_conversation,
-        "新对话创建失败，请重试",
+        "Failed to create the conversation, please try again",
     ) {
         val profile = io { CharacterRepository.get(id) } ?: error("CHARACTER_NOT_FOUND")
         val storedBinding = io { CharacterRepository.binding(id) }
