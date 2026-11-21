@@ -10,7 +10,7 @@ internal object AgentPersonalSearchToolCatalog {
             tools.put(
                 function(
                     spec.name,
-                    spec.description + "结果来自历史索引，可能延迟；返回 ref 可读取详情。",
+                    spec.description + "Results come from a historical index and may be delayed; the returned ref can read details.",
                     searchProperties(),
                 )
             )
@@ -18,8 +18,8 @@ internal object AgentPersonalSearchToolCatalog {
         tools.put(
             function(
                 "read_personal_item",
-                "使用个人数据查询返回的 ref 读取索引详情；不能用该引用直接修改原始记录。",
-                JSONObject().put("ref", string("查询结果中的 ref", 160)),
+                "Use the ref returned by a personal data search to read index details; this reference cannot directly modify the original record.",
+                JSONObject().put("ref", string("The ref from the search result.", 160)),
                 "ref",
             )
         )
@@ -32,7 +32,7 @@ internal object AgentPersonalSearchToolCatalog {
         tools.put(
             function(
                 "summarize_bills",
-                "精确汇总匹配的账单索引，区分收入、支出、转账和未知类型；最多完整汇总1000条，范围过大时失败而不返回部分总额。",
+                "Precisely aggregate the matching bill index, distinguishing income, expense, transfer, and unknown types; fully aggregates at most 1000 entries, and fails rather than returning a partial total when the range is too large.",
                 summary,
             )
         )
@@ -40,9 +40,9 @@ internal object AgentPersonalSearchToolCatalog {
 
     fun searchProperties(): JSONObject =
         JSONObject()
-            .put("query", string("可选关键词", 200))
-            .put("start_time", string("包含的起始时间，带时区偏移的 ISO 8601", 64))
-            .put("end_time", string("不包含的结束时间，带时区偏移的 ISO 8601", 64))
+            .put("query", string("Optional keyword", 200))
+            .put("start_time", string("Inclusive start time, ISO 8601 with time-zone offset", 64))
+            .put("end_time", string("Exclusive end time, ISO 8601 with time-zone offset", 64))
             .put("limit", JSONObject().put("type", "integer").put("minimum", 1).put("maximum", 30))
             .put(
                 "offset",

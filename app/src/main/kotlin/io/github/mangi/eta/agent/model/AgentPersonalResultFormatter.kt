@@ -19,31 +19,31 @@ internal object AgentPersonalResultFormatter {
                 val hasQuery = args.optString("query").trim().isNotEmpty()
                 when {
                     isCharacter && hasQuery ->
-                        AppStrings.get(R.string.trace_personal_arg_search_story_memory, "检索剧情记忆")
+                        AppStrings.get(R.string.trace_personal_arg_search_story_memory, "Search story memory")
                     isCharacter ->
-                        AppStrings.get(R.string.trace_personal_arg_read_story_memory, "读取剧情记忆")
+                        AppStrings.get(R.string.trace_personal_arg_read_story_memory, "Read story memory")
                     hasQuery ->
-                        AppStrings.get(R.string.trace_personal_arg_search_memory, "检索记忆")
+                        AppStrings.get(R.string.trace_personal_arg_search_memory, "Search memory")
                     else ->
-                        AppStrings.get(R.string.trace_personal_arg_read_memory, "读取记忆")
+                        AppStrings.get(R.string.trace_personal_arg_read_memory, "Read memory")
                 }
             }
             "memory_write", "character_memory_write" -> {
                 when (args.optString("mode")) {
                     "append" -> if (isCharacter) {
-                        AppStrings.get(R.string.trace_personal_arg_append_story_memory, "追加剧情记忆")
+                        AppStrings.get(R.string.trace_personal_arg_append_story_memory, "Append story memory")
                     } else {
-                        AppStrings.get(R.string.trace_personal_arg_append_memory, "追加记忆")
+                        AppStrings.get(R.string.trace_personal_arg_append_memory, "Append memory")
                     }
                     "clear" -> if (isCharacter) {
-                        AppStrings.get(R.string.trace_personal_arg_clear_story_memory, "清空剧情记忆")
+                        AppStrings.get(R.string.trace_personal_arg_clear_story_memory, "Clear story memory")
                     } else {
-                        AppStrings.get(R.string.trace_personal_arg_clear_memory, "清空记忆")
+                        AppStrings.get(R.string.trace_personal_arg_clear_memory, "Clear memory")
                     }
                     else -> if (isCharacter) {
-                        AppStrings.get(R.string.trace_personal_arg_update_story_memory, "更新剧情记忆")
+                        AppStrings.get(R.string.trace_personal_arg_update_story_memory, "Update story memory")
                     } else {
-                        AppStrings.get(R.string.trace_personal_arg_update_memory, "更新记忆")
+                        AppStrings.get(R.string.trace_personal_arg_update_memory, "Update memory")
                     }
                 }
             }
@@ -60,13 +60,13 @@ internal object AgentPersonalResultFormatter {
             "read_sms_code" -> {
                 val count = itemCount(json)
                 return if (count != null && count > 0) {
-                    AppStrings.get(R.string.trace_personal_sms_code_read, "已读取验证码")
+                    AppStrings.get(R.string.trace_personal_sms_code_read, "Read verification code")
                 } else {
-                    AppStrings.get(R.string.trace_personal_sms_code_empty, "未收到最新验证码")
+                    AppStrings.get(R.string.trace_personal_sms_code_empty, "No recent verification code")
                 }
             }
-            "read_personal_item" -> return AppStrings.get(R.string.trace_personal_item_read, "已读取详情")
-            "summarize_bills" -> return AppStrings.get(R.string.trace_personal_bills_summarized, "已汇总账单")
+            "read_personal_item" -> return AppStrings.get(R.string.trace_personal_item_read, "Read details")
+            "summarize_bills" -> return AppStrings.get(R.string.trace_personal_bills_summarized, "Summarized bills")
         }
 
         val target = SEARCH_TARGETS[toolName] ?: return null
@@ -83,10 +83,10 @@ internal object AgentPersonalResultFormatter {
             )
             val suffix = buildList {
                 if (json.optBoolean("has_more") || json.optBoolean("truncated")) {
-                    add(AppStrings.get(R.string.trace_res_has_more, "还有更多"))
+                    add(AppStrings.get(R.string.trace_res_has_more, "More"))
                 }
                 if (json.optBoolean("partial") || json.optBoolean("scan_limited")) {
-                    add(AppStrings.get(R.string.trace_res_partial_scope, "采集范围有限"))
+                    add(AppStrings.get(R.string.trace_res_partial_scope, "Limited scope"))
                 }
             }.joinToString(" · ")
             if (suffix.isNotEmpty()) "$base · $suffix" else base
@@ -102,37 +102,37 @@ internal object AgentPersonalResultFormatter {
                     AppStrings.quantity(
                         R.plurals.trace_personal_story_found,
                         matchedLines,
-                        "找到 %1\$d 条相关剧情",
-                        "找到 %1\$d 条相关剧情",
+                        "Found %1\$d related story entries",
+                        "Found %1\$d related story entries",
                         matchedLines,
                     )
                 } else {
                     AppStrings.quantity(
                         R.plurals.trace_personal_memory_found,
                         matchedLines,
-                        "找到 %1\$d 条相关记忆",
-                        "找到 %1\$d 条相关记忆",
+                        "Found %1\$d related memories",
+                        "Found %1\$d related memories",
                         matchedLines,
                     )
                 }
             } else {
                 if (isCharacter) {
-                    AppStrings.get(R.string.trace_personal_story_empty, "未找到相关剧情")
+                    AppStrings.get(R.string.trace_personal_story_empty, "No related story found")
                 } else {
-                    AppStrings.get(R.string.trace_personal_memory_empty, "未找到相关记忆")
+                    AppStrings.get(R.string.trace_personal_memory_empty, "No related memory found")
                 }
             }
         }
         val hasMore = json.optBoolean("has_more")
         return when {
             isCharacter && hasMore ->
-                AppStrings.get(R.string.trace_personal_story_read_prefix, "已读取前段剧情记忆")
+                AppStrings.get(R.string.trace_personal_story_read_prefix, "Read first part of story memory")
             isCharacter ->
-                AppStrings.get(R.string.trace_personal_story_read, "已读取剧情记忆")
+                AppStrings.get(R.string.trace_personal_story_read, "Read story memory")
             hasMore ->
-                AppStrings.get(R.string.trace_personal_memory_read_prefix, "已读取前段记忆")
+                AppStrings.get(R.string.trace_personal_memory_read_prefix, "Read first part of memory")
             else ->
-                AppStrings.get(R.string.trace_personal_memory_read, "已读取记忆")
+                AppStrings.get(R.string.trace_personal_memory_read, "Read memory")
         }
     }
 
@@ -140,19 +140,19 @@ internal object AgentPersonalResultFormatter {
         val isCharacter = toolName.startsWith("character_")
         return when (json.optString("mode")) {
             "clear" -> if (isCharacter) {
-                AppStrings.get(R.string.trace_personal_story_cleared, "已清空剧情记忆")
+                AppStrings.get(R.string.trace_personal_story_cleared, "Cleared story memory")
             } else {
-                AppStrings.get(R.string.trace_personal_memory_cleared, "已清空记忆")
+                AppStrings.get(R.string.trace_personal_memory_cleared, "Cleared memory")
             }
             "append" -> if (isCharacter) {
-                AppStrings.get(R.string.trace_personal_story_saved, "已保存剧情记忆")
+                AppStrings.get(R.string.trace_personal_story_saved, "Saved story memory")
             } else {
-                AppStrings.get(R.string.trace_personal_memory_saved, "已保存记忆")
+                AppStrings.get(R.string.trace_personal_memory_saved, "Saved memory")
             }
             else -> if (isCharacter) {
-                AppStrings.get(R.string.trace_personal_story_updated, "已更新剧情记忆")
+                AppStrings.get(R.string.trace_personal_story_updated, "Updated story memory")
             } else {
-                AppStrings.get(R.string.trace_personal_memory_updated, "已更新记忆")
+                AppStrings.get(R.string.trace_personal_memory_updated, "Updated memory")
             }
         }
     }
@@ -171,183 +171,183 @@ internal object AgentPersonalResultFormatter {
     private val SEARCH_TARGETS = mapOf(
         "search_system_memories" to SearchTarget(
             R.plurals.trace_personal_found_system_memories,
-            "找到 %1\$d 条系统记忆",
+            "Found %1\$d system memories",
             R.string.trace_personal_empty_system_memories,
-            "未找到相关系统记忆",
+            "No related system memories found",
         ),
         "search_coloros_memories" to SearchTarget(
             R.plurals.trace_personal_found_system_memories,
-            "找到 %1\$d 条系统记忆",
+            "Found %1\$d system memories",
             R.string.trace_personal_empty_system_memories,
-            "未找到相关系统记忆",
+            "No related system memories found",
         ),
         "search_notes" to SearchTarget(
             R.plurals.trace_personal_found_notes,
-            "找到 %1\$d 条便签",
+            "Found %1\$d notes",
             R.string.trace_personal_empty_notes,
-            "未找到相关便签",
+            "No related notes found",
         ),
         "search_coloros_notes" to SearchTarget(
             R.plurals.trace_personal_found_notes,
-            "找到 %1\$d 条便签",
+            "Found %1\$d notes",
             R.string.trace_personal_empty_notes,
-            "未找到相关便签",
+            "No related notes found",
         ),
         "search_calendar_events" to SearchTarget(
             R.plurals.trace_personal_found_calendar_events,
-            "找到 %1\$d 个日程",
+            "Found %1\$d events",
             R.string.trace_personal_empty_calendar_events,
-            "未找到相关日程",
+            "No related events found",
         ),
         "search_contacts" to SearchTarget(
             R.plurals.trace_personal_found_contacts,
-            "找到 %1\$d 位联系人",
+            "Found %1\$d contacts",
             R.string.trace_personal_empty_contacts,
-            "未找到匹配联系人",
+            "No matching contacts found",
         ),
         "search_messages" to SearchTarget(
             R.plurals.trace_personal_found_messages,
-            "找到 %1\$d 条短信",
+            "Found %1\$d messages",
             R.string.trace_personal_empty_messages,
-            "未找到相关短信",
+            "No related messages found",
         ),
         "search_call_history" to SearchTarget(
             R.plurals.trace_personal_found_call_history,
-            "找到 %1\$d 条通话记录",
+            "Found %1\$d call records",
             R.string.trace_personal_empty_call_history,
-            "未找到通话记录",
+            "No call records found",
         ),
         "search_saved_places" to SearchTarget(
             R.plurals.trace_personal_found_saved_places,
-            "找到 %1\$d 个地点",
+            "Found %1\$d places",
             R.string.trace_personal_empty_saved_places,
-            "未找到相关地点",
+            "No related places found",
         ),
         "search_personal_orders" to SearchTarget(
             R.plurals.trace_personal_found_personal_orders,
-            "找到 %1\$d 个订单",
+            "Found %1\$d orders",
             R.string.trace_personal_empty_personal_orders,
-            "未找到相关订单",
+            "No related orders found",
         ),
         "search_bills" to SearchTarget(
             R.plurals.trace_personal_found_bills,
-            "找到 %1\$d 笔账单",
+            "Found %1\$d bills",
             R.string.trace_personal_empty_bills,
-            "未找到账单记录",
+            "No bill records found",
         ),
         "search_todos" to SearchTarget(
             R.plurals.trace_personal_found_todos,
-            "找到 %1\$d 条待办",
+            "Found %1\$d todos",
             R.string.trace_personal_empty_todos,
-            "未找到待办",
+            "No todos found",
         ),
         "search_calendar_todos" to SearchTarget(
             R.plurals.trace_personal_found_todos,
-            "找到 %1\$d 条待办",
+            "Found %1\$d todos",
             R.string.trace_personal_empty_todos,
-            "未找到待办",
+            "No todos found",
         ),
         "search_flights" to SearchTarget(
             R.plurals.trace_personal_found_flights,
-            "找到 %1\$d 趟航班",
+            "Found %1\$d flights",
             R.string.trace_personal_empty_flights,
-            "未找到航班行程",
+            "No flight trips found",
         ),
         "search_hotels" to SearchTarget(
             R.plurals.trace_personal_found_hotels,
-            "找到 %1\$d 个酒店预订",
+            "Found %1\$d hotel bookings",
             R.string.trace_personal_empty_hotels,
-            "未找到预订记录",
+            "No bookings found",
         ),
         "search_trains" to SearchTarget(
             R.plurals.trace_personal_found_trains,
-            "找到 %1\$d 趟火车",
+            "Found %1\$d train trips",
             R.string.trace_personal_empty_trains,
-            "未找到火车行程",
+            "No train trips found",
         ),
         "search_daily_events" to SearchTarget(
             R.plurals.trace_personal_found_daily_events,
-            "找到 %1\$d 个生活事件",
+            "Found %1\$d life events",
             R.string.trace_personal_empty_daily_events,
-            "未找到生活事件",
+            "No life events found",
         ),
         "search_memory_collections" to SearchTarget(
             R.plurals.trace_personal_found_memory_collections,
-            "找到 %1\$d 个记忆合集",
+            "Found %1\$d memory collections",
             R.string.trace_personal_empty_memory_collections,
-            "未找到记忆合集",
+            "No memory collections found",
         ),
         "search_recordings" to SearchTarget(
             R.plurals.trace_personal_found_recordings,
-            "找到 %1\$d 条录音",
+            "Found %1\$d recordings",
             R.string.trace_personal_empty_recordings,
-            "未找到录音",
+            "No recordings found",
         ),
         "search_coloros_recordings" to SearchTarget(
             R.plurals.trace_personal_found_recordings,
-            "找到 %1\$d 条录音",
+            "Found %1\$d recordings",
             R.string.trace_personal_empty_recordings,
-            "未找到录音",
+            "No recordings found",
         ),
         "search_recording_summaries" to SearchTarget(
             R.plurals.trace_personal_found_recording_summaries,
-            "找到 %1\$d 条录音摘要",
+            "Found %1\$d recording summaries",
             R.string.trace_personal_empty_recording_summaries,
-            "未找到录音摘要",
+            "No recording summaries found",
         ),
         "recent_notifications" to SearchTarget(
             R.plurals.trace_personal_found_notifications,
-            "找到 %1\$d 条通知",
+            "Found %1\$d notifications",
             R.string.trace_personal_empty_notifications,
-            "未找到通知",
+            "No notifications found",
         ),
         "search_notification_history" to SearchTarget(
             R.plurals.trace_personal_found_notifications,
-            "找到 %1\$d 条通知",
+            "Found %1\$d notifications",
             R.string.trace_personal_empty_notifications,
-            "未找到通知",
+            "No notifications found",
         ),
         "search_clipboard_history" to SearchTarget(
             R.plurals.trace_personal_found_clipboard,
-            "找到 %1\$d 条剪贴板记录",
+            "Found %1\$d clipboard entries",
             R.string.trace_personal_empty_clipboard,
-            "未找到剪贴板记录",
+            "No clipboard entries found",
         ),
         "search_downloads" to SearchTarget(
             R.plurals.trace_personal_found_downloads,
-            "找到 %1\$d 个下载记录",
+            "Found %1\$d download records",
             R.string.trace_personal_empty_downloads,
-            "未找到下载记录",
+            "No download records found",
         ),
         "search_media" to SearchTarget(
             R.plurals.trace_personal_found_media,
-            "找到 %1\$d 个媒体文件",
+            "Found %1\$d media files",
             R.string.trace_personal_empty_media,
-            "未找到相关媒体文件",
+            "No related media files found",
         ),
         "search_audio" to SearchTarget(
             R.plurals.trace_personal_found_audio,
-            "找到 %1\$d 个音频文件",
+            "Found %1\$d audio files",
             R.string.trace_personal_empty_audio,
-            "未找到相关音频文件",
+            "No related audio files found",
         ),
         "search_files" to SearchTarget(
             R.plurals.trace_personal_found_files,
-            "找到 %1\$d 个文件",
+            "Found %1\$d files",
             R.string.trace_personal_empty_files,
-            "未找到相关文件",
+            "No related files found",
         ),
         "search_qq_chat_images" to SearchTarget(
             R.plurals.trace_personal_found_chat_images,
-            "找到 %1\$d 张聊天图片",
+            "Found %1\$d chat images",
             R.string.trace_personal_empty_chat_images,
-            "未找到聊天图片",
+            "No chat images found",
         ),
         "search_wechat_chat_images" to SearchTarget(
             R.plurals.trace_personal_found_chat_images,
-            "找到 %1\$d 张聊天图片",
+            "Found %1\$d chat images",
             R.string.trace_personal_empty_chat_images,
-            "未找到聊天图片",
+            "No chat images found",
         ),
     )
 }

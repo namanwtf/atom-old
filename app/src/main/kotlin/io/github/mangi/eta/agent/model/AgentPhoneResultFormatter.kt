@@ -13,20 +13,20 @@ internal object AgentPhoneResultFormatter {
             "list_alarms" -> return alarmCount(json)
             "list_active_timers" -> return timerCount(json)
             "read_note" -> return json.optJSONObject("note")?.let {
-                AppStrings.get(R.string.trace_phone_note_read, "已读取便签")
+                AppStrings.get(R.string.trace_phone_note_read, "Read note")
             }
             "read_calendar_event" -> return json.optJSONObject("event")?.let {
-                AppStrings.get(R.string.trace_phone_event_read, "已读取日程")
+                AppStrings.get(R.string.trace_phone_event_read, "Read event")
             }
         }
         if (json.optString("status") == "dispatched") {
             return when (toolName) {
                 "set_alarm" -> withDetail(
-                    AppStrings.get(R.string.trace_phone_alarm_submitted, "已提交闹钟请求"),
+                    AppStrings.get(R.string.trace_phone_alarm_submitted, "Alarm request submitted"),
                     alarmTime(json),
                 )
                 "set_timer" -> withDetail(
-                    AppStrings.get(R.string.trace_phone_timer_submitted, "已提交计时请求"),
+                    AppStrings.get(R.string.trace_phone_timer_submitted, "Timer request submitted"),
                     timerDuration(json),
                 )
                 else -> null
@@ -35,17 +35,17 @@ internal object AgentPhoneResultFormatter {
         if (json.opt("verified") != true) return null
         return when (toolName) {
             "set_alarm" -> withDetail(
-                AppStrings.get(R.string.trace_phone_alarm_created, "已创建闹钟"),
+                AppStrings.get(R.string.trace_phone_alarm_created, "Alarm created"),
                 alarmTime(json.optJSONObject("alarm")),
             )
             "set_timer" -> withDetail(
-                AppStrings.get(R.string.trace_phone_timer_set, "已设置计时器"),
+                AppStrings.get(R.string.trace_phone_timer_set, "Timer set"),
                 timerDuration(json.optJSONObject("timer") ?: json),
             )
             "update_alarm_time" -> alarmTimeChange(json)
             "set_alarm_enabled" -> alarmEnabled(json)
             "delete_alarm" -> withDetail(
-                AppStrings.get(R.string.trace_phone_alarm_deleted, "已删除闹钟"),
+                AppStrings.get(R.string.trace_phone_alarm_deleted, "Alarm deleted"),
                 alarmTime(json.optJSONObject("before")),
             )
             "create_calendar_event", "create_calendar_events" -> {
@@ -54,19 +54,19 @@ internal object AgentPhoneResultFormatter {
                     AppStrings.quantity(
                         R.plurals.trace_phone_events_created,
                         count,
-                        "已创建 %1\$d 个日程",
-                        "已创建 %1\$d 个日程",
+                        "Created %1\$d events",
+                        "Created %1\$d events",
                         count,
                     )
                 } else {
-                    AppStrings.get(R.string.trace_phone_event_created, "已创建日程")
+                    AppStrings.get(R.string.trace_phone_event_created, "Event created")
                 }
             }
             "update_calendar_event" -> calendarChange(json)
-            "delete_calendar_event" -> AppStrings.get(R.string.trace_phone_event_deleted, "已删除日程")
-            "create_note" -> AppStrings.get(R.string.trace_phone_note_created, "已创建便签")
+            "delete_calendar_event" -> AppStrings.get(R.string.trace_phone_event_deleted, "Event deleted")
+            "create_note" -> AppStrings.get(R.string.trace_phone_note_created, "Note created")
             "delete_note" -> if (json.optString("mode") == "recycle") {
-                AppStrings.get(R.string.trace_phone_note_recycled, "便签已移至回收站")
+                AppStrings.get(R.string.trace_phone_note_recycled, "Note moved to recycle bin")
             } else {
                 null
             }
@@ -77,16 +77,16 @@ internal object AgentPhoneResultFormatter {
     private fun calendarCount(json: JSONObject): String? {
         val items = json.optJSONArray("items") ?: return null
         val count = items.length()
-        if (count == 0) return AppStrings.get(R.string.trace_phone_calendars_empty, "未找到可用日历")
+        if (count == 0) return AppStrings.get(R.string.trace_phone_calendars_empty, "No usable calendars found")
         val base = AppStrings.quantity(
             R.plurals.trace_phone_calendars_found,
             count,
-            "找到 %1\$d 个可用日历",
-            "找到 %1\$d 个可用日历",
+            "Found %1\$d usable calendars",
+            "Found %1\$d usable calendars",
             count,
         )
         return if (json.opt("has_more") == true) {
-            "$base · ${AppStrings.get(R.string.trace_res_has_more, "还有更多")}"
+            "$base · ${AppStrings.get(R.string.trace_res_has_more, "More")}"
         } else {
             base
         }
@@ -95,16 +95,16 @@ internal object AgentPhoneResultFormatter {
     private fun alarmCount(json: JSONObject): String? {
         val items = json.optJSONArray("items") ?: return null
         val count = items.length()
-        if (count == 0) return AppStrings.get(R.string.trace_phone_alarms_empty, "暂无闹钟")
+        if (count == 0) return AppStrings.get(R.string.trace_phone_alarms_empty, "No alarms")
         val base = AppStrings.quantity(
             R.plurals.trace_phone_alarms_found,
             count,
-            "找到 %1\$d 个闹钟",
-            "找到 %1\$d 个闹钟",
+            "Found %1\$d alarms",
+            "Found %1\$d alarms",
             count,
         )
         return if (json.opt("has_more") == true) {
-            "$base · ${AppStrings.get(R.string.trace_res_has_more, "还有更多")}"
+            "$base · ${AppStrings.get(R.string.trace_res_has_more, "More")}"
         } else {
             base
         }
@@ -113,16 +113,16 @@ internal object AgentPhoneResultFormatter {
     private fun timerCount(json: JSONObject): String? {
         val items = json.optJSONArray("items") ?: return null
         val count = items.length()
-        if (count == 0) return AppStrings.get(R.string.trace_phone_timers_empty, "暂无活跃计时器")
+        if (count == 0) return AppStrings.get(R.string.trace_phone_timers_empty, "No active timers")
         val base = AppStrings.quantity(
             R.plurals.trace_phone_timers_found,
             count,
-            "找到 %1\$d 个计时器",
-            "找到 %1\$d 个计时器",
+            "Found %1\$d timers",
+            "Found %1\$d timers",
             count,
         )
         return if (json.opt("has_more") == true) {
-            "$base · ${AppStrings.get(R.string.trace_res_has_more, "还有更多")}"
+            "$base · ${AppStrings.get(R.string.trace_res_has_more, "More")}"
         } else {
             base
         }
@@ -143,8 +143,8 @@ internal object AgentPhoneResultFormatter {
                     AppStrings.quantity(
                         R.plurals.trace_phone_dur_hours,
                         hours,
-                        "%1\$d 小时",
-                        "%1\$d 小时",
+                        "%1\$d hours",
+                        "%1\$d hours",
                         hours,
                     )
                 )
@@ -155,8 +155,8 @@ internal object AgentPhoneResultFormatter {
                     AppStrings.quantity(
                         R.plurals.trace_phone_dur_minutes,
                         minutes,
-                        "%1\$d 分钟",
-                        "%1\$d 分钟",
+                        "%1\$d minutes",
+                        "%1\$d minutes",
                         minutes,
                     )
                 )
@@ -167,8 +167,8 @@ internal object AgentPhoneResultFormatter {
                     AppStrings.quantity(
                         R.plurals.trace_phone_dur_seconds,
                         remSeconds,
-                        "%1\$d 秒",
-                        "%1\$d 秒",
+                        "%1\$d seconds",
+                        "%1\$d seconds",
                         remSeconds,
                     )
                 )
@@ -183,22 +183,22 @@ internal object AgentPhoneResultFormatter {
         val summary = when {
             before != null && after != null && before == after -> AppStrings.get(
                 R.string.trace_phone_alarm_unchanged,
-                "闹钟时间未变化 · %1\$s",
+                "Alarm time unchanged · %1\$s",
                 after,
             )
             before != null && after != null -> AppStrings.get(
                 R.string.trace_phone_alarm_changed,
-                "闹钟时间：%1\$s → %2\$s",
+                "Alarm time：%1\$s → %2\$s",
                 before,
                 after,
             )
             else -> withDetail(
-                AppStrings.get(R.string.trace_phone_alarm_updated, "已更新闹钟时间"),
+                AppStrings.get(R.string.trace_phone_alarm_updated, "Alarm time updated"),
                 after,
             )
         }
         return if (alarm?.opt("enabled") == false) {
-            "$summary · ${AppStrings.get(R.string.trace_phone_alarm_disabled_suffix, "未启用")}"
+            "$summary · ${AppStrings.get(R.string.trace_phone_alarm_disabled_suffix, "not enabled")}"
         } else {
             summary
         }
@@ -210,27 +210,27 @@ internal object AgentPhoneResultFormatter {
         val before = json.optJSONObject("before")?.opt("enabled") as? Boolean
         val summary = when {
             before == enabled && enabled ->
-                AppStrings.get(R.string.trace_phone_alarm_kept_on, "闹钟保持开启")
+                AppStrings.get(R.string.trace_phone_alarm_kept_on, "Alarm kept on")
             before == enabled ->
-                AppStrings.get(R.string.trace_phone_alarm_kept_off, "闹钟保持关闭")
+                AppStrings.get(R.string.trace_phone_alarm_kept_off, "Alarm kept off")
             enabled ->
-                AppStrings.get(R.string.trace_phone_alarm_turned_on, "闹钟已开启")
+                AppStrings.get(R.string.trace_phone_alarm_turned_on, "Alarm turned on")
             else ->
-                AppStrings.get(R.string.trace_phone_alarm_turned_off, "闹钟已关闭")
+                AppStrings.get(R.string.trace_phone_alarm_turned_off, "Alarm turned off")
         }
         return withDetail(summary, alarmTime(alarm))
     }
 
     private fun calendarChange(json: JSONObject): String {
-        val updated = AppStrings.get(R.string.trace_phone_event_updated, "已更新日程")
+        val updated = AppStrings.get(R.string.trace_phone_event_updated, "Event updated")
         val before = json.optJSONObject("before") ?: return updated
         val after = json.optJSONObject("event") ?: return updated
         val fields = listOf(
-            AppStrings.get(R.string.trace_phone_field_title, "标题") to listOf("title"),
-            AppStrings.get(R.string.trace_phone_field_time, "时间") to listOf("dtstart", "dtend", "eventTimezone", "allDay"),
-            AppStrings.get(R.string.trace_phone_field_location, "地点") to listOf("eventLocation"),
-            AppStrings.get(R.string.trace_phone_field_description, "说明") to listOf("description"),
-            AppStrings.get(R.string.trace_phone_field_reminders, "提醒") to listOf("reminders"),
+            AppStrings.get(R.string.trace_phone_field_title, "Title") to listOf("title"),
+            AppStrings.get(R.string.trace_phone_field_time, "Time") to listOf("dtstart", "dtend", "eventTimezone", "allDay"),
+            AppStrings.get(R.string.trace_phone_field_location, "Location") to listOf("eventLocation"),
+            AppStrings.get(R.string.trace_phone_field_description, "Description") to listOf("description"),
+            AppStrings.get(R.string.trace_phone_field_reminders, "Reminders") to listOf("reminders"),
         )
         val changes = fields.mapNotNull { (label, keys) ->
             label.takeIf {
@@ -247,7 +247,7 @@ internal object AgentPhoneResultFormatter {
         val keys = fields.flatMap { it.second }
         val complete = keys.all { hasComparableCalendarValue(before, it) && hasComparableCalendarValue(after, it) }
         return if (complete) {
-            AppStrings.get(R.string.trace_phone_event_unchanged, "日程未变化")
+            AppStrings.get(R.string.trace_phone_event_unchanged, "Event unchanged")
         } else {
             updated
         }

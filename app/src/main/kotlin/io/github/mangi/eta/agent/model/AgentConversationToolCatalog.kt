@@ -8,10 +8,10 @@ internal object AgentConversationToolCatalog {
 
     fun schema(): JSONObject = AgentToolSchema.function(
         name = READ_HISTORY,
-        description = "检索或展开当前会话的完整脱敏历史（包含已被上下文压缩归档折叠的早期消息）。" +
-            "传 query 时按关键词检索并返回命中片段与 message_index、offset、total_chars；" +
-            "省略 query 时按 message_index 和 offset 按需展开指定消息原文或顺序分页读取。沿 next_message_index 和 next_offset 继续，" +
-            "续读固定同一份历史，从零开始可刷新；不要把分页片段误认为完整历史。敏感工具原文和瞬时图片不在持久历史中。",
+        description = "Retrieve or expand the full sanitized history of the current session (including early messages that were folded away by context compaction)." +
+            "When query is provided, search by keyword and return matched snippets with message_index, offset, and total_chars;" +
+            "when query is omitted, expand the specified message's original text or read in paged order by message_index and offset. Continue along next_message_index and next_offset," +
+            "subsequent reads stay on the same history, which can be refreshed by starting from zero; do not mistake a paginated fragment for the complete history. Sensitive tool raw text and ephemeral images are not in the persistent history.",
         parameters = JSONObject().put("type", "object").put("properties", JSONObject()
             .put("query", JSONObject().put("type", "string").put("maxLength", 500))
             .put("message_index", JSONObject().put("type", "integer").put("minimum", 0))

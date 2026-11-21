@@ -16,14 +16,14 @@ internal object AgentDeviceResultFormatter {
         when (toolName) {
             "get_current_context" -> return currentContext(json)
             "get_current_location" -> return currentLocation(json)
-            "get_device_environment" -> return AppStrings.get(R.string.trace_dev_env_read, "已读取设备环境")
-            "app_usage_summary" -> return AppStrings.get(R.string.trace_dev_usage_read, "已读取应用使用统计")
-            "recent_app_activity" -> return AppStrings.get(R.string.trace_dev_activity_read, "已读取应用活动记录")
+            "get_device_environment" -> return AppStrings.get(R.string.trace_dev_env_read, "Read device environment")
+            "app_usage_summary" -> return AppStrings.get(R.string.trace_dev_usage_read, "Read app usage statistics")
+            "recent_app_activity" -> return AppStrings.get(R.string.trace_dev_activity_read, "Read app activity records")
             "get_device_state", "get_flashlight", "get_hotspot" -> {
                 if (json.opt("ok") != true) return null
                 val label = when (toolName) {
-                    "get_flashlight" -> AppStrings.get(R.string.trace_dev_flashlight, "手电筒")
-                    "get_hotspot" -> AppStrings.get(R.string.trace_dev_hotspot, "个人热点")
+                    "get_flashlight" -> AppStrings.get(R.string.trace_dev_flashlight, "Flashlight")
+                    "get_hotspot" -> AppStrings.get(R.string.trace_dev_hotspot, "Personal hotspot")
                     else -> deviceLabel(json.optString("target")) ?: return null
                 }
                 val enabled = json.opt("enabled") as? Boolean ?: return null
@@ -36,18 +36,18 @@ internal object AgentDeviceResultFormatter {
         if (json.opt("verified") != true) return null
         return when (toolName) {
             "set_device_state" -> booleanChange(deviceLabel(json.optString("target")) ?: return null, json)
-            "set_flashlight" -> booleanChange(AppStrings.get(R.string.trace_dev_flashlight, "手电筒"), json)
-            "set_hotspot" -> booleanChange(AppStrings.get(R.string.trace_dev_hotspot, "个人热点"), json)
+            "set_flashlight" -> booleanChange(AppStrings.get(R.string.trace_dev_flashlight, "Flashlight"), json)
+            "set_hotspot" -> booleanChange(AppStrings.get(R.string.trace_dev_hotspot, "Personal hotspot"), json)
             "set_volume" -> volume(json)
             "set_brightness" -> brightness(json)
             "set_screen_timeout" -> timeout(number(json, "before"), number(json, "after"))
             "set_sound_mode" -> change(
-                AppStrings.get(R.string.trace_dev_sound_mode, "响铃模式"),
+                AppStrings.get(R.string.trace_dev_sound_mode, "Ring mode"),
                 soundMode(integer(json, "before")),
                 soundMode(integer(json, "after")),
             )
             "set_do_not_disturb" -> change(
-                AppStrings.get(R.string.trace_dev_dnd, "勿扰模式"),
+                AppStrings.get(R.string.trace_dev_dnd, "Do Not Disturb"),
                 dndMode(integer(json, "before")),
                 dndMode(integer(json, "after")),
             )
@@ -66,17 +66,17 @@ internal object AgentDeviceResultFormatter {
         }
         val location = json.optJSONObject("location") ?: return time
         val status = when (location.optString("status")) {
-            "permission_required" -> AppStrings.get(R.string.trace_dev_loc_perm, "位置未授权")
-            "background_permission_required" -> AppStrings.get(R.string.trace_dev_loc_bg_perm, "后台位置未授权")
-            "location_disabled" -> AppStrings.get(R.string.trace_dev_loc_disabled, "系统定位已关闭")
-            "unavailable" -> AppStrings.get(R.string.trace_dev_loc_none, "暂无最近位置")
+            "permission_required" -> AppStrings.get(R.string.trace_dev_loc_perm, "Location permission not granted")
+            "background_permission_required" -> AppStrings.get(R.string.trace_dev_loc_bg_perm, "Background location permission not granted")
+            "location_disabled" -> AppStrings.get(R.string.trace_dev_loc_disabled, "System location is off")
+            "unavailable" -> AppStrings.get(R.string.trace_dev_loc_none, "No recent location")
             else -> null
         }
         if (status != null) return "$time · $status"
         val latitude = number(location, "latitude")?.takeIf { it in -90.0..90.0 }
         val longitude = number(location, "longitude")?.takeIf { it in -180.0..180.0 }
         if (latitude == null || longitude == null) {
-            return "$time · ${AppStrings.get(R.string.trace_dev_loc_unavailable, "位置不可用")}"
+            return "$time · ${AppStrings.get(R.string.trace_dev_loc_unavailable, "Location unavailable")}"
         }
         val age = integer(location, "age_s")?.let { formatAge(it.toLong()) }
         return "$time · ${formatRecentLocation(latitude, longitude, age)}"
@@ -86,7 +86,7 @@ internal object AgentDeviceResultFormatter {
         val latitude = number(json, "latitude")?.takeIf { it in -90.0..90.0 }
         val longitude = number(json, "longitude")?.takeIf { it in -180.0..180.0 }
         if (latitude == null || longitude == null) {
-            return AppStrings.get(R.string.trace_dev_loc_unavailable, "位置不可用")
+            return AppStrings.get(R.string.trace_dev_loc_unavailable, "Location unavailable")
         }
         val age = number(json, "age_ms")?.let { ms -> formatAge((ms / 1000).toLong()) }
         return formatRecentLocation(latitude, longitude, age)
@@ -96,8 +96,8 @@ internal object AgentDeviceResultFormatter {
         seconds < 60 -> AppStrings.quantity(
             R.plurals.trace_dev_age_seconds,
             seconds.coerceIn(0, Int.MAX_VALUE.toLong()).toInt(),
-            "%1\$d 秒前",
-            "%1\$d 秒前",
+            "%1\$d seconds ago",
+            "%1\$d seconds ago",
             seconds,
         )
         seconds < 3600 -> {
@@ -105,8 +105,8 @@ internal object AgentDeviceResultFormatter {
             AppStrings.quantity(
                 R.plurals.trace_dev_age_minutes,
                 minutes.coerceIn(0, Int.MAX_VALUE.toLong()).toInt(),
-                "%1\$d 分钟前",
-                "%1\$d 分钟前",
+                "%1\$d minutes ago",
+                "%1\$d minutes ago",
                 minutes,
             )
         }
@@ -115,8 +115,8 @@ internal object AgentDeviceResultFormatter {
             AppStrings.quantity(
                 R.plurals.trace_dev_age_hours,
                 hours.coerceIn(0, Int.MAX_VALUE.toLong()).toInt(),
-                "%1\$d 小时前",
-                "%1\$d 小时前",
+                "%1\$d hours ago",
+                "%1\$d hours ago",
                 hours,
             )
         }
@@ -125,8 +125,8 @@ internal object AgentDeviceResultFormatter {
             AppStrings.quantity(
                 R.plurals.trace_dev_age_days,
                 days.coerceIn(0, Int.MAX_VALUE.toLong()).toInt(),
-                "%1\$d 天前",
-                "%1\$d 天前",
+                "%1\$d days ago",
+                "%1\$d days ago",
                 days,
             )
         }
@@ -136,7 +136,7 @@ internal object AgentDeviceResultFormatter {
         if (age != null) {
             AppStrings.get(
                 R.string.trace_dev_recent_location_age,
-                "最近位置：%1\$s, %2\$s（%3\$s）",
+                "Recent location：%1\$s, %2\$s（%3\$s）",
                 decimal(latitude),
                 decimal(longitude),
                 age,
@@ -144,7 +144,7 @@ internal object AgentDeviceResultFormatter {
         } else {
             AppStrings.get(
                 R.string.trace_dev_recent_location,
-                "最近位置：%1\$s, %2\$s",
+                "Recent location：%1\$s, %2\$s",
                 decimal(latitude),
                 decimal(longitude),
             )
@@ -159,12 +159,12 @@ internal object AgentDeviceResultFormatter {
 
     private fun volume(json: JSONObject): String? {
         val streamLabel = when (json.optString("stream")) {
-            "media" -> AppStrings.get(R.string.trace_dev_vol_media, "媒体音量")
-            "alarm" -> AppStrings.get(R.string.trace_dev_vol_alarm, "闹钟音量")
-            "ring" -> AppStrings.get(R.string.trace_dev_vol_ring, "铃声音量")
-            "notification" -> AppStrings.get(R.string.trace_dev_vol_notification, "通知音量")
-            "voice_call" -> AppStrings.get(R.string.trace_dev_vol_call, "通话音量")
-            "system" -> AppStrings.get(R.string.trace_dev_vol_system, "系统音量")
+            "media" -> AppStrings.get(R.string.trace_dev_vol_media, "Media volume")
+            "alarm" -> AppStrings.get(R.string.trace_dev_vol_alarm, "Alarm volume")
+            "ring" -> AppStrings.get(R.string.trace_dev_vol_ring, "Ringtone volume")
+            "notification" -> AppStrings.get(R.string.trace_dev_vol_notification, "Notification volume")
+            "voice_call" -> AppStrings.get(R.string.trace_dev_vol_call, "Call volume")
+            "system" -> AppStrings.get(R.string.trace_dev_vol_system, "System volume")
             else -> return null
         }
         val before = integer(json, "before")
@@ -176,7 +176,7 @@ internal object AgentDeviceResultFormatter {
             if (range != null) {
                 if (it !in range) null else "${((it - range.first) * 100.0 / (range.last - range.first)).roundToInt()}%"
             } else {
-                AppStrings.get(R.string.trace_dev_vol_level, "%1\$d 档", it)
+                AppStrings.get(R.string.trace_dev_vol_level, "level %1\$d", it)
             }
         }
         return change(streamLabel, display(before), display(after), unchanged = before == after)
@@ -187,7 +187,7 @@ internal object AgentDeviceResultFormatter {
         val after = number(json, "after")?.takeIf { it in 0.0..100.0 } ?: return null
         fun display(value: Double): String = "${decimal((value * 10).roundToInt() / 10.0)}%"
         return change(
-            AppStrings.get(R.string.trace_dev_brightness, "亮度"),
+            AppStrings.get(R.string.trace_dev_brightness, "Brightness"),
             before?.let(::display),
             display(after),
             unchanged = before == after,
@@ -197,13 +197,13 @@ internal object AgentDeviceResultFormatter {
     private fun timeout(before: Double?, after: Double?): String? {
         fun display(value: Double?): String? = value?.takeIf { it >= 0 && it <= Long.MAX_VALUE.toDouble() && it % 1 == 0.0 }?.let {
             if (it > 0 && it % 60_000 == 0.0) {
-                AppStrings.get(R.string.trace_dev_unit_min, "%1\$s 分钟", decimal(it / 60_000))
+                AppStrings.get(R.string.trace_dev_unit_min, "%1\$s minutes", decimal(it / 60_000))
             } else {
-                AppStrings.get(R.string.trace_dev_unit_sec, "%1\$s 秒", decimal(it / 1000))
+                AppStrings.get(R.string.trace_dev_unit_sec, "%1\$s seconds", decimal(it / 1000))
             }
         }
         return change(
-            AppStrings.get(R.string.trace_dev_screen_timeout, "自动息屏"),
+            AppStrings.get(R.string.trace_dev_screen_timeout, "Screen timeout"),
             display(before),
             display(after),
             unchanged = before == after,
@@ -226,53 +226,53 @@ internal object AgentDeviceResultFormatter {
         return when (action) {
             "force_stop" -> when {
                 before == true && after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_stopped_pkg, "应用 %1\$s：保持停止", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_stopped_pkg, "App %1\$s：kept stopped", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_stopped, "应用：保持停止")
+                    AppStrings.get(R.string.trace_dev_app_kept_stopped, "App：kept stopped")
                 }
                 after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_stopped_pkg, "已停止应用 %1\$s", packageName)
+                    AppStrings.get(R.string.trace_dev_app_stopped_pkg, "Stopped app %1\$s", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_stopped, "已停止应用")
+                    AppStrings.get(R.string.trace_dev_app_stopped, "Stopped app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_not_stopped_pkg, "应用 %1\$s：未停止", packageName)
+                    AppStrings.get(R.string.trace_dev_app_not_stopped_pkg, "App %1\$s：not stopped", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_not_stopped, "应用：未停止")
+                    AppStrings.get(R.string.trace_dev_app_not_stopped, "App：not stopped")
                 }
             }
             "freeze" -> when {
                 before == false && !after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "应用 %1\$s：保持冻结", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s：kept frozen", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "应用：保持冻结")
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App：kept frozen")
                 }
                 !after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_frozen_pkg, "已冻结应用 %1\$s", packageName)
+                    AppStrings.get(R.string.trace_dev_app_frozen_pkg, "Froze app %1\$s", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_frozen, "已冻结应用")
+                    AppStrings.get(R.string.trace_dev_app_frozen, "Froze app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "应用 %1\$s：保持启用", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s：kept enabled", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "应用：保持启用")
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App：kept enabled")
                 }
             }
             "unfreeze" -> when {
                 before == true && after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "应用 %1\$s：保持启用", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s：kept enabled", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "应用：保持启用")
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App：kept enabled")
                 }
                 after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_unfrozen_pkg, "已解冻应用 %1\$s", packageName)
+                    AppStrings.get(R.string.trace_dev_app_unfrozen_pkg, "Unfroze app %1\$s", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_unfrozen, "已解冻应用")
+                    AppStrings.get(R.string.trace_dev_app_unfrozen, "Unfroze app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "应用 %1\$s：保持冻结", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s：kept frozen", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "应用：保持冻结")
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App：kept frozen")
                 }
             }
             else -> null
@@ -286,19 +286,19 @@ internal object AgentDeviceResultFormatter {
         val key = json.optString("key")
         val booleanLabel = when (namespace to key) {
             "system" to "accelerometer_rotation" ->
-                AppStrings.get(R.string.trace_dev_label_auto_rotate, "自动旋转")
+                AppStrings.get(R.string.trace_dev_label_auto_rotate, "Auto-rotate")
             "system" to "screen_brightness_mode" ->
-                AppStrings.get(R.string.trace_dev_label_auto_brightness, "自动亮度")
+                AppStrings.get(R.string.trace_dev_label_auto_brightness, "Auto-brightness")
             "global" to "low_power" ->
-                AppStrings.get(R.string.trace_dev_label_battery_saver, "省电模式")
+                AppStrings.get(R.string.trace_dev_label_battery_saver, "Battery saver")
             "global" to "airplane_mode_on" ->
-                AppStrings.get(R.string.trace_dev_label_airplane_mode, "飞行模式")
+                AppStrings.get(R.string.trace_dev_label_airplane_mode, "Airplane mode")
             else -> null
         }
         if (booleanLabel != null) {
             fun display(value: String?): String? = when (value) {
-                "0" -> AppStrings.get(R.string.trace_dev_state_off, "关闭")
-                "1" -> AppStrings.get(R.string.trace_dev_state_on, "开启")
+                "0" -> AppStrings.get(R.string.trace_dev_state_off, "Off")
+                "1" -> AppStrings.get(R.string.trace_dev_state_on, "On")
                 else -> null
             }
             return change(booleanLabel, display(before), display(after), isBoolean = true)
@@ -308,28 +308,28 @@ internal object AgentDeviceResultFormatter {
         }
         if (namespace == "global" && key == "zen_mode") {
             return change(
-                AppStrings.get(R.string.trace_dev_dnd, "勿扰模式"),
+                AppStrings.get(R.string.trace_dev_dnd, "Do Not Disturb"),
                 dndMode(before?.toIntOrNull()),
                 dndMode(after.toIntOrNull()),
             )
         }
         // 任意设置值可能含认证信息或用户正文，摘要只保留是否变化。
         return if (before == after) {
-            AppStrings.get(R.string.trace_dev_setting_unchanged, "系统设置未变化")
+            AppStrings.get(R.string.trace_dev_setting_unchanged, "System setting unchanged")
         } else {
-            AppStrings.get(R.string.trace_dev_setting_changed, "系统设置已修改")
+            AppStrings.get(R.string.trace_dev_setting_changed, "System setting changed")
         }
     }
 
     private fun mediaControl(json: JSONObject): String? {
         if (json.opt("ok") != true) return null
         return when (json.optString("action")) {
-            "play" -> AppStrings.get(R.string.trace_dev_media_play, "已发送播放指令")
-            "pause" -> AppStrings.get(R.string.trace_dev_media_pause, "已发送暂停指令")
-            "play_pause" -> AppStrings.get(R.string.trace_dev_media_play_pause, "已发送播放/暂停切换指令")
-            "next" -> AppStrings.get(R.string.trace_dev_media_next, "已发送下一首指令")
-            "previous" -> AppStrings.get(R.string.trace_dev_media_previous, "已发送上一首指令")
-            "stop" -> AppStrings.get(R.string.trace_dev_media_stop, "已发送停止播放指令")
+            "play" -> AppStrings.get(R.string.trace_dev_media_play, "Sent play command")
+            "pause" -> AppStrings.get(R.string.trace_dev_media_pause, "Sent pause command")
+            "play_pause" -> AppStrings.get(R.string.trace_dev_media_play_pause, "Sent play/pause toggle command")
+            "next" -> AppStrings.get(R.string.trace_dev_media_next, "Sent next track command")
+            "previous" -> AppStrings.get(R.string.trace_dev_media_previous, "Sent previous track command")
+            "stop" -> AppStrings.get(R.string.trace_dev_media_stop, "Sent stop command")
             else -> null
         }
     }
@@ -342,20 +342,20 @@ internal object AgentDeviceResultFormatter {
         val labels = (0 until transports.length()).mapNotNull { index ->
             when (transports.opt(index) as? String ?: return null) {
                 "wifi" -> "Wi-Fi"
-                "cellular" -> AppStrings.get(R.string.trace_dev_net_cellular, "移动网络")
-                "ethernet" -> AppStrings.get(R.string.trace_dev_net_ethernet, "以太网")
+                "cellular" -> AppStrings.get(R.string.trace_dev_net_cellular, "Mobile network")
+                "ethernet" -> AppStrings.get(R.string.trace_dev_net_ethernet, "Ethernet")
                 "vpn" -> "VPN"
                 else -> null
             }
         }.distinct()
-        if (!connected) return AppStrings.get(R.string.trace_dev_net_disconnected, "网络：未连接")
+        if (!connected) return AppStrings.get(R.string.trace_dev_net_disconnected, "Network：not connected")
         val label = labels.joinToString(" / ").ifEmpty {
-            AppStrings.get(R.string.trace_dev_net_generic, "网络")
+            AppStrings.get(R.string.trace_dev_net_generic, "Network")
         }
         return if (validated) {
-            AppStrings.get(R.string.trace_dev_net_connected, "%1\$s：已连接互联网", label)
+            AppStrings.get(R.string.trace_dev_net_connected, "%1\$s：connected to the internet", label)
         } else {
-            AppStrings.get(R.string.trace_dev_net_unvalidated, "%1\$s：已连接，互联网未验证", label)
+            AppStrings.get(R.string.trace_dev_net_unvalidated, "%1\$s：connected, internet not verified", label)
         }
     }
 
@@ -364,9 +364,9 @@ internal object AgentDeviceResultFormatter {
         val percent = integer(json, "battery_percent")?.takeIf { it in 0..100 } ?: return null
         val charging = json.opt("charging") as? Boolean ?: return null
         return if (charging) {
-            AppStrings.get(R.string.trace_dev_battery_charging, "电量 %1\$d%% · 正在充电", percent)
+            AppStrings.get(R.string.trace_dev_battery_charging, "Battery %1\$d%% · charging", percent)
         } else {
-            AppStrings.get(R.string.trace_dev_battery_discharging, "电量 %1\$d%% · 未充电", percent)
+            AppStrings.get(R.string.trace_dev_battery_discharging, "Battery %1\$d%% · not charging", percent)
         }
     }
 
@@ -381,52 +381,52 @@ internal object AgentDeviceResultFormatter {
         val isNumeric = after.firstOrNull()?.isDigit() == true || after.endsWith("%")
         return when {
             before == null || (!unchanged && before == after) -> when {
-                isBoolean -> AppStrings.get(R.string.trace_dev_change_bool_set, "%1\$s：已%2\$s", label, after)
-                isNumeric -> AppStrings.get(R.string.trace_dev_change_set_num, "%1\$s：已设为 %2\$s", label, after)
-                else -> AppStrings.get(R.string.trace_dev_change_set, "%1\$s：已设为%2\$s", label, after)
+                isBoolean -> AppStrings.get(R.string.trace_dev_change_bool_set, "%1\$s：now %2\$s", label, after)
+                isNumeric -> AppStrings.get(R.string.trace_dev_change_set_num, "%1\$s：set to %2\$s", label, after)
+                else -> AppStrings.get(R.string.trace_dev_change_set, "%1\$s：set to %2\$s", label, after)
             }
             unchanged -> if (isNumeric) {
-                AppStrings.get(R.string.trace_dev_change_kept_num, "%1\$s：保持 %2\$s", label, after)
+                AppStrings.get(R.string.trace_dev_change_kept_num, "%1\$s：kept %2\$s", label, after)
             } else {
-                AppStrings.get(R.string.trace_dev_change_kept, "%1\$s：保持%2\$s", label, after)
+                AppStrings.get(R.string.trace_dev_change_kept, "%1\$s：kept %2\$s", label, after)
             }
             else -> AppStrings.get(R.string.trace_dev_change_arrow, "%1\$s：%2\$s → %3\$s", label, before, after)
         }
     }
 
     private fun booleanState(value: Boolean): String = if (value) {
-        AppStrings.get(R.string.trace_dev_state_on, "开启")
+        AppStrings.get(R.string.trace_dev_state_on, "On")
     } else {
-        AppStrings.get(R.string.trace_dev_state_off, "关闭")
+        AppStrings.get(R.string.trace_dev_state_off, "Off")
     }
 
     private fun deviceLabel(target: String): String? = when (target) {
         "wifi" -> "Wi-Fi"
-        "bluetooth" -> AppStrings.get(R.string.trace_dev_label_bluetooth, "蓝牙")
-        "mobile_data" -> AppStrings.get(R.string.trace_dev_label_mobile_data, "移动数据")
-        "airplane_mode" -> AppStrings.get(R.string.trace_dev_label_airplane_mode, "飞行模式")
-        "location" -> AppStrings.get(R.string.trace_dev_label_location, "定位")
+        "bluetooth" -> AppStrings.get(R.string.trace_dev_label_bluetooth, "Bluetooth")
+        "mobile_data" -> AppStrings.get(R.string.trace_dev_label_mobile_data, "Mobile data")
+        "airplane_mode" -> AppStrings.get(R.string.trace_dev_label_airplane_mode, "Airplane mode")
+        "location" -> AppStrings.get(R.string.trace_dev_label_location, "Location")
         "nfc" -> "NFC"
-        "battery_saver" -> AppStrings.get(R.string.trace_dev_label_battery_saver, "省电模式")
-        "auto_rotate" -> AppStrings.get(R.string.trace_dev_label_auto_rotate, "自动旋转")
-        "auto_brightness" -> AppStrings.get(R.string.trace_dev_label_auto_brightness, "自动亮度")
-        "dark_mode" -> AppStrings.get(R.string.trace_dev_label_dark_mode, "深色模式")
-        "night_light" -> AppStrings.get(R.string.trace_dev_label_night_light, "护眼模式")
+        "battery_saver" -> AppStrings.get(R.string.trace_dev_label_battery_saver, "Battery saver")
+        "auto_rotate" -> AppStrings.get(R.string.trace_dev_label_auto_rotate, "Auto-rotate")
+        "auto_brightness" -> AppStrings.get(R.string.trace_dev_label_auto_brightness, "Auto-brightness")
+        "dark_mode" -> AppStrings.get(R.string.trace_dev_label_dark_mode, "Dark mode")
+        "night_light" -> AppStrings.get(R.string.trace_dev_label_night_light, "Night light")
         else -> null
     }
 
     private fun soundMode(value: Int?): String? = when (value) {
-        0 -> AppStrings.get(R.string.trace_dev_sound_silent, "静音")
-        1 -> AppStrings.get(R.string.trace_dev_sound_vibrate, "振动")
-        2 -> AppStrings.get(R.string.trace_dev_sound_normal, "正常")
+        0 -> AppStrings.get(R.string.trace_dev_sound_silent, "Silent")
+        1 -> AppStrings.get(R.string.trace_dev_sound_vibrate, "Vibrate")
+        2 -> AppStrings.get(R.string.trace_dev_sound_normal, "Normal")
         else -> null
     }
 
     private fun dndMode(value: Int?): String? = when (value) {
-        0 -> AppStrings.get(R.string.trace_dev_state_off, "关闭")
-        1 -> AppStrings.get(R.string.trace_dev_dnd_priority, "优先事项")
-        2 -> AppStrings.get(R.string.trace_dev_dnd_silent, "全部静音")
-        3 -> AppStrings.get(R.string.trace_dev_dnd_alarms, "仅闹钟")
+        0 -> AppStrings.get(R.string.trace_dev_state_off, "Off")
+        1 -> AppStrings.get(R.string.trace_dev_dnd_priority, "Priority")
+        2 -> AppStrings.get(R.string.trace_dev_dnd_silent, "All silent")
+        3 -> AppStrings.get(R.string.trace_dev_dnd_alarms, "Alarms only")
         else -> null
     }
 

@@ -33,8 +33,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "get_flashlight",
                 titleRes = R.string.tool_cat_get_flashlight_title,
-                titleFallback = "手电筒状态",
-                description = "查询手电筒实际状态及是否被相机占用。",
+                titleFallback = "Flashlight status",
+                description = "Query the flashlight's actual state and whether it is occupied by the camera.",
                 descriptionRes = R.string.tool_cat_get_flashlight_desc,
                 write = false,
                 root = RootRequirement.NONE,
@@ -43,8 +43,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_flashlight",
                 titleRes = R.string.tool_cat_set_flashlight_title,
-                titleFallback = "设置手电筒",
-                description = "开启或关闭手电筒并通过系统回调验证；已处于目标状态时不重复切换。",
+                titleFallback = "Set flashlight",
+                description = "Turn the flashlight on or off and verify via system callback; do not toggle again if already in the target state.",
                 descriptionRes = R.string.tool_cat_set_flashlight_desc,
                 write = true,
                 root = RootRequirement.NONE,
@@ -53,8 +53,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "get_device_state",
                 titleRes = R.string.tool_cat_get_device_state_title,
-                titleFallback = "查询系统开关",
-                description = "查询指定系统开关，不用 GUI。",
+                titleFallback = "Query system switch",
+                description = "Query a specified system switch without using the GUI.",
                 descriptionRes = R.string.tool_cat_get_device_state_desc,
                 write = false,
                 root = RootRequirement.REQUIRED,
@@ -63,8 +63,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "get_display_state",
                 titleRes = R.string.tool_cat_get_display_state_title,
-                titleFallback = "显示状态",
-                description = "查询亮度、自动亮度、旋转和息屏时间。",
+                titleFallback = "Display state",
+                description = "Query brightness, auto-brightness, rotation, and screen-off timeout.",
                 descriptionRes = R.string.tool_cat_get_display_state_desc,
                 write = false,
                 root = RootRequirement.REQUIRED,
@@ -73,8 +73,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_brightness",
                 titleRes = R.string.tool_cat_set_brightness_title,
-                titleFallback = "设置亮度",
-                description = "按系统亮度滑块百分比设置并读回验证；不支持可靠百分比接口时明确失败。",
+                titleFallback = "Set brightness",
+                description = "Set brightness as a percentage of the system brightness slider and read back to verify; fail explicitly when no reliable percentage interface is available.",
                 descriptionRes = R.string.tool_cat_set_brightness_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -83,8 +83,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_screen_timeout",
                 titleRes = R.string.tool_cat_set_screen_timeout_title,
-                titleFallback = "设置息屏时间",
-                description = "设置无操作后的自动息屏秒数，并读回验证。",
+                titleFallback = "Set screen-off timeout",
+                description = "Set the number of seconds before the screen turns off after inactivity, and read back to verify.",
                 descriptionRes = R.string.tool_cat_set_screen_timeout_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -93,8 +93,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "get_sound_state",
                 titleRes = R.string.tool_cat_get_sound_state_title,
-                titleFallback = "声音状态",
-                description = "读取各类音量、响铃及勿扰状态。",
+                titleFallback = "Sound state",
+                description = "Read various volume levels, ringer, and do-not-disturb state.",
                 descriptionRes = R.string.tool_cat_get_sound_state_desc,
                 write = false,
                 root = RootRequirement.NONE,
@@ -103,8 +103,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_sound_mode",
                 titleRes = R.string.tool_cat_set_sound_mode_title,
-                titleFallback = "设置响铃模式",
-                description = "设置正常、静音或振动模式并验证；普通身份可能需要勿扰访问权限。",
+                titleFallback = "Set ringer mode",
+                description = "Set normal, silent, or vibrate mode and verify; the non-privileged identity may require do-not-disturb access permission.",
                 descriptionRes = R.string.tool_cat_set_sound_mode_desc,
                 write = true,
                 root = RootRequirement.PARTIAL,
@@ -112,8 +112,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_do_not_disturb",
                 titleRes = R.string.tool_cat_set_do_not_disturb_title,
-                titleFallback = "设置勿扰模式",
-                description = "直接设置勿扰策略并读回验证。",
+                titleFallback = "Set do-not-disturb mode",
+                description = "Directly set the do-not-disturb policy and read back to verify.",
                 descriptionRes = R.string.tool_cat_set_do_not_disturb_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -121,8 +121,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "get_hotspot",
                 titleRes = R.string.tool_cat_get_hotspot_title,
-                titleFallback = "热点状态",
-                description = "查询互联网共享热点是否开启；需要系统提供兼容接口。",
+                titleFallback = "Hotspot status",
+                description = "Query whether the internet-sharing hotspot is on; requires a compatible system interface.",
                 descriptionRes = R.string.tool_cat_get_hotspot_desc,
                 write = false,
                 root = RootRequirement.REQUIRED,
@@ -131,8 +131,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_hotspot",
                 titleRes = R.string.tool_cat_set_hotspot_title,
-                titleFallback = "设置个人热点",
-                description = "使用现有热点配置开启或关闭网络共享，不更改名称和密码。",
+                titleFallback = "Set personal hotspot",
+                description = "Turn network sharing on or off using the existing hotspot configuration; does not change the name or password.",
                 descriptionRes = R.string.tool_cat_set_hotspot_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -140,8 +140,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "list_calendars",
                 titleRes = R.string.tool_cat_list_calendars_title,
-                titleFallback = "可用日历",
-                description = "列出当前用户可写的日历 ID 和名称；创建时必须选择真实日历，不能猜 calendar_id。",
+                titleFallback = "Available calendars",
+                description = "List the writable calendar IDs and names for the current user; when creating, you must pick a real calendar and must not guess calendar_id.",
                 descriptionRes = R.string.tool_cat_list_calendars_desc,
                 write = false,
                 root = RootRequirement.PARTIAL,
@@ -150,8 +150,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "read_calendar_event",
                 titleRes = R.string.tool_cat_read_calendar_event_title,
-                titleFallback = "日程详情",
-                description = "按原始 event_id 读取实时事件与提醒；不得使用 DMP 文档 ID。",
+                titleFallback = "Event details",
+                description = "Read the live event and reminders by raw event_id; do not use the DMP document ID.",
                 descriptionRes = R.string.tool_cat_read_calendar_event_desc,
                 write = false,
                 root = RootRequirement.PARTIAL,
@@ -160,8 +160,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "create_calendar_event",
                 titleRes = R.string.tool_cat_create_calendar_event_title,
-                titleFallback = "创建日程",
-                description = "直接创建日程和提醒，事务完成后读回确认。一次性日程使用起止时间；全天事件使用 UTC 零点和排他的结束零点。超时后先查询，不要重复创建。",
+                titleFallback = "Create event",
+                description = "Directly create an event and reminders, and read back to confirm after the transaction completes. One-off events use start and end times; all-day events use UTC midnight and an exclusive end midnight. After a timeout, query first; do not create duplicates.",
                 descriptionRes = R.string.tool_cat_create_calendar_event_desc,
                 write = true,
                 root = RootRequirement.PARTIAL,
@@ -169,8 +169,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "create_calendar_events",
                 titleRes = R.string.tool_cat_create_calendar_events_title,
-                titleFallback = "批量创建日程",
-                description = "一次创建同一日历中的多条日程和提醒；先校验全部参数，再在同一事务中写入并逐条核对。最多 30 条，结果未确认时先查询，不要重复创建。",
+                titleFallback = "Create events in bulk",
+                description = "Create multiple events and reminders in the same calendar in one call; validate all parameters first, then write in a single transaction and verify each. At most 30 items; if results are unconfirmed, query first; do not create duplicates.",
                 descriptionRes = R.string.tool_cat_create_calendar_events_desc,
                 write = true,
                 root = RootRequirement.PARTIAL,
@@ -178,8 +178,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "update_calendar_event",
                 titleRes = R.string.tool_cat_update_calendar_event_title,
-                titleFallback = "修改日程",
-                description = "按原始 event_id 修改日程字段和提醒，并读回确认；修改时间须同时给出起止时间。当前不修改重复事件。",
+                titleFallback = "Update event",
+                description = "Modify event fields and reminders by raw event_id, and read back to confirm; when changing the time you must provide both start and end times. Recurring events are not modified for now.",
                 descriptionRes = R.string.tool_cat_update_calendar_event_desc,
                 write = true,
                 root = RootRequirement.PARTIAL,
@@ -187,8 +187,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "delete_calendar_event",
                 titleRes = R.string.tool_cat_delete_calendar_event_title,
-                titleFallback = "删除日程",
-                description = "删除精确原始 event_id；重复事件必须明确 scope=series，不能把索引 ID 当作事件 ID。",
+                titleFallback = "Delete event",
+                description = "Delete the exact raw event_id; recurring events must explicitly specify scope=series, and must not treat an index ID as an event ID.",
                 descriptionRes = R.string.tool_cat_delete_calendar_event_desc,
                 write = true,
                 root = RootRequirement.PARTIAL,
@@ -196,8 +196,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "update_alarm_time",
                 titleRes = R.string.tool_cat_update_alarm_time_title,
-                titleFallback = "修改闹钟时间",
-                description = "按 alarm_id 修改小时和分钟，保留原启用状态并验证。",
+                titleFallback = "Change alarm time",
+                description = "Change the hour and minute by alarm_id, keep the original enabled state, and verify.",
                 descriptionRes = R.string.tool_cat_update_alarm_time_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -206,8 +206,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "set_alarm_enabled",
                 titleRes = R.string.tool_cat_set_alarm_enabled_title,
-                titleFallback = "闹钟开关",
-                description = "启用或关闭精确 alarm_id，读回验证；不按模糊时间匹配多个闹钟。",
+                titleFallback = "Alarm switch",
+                description = "Enable or disable the exact alarm_id and read back to verify; do not match multiple alarms by fuzzy time.",
                 descriptionRes = R.string.tool_cat_set_alarm_enabled_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -216,8 +216,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "delete_alarm",
                 titleRes = R.string.tool_cat_delete_alarm_title,
-                titleFallback = "删除闹钟",
-                description = "删除精确 alarm_id 后核对；不得使用 DMP 索引 ID。",
+                titleFallback = "Delete alarm",
+                description = "Delete the exact alarm_id and then verify; do not use the DMP index ID.",
                 descriptionRes = R.string.tool_cat_delete_alarm_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -226,8 +226,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "create_note",
                 titleRes = R.string.tool_cat_create_note_title,
-                titleFallback = "创建便签",
-                description = "直接创建系统便签，解析实际结果 UUID 并读回；返回未确认时不能重复创建。",
+                titleFallback = "Create note",
+                description = "Directly create a system note, parse the actual result UUID, and read back; do not create again if the result is unconfirmed.",
                 descriptionRes = R.string.tool_cat_create_note_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -236,8 +236,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "read_note",
                 titleRes = R.string.tool_cat_read_note_title,
-                titleFallback = "便签详情",
-                description = "按原始 note_id UUID 读取便签正文；不能使用 DMP 文档 ID。",
+                titleFallback = "Note details",
+                description = "Read the note body by raw note_id UUID; do not use the DMP document ID.",
                 descriptionRes = R.string.tool_cat_read_note_desc,
                 write = false,
                 root = RootRequirement.REQUIRED,
@@ -247,8 +247,8 @@ internal object AgentPhoneToolCatalog {
             Entry(
                 name = "delete_note",
                 titleRes = R.string.tool_cat_delete_note_title,
-                titleFallback = "回收便签",
-                description = "按原始 note_id UUID 将便签移入回收站并验证，不是永久删除。",
+                titleFallback = "Move note to trash",
+                description = "Move the note to the trash by raw note_id UUID and verify; this is not a permanent deletion.",
                 descriptionRes = R.string.tool_cat_delete_note_desc,
                 write = true,
                 root = RootRequirement.REQUIRED,
@@ -273,7 +273,7 @@ internal object AgentPhoneToolCatalog {
             p.put(key, schema)
             if (need) required += key
         }
-        fun id(key: String) = field(key, text("原始对象 ID", 36))
+        fun id(key: String) = field(key, text("Raw object ID", 36))
         when (entry.name) {
             "set_flashlight",
             "set_hotspot" -> field("enabled", JSONObject().put("type", "boolean"))
@@ -285,7 +285,7 @@ internal object AgentPhoneToolCatalog {
                 field("mode", enum(listOf("off", "priority", "alarms", "silent")))
             "read_calendar_event" -> id("event_id")
             "create_calendar_events" -> {
-                field("calendar_id", text("可写日历 ID", 19), false)
+                field("calendar_id", text("Writable calendar ID", 19), false)
                 val single =
                     schema(entries.first { it.name == "create_calendar_event" })
                         .getJSONObject("function")
@@ -304,15 +304,15 @@ internal object AgentPhoneToolCatalog {
             "update_calendar_event" -> {
                 val create = entry.name == "create_calendar_event"
                 if (create)
-                    field("calendar_id", text("list_calendars 返回的可写日历 ID；仅一个日历时可省略", 19), false)
+                    field("calendar_id", text("Writable calendar ID returned by list_calendars; can be omitted when there is only one calendar", 19), false)
                 else id("event_id")
-                field("title", text("日程标题", 200), create)
-                field("start_time", text("带偏移的 ISO 8601 起始时间", 64), create)
-                field("end_time", text("带偏移的 ISO 8601 结束时间", 64), create)
-                field("timezone", text("IANA 时区，如 Asia/Shanghai", 80), false)
+                field("title", text("Event title", 200), create)
+                field("start_time", text("ISO 8601 start time with offset", 64), create)
+                field("end_time", text("ISO 8601 end time with offset", 64), create)
+                field("timezone", text("IANA timezone, e.g. Asia/Shanghai", 80), false)
                 field("all_day", JSONObject().put("type", "boolean"), false)
-                field("location", text("地点", 500), false)
-                field("description", text("说明", 8000), false)
+                field("location", text("Location", 500), false)
+                field("description", text("Description", 8000), false)
                 field(
                     "reminder_minutes",
                     JSONObject()
@@ -337,8 +337,8 @@ internal object AgentPhoneToolCatalog {
             }
             "delete_alarm" -> id("alarm_id")
             "create_note" -> {
-                field("title", text("标题", 200), false)
-                field("content", text("便签正文", 20000))
+                field("title", text("Title", 200), false)
+                field("content", text("Note body", 20000))
             }
             "read_note",
             "delete_note" -> id("note_id")
