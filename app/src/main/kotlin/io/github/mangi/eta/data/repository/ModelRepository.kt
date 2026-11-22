@@ -127,7 +127,7 @@ internal object ModelRepository {
             require(provider.authMode == ProviderAuthModes.API_KEY) {
                 AppStrings.get(
                     R.string.repo_err_account_catalog_requires_session,
-                    "The account model catalog must be bound to the current sign-in state，please re-fetch",
+                    "The account model catalog must be bound to the current sign-in state, please re-fetch",
                 )
             }
             applyRemoteModels(provider, fetched, adoptedModelIds)
@@ -147,7 +147,7 @@ internal object ModelRepository {
             require(catalog.matches(provider)) {
                 AppStrings.get(
                     R.string.repo_err_provider_connection_changed,
-                    "The provider connection has changed，please re-fetch the models",
+                    "The provider connection has changed, please re-fetch the models",
                 )
             }
             val binding = catalog.accountBinding
@@ -159,7 +159,7 @@ internal object ModelRepository {
                         "oauth_session_changed",
                         AppStrings.get(
                             R.string.repo_err_oauth_session_changed_refetch,
-                            "The sign-in state has changed，please re-fetch the models",
+                            "The sign-in state has changed, please re-fetch the models",
                         ),
                     )
                 }

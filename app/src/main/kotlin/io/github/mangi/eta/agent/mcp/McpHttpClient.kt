@@ -548,12 +548,12 @@ internal class McpHttpStatusException(
     val code: Int,
     safeMessage: String,
     val jsonRpcCode: Int? = null,
-) : IOException(AppStrings.get(R.string.mcp_err_http_status, "MCP request failed：HTTP %1\$d %2\$s", code, safeMessage.take(200)))
+) : IOException(AppStrings.get(R.string.mcp_err_http_status, "MCP request failed: HTTP %1\$d %2\$s", code, safeMessage.take(200)))
 
 internal class McpJsonRpcException(
     val code: Int,
     safeMessage: String,
-) : IOException(AppStrings.get(R.string.mcp_err_protocol_code, "MCP protocol error：code=%1\$d %2\$s", code, safeMessage.take(200)))
+) : IOException(AppStrings.get(R.string.mcp_err_protocol_code, "MCP protocol error: code=%1\$d %2\$s", code, safeMessage.take(200)))
 
 private class McpProtocolCompatibilityException(cause: Throwable) : IOException(cause.message, cause)
 

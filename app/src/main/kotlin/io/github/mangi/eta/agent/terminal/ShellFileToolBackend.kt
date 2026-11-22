@@ -181,7 +181,7 @@ internal class ShellFileToolBackend(
             44 -> fail("FILE_CHANGED", "File content has changed; re-read before editing")
             45 -> fail("FILE_HASH_UNAVAILABLE", "Current environment cannot verify the file content revision")
             0 -> Unit
-            else -> if (!allowFailure || result.exitCode != 1) fail("FILE_COMMAND_FAILED", "File operation failed（exit=${result.exitCode}）")
+            else -> if (!allowFailure || result.exitCode != 1) fail("FILE_COMMAND_FAILED", "File operation failed(exit=${result.exitCode})")
         }
         if (result.outputTruncated) fail("FILE_OUTPUT_LIMIT", "File operation result exceeded the budget; narrow the scope")
         return result

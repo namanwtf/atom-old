@@ -67,7 +67,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.MULTIPLE_SKILLS_FOUND,
                 AppStrings.get(
                     R.string.skill_i18n_local_zip_multiple_skills,
-                    "A local ZIP must contain exactly one Skill，found %1\$d",
+                    "A local ZIP must contain exactly one Skill, found %1\$d",
                     candidates.size,
                 ),
             )
@@ -196,7 +196,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.INVALID_SELECTION,
                         AppStrings.get(
                             R.string.skill_i18n_invalid_selected_skill_root,
-                            "The selected path is not a valid Skill root directory：%1\$s",
+                            "The selected path is not a valid Skill root directory: %1\$s",
                             relativePath,
                         ),
                     )
@@ -262,7 +262,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.DUPLICATE_SKILL_ID,
                 AppStrings.get(
                     R.string.skill_i18n_duplicate_skill_names,
-                    "The selected Skills use a duplicate name：%1\$s",
+                    "The selected Skills use a duplicate name: %1\$s",
                     duplicateIds.sorted().joinToString(),
                 ),
             )
@@ -379,12 +379,12 @@ class SkillPackageInstaller internal constructor(
             val message = if (rollbackComplete) {
                 AppStrings.get(
                     R.string.skill_i18n_commit_failed_restored,
-                    "Skill install commit failed，the old Skill has been restored",
+                    "Skill install commit failed, the old Skill has been restored",
                 )
             } else {
                 AppStrings.get(
                     R.string.skill_i18n_commit_failed_recovery_incomplete,
-                    "Skill install commit failed，and automatic recovery did not complete",
+                    "Skill install commit failed, and automatic recovery did not complete",
                 )
             }
             return SkillInstallResult.Failure(
@@ -423,7 +423,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_nested_skill_md,
-                        "Skill %1\$s still contains another SKILL.md：%2\$s",
+                        "Skill %1\$s still contains another SKILL.md: %2\$s",
                         parent.relativePath,
                         nested.relativePath,
                     ),
@@ -494,7 +494,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_invalid_skill_name,
-                    "Skill name must be a combination of lowercase letters、digits and single hyphens，no more than %1\$d characters",
+                    "Skill name must be a combination of lowercase letters, digits and single hyphens, no more than %1\$d characters",
                     MAX_SKILL_NAME_LENGTH,
                 ),
             )
@@ -593,7 +593,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_duplicate_entry,
-                            "ZIP contains a duplicate entry：%1\$s",
+                            "ZIP contains a duplicate entry: %1\$s",
                             relativePath,
                         ),
                     )
@@ -606,7 +606,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_entry_file_dir_conflict,
-                            "ZIP entry has a file/directory conflict：%1\$s",
+                            "ZIP entry has a file/directory conflict: %1\$s",
                             relativePath,
                         ),
                     )
@@ -616,7 +616,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_entry_file_dir_conflict,
-                            "ZIP entry has a file/directory conflict：%1\$s",
+                            "ZIP entry has a file/directory conflict: %1\$s",
                             relativePath,
                         ),
                     )
@@ -838,7 +838,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.COMMIT_FAILED,
                     AppStrings.get(
                         R.string.skill_i18n_pending_recovery_detected,
-                        "Detected an incomplete Skill recovery；installation stopped",
+                        "Detected an incomplete Skill recovery; installation stopped",
                     ),
                 ),
                 recoveryRequired = true,

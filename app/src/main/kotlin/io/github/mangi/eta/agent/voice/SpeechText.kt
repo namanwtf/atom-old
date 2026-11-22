@@ -33,7 +33,7 @@ internal object SpeechText {
                         append(
                             AppStrings.get(
                                 R.string.voice_i18n_speech_text_ordered_item,
-                                "Item %1\$d：",
+                                "Item %1\$d: ",
                                 start + index,
                             ),
                         )
@@ -45,9 +45,9 @@ internal object SpeechText {
                     val marker = markdown.substring(node.startOffset, node.endOffset)
                     append(
                         if ('x' in marker || 'X' in marker) {
-                            AppStrings.get(R.string.voice_i18n_speech_text_task_done, "Done：")
+                            AppStrings.get(R.string.voice_i18n_speech_text_task_done, "Done: ")
                         } else {
-                            AppStrings.get(R.string.voice_i18n_speech_text_task_todo, "Not done：")
+                            AppStrings.get(R.string.voice_i18n_speech_text_task_todo, "Not done: ")
                         },
                     )
                 }
@@ -95,7 +95,7 @@ internal object SpeechText {
     }
 
     private val URL = Regex(
-        """(?<![A-Za-z0-9_])(?:https?://|www\.)(?:(?![,;]\p{IsHan})[^\s<>"'`，。！？；：、（）【】《》“”‘’])+""",
+        """(?<![A-Za-z0-9_])(?:https?://|www\.)(?:(?![,;]\p{IsHan})[^\s<>"'`, .!?; : , ()[]《》""‘’])+""",
         RegexOption.IGNORE_CASE,
     )
     private val HORIZONTAL_SPACE = Regex("[ \\t]+")
@@ -108,7 +108,7 @@ internal object SpeechText {
         while (remaining.isNotEmpty()) {
             var end = minOf(limit, remaining.length)
             if (end < remaining.length) {
-                val boundary = remaining.take(end).indexOfLast { it in "。！？.!?；;\n" }
+                val boundary = remaining.take(end).indexOfLast { it in ".!?.!?; ;\n" }
                 if (boundary >= end / 2) end = boundary + 1
                 if (remaining[end - 1].isHighSurrogate()) end--
             }

@@ -114,12 +114,12 @@ internal class SpeechInputController(
                                                     progress = if (it.holdToTalk) {
                                                         AppStrings.get(
                                                             R.string.voice_i18n_progress_hold_to_talk,
-                                                            "Release to send，move away to cancel",
+                                                            "Release to send, move away to cancel",
                                                         )
                                                     } else {
                                                         AppStrings.get(
                                                             R.string.voice_i18n_progress_listening_tap_done,
-                                                            "Listening，tap done to finish",
+                                                            "Listening, tap done to finish",
                                                         )
                                                     },
                                                 )
@@ -177,7 +177,7 @@ internal class SpeechInputController(
                 if (text.isBlank()) {
                     throw SpeechFailure(
                         SpeechErrorCode.NO_SPEECH,
-                        AppStrings.get(R.string.voice_i18n_no_speech_recognized, "No speech recognized，please retry"),
+                        AppStrings.get(R.string.voice_i18n_no_speech_recognized, "No speech recognized, please retry"),
                     )
                 }
                 val final = refined(session, config.refineTranscript, text)

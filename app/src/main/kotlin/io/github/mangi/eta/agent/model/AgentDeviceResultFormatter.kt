@@ -27,7 +27,7 @@ internal object AgentDeviceResultFormatter {
                     else -> deviceLabel(json.optString("target")) ?: return null
                 }
                 val enabled = json.opt("enabled") as? Boolean ?: return null
-                return AppStrings.get(R.string.trace_dev_kv, "%1\$s：%2\$s", label, booleanState(enabled))
+                return AppStrings.get(R.string.trace_dev_kv, "%1\$s: %2\$s", label, booleanState(enabled))
             }
             "media_control" -> return mediaControl(json)
             "network_info" -> return networkInfo(json)
@@ -136,7 +136,7 @@ internal object AgentDeviceResultFormatter {
         if (age != null) {
             AppStrings.get(
                 R.string.trace_dev_recent_location_age,
-                "Recent location：%1\$s, %2\$s（%3\$s）",
+                "Recent location: %1\$s, %2\$s(%3\$s)",
                 decimal(latitude),
                 decimal(longitude),
                 age,
@@ -144,7 +144,7 @@ internal object AgentDeviceResultFormatter {
         } else {
             AppStrings.get(
                 R.string.trace_dev_recent_location,
-                "Recent location：%1\$s, %2\$s",
+                "Recent location: %1\$s, %2\$s",
                 decimal(latitude),
                 decimal(longitude),
             )
@@ -226,9 +226,9 @@ internal object AgentDeviceResultFormatter {
         return when (action) {
             "force_stop" -> when {
                 before == true && after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_stopped_pkg, "App %1\$s：kept stopped", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_stopped_pkg, "App %1\$s: kept stopped", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_stopped, "App：kept stopped")
+                    AppStrings.get(R.string.trace_dev_app_kept_stopped, "App: kept stopped")
                 }
                 after -> if (packageName != null) {
                     AppStrings.get(R.string.trace_dev_app_stopped_pkg, "Stopped app %1\$s", packageName)
@@ -236,16 +236,16 @@ internal object AgentDeviceResultFormatter {
                     AppStrings.get(R.string.trace_dev_app_stopped, "Stopped app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_not_stopped_pkg, "App %1\$s：not stopped", packageName)
+                    AppStrings.get(R.string.trace_dev_app_not_stopped_pkg, "App %1\$s: not stopped", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_not_stopped, "App：not stopped")
+                    AppStrings.get(R.string.trace_dev_app_not_stopped, "App: not stopped")
                 }
             }
             "freeze" -> when {
                 before == false && !after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s：kept frozen", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s: kept frozen", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App：kept frozen")
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App: kept frozen")
                 }
                 !after -> if (packageName != null) {
                     AppStrings.get(R.string.trace_dev_app_frozen_pkg, "Froze app %1\$s", packageName)
@@ -253,16 +253,16 @@ internal object AgentDeviceResultFormatter {
                     AppStrings.get(R.string.trace_dev_app_frozen, "Froze app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s：kept enabled", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s: kept enabled", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App：kept enabled")
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App: kept enabled")
                 }
             }
             "unfreeze" -> when {
                 before == true && after -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s：kept enabled", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled_pkg, "App %1\$s: kept enabled", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App：kept enabled")
+                    AppStrings.get(R.string.trace_dev_app_kept_enabled, "App: kept enabled")
                 }
                 after -> if (packageName != null) {
                     AppStrings.get(R.string.trace_dev_app_unfrozen_pkg, "Unfroze app %1\$s", packageName)
@@ -270,9 +270,9 @@ internal object AgentDeviceResultFormatter {
                     AppStrings.get(R.string.trace_dev_app_unfrozen, "Unfroze app")
                 }
                 else -> if (packageName != null) {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s：kept frozen", packageName)
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen_pkg, "App %1\$s: kept frozen", packageName)
                 } else {
-                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App：kept frozen")
+                    AppStrings.get(R.string.trace_dev_app_kept_frozen, "App: kept frozen")
                 }
             }
             else -> null
@@ -348,14 +348,14 @@ internal object AgentDeviceResultFormatter {
                 else -> null
             }
         }.distinct()
-        if (!connected) return AppStrings.get(R.string.trace_dev_net_disconnected, "Network：not connected")
+        if (!connected) return AppStrings.get(R.string.trace_dev_net_disconnected, "Network: not connected")
         val label = labels.joinToString(" / ").ifEmpty {
             AppStrings.get(R.string.trace_dev_net_generic, "Network")
         }
         return if (validated) {
-            AppStrings.get(R.string.trace_dev_net_connected, "%1\$s：connected to the internet", label)
+            AppStrings.get(R.string.trace_dev_net_connected, "%1\$s: connected to the internet", label)
         } else {
-            AppStrings.get(R.string.trace_dev_net_unvalidated, "%1\$s：connected, internet not verified", label)
+            AppStrings.get(R.string.trace_dev_net_unvalidated, "%1\$s: connected, internet not verified", label)
         }
     }
 
@@ -381,16 +381,16 @@ internal object AgentDeviceResultFormatter {
         val isNumeric = after.firstOrNull()?.isDigit() == true || after.endsWith("%")
         return when {
             before == null || (!unchanged && before == after) -> when {
-                isBoolean -> AppStrings.get(R.string.trace_dev_change_bool_set, "%1\$s：now %2\$s", label, after)
-                isNumeric -> AppStrings.get(R.string.trace_dev_change_set_num, "%1\$s：set to %2\$s", label, after)
-                else -> AppStrings.get(R.string.trace_dev_change_set, "%1\$s：set to %2\$s", label, after)
+                isBoolean -> AppStrings.get(R.string.trace_dev_change_bool_set, "%1\$s: now %2\$s", label, after)
+                isNumeric -> AppStrings.get(R.string.trace_dev_change_set_num, "%1\$s: set to %2\$s", label, after)
+                else -> AppStrings.get(R.string.trace_dev_change_set, "%1\$s: set to %2\$s", label, after)
             }
             unchanged -> if (isNumeric) {
-                AppStrings.get(R.string.trace_dev_change_kept_num, "%1\$s：kept %2\$s", label, after)
+                AppStrings.get(R.string.trace_dev_change_kept_num, "%1\$s: kept %2\$s", label, after)
             } else {
-                AppStrings.get(R.string.trace_dev_change_kept, "%1\$s：kept %2\$s", label, after)
+                AppStrings.get(R.string.trace_dev_change_kept, "%1\$s: kept %2\$s", label, after)
             }
-            else -> AppStrings.get(R.string.trace_dev_change_arrow, "%1\$s：%2\$s → %3\$s", label, before, after)
+            else -> AppStrings.get(R.string.trace_dev_change_arrow, "%1\$s: %2\$s → %3\$s", label, before, after)
         }
     }
 

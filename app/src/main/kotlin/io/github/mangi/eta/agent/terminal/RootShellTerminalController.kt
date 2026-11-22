@@ -49,7 +49,7 @@ internal class RootShellTerminalController(
         "terminal" -> terminal(args)
         "terminal_job" -> terminalJob(args)
         "terminal_daemon" -> terminalDaemon(args)
-        else -> errorJson("UNKNOWN_TOOL", "Unknown terminal tool：$name")
+        else -> errorJson("UNKNOWN_TOOL", "Unknown terminal tool: $name")
     }
 
     private fun terminal(args: JSONObject): String = when (args.optString("action", "exec").lowercase()) {
@@ -186,7 +186,7 @@ internal class RootShellTerminalController(
     ): String {
         val session = sessionId?.takeIf { it.isNotBlank() }?.let { id ->
             synchronized(sessions) { sessions[id] }
-                ?: return errorJson("SESSION_NOT_FOUND", "terminal session not found：$id")
+                ?: return errorJson("SESSION_NOT_FOUND", "terminal session not found: $id")
         }
         val effectiveEnvironment = session?.environment ?: normalizeEnvironment(environment)
         val effectiveIdentity = session?.identity ?: normalizeIdentity(identity.ifBlank { defaultIdentity(effectiveEnvironment) })
@@ -289,7 +289,7 @@ internal class RootShellTerminalController(
         val supervisor = detachedSupervisor
             ?: return errorJson("DAEMON_UNAVAILABLE", "Daemon task host is unavailable")
         if (taskId.isBlank()) return errorJson("INVALID_ARGUMENT", "task_id must not be empty")
-        val task = supervisor.findTask(taskId) ?: return errorJson("TASK_NOT_FOUND", "Daemon task not found：$taskId")
+        val task = supervisor.findTask(taskId) ?: return errorJson("TASK_NOT_FOUND", "Daemon task not found: $taskId")
         if (task.identity == "root" && !rootAvailable()) return errorJson("ROOT_REQUIRED", "Root authorization is unavailable")
         if (!supervisor.stop(taskId)) {
             return errorJson("DAEMON_STOP_FAILED", "Failed to stop the daemon task; retry")
@@ -304,7 +304,7 @@ internal class RootShellTerminalController(
 
     private fun closeTerminal(sessionId: String): String {
         if (sessionId.isBlank()) return errorJson("INVALID_ARGUMENT", "Closing a session requires session_id")
-        if (!closeSession(sessionId)) return errorJson("SESSION_NOT_FOUND", "terminal session not found：$sessionId")
+        if (!closeSession(sessionId)) return errorJson("SESSION_NOT_FOUND", "terminal session not found: $sessionId")
         return JSONObject()
             .put("ok", true)
             .put("tool", "terminal")

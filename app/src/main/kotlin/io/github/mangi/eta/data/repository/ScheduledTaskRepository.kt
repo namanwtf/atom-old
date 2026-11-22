@@ -225,8 +225,8 @@ internal object ScheduledTaskRepository {
             AppStrings.quantity(
                 R.plurals.scheduled_auto_disabled_consecutive_failures,
                 nextFailures,
-                "Failed %1\$d times in a row，automatically paused to avoid repeated battery drain and retries",
-                "Failed %1\$d times in a row，automatically paused to avoid repeated battery drain and retries",
+                "Failed %1\$d times in a row, automatically paused to avoid repeated battery drain and retries",
+                "Failed %1\$d times in a row, automatically paused to avoid repeated battery drain and retries",
                 nextFailures,
             )
         } else if (run.status.isSuccess) {
@@ -281,7 +281,7 @@ internal object ScheduledTaskRepository {
         val d = dao(context)
         val interruptedSummary = AppStrings.get(
             R.string.scheduled_run_interrupted_process_exit,
-            "The app process exited during execution，the task was interrupted",
+            "The app process exited during execution, the task was interrupted",
         )
         val dangling = d.runningRuns()
         dangling.forEach { entity ->

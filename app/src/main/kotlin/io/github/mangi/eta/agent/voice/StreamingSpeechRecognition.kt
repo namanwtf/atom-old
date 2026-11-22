@@ -80,7 +80,7 @@ private suspend fun recognizeQwen(
                     "error", "conversation.item.input_audio_transcription.failed" ->
                         throw SpeechFailure(
                             SpeechErrorCode.SERVER,
-                            AppStrings.get(R.string.voice_i18n_qwen_asr_failed, "Qwen recognition failed，please check model permissions and configuration"),
+                            AppStrings.get(R.string.voice_i18n_qwen_asr_failed, "Qwen recognition failed, please check model permissions and configuration"),
                         )
                 }
             }

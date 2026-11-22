@@ -346,18 +346,18 @@ internal class AgentBrowserSession(
             return errorResult(action, "MAIN_THREAD_CALL", "Browser operations cannot block the main thread")
         }
         checkCancellation()
-        if (isDataClearing()) return errorResult(action, "BROWSER_DATA_CLEARING", "Clearing browser data，please try again later", "blocked")
+        if (isDataClearing()) return errorResult(action, "BROWSER_DATA_CLEARING", "Clearing browser data, please try again later", "blocked")
         // Respond to this run's cancellation even while waiting for another action; don't clear an already-arrived cancellation signal after acquiring the lock.
         while (!operationLock.tryLock(100L, TimeUnit.MILLISECONDS)) checkCancellation()
         return try {
             checkCancellation()
             if (closed) return errorResult(action, "BROWSER_SESSION_CLOSED", "Browser session closed")
-            if (isDataClearing()) return errorResult(action, "BROWSER_DATA_CLEARING", "Clearing browser data，please try again later", "blocked")
+            if (isDataClearing()) return errorResult(action, "BROWSER_DATA_CLEARING", "Clearing browser data, please try again later", "blocked")
             if (!userInitiated && userControlActive) {
                 return errorResult(
                     action = action,
                     code = "USER_CONTROL_ACTIVE",
-                    message = "The user is taking over the browser，please wait until the user leaves the browser page before continuing",
+                    message = "The user is taking over the browser, please wait until the user leaves the browser page before continuing",
                     status = "blocked",
                 )
             }
@@ -650,7 +650,7 @@ internal class AgentBrowserSession(
     private fun requirePage(): WebView {
         val view = ensureWebView()
         if (!snapshots.value.available || currentUrl.isBlank()) {
-            throw BrowserFailure("NO_PAGE", "No page is loaded，please call navigate first")
+            throw BrowserFailure("NO_PAGE", "No page is loaded, please call navigate first")
         }
         throwIfInterrupted()
         return view
@@ -1062,7 +1062,7 @@ internal class AgentBrowserSession(
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
             if (webView !== view || !request.isForMainFrame) return
-            setNavigationErrorOnMain("NETWORK_ERROR", "Page load failed，please check your network connection")
+            setNavigationErrorOnMain("NETWORK_ERROR", "Page load failed, please check your network connection")
         }
 
         override fun onReceivedHttpError(
@@ -1083,7 +1083,7 @@ internal class AgentBrowserSession(
             mainHandler.post {
                 if (webView === view) {
                     destroyWebViewOnMain()
-                    currentError = "The web renderer process exited，please reopen the page"
+                    currentError = "The web renderer process exited, please reopen the page"
                     currentLoading = false
                     currentPageVisible = false
                     committedMainFrameUrl = ""

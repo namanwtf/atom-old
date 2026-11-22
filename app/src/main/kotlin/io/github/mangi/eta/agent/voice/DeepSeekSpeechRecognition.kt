@@ -45,7 +45,7 @@ internal fun deepSeekAsrTranscript(response: JSONObject): String {
     if (!response.isNull("error")) {
         throw SpeechFailure(
             SpeechErrorCode.SERVER,
-            AppStrings.get(R.string.voice_i18n_deepseek_asr_failed, "DeepSeek speech recognition failed，please check service permissions and configuration"),
+            AppStrings.get(R.string.voice_i18n_deepseek_asr_failed, "DeepSeek speech recognition failed, please check service permissions and configuration"),
         )
     }
     val text = response.opt("text") as? String

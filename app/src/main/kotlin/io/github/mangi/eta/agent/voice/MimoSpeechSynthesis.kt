@@ -46,7 +46,7 @@ internal class MimoTtsDecoder(onAudio: (ByteArray) -> Unit) {
         if (!message.isNull("error")) {
             throw SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_mimo_tts_failed, "MiMo voice synthesis failed，please check service permissions and configuration"),
+                AppStrings.get(R.string.voice_i18n_mimo_tts_failed, "MiMo voice synthesis failed, please check service permissions and configuration"),
             )
         }
         val choices = message.optionalField<JSONArray>("choices")
@@ -65,11 +65,11 @@ internal class MimoTtsDecoder(onAudio: (ByteArray) -> Unit) {
             null, "stop" -> Unit
             "length" -> throw SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_mimo_tts_incomplete, "MiMo voice synthesis incomplete，please shorten the text and retry"),
+                AppStrings.get(R.string.voice_i18n_mimo_tts_incomplete, "MiMo voice synthesis incomplete, please shorten the text and retry"),
             )
             "content_filter" -> throw SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_mimo_tts_content_filter, "MiMo could not synthesize this text，please adjust and retry"),
+                AppStrings.get(R.string.voice_i18n_mimo_tts_content_filter, "MiMo could not synthesize this text, please adjust and retry"),
             )
             else -> throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,

@@ -39,7 +39,7 @@ internal class ScheduledTaskToolExecutor(
                 "update" -> handleUpdate(args)
                 "delete" -> handleDelete(args)
                 "run_now" -> handleRunNow(args)
-                else -> errorJson("INVALID_ACTION", "Unsupported action：$action")
+                else -> errorJson("INVALID_ACTION", "Unsupported action: $action")
             }
         }
     }
@@ -88,7 +88,7 @@ internal class ScheduledTaskToolExecutor(
                         .put("summary", summary)
                 )
             }
-            else -> errorJson("UNKNOWN_TOOL", "Unknown scheduled task tool：${call.name}")
+            else -> errorJson("UNKNOWN_TOOL", "Unknown scheduled task tool: ${call.name}")
         }
     }
 
@@ -122,7 +122,7 @@ internal class ScheduledTaskToolExecutor(
         if (prompt.isEmpty()) return errorJson("MISSING_PROMPT", "Please provide the task prompt")
 
         val schedule = parseScheduleFromArgs(args, base = ScheduledTaskSchedule(), nowMs = nowMs)
-            ?: return errorJson("INVALID_SCHEDULE", "Invalid schedule parameters，check the trigger type and time fields")
+            ?: return errorJson("INVALID_SCHEDULE", "Invalid schedule parameters, check the trigger type and time fields")
         val validationError = ScheduledTaskScheduleCalculator.validateSchedule(schedule, nowMs)
         if (validationError != null) {
             return errorJson("INVALID_SCHEDULE", validationError)
@@ -243,7 +243,7 @@ internal class ScheduledTaskToolExecutor(
                 JSONObject()
                     .put("task_id", taskId)
                     .put("status", "started")
-                    .put("message", "Background trial run started，a result notification will be sent and recorded in the run timeline when complete")
+                    .put("message", "Background trial run started, a result notification will be sent and recorded in the run timeline when complete")
             )
             ScheduledTaskRunner.ManualTriggerResult.AlreadyRunning -> errorJson(
                 "ALREADY_RUNNING",

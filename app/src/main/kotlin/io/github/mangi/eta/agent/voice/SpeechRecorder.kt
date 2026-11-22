@@ -52,7 +52,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
             if (audio.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
                 throw SpeechFailure(
                     SpeechErrorCode.AUDIO,
-                    AppStrings.get(R.string.voice_i18n_recorder_mic_busy, "Microphone unavailable，possibly in use by another app"),
+                    AppStrings.get(R.string.voice_i18n_recorder_mic_busy, "Microphone unavailable, possibly in use by another app"),
                 )
             }
             onReady()
@@ -73,7 +73,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
                     if (finishing.get() && sent.isClosed) break
                     throw SpeechFailure(
                         SpeechErrorCode.BACKPRESSURE,
-                        AppStrings.get(R.string.voice_i18n_upload_backpressure, "network upload too slow，please retry"),
+                        AppStrings.get(R.string.voice_i18n_upload_backpressure, "network upload too slow, please retry"),
                     )
                 }
                 total += count
@@ -129,7 +129,7 @@ internal suspend fun collectSpeechAudio(frames: kotlinx.coroutines.channels.Rece
     if (out.size() == 0) {
         throw SpeechFailure(
             SpeechErrorCode.NO_SPEECH,
-            AppStrings.get(R.string.voice_i18n_no_audio_recorded, "No voice recorded，please retry"),
+            AppStrings.get(R.string.voice_i18n_no_audio_recorded, "No voice recorded, please retry"),
         )
     }
     return pcmToWav(out.toByteArray())

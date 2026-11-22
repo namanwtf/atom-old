@@ -59,7 +59,7 @@ internal class SpeechAudioLease(
         if (!focused) {
             throw SpeechFailure(
                 SpeechErrorCode.AUDIO,
-                AppStrings.get(R.string.voice_i18n_audio_focus_unavailable, "Cannot obtain audio focus right now，please retry later"),
+                AppStrings.get(R.string.voice_i18n_audio_focus_unavailable, "Cannot obtain audio focus right now, please retry later"),
             )
         }
     }

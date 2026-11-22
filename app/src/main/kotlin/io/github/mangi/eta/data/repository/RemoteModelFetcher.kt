@@ -109,7 +109,7 @@ internal object RemoteModelFetcher {
                         "oauth_session_changed",
                         AppStrings.get(
                             R.string.repo_err_oauth_account_changed_refetch,
-                            "The signed-in account has changed，please re-fetch the models",
+                            "The signed-in account has changed, please re-fetch the models",
                         ),
                     )
                 }

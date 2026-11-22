@@ -35,7 +35,7 @@ internal object AppUpdateChecker {
                 throw IOException(
                     AppStrings.get(
                         R.string.update_err_github_release_http,
-                        "GitHub Release request failed（HTTP %1\$d）",
+                        "GitHub Release request failed(HTTP %1\$d)",
                         response.code,
                     ),
                 )

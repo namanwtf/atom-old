@@ -28,9 +28,9 @@ internal class McpRunSnapshot(
     fun appendModelTools(destination: JSONArray) {
         tools.forEach { tool ->
             val description = buildString {
-                append("Tools provided by MCP server「").append(tool.server.name).append("」")
+                append("Tools provided by MCP server"").append(tool.server.name).append(""")
                 tool.definition.description.trim().takeIf { it.isNotBlank() }?.let {
-                    append("。 ").append(it)
+                    append(". ").append(it)
                 }
             }
             destination.put(

@@ -118,7 +118,7 @@
   <string name="shared_folders_mount_point">Mount point: %1$s</string>
   <string name="shared_folders_source_missing">Source directory missing</string>
   <string name="shared_folders_remove_title">Remove shared folder</string>
-  <string name="shared_folders_remove_message">Remove “%1$s” (%2$s)? Files in the source directory are not deleted.</string>
+  <string name="shared_folders_remove_message">Remove "%1$s" (%2$s)? Files in the source directory are not deleted.</string>
   <string name="shared_folders_picker_title">Add shared folder</string>
   <string name="shared_folders_path_label">Directory</string>
   <string name="shared_folders_name_label">Mount name</string>
@@ -880,8 +880,8 @@
     <item quantity="one">Added %1$d item; %2$d item could not be referenced</item>
     <item quantity="other">Added %1$d items; %2$d items could not be referenced</item>
   </plurals>
-  <string name="skill_deleted_message">“%1$s” was removed from Atom.</string>
-  <string name="skill_enabled_message">“%1$s” is enabled and will be available from the next conversation turn.</string>
+  <string name="skill_deleted_message">"%1$s" was removed from Atom.</string>
+  <string name="skill_enabled_message">"%1$s" is enabled and will be available from the next conversation turn.</string>
   <string name="settings_open_assistant_failed">Couldn\'t open default assistant settings</string>
   <string name="settings_model_not_selected">No model selected</string>
   <string name="settings_not_configured">Not configured</string>
@@ -898,8 +898,8 @@
   <string name="provider_save_failed">Couldn\'t save provider</string>
   <string name="provider_delete_failed">Couldn\'t delete provider</string>
   <string name="provider_reset_failed">Couldn\'t reset provider</string>
-  <string name="provider_delete_summary">“%1$s” will be permanently deleted.</string>
-  <string name="provider_reset_summary">Restore the default settings and official model catalog for “%1$s”. The API key will be kept.</string>
+  <string name="provider_delete_summary">"%1$s" will be permanently deleted.</string>
+  <string name="provider_reset_summary">Restore the default settings and official model catalog for "%1$s". The API key will be kept.</string>
   <plurals name="provider_models_fetched">
     <item quantity="one">Fetched %d model</item>
     <item quantity="other">Fetched %d models</item>
@@ -921,7 +921,7 @@
   <string name="provider_model_list_count">Models (%1$d)</string>
   <string name="provider_model_list_matches">Models (%1$d of %2$d match)</string>
   <string name="provider_model_saved">Saved: %1$s</string>
-  <string name="provider_model_delete_summary">“%1$s” will be permanently deleted.</string>
+  <string name="provider_model_delete_summary">"%1$s" will be permanently deleted.</string>
   <string name="provider_model_deleted">Deleted: %1$s</string>
   <plurals name="provider_selected_delete_summary">
     <item quantity="one">The selected model will be permanently deleted.</item>
@@ -1064,11 +1064,11 @@
   <string name="skills_installing_package">Verifying and installing. Please wait</string>
   <string name="skills_choose_package">Choose a skill package containing SKILL.md</string>
   <string name="skills_choose_zip">Choose ZIP skill package</string>
-  <string name="skills_replace_summary">A user skill named “%1$s” (%2$s) already exists. Replacing it will overwrite all of its current files.</string>
+  <string name="skills_replace_summary">A user skill named "%1$s" (%2$s) already exists. Replacing it will overwrite all of its current files.</string>
   <string name="settings_context_extensions">Context &amp; extensions</string>
   <string name="settings_llm_providers">LLM providers</string>
   <string name="skills_replace">Replace</string>
-  <string name="skills_delete_summary">After deleting “%1$s”, you will need to reinstall it to restore it.</string>
+  <string name="skills_delete_summary">After deleting "%1$s", you will need to reinstall it to restore it.</string>
   <string name="skills_no_description">No description</string>
   <string name="browser_no_external_app">No app can open this webpage</string>
   <string name="browser_back">Back</string>
@@ -1531,9 +1531,9 @@
   <string name="subagent_settings_field_prompt">System instructions</string>
   <string name="subagent_settings_tools_label">Tools</string>
   <string name="subagent_settings_save_failed">Failed to save</string>
-  <string name="subagent_settings_name_exists">A custom Subagent named “%1$s” already exists. Choose a different name.</string>
+  <string name="subagent_settings_name_exists">A custom Subagent named "%1$s" already exists. Choose a different name.</string>
   <string name="subagent_settings_delete_title">Delete Subagent</string>
-  <string name="subagent_settings_delete_confirm">Delete custom Subagent “%1$s”? Its agents/%1$s.md file will be removed and cannot be undone.</string>
+  <string name="subagent_settings_delete_confirm">Delete custom Subagent "%1$s"? Its agents/%1$s.md file will be removed and cannot be undone.</string>
   <string name="route_scheduled_tasks">Scheduled Tasks</string>
   <string name="route_scheduled_task_detail">Task Details</string>
   <string name="route_scheduled_task_new">New Scheduled Task</string>

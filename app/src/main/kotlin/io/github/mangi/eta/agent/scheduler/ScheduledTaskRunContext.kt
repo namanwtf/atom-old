@@ -55,33 +55,33 @@ internal data class ScheduledTaskRunContext(
         val nowText = Instant.ofEpochMilli(startedAt).atZone(zone).format(DATETIME_FORMATTER)
         val triggerDesc = when (triggerSource) {
             ScheduledTaskTriggerSource.SCHEDULE -> "Triggered automatically on schedule"
-            ScheduledTaskTriggerSource.MANUAL -> "Triggered by the user manually tapping「Run now」"
+            ScheduledTaskTriggerSource.MANUAL -> "Triggered by the user manually tapping"Run now""
             ScheduledTaskTriggerSource.MISFIRE_CATCHUP -> {
                 val scheduledText = scheduledForAt?.let {
                     Instant.ofEpochMilli(it).atZone(zone).format(DATETIME_FORMATTER)
                 }.orEmpty()
-                "The device was previously asleep/offline，this is a delayed catch-up run（originally scheduled：$scheduledText）"
+                "The device was previously asleep/offline, this is a delayed catch-up run(originally scheduled: $scheduledText)"
             }
         }
         val deliveryDesc = when (deliveryMode) {
             ScheduledTaskDeliveryMode.ALWAYS ->
-                "This task uses「notify after every completion」：please give a concise, clear final result with the key points first。"
+                "This task uses"notify after every completion": please give a concise, clear final result with the key points first."
             ScheduledTaskDeliveryMode.ON_CHANGE ->
-                "This task uses「notify only when a change is found」：if there is no change or new development worth attention from the user compared to the last record in the task memo，" +
-                    "please call scheduled_task_report(outcome=\"no_change\", summary=\"brief note that nothing changed\") and end the reply；the system will stay silent and not disturb the user；" +
-                    "If you find a material change or something that needs a reminder，first update the task memo as needed，then call scheduled_task_report(outcome=\"deliver\", summary=\"1-2 sentence notification summary\") and output the full conclusion。"
+                "This task uses"notify only when a change is found": if there is no change or new development worth attention from the user compared to the last record in the task memo, " +
+                    "please call scheduled_task_report(outcome=\"no_change\", summary=\"brief note that nothing changed\") and end the reply; the system will stay silent and not disturb the user; " +
+                    "If you find a material change or something that needs a reminder, first update the task memo as needed, then call scheduled_task_report(outcome=\"deliver\", summary=\"1-2 sentence notification summary\") and output the full conclusion."
             ScheduledTaskDeliveryMode.SILENT ->
-                "This task uses「silent archive」：only complete the work and record it in the background；the system will not send a regular completion notification。"
+                "This task uses"silent archive": only complete the work and record it in the background; the system will not send a regular completion notification."
         }
         return buildString {
-            append("【Unattended scheduled task mode】\n")
-            append("Currently running the user preset scheduled task「").append(taskName).append("」（trigger type：").append(triggerDesc).append("；current local time：").append(nowText).append("）。\n")
-            append("Execution rules：\n")
-            append("1. This is an unattended run，no one is at the screen to answer follow-ups. Deliver the final conclusion directly；do not just give a plan，do not say “OK I will look into it”，do not ask the user for clarification；if a key condition or permission is truly missing，briefly state the blocking reason.\n")
+            append("[Unattended scheduled task mode]\n")
+            append("Currently running the user preset scheduled task"").append(taskName).append(""(trigger type: ").append(triggerDesc).append("; current local time: ").append(nowText).append(").\n")
+            append("Execution rules: \n")
+            append("1. This is an unattended run, no one is at the screen to answer follow-ups. Deliver the final conclusion directly; do not just give a plan, do not say "OK I will look into it", do not ask the user for clarification; if a key condition or permission is truly missing, briefly state the blocking reason.\n")
             append("2. ").append(deliveryDesc).append('\n')
-            append("3. You can use scheduled_task_update_memo to update the private memo of this task（to save the last check cursor，already announced items，or key state for comparison on the next scheduled run；never write secrets or sensitive credentials）.\n")
+            append("3. You can use scheduled_task_update_memo to update the private memo of this task(to save the last check cursor, already announced items, or key state for comparison on the next scheduled run; never write secrets or sensitive credentials).\n")
             if (!capabilities.guiTools) {
-                append("4. This task has no app UI（GUI）access enabled，please use only the currently available background tools to complete the task.\n")
+                append("4. This task has no app UI(GUI)access enabled, please use only the currently available background tools to complete the task.\n")
             }
             if (memo.isNotBlank()) {
                 append("\n<scheduled_task_memo>\n")
@@ -111,7 +111,7 @@ internal data class ScheduledTaskRunContext(
         private const val KEY_STARTED_AT = "started_at"
 
         private val DATETIME_FORMATTER: DateTimeFormatter =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm (EEE)", Locale.SIMPLIFIED_CHINESE)
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm (EEE)", Locale.ENGLISH)
 
         fun fromAdapterPayload(json: JSONObject?): ScheduledTaskRunContext? {
             if (json == null || !json.optBoolean(KEY_MARKER, false)) return null

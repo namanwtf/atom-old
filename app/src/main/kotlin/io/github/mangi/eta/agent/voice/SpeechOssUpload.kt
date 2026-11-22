@@ -83,7 +83,7 @@ internal class SpeechOssUpload(
                 SpeechErrorCode.STORAGE,
                 AppStrings.get(
                     R.string.voice_i18n_oss_pending_cleanup_limit,
-                    "Many recordings are pending cleanup，please check OSS delete permissions and restart Eta",
+                    "Many recordings are pending cleanup, please check OSS delete permissions and restart Eta",
                 ),
             )
         }

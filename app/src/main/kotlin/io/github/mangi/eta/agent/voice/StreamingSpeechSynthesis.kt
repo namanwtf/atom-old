@@ -81,14 +81,14 @@ private suspend fun streamQwen(
                     if (audioBytes == 0L) {
                         throw SpeechFailure(
                             SpeechErrorCode.PROTOCOL,
-                            AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
+                            AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete, please retry"),
                         )
                     }
                     return@coroutineScope
                 }
                 "error" -> throw SpeechFailure(
                     SpeechErrorCode.SERVER,
-                    AppStrings.get(R.string.voice_i18n_qwen_tts_stream_failed, "Qwen voice synthesis failed，please check model permissions and configuration"),
+                    AppStrings.get(R.string.voice_i18n_qwen_tts_stream_failed, "Qwen voice synthesis failed, please check model permissions and configuration"),
                 )
             }
         }
@@ -134,7 +134,7 @@ private suspend fun streamDoubao(
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_doubao_tts_failed_code,
-                            "Doubao voice synthesis failed（%1\$d）",
+                            "Doubao voice synthesis failed(%1\$d)",
                             frame.errorCode,
                         ),
                     )
@@ -153,7 +153,7 @@ private suspend fun streamDoubao(
                         if (audioBytes == 0L) {
                             throw SpeechFailure(
                                 SpeechErrorCode.PROTOCOL,
-                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
+                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete, please retry"),
                             )
                         }
                         return@coroutineScope
@@ -161,7 +161,7 @@ private suspend fun streamDoubao(
                     DoubaoTtsCodec.CONNECTION_FAILED, DoubaoTtsCodec.SESSION_FAILED ->
                         throw SpeechFailure(
                             SpeechErrorCode.SERVER,
-                            AppStrings.get(R.string.voice_i18n_doubao_tts_stream_failed, "Doubao voice synthesis failed，please check the voice and service configuration"),
+                            AppStrings.get(R.string.voice_i18n_doubao_tts_stream_failed, "Doubao voice synthesis failed, please check the voice and service configuration"),
                         )
                 }
             }

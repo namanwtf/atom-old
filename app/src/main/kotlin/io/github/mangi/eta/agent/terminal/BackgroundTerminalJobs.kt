@@ -82,7 +82,7 @@ internal class BackgroundTerminalJobs(
         val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMs.coerceIn(0, 60_000))
         waitLock.withLock {
             while (supervisor.findTask(id)?.completedAt == null) {
-                if (isCancelled()) return failure("CANCELLED", "Wait cancelled；the background command is still kept and can be stopped separately")
+                if (isCancelled()) return failure("CANCELLED", "Wait cancelled; the background command is still kept and can be stopped separately")
                 val remaining = deadline - System.nanoTime()
                 if (remaining <= 0) break
                 changed.awaitNanos(minOf(remaining, TimeUnit.MILLISECONDS.toNanos(200)))

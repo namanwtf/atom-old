@@ -17,7 +17,7 @@ internal data class AgentOverlayState(
     val status: AgentOverlayStatus = AgentOverlayStatus.Reasoning,
     val detailText: String = "",
     /**
-     * Capsule second line: while thinking it is the model's latest visible reasoning; while running a tool it is the argument summary (e.g. "taps 「Search」").
+     * Capsule second line: while thinking it is the model's latest visible reasoning; while running a tool it is the argument summary (e.g. "taps "Search"").
      * Only a short trailing segment is kept so the user can glance at what the Agent is thinking; the full reasoning stays in the conversation.
      */
     val thought: String = "",

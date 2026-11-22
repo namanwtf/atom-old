@@ -175,7 +175,7 @@ internal object AgentModelImageEncoder {
             }
             val encoded = output.toByteArray()
             require(encoded.isNotEmpty() && encoded.size <= MAX_AGENT_IMAGE_BYTES) {
-                "image data too large：${encoded.size}"
+                "image data too large: ${encoded.size}"
             }
             return AgentModelClient.ModelImage(
                 reference = "data:${profile.mimeType};base64,${Base64.encodeToString(encoded, Base64.NO_WRAP)}",
@@ -219,7 +219,7 @@ internal object AgentModelImageEncoder {
 
     private fun inspectBounds(bytes: ByteArray, mimeHint: String): ImageBounds {
         require(bytes.isNotEmpty()) { "image content is empty" }
-        require(bytes.size <= MAX_AGENT_IMAGE_BYTES) { "image data too large：${bytes.size}" }
+        require(bytes.size <= MAX_AGENT_IMAGE_BYTES) { "image data too large: ${bytes.size}" }
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
         return ImageBounds(

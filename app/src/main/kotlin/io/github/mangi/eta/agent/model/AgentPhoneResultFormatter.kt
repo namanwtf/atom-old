@@ -188,7 +188,7 @@ internal object AgentPhoneResultFormatter {
             )
             before != null && after != null -> AppStrings.get(
                 R.string.trace_phone_alarm_changed,
-                "Alarm time：%1\$s → %2\$s",
+                "Alarm time: %1\$s → %2\$s",
                 before,
                 after,
             )
@@ -241,7 +241,7 @@ internal object AgentPhoneResultFormatter {
             }
         }
         if (changes.isNotEmpty()) {
-            val separator = AppStrings.get(R.string.trace_list_separator, "、")
+            val separator = AppStrings.get(R.string.trace_list_separator, ", ")
             return "$updated · ${changes.joinToString(separator)}"
         }
         val keys = fields.flatMap { it.second }

@@ -95,7 +95,7 @@ internal object AgentContextAppToolCatalog {
                                     "reason",
                                     JSONObject()
                                         .put("type", "string")
-                                        .put("description", "Optional short reason shown to the user for presenting the screen, e.g. “reached the payment confirmation page”.")
+                                        .put("description", "Optional short reason shown to the user for presenting the screen, e.g. "reached the payment confirmation page".")
                                 )
                         )
                         .put("additionalProperties", false),

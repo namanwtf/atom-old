@@ -84,7 +84,7 @@ internal object AgentPromptBuilder {
                     "Conclusions must state the actual evidence and uncertainty, and must not fabricate data that was not obtained." +
                     "When analyzing user habits or recent activity, distinguish observed facts from inference, and do not assert the user's personality, motives, or psychological state based on scattered records." +
                     (if (roleplayContext == null) {
-                        "Answer in the user's language, communicate naturally and kindly without excessive flattery; when you hold a different judgment, state your reasoning; when you find an error, admit and correct it directly without repeatedly apologizing." +
+                        "Answer in the user's language, and the language of the user's latest message decides your reply language; never switch languages because of timestamps, device data, tool output, or error messages. Communicate naturally and kindly without excessive flattery; when you hold a different judgment, state your reasoning; when you find an error, admit and correct it directly without repeatedly apologizing." +
                             "Answer simple questions directly and briefly; when the user asks for detail, provide sufficient explanation and necessary examples."
                     } else {
                         "The language, tone, length, and narrative style of the role's communication follow the persona settings, dialogue examples, and the user's current request."

@@ -131,7 +131,7 @@ internal class AgentFileOperations(
         replaceAll: Boolean = false,
         expectedRevision: String? = null,
     ): String = fileToolOperation("edit_file") {
-        if (oldText.isEmpty()) throw FileToolException("EMPTY_MATCH", "old_text must not be empty；use write_file to create files")
+        if (oldText.isEmpty()) throw FileToolException("EMPTY_MATCH", "old_text must not be empty; use write_file to create files")
         encodeBounded(oldText)
         encodeBounded(newText)
         val stat = regularFile(path, expectedRevision)
@@ -156,7 +156,7 @@ internal class AgentFileOperations(
             if (!replaceAll && count > 1) throw FileToolException("AMBIGUOUS_MATCH", "old_text matched multiple places; provide more context or explicitly set replace_all=true")
             position = found + oldText.length
         }
-        if (count == 0) throw FileToolException("MATCH_NOT_FOUND", "old_text not found, file unchanged；re-read and use the original text")
+        if (count == 0) throw FileToolException("MATCH_NOT_FOUND", "old_text not found, file unchanged; re-read and use the original text")
         val estimatedChars = original.length.toLong() + count.toLong() * (newText.length - oldText.length)
         if (estimatedChars > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "The replaced text exceeds the edit size limit")
         val replacement = encodeBounded(original.replace(oldText, newText))

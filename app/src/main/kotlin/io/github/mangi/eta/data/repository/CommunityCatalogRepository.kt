@@ -145,7 +145,7 @@ internal object CommunityCatalogRepository {
         require(models.size == modelIds.size) {
             AppStrings.get(
                 R.string.repo_err_catalog_selected_model_missing,
-                "The selected model is no longer in the catalog，please reselect",
+                "The selected model is no longer in the catalog, please reselect",
             )
         }
         return CustomProviderSetting(

@@ -174,7 +174,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_url_type_unsupported,
-                    "Only GitHub repository、tree or blob URLs are supported",
+                    "Only GitHub repository, tree or blob URLs are supported",
                 ),
             )
         }
@@ -282,7 +282,7 @@ internal class PublicGitHubSkillSource(
                 "REPOSITORY_TREE_TOO_LARGE",
                 AppStrings.get(
                     R.string.skill_i18n_github_tree_too_large,
-                    "The repository directory is too large，GitHub did not return complete results；please provide an explicit Skill path",
+                    "The repository directory is too large, GitHub did not return complete results; please provide an explicit Skill path",
                 ),
             )
         }
@@ -312,7 +312,7 @@ internal class PublicGitHubSkillSource(
                         "TOO_MANY_SKILL_CANDIDATES",
                         AppStrings.get(
                             R.string.skill_i18n_github_too_many_candidates,
-                            "Candidate Skills exceed %1\$d，please narrow the repository path",
+                            "Candidate Skills exceed %1\$d, please narrow the repository path",
                             MAX_CANDIDATES,
                         ),
                     )
@@ -481,7 +481,7 @@ internal class PublicGitHubSkillSource(
                         "GITHUB_REDIRECT_REJECTED",
                         AppStrings.get(
                             R.string.skill_i18n_github_redirect_rejected,
-                            "The GitHub download was redirected，access to other hosts was rejected",
+                            "The GitHub download was redirected, access to other hosts was rejected",
                         ),
                     )
                 }
@@ -494,15 +494,15 @@ internal class PublicGitHubSkillSource(
                     val message = when (code) {
                         "GITHUB_RATE_LIMITED" -> AppStrings.get(
                             R.string.skill_i18n_github_rate_limited,
-                            "The GitHub request is rate-limited，please retry later",
+                            "The GitHub request is rate-limited, please retry later",
                         )
                         "GITHUB_NOT_FOUND" -> AppStrings.get(
                             R.string.skill_i18n_github_not_found,
-                            "Public GitHub repository、ref or path not found",
+                            "Public GitHub repository, ref or path not found",
                         )
                         else -> AppStrings.get(
                             R.string.skill_i18n_github_request_failed,
-                            "GitHub request failed（HTTP %1\$d）",
+                            "GitHub request failed(HTTP %1\$d)",
                             response.code,
                         )
                     }

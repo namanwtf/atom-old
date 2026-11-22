@@ -123,7 +123,7 @@ internal object GeminiModelCatalog {
             throw IllegalStateException(
                 AppStrings.get(
                     R.string.repo_err_vertex_remote_fetch_unsupported,
-                    "Vertex AI API Key does not support fetching the remote model list，use built-in presets or add models manually。",
+                    "Vertex AI API Key does not support fetching the remote model list, use built-in presets or add models manually.",
                 ),
             )
         }
@@ -187,7 +187,7 @@ internal object GeminiModelCatalog {
         requireNotNull(model) {
             AppStrings.get(
                 R.string.repo_err_vertex_model_required,
-                "Please save the connection first and add or enable a Gemini 4 model for the current region。",
+                "Please save the connection first and add or enable a Gemini 4 model for the current region.",
             )
         }
         val url = ProviderUrls.vertexCountTokensUrl(
@@ -225,7 +225,7 @@ internal object GeminiModelCatalog {
                         false,
                         AppStrings.get(
                             R.string.repo_err_vertex_invalid_token_count,
-                            "Vertex AI returned an invalid token count response。",
+                            "Vertex AI returned an invalid token count response.",
                         ),
                     )
                 }

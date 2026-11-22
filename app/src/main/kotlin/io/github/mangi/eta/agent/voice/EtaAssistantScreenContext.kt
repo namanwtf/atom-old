@@ -97,13 +97,13 @@ internal class EtaAssistantScreenContext(
         return synchronized(this) {
             if (closed) return@synchronized Snapshot()
             val text = buildString {
-                appendLine("Captured at（Unix ms）：$capturedAt；this is the screen at the time the assistant woke up，not the live state after actions。")
+                appendLine("Captured at(Unix ms): $capturedAt; this is the screen at the time the assistant woke up, not the live state after actions.")
                 if (foregroundApps.isNotEmpty()) {
-                    appendLine("Foreground apps：" + foregroundApps.take(MAX_ACTIVITIES)
+                    appendLine("Foreground apps: " + foregroundApps.take(MAX_ACTIVITIES)
                         .joinToString { it.flattenToShortString().take(512) })
                 }
-                appendLine(if (image != null) "A screenshot is attached。" else "The system did not provide a usable screenshot。")
-                if (activities.isEmpty()) appendLine("The system has not provided app content。")
+                appendLine(if (image != null) "A screenshot is attached." else "The system did not provide a usable screenshot.")
+                if (activities.isEmpty()) appendLine("The system has not provided app content.")
                 activities.entries.sortedWith(compareByDescending<Map.Entry<Int, Pair<Boolean, String>>> { it.value.first }
                     .thenBy { it.key }).take(MAX_ACTIVITIES).forEach { appendLine(it.value.second) }
             }

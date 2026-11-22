@@ -17,7 +17,7 @@ internal object AgentImageCodec {
         mimeHint: String = "image/jpeg"
     ): AgentModelClient.ModelImage {
         require(bytes.isNotEmpty()) { "image content is empty" }
-        require(bytes.size <= MAX_AGENT_IMAGE_BYTES) { "image data too large：${bytes.size}" }
+        require(bytes.size <= MAX_AGENT_IMAGE_BYTES) { "image data too large: ${bytes.size}" }
         // For already-encoded images only size and format are read; the body keeps the original bytes.
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
@@ -209,7 +209,7 @@ internal object AgentImageCodec {
         val length = context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
             descriptor.length
         } ?: -1L
-        require(length <= MAX_AGENT_IMAGE_BYTES || length < 0L) { "image file too large：$length" }
+        require(length <= MAX_AGENT_IMAGE_BYTES || length < 0L) { "image file too large: $length" }
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, options)
@@ -248,7 +248,7 @@ internal object AgentImageCodec {
     }.getOrNull()
 
     private fun File.readBytesLimited(): ByteArray {
-        require(length() <= MAX_AGENT_IMAGE_BYTES.toLong()) { "image file too large：${length()}" }
+        require(length() <= MAX_AGENT_IMAGE_BYTES.toLong()) { "image file too large: ${length()}" }
         return readBytes()
     }
 
@@ -260,7 +260,7 @@ internal object AgentImageCodec {
             val read = read(buffer)
             if (read < 0) break
             total += read
-            require(total <= MAX_AGENT_IMAGE_BYTES) { "image data too large：$total" }
+            require(total <= MAX_AGENT_IMAGE_BYTES) { "image data too large: $total" }
             output.write(buffer, 0, read)
         }
         return output.toByteArray()

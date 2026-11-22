@@ -67,8 +67,8 @@
     <string name="imagegen_link_standalone">Enter standalone API key</string>
     <string name="imagegen_model_presets">Model presets</string>
     <string name="imagegen_official_default">Official default</string>
-    <string name="imagegen_linked_provider_footer_with_url">Reusing the API key and endpoint (%2$s) from “%1$s”. To specify a different URL or region, switch “Credential source” to “Enter standalone API key”.</string>
-    <string name="imagegen_linked_provider_footer">Reusing the API key and endpoint from “%1$s”. To specify a different URL or region, switch “Credential source” to “Enter standalone API key”.</string>
+    <string name="imagegen_linked_provider_footer_with_url">Reusing the API key and endpoint (%2$s) from "%1$s". To specify a different URL or region, switch "Credential source" to "Enter standalone API key".</string>
+    <string name="imagegen_linked_provider_footer">Reusing the API key and endpoint from "%1$s". To specify a different URL or region, switch "Credential source" to "Enter standalone API key".</string>
     <string name="imagegen_section_connection">Connection &amp; model</string>
     <string name="imagegen_field_model_id">Model ID</string>
     <string name="imagegen_field_model_or_endpoint_id">Model ID or Endpoint ID</string>

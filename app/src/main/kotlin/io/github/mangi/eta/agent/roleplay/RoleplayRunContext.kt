@@ -90,7 +90,7 @@ internal data class RoleplayRunContext(
             "Personality" to card.personality,
             "Scenario" to card.scenario,
             "Example dialogue (examples, not actual conversations)" to card.exampleMessages,
-        ).forEach { (label, content) -> if (content.isNotBlank()) appendLine("$label：\n${expand(content)}") }
+        ).forEach { (label, content) -> if (content.isNotBlank()) appendLine("$label: \n${expand(content)}") }
         appendLine("User's identity in the story:$userName")
         if (userDescription.isNotBlank()) appendLine("User persona:\n$userDescription")
         if (after.isNotBlank()) appendLine("Additional world setting:\n${expand(after)}")

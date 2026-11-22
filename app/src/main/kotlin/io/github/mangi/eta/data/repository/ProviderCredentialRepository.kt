@@ -47,7 +47,7 @@ internal object ProviderCredentialRepository {
             "oauth_not_initialized",
             AppStrings.get(
                 R.string.repo_err_auth_service_not_ready,
-                "The sign-in service is not ready yet，please reopen Eta",
+                "The sign-in service is not ready yet, please reopen Eta",
             ),
         )
 }

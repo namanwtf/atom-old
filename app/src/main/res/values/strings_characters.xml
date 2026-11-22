@@ -40,7 +40,7 @@
     <item quantity="one">%1$d item handled within compatibility scope</item>
     <item quantity="other">%1$d items handled within compatibility scope</item>
   </plurals>
-  <string name="character_delete_confirm_message">“%1$s” will be removed from the library along with its image and story memory. Existing conversations will be kept. This cannot be undone.</string>
+  <string name="character_delete_confirm_message">"%1$s" will be removed from the library along with its image and story memory. Existing conversations will be kept. This cannot be undone.</string>
 
   <string name="character_section_description">Character profile</string>
   <string name="character_section_greetings">Greetings</string>

@@ -80,7 +80,7 @@ internal class SpeechAudioStreamDecoder(private val qwen: Boolean, onAudio: (Byt
             if (message.optString("code").isNotBlank() || message.optInt("status_code", 200) != 200) {
                 throw SpeechFailure(
                     SpeechErrorCode.SERVER,
-                    AppStrings.get(R.string.voice_i18n_qwen_tts_failed, "Qwen voice synthesis failed，please check the configuration"),
+                    AppStrings.get(R.string.voice_i18n_qwen_tts_failed, "Qwen voice synthesis failed, please check the configuration"),
                 )
             }
             val output = message.getJSONObject("output")
@@ -94,7 +94,7 @@ internal class SpeechAudioStreamDecoder(private val qwen: Boolean, onAudio: (Byt
                     SpeechErrorCode.SERVER,
                     AppStrings.get(
                         R.string.voice_i18n_doubao_tts_failed_code,
-                        "Doubao voice synthesis failed（%1\$d）",
+                        "Doubao voice synthesis failed(%1\$d)",
                         message.getInt("code"),
                     ),
                 )

@@ -163,7 +163,7 @@ internal fun VirtualDisplayStageSection(
             .padding(horizontal = StageMattePadding, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // ── Gallery matte inner canvas（Concentric 18.dp Corner） ────────────────────
+        // ── Gallery matte inner canvas(Concentric 18.dp Corner) ────────────────────
         Box(
             modifier = Modifier
                 .height(StageCanvasHeight)

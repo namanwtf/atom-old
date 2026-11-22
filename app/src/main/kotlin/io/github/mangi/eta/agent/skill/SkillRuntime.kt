@@ -174,7 +174,7 @@ private class BuiltinSkillAssetStore(
 
     fun installBuiltin(skillId: String, registryStore: SkillRegistryStore) {
         val builtin = findBuiltin(skillId)
-            ?: throw IllegalArgumentException("Built-in skill not found：$skillId")
+            ?: throw IllegalArgumentException("Built-in skill not found: $skillId")
         installBuiltinInternal(builtin)
         registryStore.set(
             skillId,
@@ -186,7 +186,7 @@ private class BuiltinSkillAssetStore(
         val targetDir = File(skillsRoot, builtin.id)
         if (Files.exists(targetDir.toPath(), LinkOption.NOFOLLOW_LINKS)) {
             if (!deleteSkillPathWithoutFollowingLinks(skillsRoot, targetDir)) {
-                error("Unable to safely clean up the built-in Skill directory：${builtin.id}")
+                error("Unable to safely clean up the built-in Skill directory: ${builtin.id}")
             }
         }
         copyAssetRecursively(context.assets, builtin.assetPath, targetDir)
@@ -274,7 +274,7 @@ class SkillIndexService(
         return withMutationLock {
             synchronized(indexLock) {
                 val entry = listSkillsForManagement().firstOrNull { it.id == skillId && it.installed }
-                    ?: throw IllegalArgumentException("Installed skill not found：$skillId")
+                    ?: throw IllegalArgumentException("Installed skill not found: $skillId")
                 registryStore.set(
                     entry.id,
                     SkillRegistryEntry(enabled = enabled, source = entry.source, installState = INSTALL_STATE_INSTALLED),
@@ -345,7 +345,7 @@ class SkillIndexService(
                     }.isSuccess
                     if (!rollbackComplete) {
                         throw SkillRecoveryRequiredException(
-                            "Skill deletion failed，and the files or registry have not been fully recovered",
+                            "Skill deletion failed, and the files or registry have not been fully recovered",
                             error,
                         )
                     }
@@ -372,7 +372,7 @@ class SkillIndexService(
                 builtinStore.installBuiltin(skillId, registryStore)
                 invalidateIndexLocked()
                 findInstalledSkill(skillId)
-                    ?: throw IllegalStateException("Indexing failed after installing the built-in skill：$skillId")
+                    ?: throw IllegalStateException("Indexing failed after installing the built-in skill: $skillId")
             }
         }
     }
@@ -447,7 +447,7 @@ class SkillIndexService(
     private fun seedBuiltinSkillsLocked() {
         if (builtinsSeeded) return
         if (!skillsRoot.exists() && !skillsRoot.mkdirs()) {
-            error("Unable to create the Skills directory：${skillsRoot.absolutePath}")
+            error("Unable to create the Skills directory: ${skillsRoot.absolutePath}")
         }
         builtinStore.seedMissingBuiltins(registryStore)
         builtinsSeeded = true

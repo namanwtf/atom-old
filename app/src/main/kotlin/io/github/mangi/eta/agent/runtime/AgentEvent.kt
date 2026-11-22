@@ -27,7 +27,7 @@ internal sealed interface AgentEvent {
         val displayMessage: String get() = when (phase) {
             PHASE_STARTED -> RUNNING_DETAIL
             PHASE_COMPLETED -> {
-                val archiveTag = archiveId.takeIf { it.isNotBlank() }?.let { "（$it）" }.orEmpty()
+                val archiveTag = archiveId.takeIf { it.isNotBlank() }?.let { "($it)" }.orEmpty()
                 "Context compressed $archiveTag; usage will update after the next model response."
             }
             else -> "Context compression failed; the original context was kept."

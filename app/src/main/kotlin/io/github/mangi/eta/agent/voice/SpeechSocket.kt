@@ -57,7 +57,7 @@ internal class SpeechSocket(
         if (bytes.size > SpeechHttp.MAX_JSON_BYTES || !accepted) {
             val failure = SpeechFailure(
                 SpeechErrorCode.BACKPRESSURE,
-                AppStrings.get(R.string.voice_i18n_socket_receive_backpressure, "voice data processing too slow，please retry"),
+                AppStrings.get(R.string.voice_i18n_socket_receive_backpressure, "voice data processing too slow, please retry"),
             )
             messages.close(failure)
             frames.close(failure)
@@ -72,7 +72,7 @@ internal class SpeechSocket(
         if (!accepted || socket.queueSize() > 256 * 1024) {
             throw SpeechFailure(
                 SpeechErrorCode.BACKPRESSURE,
-                AppStrings.get(R.string.voice_i18n_socket_send_backpressure, "network upload too slow，please check your network and retry"),
+                AppStrings.get(R.string.voice_i18n_socket_send_backpressure, "network upload too slow, please check your network and retry"),
             )
         }
     }

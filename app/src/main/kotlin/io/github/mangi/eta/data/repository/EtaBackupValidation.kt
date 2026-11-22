@@ -121,7 +121,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_unsupported_version,
-                    "Unsupported Eta backup version：%1\$d",
+                    "Unsupported Eta backup version: %1\$d",
                     document.schemaVersion,
                 ),
             )

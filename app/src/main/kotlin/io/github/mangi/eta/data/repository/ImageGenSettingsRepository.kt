@@ -41,7 +41,7 @@ import kotlinx.serialization.json.Json
 internal class ImageGenCredentialsUnavailable : IllegalStateException(
     AppStrings.get(
         R.string.imagegen_error_credentials_unavailable,
-        "AI image generation credentials are temporarily unavailable，please re-enter and save",
+        "AI image generation credentials are temporarily unavailable, please re-enter and save",
     ),
 )
 
@@ -413,7 +413,7 @@ internal object ImageGenSettingsRepository {
         val uri = runCatching { URI(trimmed) }.getOrNull()
             ?: return AppStrings.get(R.string.imagegen_error_url_invalid, "Endpoint URL format is invalid")
         val scheme = uri.scheme?.lowercase()
-            ?: return AppStrings.get(R.string.imagegen_error_url_missing_scheme, "Endpoint URL is missing the scheme（https://）")
+            ?: return AppStrings.get(R.string.imagegen_error_url_missing_scheme, "Endpoint URL is missing the scheme(https://)")
         val host = uri.host?.lowercase()?.takeIf { it.isNotBlank() }
             ?: return AppStrings.get(R.string.imagegen_error_url_missing_host, "Endpoint URL is missing a valid hostname")
         if (scheme == "https") return null

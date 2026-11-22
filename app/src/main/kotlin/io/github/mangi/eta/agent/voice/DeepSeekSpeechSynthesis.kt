@@ -108,7 +108,7 @@ internal suspend fun streamDeepSeekSpeech(
                         if (audioBytes == 0L) {
                             throw SpeechFailure(
                                 SpeechErrorCode.PROTOCOL,
-                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
+                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete, please retry"),
                             )
                         }
                         pcm.end()
@@ -116,7 +116,7 @@ internal suspend fun streamDeepSeekSpeech(
                     }
                     "content_filter" -> throw SpeechFailure(
                         SpeechErrorCode.SERVER,
-                        AppStrings.get(R.string.voice_i18n_deepseek_tts_content_filter, "DeepSeek could not synthesize this text，please adjust and retry"),
+                        AppStrings.get(R.string.voice_i18n_deepseek_tts_content_filter, "DeepSeek could not synthesize this text, please adjust and retry"),
                     )
                     "invalid_input" -> throw SpeechFailure(
                         SpeechErrorCode.CONFIGURATION,
@@ -126,7 +126,7 @@ internal suspend fun streamDeepSeekSpeech(
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_deepseek_tts_failed_code,
-                            "DeepSeek voice synthesis failed（%1\$s）",
+                            "DeepSeek voice synthesis failed(%1\$s)",
                             code.ifBlank { "unknown" },
                         ),
                     )

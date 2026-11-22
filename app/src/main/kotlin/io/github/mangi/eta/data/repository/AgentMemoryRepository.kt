@@ -199,7 +199,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_RANGE_INVALID",
                 message = AppStrings.get(
                     R.string.repo_err_memory_invalid_replace_range,
-                    "Replacement line range is invalid；please re-read the memory and try again",
+                    "Replacement line range is invalid; please re-read the memory and try again",
                 ),
             )
         }

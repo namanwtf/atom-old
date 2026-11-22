@@ -128,7 +128,7 @@ internal object ScheduledTaskScheduleCalculator {
         if (schedule.timezoneId.isNotBlank() && runCatching { ZoneId.of(schedule.timezoneId.trim()) }.isFailure) {
             return AppStrings.get(
                 R.string.scheduled_error_invalid_timezone,
-                "Invalid timezone identifier：%1\$s",
+                "Invalid timezone identifier: %1\$s",
                 schedule.timezoneId,
             )
         }
@@ -176,7 +176,7 @@ internal object ScheduledTaskScheduleCalculator {
                 when {
                     parsed == null -> AppStrings.get(
                         R.string.scheduled_error_cron_invalid,
-                        "Invalid Cron expression，must be 5 fields（minute hour day month weekday），e.g. 0 9 * * 1-5",
+                        "Invalid Cron expression, must be 5 fields(minute hour day month weekday), e.g. 0 9 * * 1-5",
                     )
                     findNextCronOccurrence(parsed, nowMs, resolveZone(schedule, defaultZone)) == null ->
                         AppStrings.get(
@@ -201,7 +201,7 @@ internal object ScheduledTaskScheduleCalculator {
             isInQuietHours(nowMs, task.quietHours, zone)
         ) {
             return MisfireDecision.Skip(
-                AppStrings.get(R.string.scheduled_skip_quiet_hours, "Currently in do-not-disturb hours，this run has been skipped"),
+                AppStrings.get(R.string.scheduled_skip_quiet_hours, "Currently in do-not-disturb hours, this run has been skipped"),
             )
         }
         val delayMs = (nowMs - scheduledForAt).coerceAtLeast(0L)
@@ -209,7 +209,7 @@ internal object ScheduledTaskScheduleCalculator {
         if (delayMs <= 2 * 60_000L) return MisfireDecision.RunNow
         return when (task.misfirePolicy) {
             ScheduledTaskMisfirePolicy.SKIP -> MisfireDecision.Skip(
-                AppStrings.get(R.string.scheduled_skip_misfire_policy, "Missed the scheduled trigger time，skipped per policy"),
+                AppStrings.get(R.string.scheduled_skip_misfire_policy, "Missed the scheduled trigger time, skipped per policy"),
             )
             ScheduledTaskMisfirePolicy.RUN_ONCE_WITHIN_WINDOW -> {
                 val windowMs = task.misfireWindowMinutes.coerceIn(5, 24 * 60) * 60_000L
@@ -219,7 +219,7 @@ internal object ScheduledTaskScheduleCalculator {
                     MisfireDecision.Skip(
                         AppStrings.get(
                             R.string.scheduled_skip_misfire_window_expired,
-                            "Missed trigger time exceeds the catch-up window，skipped",
+                            "Missed trigger time exceeds the catch-up window, skipped",
                         ),
                     )
                 }
@@ -296,7 +296,7 @@ internal object ScheduledTaskScheduleCalculator {
                     days == listOf(6, 7) -> AppStrings.get(R.string.scheduled_schedule_weekends, "Weekends %1\$s", timeText)
                     days.isEmpty() -> AppStrings.get(R.string.scheduled_schedule_weekly_generic, "Every week %1\$s", timeText)
                     else -> {
-                        val separator = AppStrings.get(R.string.scheduled_day_list_separator, "、")
+                        val separator = AppStrings.get(R.string.scheduled_day_list_separator, ", ")
                         val dayList = days.joinToString(separator, transform = ::shortDayName)
                         AppStrings.get(R.string.scheduled_schedule_weekly_days, "Every %1\$s %2\$s", dayList, timeText)
                     }
@@ -336,8 +336,8 @@ internal object ScheduledTaskScheduleCalculator {
                     AppStrings.quantity(
                         R.plurals.scheduled_next_run_in_minutes,
                         minutes.toInt(),
-                        "in %1\$d minutes（%2\$s）",
-                        "in %1\$d minutes（%2\$s）",
+                        "in %1\$d minutes(%2\$s)",
+                        "in %1\$d minutes(%2\$s)",
                         minutes,
                         hhmm,
                     )

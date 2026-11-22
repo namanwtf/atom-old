@@ -34,7 +34,7 @@ internal fun mimoAsrTranscript(response: JSONObject): String {
     if (!response.isNull("error")) {
         throw SpeechFailure(
             SpeechErrorCode.SERVER,
-            AppStrings.get(R.string.voice_i18n_mimo_asr_failed, "MiMo speech recognition failed，please check service permissions and configuration"),
+            AppStrings.get(R.string.voice_i18n_mimo_asr_failed, "MiMo speech recognition failed, please check service permissions and configuration"),
         )
     }
     val choice = response.optJSONArray("choices")?.optJSONObject(0)
@@ -46,11 +46,11 @@ internal fun mimoAsrTranscript(response: JSONObject): String {
         "stop" -> Unit
         "length" -> throw SpeechFailure(
             SpeechErrorCode.SERVER,
-            AppStrings.get(R.string.voice_i18n_mimo_asr_incomplete, "MiMo recognition result incomplete，please shorten the recording and retry"),
+            AppStrings.get(R.string.voice_i18n_mimo_asr_incomplete, "MiMo recognition result incomplete, please shorten the recording and retry"),
         )
         "content_filter" -> throw SpeechFailure(
             SpeechErrorCode.SERVER,
-            AppStrings.get(R.string.voice_i18n_mimo_asr_content_filter, "MiMo could not process this recording，please retry"),
+            AppStrings.get(R.string.voice_i18n_mimo_asr_content_filter, "MiMo could not process this recording, please retry"),
         )
         else -> throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,

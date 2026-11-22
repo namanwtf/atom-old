@@ -23,7 +23,7 @@ internal object ProviderParameterDiagnostics {
             }
             if (fields.size >= 3) break
         }
-        val separator = AppStrings.get(R.string.provider_param_separator, "；")
+        val separator = AppStrings.get(R.string.provider_param_separator, "; ")
         return (codes.take(1) + fields.take(3).map {
             AppStrings.get(R.string.provider_param_field, "Field %1\$s", it)
         }).joinToString(separator).ifEmpty { null }

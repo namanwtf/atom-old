@@ -82,15 +82,15 @@ internal class ConversationTitleGenerator(
             "Title: ",
             "Title:",
             "title:",
-            "title：",
+            "title: ",
         )
         private val QUOTE_PAIRS = listOf(
             '"' to '"',
             '\'' to '\'',
             '`' to '`',
-            '“' to '”',
+            '"' to '"',
             '‘' to '’',
-            '「' to '」',
+            '"' to '"',
             '『' to '』',
             '《' to '》',
         )

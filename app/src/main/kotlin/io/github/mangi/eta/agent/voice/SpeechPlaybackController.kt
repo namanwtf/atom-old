@@ -65,7 +65,7 @@ internal class SpeechPlaybackController(
                 if (readable.length > 30_000) {
                     throw SpeechFailure(
                         SpeechErrorCode.CONFIGURATION,
-                        AppStrings.get(R.string.voice_i18n_playback_text_too_long, "Text too long，please choose a shorter answer to read aloud"),
+                        AppStrings.get(R.string.voice_i18n_playback_text_too_long, "Text too long, please choose a shorter answer to read aloud"),
                     )
                 }
                 lease?.requestPlaybackFocus { beforePlayback(); playbackActive = true }

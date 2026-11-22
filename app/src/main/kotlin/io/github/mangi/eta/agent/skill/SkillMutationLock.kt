@@ -51,7 +51,7 @@ internal object SkillMutationLock {
                             if (recovered.isNotEmpty()) {
                                 val handler = recoveryHandler
                                     ?: throw SkillRecoveryRequiredException(
-                                        "Skill files recovered，awaiting registry recovery"
+                                        "Skill files recovered, awaiting registry recovery"
                                     )
                                 try {
                                     handler(recovered)

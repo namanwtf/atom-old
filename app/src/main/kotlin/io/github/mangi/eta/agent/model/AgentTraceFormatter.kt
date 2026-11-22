@@ -912,8 +912,6 @@ internal class AgentTraceFormatter {
     private fun sanitizeSummaryValue(value: String, maxChars: Int = 80): String =
         value.replace(Regex("\\s+"), " ")
             .trim()
-            .replace(',', '，')
-            .replace('=', '＝')
             .let { if (it.length <= maxChars) it else it.take(maxChars) + "..." }
 
     private fun safeHttpHost(rawUrl: String): String? =

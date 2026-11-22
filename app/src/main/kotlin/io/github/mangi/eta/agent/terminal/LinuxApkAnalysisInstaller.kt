@@ -461,7 +461,7 @@ internal class LinuxApkAnalysisInstaller(
             #!/bin/sh
             case "${'$'}{1:-}" in
               b|build)
-                echo "APKTOOL_BUILD_UNAVAILABLE: Eta APK analysis archive does not include ARM64 AAPT2 yet; only decoding and inspection are supported。" >&2
+                echo "APKTOOL_BUILD_UNAVAILABLE: Eta APK analysis archive does not include ARM64 AAPT2 yet; only decoding and inspection are supported." >&2
                 exit 64
                 ;;
             esac

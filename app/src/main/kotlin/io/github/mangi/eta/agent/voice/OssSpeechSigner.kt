@@ -63,7 +63,7 @@ internal object OssSpeechSigner {
         if (endpoint.encodedPath != "/" || endpoint.port != 443) {
             throw SpeechFailure(
                 SpeechErrorCode.CONFIGURATION,
-                AppStrings.get(R.string.voice_i18n_oss_endpoint_invalid, "OSS Endpoint must be a standard region domain，without path or port"),
+                AppStrings.get(R.string.voice_i18n_oss_endpoint_invalid, "OSS Endpoint must be a standard region domain, without path or port"),
             )
         }
         endpoint.newBuilder().host("${config.bucket}.${endpoint.host}")

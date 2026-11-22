@@ -63,7 +63,7 @@ internal class PendingSkillRecoveryJournal private constructor(
                 record
             }
         }
-        check(found) { "Skill not found in the recovery log：$skillId" }
+        check(found) { "Skill not found in the recovery log: $skillId" }
         writeJournalAtomically(operationDirectory, records)
     }
 
@@ -146,14 +146,14 @@ private fun recoverOperation(
                         record.id,
                         directoryMover,
                     )
-                    record.backupCompleted -> recoveryFailure("Old Skill backup missing：${record.id}")
+                    record.backupCompleted -> recoveryFailure("Old Skill backup missing: ${record.id}")
                     !isSafeExistingTarget(skillsRoot, target) ->
-                        recoveryFailure("Old Skill target is inconsistent with the recovery log：${record.id}")
+                        recoveryFailure("Old Skill target is inconsistent with the recovery log: ${record.id}")
                 }
             } else {
-                if (backupExists) recoveryFailure("A brand-new Skill must not have an old backup：${record.id}")
+                if (backupExists) recoveryFailure("A brand-new Skill must not have an old backup: ${record.id}")
                 if (!deleteSkillPathWithoutFollowingLinks(skillsRoot, target)) {
-                    recoveryFailure("Unable to remove the incompletely installed Skill：${record.id}")
+                    recoveryFailure("Unable to remove the incompletely installed Skill: ${record.id}")
                 }
             }
         }
@@ -207,7 +207,7 @@ private fun restoreBackup(
         Files.isSymbolicLink(backup.toPath()) || !backup.isDirectory ||
         !isStrictChild(backupRoot, backup)
     ) {
-        recoveryFailure("Old Skill backup is unsafe：$skillId")
+        recoveryFailure("Old Skill backup is unsafe: $skillId")
     }
     val recoveryRoot = File(operation, RECOVERY_DIRECTORY_NAME)
     if (!recoveryRoot.mkdirs() && !recoveryRoot.isDirectory) {
@@ -224,7 +224,7 @@ private fun restoreBackup(
 
     val target = File(skillsRoot, skillId)
     if (!deleteSkillPathWithoutFollowingLinks(skillsRoot, target)) {
-        recoveryFailure("Unable to clean up the Skill with an incomplete commit：$skillId")
+        recoveryFailure("Unable to clean up the Skill with an incomplete commit: $skillId")
     }
     directoryMover.move(staging, target)
 }

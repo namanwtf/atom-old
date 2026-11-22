@@ -67,15 +67,15 @@ internal object SpeechHttp {
         throw when (status) {
             401, 403 -> SpeechFailure(
                 SpeechErrorCode.AUTHENTICATION,
-                AppStrings.get(R.string.voice_i18n_http_auth_failed, "Voice service authentication failed，please check credentials and service permissions"),
+                AppStrings.get(R.string.voice_i18n_http_auth_failed, "Voice service authentication failed, please check credentials and service permissions"),
             )
             429 -> SpeechFailure(
                 SpeechErrorCode.RATE_LIMITED,
-                AppStrings.get(R.string.voice_i18n_http_rate_limited, "Voice service requests too frequent，please retry later"),
+                AppStrings.get(R.string.voice_i18n_http_rate_limited, "Voice service requests too frequent, please retry later"),
             )
             else -> SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_http_request_failed, "Voice service request failed（HTTP %1\$d）", status),
+                AppStrings.get(R.string.voice_i18n_http_request_failed, "Voice service request failed(HTTP %1\$d)", status),
             )
         }
     }

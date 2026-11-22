@@ -298,7 +298,7 @@ internal object BrowserDomScripts {
             }
             if (tag === 'img') {
               var alt = cleanInline(node.getAttribute('alt'), 200);
-              if (alt) emit(state, '[image：' + markdownEscape(alt) + ']');
+              if (alt) emit(state, '[image: ' + markdownEscape(alt) + ']');
               return;
             }
             if (tag === 'ul' || tag === 'ol') {

@@ -69,7 +69,7 @@ internal class DetachedTaskSupervisor(
             return DaemonStartResult.Failed("INVALID_IDENTITY", "Rootless Linux uses the normal app identity")
         }
         if (list().count { it.running } >= MAX_TASKS) {
-            return DaemonStartResult.Failed("MAX_TASKS_REACHED", "Daemon task count has reached the limit $MAX_TASKS；stop unused tasks first")
+            return DaemonStartResult.Failed("MAX_TASKS_REACHED", "Daemon task count has reached the limit $MAX_TASKS; stop unused tasks first")
         }
         val id = (if (commandTask) "job_" else "dm_") + UUID.randomUUID().toString().take(8)
         val token = UUID.randomUUID().toString().replace("-", "")
@@ -184,7 +184,7 @@ internal class DetachedTaskSupervisor(
 
     fun readLogs(id: String, maxBytes: Int = MAX_LOG_READ_BYTES): DaemonLogsResult {
         val task = synchronized(RECORDS_LOCK) { loadTasksLocked() }.firstOrNull { it.id == id }
-            ?: return DaemonLogsResult(ok = false, code = "TASK_NOT_FOUND", message = "Daemon task not found：$id")
+            ?: return DaemonLogsResult(ok = false, code = "TASK_NOT_FOUND", message = "Daemon task not found: $id")
         if (task.identity == "root" && !rootAvailable()) return DaemonLogsResult(ok = false, code = "ROOT_REQUIRED", message = "Root authorization is unavailable")
         val limit = maxBytes.coerceIn(1_024, MAX_LOG_READ_BYTES)
         val result = runOneShotShell(
@@ -194,7 +194,7 @@ internal class DetachedTaskSupervisor(
             timeoutSeconds = 15,
         )
         if (result.exitCode != 0) {
-            return DaemonLogsResult(ok = false, code = "LOGS_UNAVAILABLE", message = "Logs are unavailable：exit=${result.exitCode}")
+            return DaemonLogsResult(ok = false, code = "LOGS_UNAVAILABLE", message = "Logs are unavailable: exit=${result.exitCode}")
         }
         return DaemonLogsResult(
             ok = true,

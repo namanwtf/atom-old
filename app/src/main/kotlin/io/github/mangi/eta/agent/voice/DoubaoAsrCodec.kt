@@ -44,7 +44,7 @@ internal object DoubaoAsrCodec {
             val code = buffer.int
             throw SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_doubao_asr_failed_code, "Doubao recognition failed（%1\$d）", code),
+                AppStrings.get(R.string.voice_i18n_doubao_asr_failed_code, "Doubao recognition failed(%1\$d)", code),
             )
         }
         if (type != 9 || encoding shr 4 != 1 || flags !in 0..3) invalid()

@@ -64,7 +64,7 @@ internal object GrokModelCatalog {
         require(visible == 0 || unsupported != visible) {
             AppStrings.get(
                 R.string.repo_err_grok_catalog_unsupported_protocol,
-                "The current subscription connection does not use the model protocol specified by the catalog，so these models cannot be imported",
+                "The current subscription connection does not use the model protocol specified by the catalog, so these models cannot be imported",
             )
         }
         return models

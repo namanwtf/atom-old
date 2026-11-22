@@ -124,6 +124,6 @@ internal object SpeechSettingsRepository {
 internal class SpeechCredentialsUnavailable : Exception(
     AppStrings.get(
         R.string.repo_err_speech_credentials_unavailable,
-        "Voice credentials cannot be decrypted，please re-enter and save",
+        "Voice credentials cannot be decrypted, please re-enter and save",
     ),
 )

@@ -54,7 +54,7 @@ internal class AssistantSpeechForeground(private val service: Service) {
                 SpeechErrorCode.PERMISSION,
                 AppStrings.get(
                     R.string.voice_i18n_fg_permission_denied,
-                    "The system does not allow the current overlay to use audio，please check microphone permission and default digital assistant settings",
+                    "The system does not allow the current overlay to use audio, please check microphone permission and default digital assistant settings",
                 ),
             )
         }

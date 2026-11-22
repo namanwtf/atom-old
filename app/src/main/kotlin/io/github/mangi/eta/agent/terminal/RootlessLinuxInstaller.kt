@@ -136,9 +136,9 @@ internal object RootlessLinuxInstaller {
             }
             File(staging, "usr/local/bin/${helper.first}").apply { writeText(helper.second + "\n"); setExecutable(true, false) }
             val result = InstallerShellRunner.run("/bin/sh -c ':'", 20, distribution.terminalEnvironment, staging.absolutePath)
-            if (result.exitCode != 0) throw RootlessInstallFailure("PROOT_START_FAILED", "Rootless Linux could not start（exit code ${result.exitCode}）；confirm you are using a supported 64-bit device and retry")
+            if (result.exitCode != 0) throw RootlessInstallFailure("PROOT_START_FAILED", "Rootless Linux could not start(exit code ${result.exitCode}); confirm you are using a supported 64-bit device and retry")
             File(staging, LinuxEnvironmentPaths.READY_MARKER).writeText("version=${artifact.version}\nsha256=${artifact.sha256}\nbackend=proot\n")
-            if (rootfs.exists()) throw RootlessInstallFailure("ENVIRONMENT_ALREADY_EXISTS", "The original environment directory is preserved and cannot be overwritten；export needed files first, then handle the incomplete environment")
+            if (rootfs.exists()) throw RootlessInstallFailure("ENVIRONMENT_ALREADY_EXISTS", "The original environment directory is preserved and cannot be overwritten; export needed files first, then handle the incomplete environment")
             if (!staging.renameTo(rootfs)) throw RootlessInstallFailure("ENVIRONMENT_ACTIVATION_FAILED", "Unable to activate the new environment; check internal storage space and retry")
             return true
         } finally {

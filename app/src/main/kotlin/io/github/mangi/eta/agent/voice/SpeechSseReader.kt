@@ -96,7 +96,7 @@ internal class SpeechSegmentAudio(
         if (!completed || bytes == 0L) {
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
+                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete, please retry"),
             )
         }
         pcm.end()

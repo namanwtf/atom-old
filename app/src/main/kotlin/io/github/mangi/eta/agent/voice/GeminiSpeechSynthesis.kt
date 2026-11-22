@@ -82,7 +82,7 @@ internal class GeminiSpeechDecoder(onAudio: (ByteArray) -> Unit) {
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_gemini_tts_incomplete,
-                            "Gemini did not finish reading aloud，please shorten the text or adjust the reading style and retry",
+                            "Gemini did not finish reading aloud, please shorten the text or adjust the reading style and retry",
                         ),
                     )
                 }
@@ -101,21 +101,21 @@ private fun geminiFailure(error: JSONObject?): SpeechFailure = when (error?.optS
         SpeechErrorCode.AUTHENTICATION,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_auth_failed,
-            "Gemini authentication failed，please check API Key、region and model permissions",
+            "Gemini authentication failed, please check API Key, region and model permissions",
         ),
     )
     "RESOURCE_EXHAUSTED" -> SpeechFailure(
         SpeechErrorCode.RATE_LIMITED,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_rate_limited,
-            "Gemini quota exhausted or requests too frequent，please retry later",
+            "Gemini quota exhausted or requests too frequent, please retry later",
         ),
     )
     else -> SpeechFailure(
         SpeechErrorCode.SERVER,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_failed,
-            "Gemini voice synthesis failed，please check model permissions and configuration",
+            "Gemini voice synthesis failed, please check model permissions and configuration",
         ),
     )
 }

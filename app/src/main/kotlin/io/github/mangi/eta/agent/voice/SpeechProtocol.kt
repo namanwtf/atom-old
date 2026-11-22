@@ -21,7 +21,7 @@ internal fun Throwable.speechFailure(): SpeechFailure = when (this) {
     is SpeechFailure -> this
     is SpeechCredentialsUnavailable -> SpeechFailure(
         SpeechErrorCode.CREDENTIALS,
-        AppStrings.get(R.string.voice_i18n_credentials_decrypt_failed, "Voice credentials cannot be decrypted，please re-enter and save"),
+        AppStrings.get(R.string.voice_i18n_credentials_decrypt_failed, "Voice credentials cannot be decrypted, please re-enter and save"),
     )
     is SecurityException -> SpeechFailure(
         SpeechErrorCode.PERMISSION,
@@ -29,11 +29,11 @@ internal fun Throwable.speechFailure(): SpeechFailure = when (this) {
     )
     is kotlinx.coroutines.TimeoutCancellationException -> SpeechFailure(
         SpeechErrorCode.TIMEOUT,
-        AppStrings.get(R.string.voice_i18n_service_timeout, "Voice service response timed out，please retry"),
+        AppStrings.get(R.string.voice_i18n_service_timeout, "Voice service response timed out, please retry"),
     )
     is IOException -> SpeechFailure(
         SpeechErrorCode.NETWORK,
-        AppStrings.get(R.string.voice_i18n_network_unavailable, "Cannot connect to the voice service，please check your network"),
+        AppStrings.get(R.string.voice_i18n_network_unavailable, "Cannot connect to the voice service, please check your network"),
     )
     else -> SpeechFailure(
         SpeechErrorCode.PROTOCOL,
@@ -94,7 +94,7 @@ internal fun validateSpeechSettings(
                 if (settings.minimaxTts.speed !in 0.5f..2f) {
                     throw SpeechFailure(
                         SpeechErrorCode.CONFIGURATION,
-                        AppStrings.get(R.string.voice_i18n_config_minimax_speed_range, "MiniMax speed must be within 0.5～2 times"),
+                        AppStrings.get(R.string.voice_i18n_config_minimax_speed_range, "MiniMax speed must be within 0.5~2 times"),
                     )
                 }
             }

@@ -82,22 +82,22 @@ private fun decodeHexAudio(value: String): ByteArray {
 private fun minimaxFailure(code: Int): SpeechFailure = when (code) {
     1001 -> SpeechFailure(
         SpeechErrorCode.TIMEOUT,
-        AppStrings.get(R.string.voice_i18n_minimax_tts_timeout, "MiniMax voice synthesis timed out，please retry"),
+        AppStrings.get(R.string.voice_i18n_minimax_tts_timeout, "MiniMax voice synthesis timed out, please retry"),
     )
     1002, 1039 -> SpeechFailure(
         SpeechErrorCode.RATE_LIMITED,
-        AppStrings.get(R.string.voice_i18n_minimax_tts_rate_limited, "MiniMax requests too frequent，please retry later"),
+        AppStrings.get(R.string.voice_i18n_minimax_tts_rate_limited, "MiniMax requests too frequent, please retry later"),
     )
     1004 -> SpeechFailure(
         SpeechErrorCode.AUTHENTICATION,
-        AppStrings.get(R.string.voice_i18n_minimax_tts_auth_failed, "MiniMax authentication failed，please check API Key"),
+        AppStrings.get(R.string.voice_i18n_minimax_tts_auth_failed, "MiniMax authentication failed, please check API Key"),
     )
     1042, 2013 -> SpeechFailure(
         SpeechErrorCode.CONFIGURATION,
-        AppStrings.get(R.string.voice_i18n_minimax_tts_invalid_config, "MiniMax cannot process the current text or voice，please check the configuration"),
+        AppStrings.get(R.string.voice_i18n_minimax_tts_invalid_config, "MiniMax cannot process the current text or voice, please check the configuration"),
     )
     else -> SpeechFailure(
         SpeechErrorCode.SERVER,
-        AppStrings.get(R.string.voice_i18n_minimax_tts_failed_code, "MiniMax voice synthesis failed（%1\$d）", code),
+        AppStrings.get(R.string.voice_i18n_minimax_tts_failed_code, "MiniMax voice synthesis failed(%1\$d)", code),
     )
 }

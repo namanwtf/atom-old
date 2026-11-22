@@ -93,7 +93,7 @@ private suspend fun recognizeQwenFile(
         onProgress(
             AppStrings.get(
                 R.string.voice_i18n_progress_waiting_file_transcription,
-                "Waiting for file transcription，you can cancel anytime",
+                "Waiting for file transcription, you can cancel anytime",
             ),
         )
         awaitQwenFileTranscript(base, credentials.qwenAsr, task)
@@ -117,7 +117,7 @@ private suspend fun awaitQwenFileTranscript(base: String, key: String, task: Str
             "FAILED", "CANCELED", "UNKNOWN" ->
                 throw SpeechFailure(
                     SpeechErrorCode.SERVER,
-                    AppStrings.get(R.string.voice_i18n_qwen_file_transcription_failed, "Qwen file transcription failed，please check service permissions"),
+                    AppStrings.get(R.string.voice_i18n_qwen_file_transcription_failed, "Qwen file transcription failed, please check service permissions"),
                 )
             else -> throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,

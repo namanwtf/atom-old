@@ -87,7 +87,7 @@ internal object CharacterMacros {
             "isodate" to now.format(DateTimeFormatter.ISO_LOCAL_DATE),
             "time" to now.format(DateTimeFormatter.ofPattern("HH:mm")),
             "isotime" to now.format(DateTimeFormatter.ofPattern("HH:mm")),
-            "weekday" to now.format(DateTimeFormatter.ofPattern("EEEE", Locale.SIMPLIFIED_CHINESE)),
+            "weekday" to now.format(DateTimeFormatter.ofPattern("EEEE", Locale.ENGLISH)),
             "newline" to "\n",
             "noop" to "",
         )

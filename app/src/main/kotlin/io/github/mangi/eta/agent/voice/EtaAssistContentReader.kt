@@ -80,7 +80,7 @@ internal object EtaAssistContentReader {
         for (key in data.keySet().sorted().take(24)) {
             val value = data.get(key)
             if (value is CharSequence || value is Number || value is Boolean) {
-                output.line("App data：${key.take(128)}", value.toString())
+                output.line("App data: ${key.take(128)}", value.toString())
             }
         }
     }
@@ -100,7 +100,7 @@ internal object EtaAssistContentReader {
         val full: Boolean get() = text.length >= MAX_CHARS
         fun line(label: String, value: String?, limit: Int = 600) {
             if (value.isNullOrBlank() || full) return
-            val line = "$label：${JSONObject.quote(value.take(limit))}\n"
+            val line = "$label: ${JSONObject.quote(value.take(limit))}\n"
             val remaining = MAX_CHARS - text.length
             text.append(line.take(remaining))
         }

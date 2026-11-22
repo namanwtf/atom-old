@@ -370,7 +370,7 @@ internal class DebianEnvironmentInstaller(
                 }
                 eta_apt_repair() {
                   eta_apt_healthy && return 0
-                  # Configuration may be blocked by missing dependencies; after APT repairs it, it must be configured and verified again。
+                  # Configuration may be blocked by missing dependencies; after APT repairs it, it must be configured and verified again.
                   if dpkg --configure -a && eta_apt_healthy; then return 0; fi
                   eta_apt --fix-broken --no-remove install -y --no-install-recommends || return 1
                   dpkg --configure -a && eta_apt_healthy

@@ -133,6 +133,6 @@ internal object WebToolsSettingsRepository {
 internal class WebToolsCredentialsUnavailable : Exception(
     AppStrings.get(
         R.string.repo_err_web_tools_credentials_unavailable,
-        "Web tool credentials cannot be decrypted，please re-enter and save",
+        "Web tool credentials cannot be decrypted, please re-enter and save",
     ),
 )
