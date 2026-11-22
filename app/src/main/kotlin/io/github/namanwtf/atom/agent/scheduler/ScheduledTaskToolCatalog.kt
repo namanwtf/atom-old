@@ -51,7 +51,7 @@ internal object ScheduledTaskToolCatalog {
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 80)
-                    .put("description", "A short, clear task name(e.g. "daily evening briefing", "product restock monitoring")."),
+                    .put("description", "A short, clear task name(e.g. \"daily evening briefing\", \"product restock monitoring\")."),
             )
             .put(
                 "prompt",
@@ -210,7 +210,7 @@ internal object ScheduledTaskToolCatalog {
             )
         return AgentToolSchema.function(
             name = TOOL_REPORT,
-            description = "Report the structured delivery conclusion of this run to the scheduled task scheduler: in "notify on change only" mode, when there is no change be sure to pass outcome=\"no_change\" to stay silent; when the user needs to be notified, pass outcome=\"deliver\" and provide a concise notification summary.",
+            description = "Report the structured delivery conclusion of this run to the scheduled task scheduler: in \"notify on change only\" mode, when there is no change be sure to pass outcome=\"no_change\" to stay silent; when the user needs to be notified, pass outcome=\"deliver\" and provide a concise notification summary.",
             parameters = JSONObject()
                 .put("type", "object")
                 .put("properties", properties)
