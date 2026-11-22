@@ -13,10 +13,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * 内部精确闹钟与通知快捷操作接收器（`exported="false"`）。
+ * Internal receiver for the exact alarm and notification quick actions (`exported="false"`).
  *
- * 在 `goAsync()` 保护内立刻把执行权移交 [ScheduledTaskRunner]，后者在 Android Doze 10 秒
- * 临时豁免窗口内完成 WakeLock 与前台服务接管。
+ * Immediately hands execution over to [ScheduledTaskRunner] under `goAsync()` protection; the runner completes the WakeLock and foreground-service takeover within the Android Doze 10-second
+ * temporary exemption window.
  */
 internal class ScheduledTaskAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -52,9 +52,9 @@ internal class ScheduledTaskAlarmReceiver : BroadcastReceiver() {
 }
 
 /**
- * 系统生命周期广播接收器：重启、改时间、换时区、应用覆盖安装、精确闹钟权限变化时重建调度。
+ * System lifecycle broadcast receiver: rebuilds scheduling on reboot, time change, timezone change, app update, or exact-alarm permission change.
  *
- * 严格不在开机广播内直接拉起前台服务执行过期模型任务，避免触碰 Android 15+ 开机 FGS 限制。
+ * Strictly never starts a foreground service directly inside the boot broadcast to run overdue model tasks, avoiding Android 15+ boot FGS restrictions.
  */
 internal class ScheduledTaskSystemReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {

@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.model
 
 import org.json.JSONArray
 
-/** 签名工具链完成前保持请求前缀，避免压缩或目录刷新破坏下一轮回传。 */
+/** Keep the request prefix until the signed tool chain completes, so compression or catalog refresh does not break the next turn's round-trip. */
 internal object SignedToolContext {
     fun hasPendingResponse(messages: JSONArray): Boolean =
         AnthropicEphemeralState.hasPendingToolResponse(messages) ||

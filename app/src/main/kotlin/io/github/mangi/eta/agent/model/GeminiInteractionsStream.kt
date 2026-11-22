@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 按 step index 构建完整回放步骤，完成事件只决定终态，不能代替流内累积。 */
+/** Builds complete replay steps by step index; the completion event only decides the terminal state and cannot replace in-stream accumulation. */
 internal class GeminiInteractionsStream(
     private val onEvent: (ProviderEvent) -> Unit,
     private val pendingSuggestions: JSONArray = JSONArray(),
@@ -82,7 +82,7 @@ internal class GeminiInteractionsStream(
                 event.optJSONObject("error") ?: JSONObject(),
                 AppStrings.get(R.string.provider_err_gemini_stream_failed, "Gemini streaming response failed."),
             )
-            // 新增事件可以忽略；已知步骤里的未知输出必须明确失败。
+            // New event types may be ignored; unknown outputs within a known step must fail explicitly.
         }
         return true
     }
@@ -156,7 +156,7 @@ internal class GeminiInteractionsStream(
             }
             "thought_signature" -> {
                 requireType(state, "thought")
-                // 签名是完整的不透明值，后来的签名替换之前值，不能拼接或解码再编码。
+                // The signature is a complete opaque value; later signatures replace earlier ones and must not be concatenated or decoded-then-re-encoded.
                 state.step.put("signature", string(delta, "signature", allowEmpty = true))
             }
             "arguments_delta" -> {
@@ -228,10 +228,10 @@ internal class GeminiInteractionsStream(
             )
         }
         if (status !in setOf("completed", "requires_action", "incomplete", "budget_exceeded")) malformed()
-        // 累计用量可能先于正文到达；终态统一发布，确保展示层已有对应的正文块。
+        // Cumulative usage may arrive before the text; the terminal state is published uniformly to ensure the presentation layer already has the corresponding text blocks.
         if (!usage.isEmpty) onEvent(ProviderEvent.Usage(usage))
         if (status == "incomplete" || status == "budget_exceeded") {
-            // 明确的预算终态不能作为成功回答，也不能按网络中断重试或执行已生成的工具调用。
+            // An explicit budget terminal state cannot be treated as a successful answer, nor retried as a network interruption, nor execute already-generated tool calls.
             emitSuggestions(JSONObject())
             throw AgentModelFailure(
                 "MODEL_OUTPUT_LIMIT",

@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.device
 
 import java.util.UUID
 
-/** 在固定命令执行前确认 Root，避免把命令自身的非零退出误判为授权撤销。 */
+/** Confirm Root before the fixed command executes, so the command's own non-zero exit is not mistaken for a grant being revoked. */
 internal class RootCommandEnvelope(command: String, token: String = UUID.randomUUID().toString()) {
     private val marker = "ETA_ROOT_GRANTED_$token\n"
     val markerBytes: Int get() = marker.length

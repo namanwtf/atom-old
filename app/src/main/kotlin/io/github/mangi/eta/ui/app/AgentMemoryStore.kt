@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 记忆页的读取、编辑与保存状态；与会话和 Agent run 无共享状态。 */
+/** Read, edit, and save state for the memory page; no state shared with conversations or Agent runs. */
 internal class AgentMemoryStore(
     context: Context,
     private val scope: CoroutineScope,

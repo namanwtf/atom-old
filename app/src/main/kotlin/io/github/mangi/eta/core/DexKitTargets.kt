@@ -7,7 +7,7 @@ import java.io.Closeable
 import java.io.File
 import java.lang.reflect.Method
 
-/** 单次 Hook 安装共享 APK 解析资源；查询语义变化时，调用方必须更新 key 的版本。 */
+/** APK parsing resources shared across a single Hook install; callers must bump the key version when query semantics change. */
 internal class DexKitTargets(
     private val apkPath: String,
     private val classLoader: ClassLoader,

@@ -98,7 +98,7 @@ fun AgentAppTheme(
     LaunchedEffect(isDark) { onResolvedDarkModeChange(isDark) }
 
     val currentContent by rememberUpdatedState(content)
-    // 切换 UI 样式时移动同一内容树，保留导航栈、页面草稿与正在运行的任务状态。
+    // Move the same content tree when switching UI styles, preserving the nav stack, page drafts, and running task state.
     val scopedContent = remember { movableContentOf { currentContent() } }
 
     MiuixTheme(controller = controller) {
@@ -157,9 +157,9 @@ fun AgentAppTheme(
                 LocalUiStyle provides appearance.uiStyle,
             ) {
                 if (appearance.uiStyle == AppearanceUiStyle.COUI) {
-                    // 使用 colors 重载避免拉入 COUI ThemeController 对 material-color-utilities 5.0
-                    // 旧包的静态引用（Miuix 0.9.5-beta02 已升级至 6.0.0）；显式补齐 COUI LocalContentColor，
-                    // 避免深色模式下 COUI 组件回退到默认黑色内容色。
+                    // Use the colors overload to avoid pulling in COUI ThemeController's static references to material-color-utilities 5.0
+                    // (Miuix 0.9.5-beta02 already upgraded to 6.0.0); explicitly supply COUI LocalContentColor,
+                    // so COUI components don't fall back to the default black content color in dark mode.
                     COUITheme(colors = couiNative) {
                         CompositionLocalProvider(
                             LocalCouiContentColor provides couiNative.labelPrimary,
@@ -176,8 +176,8 @@ fun AgentAppTheme(
                                     contentWindowInsets = WindowInsets(0),
                                 ) {
                                     if (provideGlassHost) {
-                                        // 主窗口根级记录页面背景，使 AgentAppRoot 层弹出的弹窗同样拥有 COUI 17 材质模糊；
-                                        // 各二级页自身的 CouiBackdropContent 会覆盖为当前页局部背景。
+                                        // Record the page background at the main-window root, so popups from the AgentAppRoot layer also get COUI 17 material blur;
+                                        // each secondary page's own CouiBackdropContent overrides it with the current page's local background.
                                         val rootBackdrop = rememberCouiPageBackdrop(couiNative.backgroundWithCard)
                                         CouiBackdropContent(rootBackdrop) { scopedContent() }
                                     } else {

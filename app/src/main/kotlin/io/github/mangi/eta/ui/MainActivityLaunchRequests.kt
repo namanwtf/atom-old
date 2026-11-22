@@ -14,7 +14,7 @@ internal fun conversationHandoffStartMode(): Int =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
         ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
     } else {
-        // Android 14、15 的 PendingIntent 交接仅支持旧版显式授权模式。
+        // Android 14/15 PendingIntent handoff only supports the legacy explicit authorization mode.
         @Suppress("DEPRECATION")
         ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
     }
@@ -84,7 +84,7 @@ internal data class MainActivityLaunchRequests(
         private const val STATE_KEY = "eta_pending_launch_requests"
 
         fun restore(savedInstanceState: Bundle?, intent: Intent?): MainActivityLaunchRequests {
-            // 系统可能保留最初的启动 Intent；空的待办状态也必须保存，防止重建后重放已消费的跳转。
+            // The system may keep the original launch Intent; even an empty pending state must be saved, so a consumed jump isn't replayed after recreation.
             val saved = savedInstanceState?.getBundle(STATE_KEY)
                 ?: return MainActivityLaunchRequests().accept(intent)
             val source = saved.getString("archive_source")

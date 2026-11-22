@@ -34,7 +34,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
                                 AppStrings.get(R.string.auth_callback_success_html, "Authorization returned; return to Eta to finish signing in."),
                             )
                         } catch (_: java.io.IOException) {
-                            // 浏览器可能在回调后立即关闭标签页，已验证的授权码仍交给 Eta 换码。
+                            // The browser may close the tab immediately after the callback; the verified authorization code is still handed to Eta for code exchange.
                             controller.throwIfCancelled()
                         }
                         return result

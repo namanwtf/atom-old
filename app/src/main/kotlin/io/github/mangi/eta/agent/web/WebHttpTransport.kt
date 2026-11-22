@@ -29,7 +29,7 @@ internal data class WebHttpResponse(
     val truncated: Boolean,
 )
 
-/** 独立匿名 GET 请求，不继承 WebView 登录状态；关闭只取消本次运行拥有的请求。 */
+/** Standalone anonymous GET requests that do not inherit WebView login state; closing cancels only the requests owned by this run. */
 internal class WebHttpTransport(baseClient: OkHttpClient) : Closeable {
     private val client = baseClient.newBuilder()
         .cookieJar(CookieJar.NO_COOKIES)
@@ -114,7 +114,7 @@ internal class WebHttpTransport(baseClient: OkHttpClient) : Closeable {
                         }
                     } else {
                         val status = response.code
-                        // 错误响应不读取正文，避免认证信息和服务器回显进入日志或错误说明。
+                        // Error responses do not read the body, keeping credentials and server echoes out of logs and error descriptions.
                         if (!response.isSuccessful) return WebHttpResponse(initial.toString(), url.toString(), status, response.header("Content-Type"), byteArrayOf(), false)
                         val responseBody = response.body
                         val output = ByteArrayOutputStream(minOf(maxBytes, 16_384))

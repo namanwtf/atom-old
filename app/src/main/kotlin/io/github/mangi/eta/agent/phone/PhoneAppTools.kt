@@ -31,7 +31,7 @@ internal class PhoneAppTools(
         if (!calendar && !system && !colorOs())
             return if (tool in setOf("set_alarm", "list_alarms")) null
             else PhoneOperation.failure("DEVICE_UNSUPPORTED", "the current device has no compatible first-party app interface")
-        // 标准 Intent 仍承担显式震动设置；厂商创建接口没有对应参数，不能静默忽略。
+        // The standard Intent still handles explicit vibration settings; the vendor creation API has no corresponding parameter, so it can't be silently ignored.
         if (tool == "set_alarm" && (arguments.has("vibrate") || !rootAvailable())) return null
         if (calendar && hasCalendarAccess(tool in PhoneOperation.writes))
             return PhoneOperations.execute(context, tool, arguments)

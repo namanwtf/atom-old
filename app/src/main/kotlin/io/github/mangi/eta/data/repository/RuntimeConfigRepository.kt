@@ -62,10 +62,10 @@ internal object RuntimeConfigRepository {
     }
 
     /**
-     * 解析全局对话浮窗助手（电源键 / 系统助手入口）实际运行所用的模型与思考配置。
+     * Resolve the model and reasoning configuration actually used by the global conversation overlay assistant (power key / system assistant entry).
      *
-     * 指定了独立浮窗模型且仍启用时优先使用，否则平滑回退到全局主模型；
-     * 思考等级未显式指定时跟随全局默认思考开关与模型默认档位。
+     * When a standalone overlay model is set and still enabled, prefer it; otherwise gracefully fall back to the global main model;
+     * when the reasoning level is not explicitly set, follow the global default reasoning switch and the model's default tier.
      */
     suspend fun assistantOverlayRuntimeConfig(): AgentModelClient.ModelConfig? {
         val settings = SettingsDataStore.assistantOverlaySettings()
@@ -104,10 +104,10 @@ internal object RuntimeConfigRepository {
     }
 
     /**
-     * 解析对话标题生成所用的模型与思考配置。
+     * Resolve the model and reasoning configuration used for conversation title generation.
      *
-     * 关闭自动标题时返回 `null`；若指定了独立标题模型且仍启用则优先使用，否则平滑回退到
-     * 会话当前模型（或全局默认模型）。思考等级未显式指定时默认取最低可用档位以节省 Token。
+     * Returns `null` when auto titles are off; if a standalone title model is set and still enabled, prefer it, otherwise gracefully fall back to
+     * the conversation's current model (or the global default model). When the reasoning level is not explicitly set, it defaults to the lowest available tier to save tokens.
      */
     suspend fun titleGeneratorConfig(
         conversationModelId: String? = null,
@@ -166,10 +166,10 @@ internal object RuntimeConfigRepository {
     }
 
     /**
-     * 解析 Subagent 实际运行所用的模型配置。
+     * Resolve the model configuration actually used by a subagent run.
      *
-     * 指定了独立子模型且该模型仍处于启用状态时优先使用子模型，否则平滑回退到主模型；
-     * 工具开关继承父请求，并强制关闭 `subagentTools` 防止递归派发。
+     * When a standalone sub-model is set and still enabled, prefer the sub-model; otherwise gracefully fall back to the main model;
+     * tool switches are inherited from the parent request, and `subagentTools` is forcibly disabled to prevent recursive dispatch.
      */
     suspend fun subagentRuntimeConfig(
         primaryConfig: AgentModelClient.ModelConfig,
@@ -255,7 +255,7 @@ internal object RuntimeConfigRepository {
         return buildRuntimeConfig(provider, model)
     }
 
-    /** 会话绑定的模型仍可用时使用它，否则回落到默认模型。 */
+    /** Use the conversation-bound model when it is still available, otherwise fall back to the default model. */
     suspend fun runtimeConfigFor(modelId: String?): AgentModelClient.ModelConfig? {
         ProviderRepository.ensureBuiltInsMerged()
         ProviderRepository.allProviders().enabledModel(modelId)?.let { (provider, model) ->

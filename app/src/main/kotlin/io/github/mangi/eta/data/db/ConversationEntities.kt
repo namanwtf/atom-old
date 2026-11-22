@@ -22,7 +22,7 @@ internal data class ConversationEntity(
     @ColumnInfo(name = "revisions_json", defaultValue = "''") val revisionsJson: String = "",
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
-    /** 会话最近使用的本地 Model.id；null 表示跟随默认模型。 */
+    /** Local Model.id most recently used by the conversation; null means follow the default model. */
     @ColumnInfo(name = "model_id") val modelId: String? = null,
     @ColumnInfo(name = "is_pinned", defaultValue = "0") val isPinned: Boolean = false,
 )
@@ -41,7 +41,7 @@ internal data class ConversationMetadata(
     @ColumnInfo(name = "is_pinned") val isPinned: Boolean = false,
 )
 
-/** 会话侧栏只读取定长预览，不读取上下文、角色卡与修订正文。 */
+/** The conversation sidebar reads only the fixed-length preview, not the context, character card, or revision body. */
 internal data class ConversationIndexRow(
     val id: String,
     val title: String,

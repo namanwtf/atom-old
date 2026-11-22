@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.model
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 公开网页搜索与静态正文读取不改变共享浏览器会话。 */
+/** Public web search and static page reading do not alter the shared browser session. */
 internal object AgentWebToolCatalog {
     fun appendTo(tools: JSONArray, includeSearch: Boolean = true) {
         if (includeSearch) tools.put(AgentToolSchema.function(

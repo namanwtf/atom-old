@@ -1,16 +1,16 @@
 package io.github.mangi.eta.agent.voice
 
 /**
- * 长文本按段独立合成后无缝拼接播放，相邻两段的末尾与开头采样不一定在零点附近，
- * 波形阶跃会听成一声“滋”。每段首尾各做几毫秒线性淡入淡出：段尾需要等段结束才能确定，
- * 因此始终保留最后 [fadeSamples] 个采样，直到 [end] 时淡出写出。输入为 16 位小端单声道 PCM，
- * 每次写入都是整采样。
+ * Long text is synthesized per segment and then played back seamlessly. The last samples of one segment and the first samples of the next are not necessarily near zero,
+ * and a waveform step is heard as a "buzz". Each segment gets a few milliseconds of linear fade-in and fade-out: the tail can only be finalized once the segment ends,
+ * so the last [fadeSamples] samples are always retained and written out faded at [end]. Input is 16-bit little-endian mono PCM,
+ * and every write is whole-sample.
  */
 internal class SpeechSegmentFade(private val fadeSamples: Int = FADE_SAMPLES) {
     private var tail = ByteArray(0)
     private var emittedSamples = 0L
 
-    /** 返回可以立即播放的部分，可能为空。 */
+    /** Returns the part that can be played immediately, which may be empty. */
     fun write(bytes: ByteArray): ByteArray {
         val joined = tail + bytes
         val keep = minOf(joined.size, fadeSamples * BYTES_PER_SAMPLE)
@@ -18,7 +18,7 @@ internal class SpeechSegmentFade(private val fadeSamples: Int = FADE_SAMPLES) {
         return joined.copyOfRange(0, joined.size - keep).also(::fadeIn)
     }
 
-    /** 结束当前段并返回淡出后的段尾，之后可以开始下一段。 */
+    /** Ends the current segment and returns the faded-out tail; the next segment can then begin. */
     fun end(): ByteArray {
         val last = tail
         tail = ByteArray(0)
@@ -52,7 +52,7 @@ internal class SpeechSegmentFade(private val fadeSamples: Int = FADE_SAMPLES) {
 
     private companion object {
         const val BYTES_PER_SAMPLE = 2
-        /** 24 kHz 下 5 ms，短到听不出音量变化，足以消除阶跃。 */
+        /** 5 ms at 24 kHz, short enough that the volume change is inaudible, yet enough to remove the step. */
         const val FADE_SAMPLES = 120
     }
 }

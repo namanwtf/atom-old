@@ -8,7 +8,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 
-/** 凭据仅在请求发送前解析；401 恢复止于响应头，不重放已经开始的模型流。 */
+/** Credentials are resolved only right before the request is sent; 401 recovery stops at the response headers and never replays an already-started model stream. */
 internal object AuthorizedProviderHttp {
     fun <T> execute(
         client: OkHttpClient,

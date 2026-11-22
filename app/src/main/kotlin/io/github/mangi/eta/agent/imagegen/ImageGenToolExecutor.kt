@@ -15,11 +15,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 执行 `generate_image` 工具调用：
- * 1. 读取最新生图运行时配置并校验能力约束；
- * 2. 严格按当前会话可见历史解析授权用户附件、受管生成资产（按资产 ID 验证 canonical path）或公共相册图片；
- * 3. 调用对应渠道生图并在单一原子边界内整批发布到本地存储；
- * 4. 通过 `ToolResult.command` 回传结构化图片展示负载，同时给模型返回精简元信息（省 Token）。
+ * Executes the `generate_image` tool call:
+ * 1. Read the latest image-generation runtime config and validate capability constraints;
+ * 2. Resolve authorized user attachments, managed generated assets (canonical path verified by asset ID), or public gallery images strictly from the current session's visible history;
+ * 3. Invoke the corresponding channel to generate images and publish the whole batch to local storage within a single atomic boundary;
+ * 4. Return the structured image-display payload via `ToolResult.command`, while returning trimmed metadata to the model (to save tokens).
  */
 internal class ImageGenToolExecutor(
     context: Context,
@@ -235,7 +235,7 @@ internal class ImageGenToolExecutor(
         return resolved
     }
 
-    /** 优先取本轮用户主动附的图，否则定向查询当前会话 Room 中最近一条含图用户消息，不限消息条数。 */
+    /** Prefer the images the user attached in this turn; otherwise query the current session's Room for the most recent user message containing images, without limiting the message count. */
     private fun loadLatestConversationUserImages(): List<ImageGenInputImage> {
         val currentTurn = currentTurnUserImages()
         if (currentTurn.isNotEmpty()) {
@@ -269,7 +269,7 @@ internal class ImageGenToolExecutor(
                 val decoded = GeneratedImageStore.decodeSourceBytes(ref) ?: continue
                 out += ImageGenClient.prepareReferenceImage(decoded.first, decoded.second)
             } else {
-                // 防止备份导入伪造私有目录路径：非 data URL 历史引用必须经过白名单路径校验。
+                // Prevent backup imports from forging private-directory paths: non-data-URL historical references must pass whitelist path validation.
                 runCatching { decodeAllowedLocalImage(ref) }.getOrNull()?.let { out += it }
             }
         }
@@ -277,10 +277,10 @@ internal class ImageGenToolExecutor(
     }
 
     /**
-     * 解析当前会话最近生成的受管资产：
-     * - 主聊天会话（有 conversationId）直接以 Room 当前可见历史为唯一事实源，避免重生成裁剪后命中过期缓存；
-     * - 无 Room 会话 ID 的入口（助手浮层/定时任务）按稳定 sessionKey 查找；
-     * - 始终通过资产 ID 走 `GeneratedImageStore.findById` 校验 canonical path，不信任载荷里的任意路径字符串。
+     * Resolve the most recent managed assets generated for the current session:
+     * - The main chat session (with a conversationId) uses the Room's current visible history as the single source of truth, avoiding stale cache hits after a regenerate crop;
+     * - Entries without a Room session ID (assistant overlay / scheduled tasks) look up by the stable sessionKey;
+     * - Always validate the canonical path via `GeneratedImageStore.findById` by asset ID, never trusting arbitrary path strings in the payload.
      */
     private fun loadLatestConversationGeneratedRecord(): GeneratedImageRecord? {
         val convId = conversationId?.takeIf { it.isNotBlank() }
@@ -302,7 +302,7 @@ internal class ImageGenToolExecutor(
         return GeneratedImageStore.findById(appContext, sessionLatestId)
     }
 
-    /** 每次读取均验证 canonical path：仅允许受管生成图目录或公共外部存储里的合法图片文件。 */
+    /** Validate the canonical path on every read: only legitimate image files in the managed generated-image directory or public external storage are allowed. */
     private fun decodeAllowedLocalImage(path: String): ImageGenInputImage {
         val file = File(path.removePrefix("file://").trim())
         if (!file.isFile || !file.canRead()) {

@@ -27,7 +27,7 @@ internal data class RootAccessState(
     val isGranted: Boolean get() = status == RootAccessStatus.GRANTED
 }
 
-/** Root 探测归 App 进程所有；读取能力不会执行 su 或弹出授权。 */
+/** Root probing is owned by the App process; reading the capability never executes su or pops up a grant prompt. */
 internal object RootAccess {
     private const val PREFERENCES = "eta_root_access"
     private const val AUTOMATIC_REQUEST_ATTEMPTED = "automatic_request_attempted"
@@ -50,14 +50,16 @@ internal object RootAccess {
         refresh(context)
     }
 
-    /** 首次发现 su 时请求一次；拒绝后只有显式 request 才会再次申请。 */
+    /** Request once the first time su is found; after a denial only an explicit request asks again. */
     fun refresh(context: Context): Job = startProbe(context, explicit = false)
 
     fun request(context: Context): Job = startProbe(context, explicit = true)
 
     /**
-     * 工具或 Runtime 启动阶段等待探测完成；若此前已授过权（last_granted=true）但本次探测处于临时失败态
-     * （例如重启后 KernelSU 临时 Root 尚未就绪或超时），在冷却时间后自动复检一次，避免整次进程周期失灵。
+     * Tool or Runtime startup waits for the probe to finish; if access was previously granted
+     * (last_granted=true) but this probe is in a temporary failure state (for example, KernelSU's
+     * temporary Root is not ready yet or timed out after a reboot), re-check automatically once
+     * after a cooldown so the whole process lifetime does not lose access.
      */
     fun awaitOrRetryIfPreviouslyGranted(context: Context, maxWaitMs: Long = 3_000L) {
         if (isGranted) return
@@ -89,7 +91,7 @@ internal object RootAccess {
         }
     }
 
-    /** 仅由执行器确认 su 拒绝后调用；普通命令失败不代表授权被撤销。 */
+    /** Called only after the executor confirms an su denial; an ordinary command failure does not mean the grant was revoked. */
     fun markDenied() {
         preferences?.edit()?.putBoolean(LAST_GRANTED, false)?.apply()
         mutableState.value = mutableState.value.copy(status = RootAccessStatus.DENIED)
@@ -106,7 +108,7 @@ internal object RootAccess {
                 val attempted = prefs.getBoolean(AUTOMATIC_REQUEST_ATTEMPTED, false)
                 val wasGranted = prefs.getBoolean(LAST_GRANTED, false)
                 val present = suExists()
-                // 若此前已授过权（wasGranted=true），即使 KernelSU 隐藏 su 文件或 PATH 不可见，也允许尝试执行 su。
+                // If access was previously granted (wasGranted=true), allow attempting to run su even when KernelSU hides the su file or it is absent from PATH.
                 if (!present && !explicit && !wasGranted) {
                     mutableState.value = RootAccessState(RootAccessStatus.UNAVAILABLE)
                     return@launch
@@ -122,7 +124,7 @@ internal object RootAccess {
                     )
                     return@launch
                 }
-                // 先记住尝试，进程在授权弹窗期间退出也不会在下次启动再次打扰用户。
+                // Remember the attempt first, so that if the process exits during the grant prompt it does not bother the user again on the next launch.
                 if (!prefs.edit().putBoolean(AUTOMATIC_REQUEST_ATTEMPTED, true).commit()) {
                     mutableState.value = RootAccessState(RootAccessStatus.NOT_GRANTED, suPresent = present)
                     AndroidAgentLogger.warn("Root access probe outcome=preferences_unavailable")
@@ -187,7 +189,7 @@ internal fun classifyRootProbeOutcome(
         result.errorCode == "ROOT_INPUT_FAILED" || result.errorCode == "ROOT_OUTPUT_FAILED" -> RootAccessStatus.UNAVAILABLE
         else -> RootAccessStatus.DENIED
     }
-    // 临时不可用或超时不擦除历史授权，仅在确认被拒绝时清除 last_granted。
+    // Temporary unavailability or timeout does not erase the historical grant; clear last_granted only when a denial is confirmed.
     val keepLastGranted = wasGranted && status != RootAccessStatus.DENIED
     return status to keepLastGranted
 }

@@ -11,12 +11,12 @@ import org.json.JSONObject
 internal fun quoteColorOsMemoryIdentifier(value: String): String =
     "\"" + value.replace("\"", "\"\"") + "\""
 
-/** 只接受查询调用，兼容宿主的加密数据库连接和普通 SQLite 快照。 */
+/** Accepts only query calls, and works with both the host's encrypted database connection and plain SQLite snapshots. */
 internal fun interface ColorOsMemoryReadDatabase {
     fun rawQuery(sql: String, selectionArgs: Array<String>?): Cursor
 }
 
-/** Runtime 快照和小布进程 Hook 共用固定查询，不暴露任意 SQL 入口。 */
+/** Runtime snapshots and the Breeno process hook share the same fixed queries; no arbitrary SQL entry point is exposed. */
 internal object ColorOsMemoryDatabaseQuery {
     fun execute(database: SQLiteDatabase, operation: String, args: JSONObject): String =
         execute(ColorOsMemoryReadDatabase(database::rawQuery), operation, args)

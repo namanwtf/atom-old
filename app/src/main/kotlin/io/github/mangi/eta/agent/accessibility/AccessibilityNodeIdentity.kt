@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.accessibility
 
-/** 可在 JVM 中验证的节点身份指纹；viewId 不是列表项唯一标识。 */
+/** A node identity fingerprint that can be verified in the JVM; viewId is not a unique identifier for list items. */
 internal data class AccessibilityNodeIdentity(
     val uniqueId: String,
     val windowId: Int,
@@ -21,7 +21,7 @@ internal data class AccessibilityNodeIdentity(
         if (password != refreshed.password) return false
         if (uniqueId != refreshed.uniqueId) return false
         if (viewId.isNotBlank() && viewId != refreshed.viewId) return false
-        // uniqueId 只证明还是同一个虚拟节点，不证明它仍表达模型观察时的动作语义。
+        // uniqueId only proves it is still the same virtual node, not that it still expresses the action semantics the model observed.
         if (text != refreshed.text) return false
         if (description != refreshed.description) return false
         return true
@@ -29,8 +29,9 @@ internal data class AccessibilityNodeIdentity(
 }
 
 /**
- * 窗口内容变化后，只有真正稳定且在观察范围内可证明唯一的身份才能继续使用。
- * 截断快照无法证明 text/desc 指纹在窗口其余部分不存在重复项。
+ * After window content changes, only identities that are genuinely stable and provably unique
+ * within the observed range can continue to be used. A truncated snapshot cannot prove that a
+ * text/desc fingerprint has no duplicates elsewhere in the window.
  */
 internal object AccessibilityIdentityFreshnessPolicy {
     fun canBypassContentChange(

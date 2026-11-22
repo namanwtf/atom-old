@@ -10,7 +10,7 @@ import kotlinx.serialization.json.intOrNull
 
 internal data class UnsupportedWorldbookEntry(val index: Int, val reasons: List<String>)
 
-/** 同一判定同时用于导入后的能力说明和每轮投影，未支持的条件不退化为无条件触发。 */
+/** The same determination is used for both the post-import capability description and per-round projection; unsupported conditions don't degrade into unconditional triggers. */
 internal object CharacterWorldbookSupport {
     fun reasons(entry: JsonObject): List<String> = buildList {
         val extensions = entry["extensions"] as? JsonObject ?: JsonObject(emptyMap())

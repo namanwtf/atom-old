@@ -3,11 +3,11 @@ package io.github.mangi.eta.data.model
 import kotlinx.serialization.Serializable
 
 /**
- * 自动生成对话标题配置。
+ * Configuration for auto-generating conversation titles.
  *
- * [modelId] 为空表示跟随当前对话使用的模型（或默认模型）；指定具体 [Model.id] 且对应
- * 服务商与模型仍启用时，优先使用该模型生成标题，便于用轻量小模型降低 Token 消耗。
- * [reasoningEffort] 为空表示自动选择最低可用思考等级（优先关闭思考）。
+ * An empty [modelId] means follow the model used by the current conversation (or the default model); when a specific [Model.id] is set and the corresponding
+ * provider and model are still enabled, prefer that model for title generation, making it easy to lower token consumption with a lightweight small model.
+ * An empty [reasoningEffort] means automatically pick the lowest available reasoning level (preferring to disable reasoning).
  */
 @Serializable
 internal data class ConversationTitleSettings(

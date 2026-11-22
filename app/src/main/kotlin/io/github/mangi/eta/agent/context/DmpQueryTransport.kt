@@ -32,7 +32,7 @@ internal fun interface DmpQueryTransport {
     fun query(query: DmpQuery): DmpQueryResult
 }
 
-/** 只接受领域层构造的查询；数据经带类型标记的十六进制传输，不依赖 CLI 的文本转义。 */
+/** Accepts only queries constructed by the domain layer; data is transported as type-tagged hexadecimal, not relying on the CLI's text escaping. */
 internal class RootDmpQueryTransport internal constructor(
     private val userId: Int,
     private val execute: (command: String, timeoutMillis: Long, maxOutputBytes: Int) -> BoundedRootCommandExecutor.Result,
@@ -55,8 +55,8 @@ internal class RootDmpQueryTransport internal constructor(
             return failure("DMP_OUTPUT_INVALID")
         }
         val calendar = query.resource in CALENDAR_RESOURCES
-        // CLI 无法区分 null cursor 和零行；日历展开还可能把 SQL 异常吞成 null。
-        // 恒假资源探测不经过展开路径，因此日历复核必须保留原条件并合计两部分数量。
+        // The CLI cannot distinguish a null cursor from zero rows; calendar expansion may also swallow SQL exceptions into null.
+        // The always-false resource probe does not go through the expansion path, so the calendar re-check must keep the original condition and sum the two parts.
         val probe = DmpQuery(query.resource, listOf(DmpProjection("count", "COUNT(*)", 16)),
             selection = if (calendar) query.selection else "0", limit = if (calendar) 2 else 1)
         return when (val checked = queryOnce(probe)) {
@@ -213,7 +213,7 @@ internal class RootDmpQueryTransport internal constructor(
     private fun validClause(value: String?, limit: Int): Boolean =
         value == null || value.length <= limit && '\u0000' !in value
 
-    /** 日历时间窗口会展开为联合查询，排序必须引用 SELECT 中的数值别名。 */
+    /** Calendar time windows expand into union queries, so sorting must reference the numeric alias in the SELECT. */
     private fun calendarSortColumns(query: DmpQuery): List<SortColumn>? {
         if (query.resource !in CALENDAR_RESOURCES || query.sortOrder.isNullOrBlank()) return emptyList()
         val terms = query.sortOrder.split(',')

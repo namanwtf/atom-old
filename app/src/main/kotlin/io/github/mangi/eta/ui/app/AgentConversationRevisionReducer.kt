@@ -5,7 +5,7 @@ import io.github.mangi.eta.ui.model.AgentChatMessageUi
 import io.github.mangi.eta.ui.model.AgentChatUiState
 import io.github.mangi.eta.ui.model.UserMessageUi
 
-/** 以用户轮次为边界同步裁剪展示消息与模型上下文。 */
+/** Trims displayed messages and model context synchronously, bounded by user turns. */
 internal object AgentConversationRevisionReducer {
     data class Boundary(
         val userMessage: UserMessageUi,
@@ -31,7 +31,7 @@ internal object AgentConversationRevisionReducer {
         val historySlice = sliceBeforeTurnFromTail(state.history, turnsFromEnd)
         val journalSlice = sliceBeforeTurnFromTail(state.journal, turnsFromEnd)
 
-        // 优先保留已压缩的活跃 history；只有目标轮次已被折叠或使摘要失效时，才从原始 journal 重建。
+        // Prefer keeping the already-compacted active history; only rebuild from the raw journal when the target turn is folded or invalidates the summary.
         val (historyPrefix, compacted) = when {
             historySlice != null && !historySlice.invalidatesSummary -> {
                 historySlice.prefix to false
@@ -74,7 +74,7 @@ internal object AgentConversationRevisionReducer {
     ): PrefixSlice? {
         if (source.isEmpty()) return null
         val userIndices = source.indices.filter { source[it].role == "user" }
-        // 旧版本可能已经丢失前缀；只能对已有记录做尾部对齐，不能伪造恢复。
+        // Old versions may have already lost the prefix; only tail-align existing records, never fabricate recovery.
         val retainedUserOrdinal = userIndices.size - turnsFromEnd
         val cutIndex = userIndices.getOrNull(retainedUserOrdinal) ?: return null
         val prefix = source.take(cutIndex)

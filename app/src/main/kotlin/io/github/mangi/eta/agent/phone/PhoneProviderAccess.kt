@@ -15,7 +15,7 @@ import android.os.Process
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** 业务层共用同一 Provider 合同；普通授权与 Root 只在连接方式上不同。 */
+/** The business layer shares the same Provider contract; normal authorization and Root differ only in how they connect. */
 internal interface PhoneProviderAccess {
     val callerPackage: String
 
@@ -63,7 +63,7 @@ internal class AppPhoneProviderAccess(
         resolver.applyBatch(authority, operations)
 }
 
-/** app_process 不注册 App 的 ApplicationThread，必须持有显式的外部 Provider 引用。 */
+/** app_process does not register the App's ApplicationThread, so an explicit external Provider reference must be held. */
 internal class RootPhoneProviderAccess(private val userId: Int) : PhoneProviderAccess {
     override val callerPackage = "root"
     private val attribution =

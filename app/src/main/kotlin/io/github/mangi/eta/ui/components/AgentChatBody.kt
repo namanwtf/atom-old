@@ -138,10 +138,10 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 /**
- * 聊天主体：消息流 + 底部输入框。
+ * Chat body: message stream + bottom input box.
  *
- * AI 对话使用正向时间线：第一条消息从对话区顶部开始，后续回复顺序向下追加。
- * 空 assistant 占位不参与布局，避免刚发送时出现一个无内容消息节点。
+ * AI conversations use a forward timeline: the first message starts at the top of the conversation area and later replies append downward in order.
+ * The empty assistant placeholder doesn't participate in layout, so a contentless message node doesn't appear right after sending.
  */
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
@@ -275,8 +275,8 @@ internal fun AgentChatBody(
             onBottomAnchorChanged = { keepBottomAnchored = it },
             onSubmit = { text ->
                 sentFromKeyboard = true
-                // 发送即重新锚定底部：用户从历史上方直接发送时，同帧内 isStreaming 与
-                // 新消息一起到位，立即回到底部并恢复后续的流式平滑跟底。
+                // Sending re-anchors the bottom: when the user sends directly from above history, isStreaming and
+                // the new message land in the same frame, immediately returning to the bottom and resuming smooth stream follow.
                 keepBottomAnchored = true
                 onSubmit(text)
             },
@@ -508,7 +508,7 @@ internal fun AgentConversationMessages(
     onHistoryViewportChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    // 上一版条目只作复用比对，不参与组合观察。
+    // The previous entry is only for reuse comparison and doesn't participate in composition observation.
     val timelineCache = remember { TimelineEntriesCache() }
     val timelineEntries = remember(visibleMessages) {
         visibleMessages.toTimelineEntries(previous = timelineCache.entries)
@@ -519,16 +519,16 @@ internal fun AgentConversationMessages(
     } else {
         null
     }
-    // 复制按钮只出现在每轮对话的最终结果上，中间步骤的过渡文本不提供复制入口。
-    // 流式进行中当前这一轮尚未收尾，此时的“最后一条正文”只是中间步骤，不标记。
+    // The copy button appears only on each turn's final result; transitional text of intermediate steps has no copy entry.
+    // While streaming, the current turn hasn't closed, so its "last body" is only an intermediate step and isn't marked.
     val finalResultMessageIds = remember(visibleMessages, isStreaming) {
         resolveFinalResultMessageIds(visibleMessages, isStreaming = isStreaming)
     }
     val branchMessageIds = remember(visibleMessages, isStreaming) {
         ConversationBranchBoundary.eligibleMessageIds(visibleMessages.branchMessageOutline(), running = isStreaming)
     }
-    // 流式消息的渲染会话按 id 提升到列表层持有：item 滚出视口被 LazyColumn 销毁后，
-    // 滑回时复用同一解析会话与打字机进度，避免整段内容重新解析并重放显现动画。
+    // Streaming messages' render sessions are promoted to the list layer keyed by id: after an item scrolls out and is destroyed by LazyColumn,
+    // sliding back reuses the same parse session and typewriter progress, avoiding re-parsing the whole content and replaying the reveal animation.
     val streamingMarkdownCache = remember { StreamingMarkdownStateCache() }
     val streamingMarkdownStates = streamingMarkdownCache.states
     val streamingMessageIds = remember(visibleMessages) {
@@ -600,7 +600,7 @@ internal fun AgentConversationMessages(
 
     val tailMessage = visibleMessages.lastOrNull() as? AgentMessageUi
     val currentTailMessage by rememberUpdatedState(tailMessage)
-    // 显现进度属于尾部条目的高频状态；列表作用域只观察离散化后的布尔值。
+    // Reveal progress is high-frequency state of the trailing entry; the list scope observes only the discretized boolean.
     val isTailRendering by remember {
         derivedStateOf {
             currentTailMessage?.let { message ->
@@ -618,7 +618,7 @@ internal fun AgentConversationMessages(
         } else if (isStreaming || isTailRendering) {
             isBottomSettling = true
         } else if (isBottomSettling) {
-            // 显现完成后还会切换稳定排版并插入操作行，等其完成测量并对齐底部后收口。
+            // After reveal completes it also switches to stable layout and inserts the action row; wait for that to measure and align to the bottom before closing out.
             withFrameNanos { }
             withFrameNanos { }
             withTimeoutOrNull(BOTTOM_SETTLE_TIMEOUT_MS) {
@@ -670,8 +670,8 @@ internal fun AgentConversationMessages(
         }
     }
 
-    // 流式输出及渲染收尾期间发布最新的跟底距离。历史消息中的步骤/思考展开同样会改变
-    // 列表高度，但那是用户主动查看内容，不能被误判成尾部文字增长。
+    // Publish the latest follow distance during streaming output and render wrap-up. Expanding steps/thinking in historical messages also changes
+    // list height, but that's the user actively viewing content, not tail text growth, and must not be misjudged.
     LaunchedEffect(scrollState) {
         snapshotFlow {
             val layoutInfo = scrollState.layoutInfo
@@ -682,8 +682,8 @@ internal fun AgentConversationMessages(
                 enabled = shouldFollowBottom,
                 bottomItemIndex = currentBottomItemIndex,
                 sentinelBottom = sentinel?.let { it.offset + it.size },
-                // 输入器高度属于滚动内容的 bottom inset，而不是滚动容器高度。
-                // 跟底目标应是 afterContentPadding 之前的正文边界。
+                // The input bar height is a bottom inset of the scroll content, not the scroll container height.
+                // The follow target should be the body boundary before afterContentPadding.
                 viewportEnd = layoutInfo.viewportEndOffset - layoutInfo.afterContentPadding,
                 lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index,
             )
@@ -701,8 +701,8 @@ internal fun AgentConversationMessages(
             }
     }
 
-    // 一个持续存在的帧时钟从当前屏幕位置追向最新目标。新字符继续到达时只更新目标，
-    // 不取消并重启动画，因此速度连续；用户开始拖动后，enabled=false 会立即停止跟随。
+    // A persistent frame clock chases the latest target from the current screen position. As new characters arrive, only the target updates,
+    // without cancelling and restarting the animation, so speed stays continuous; once the user starts dragging, enabled=false stops following immediately.
     LaunchedEffect(scrollState, bottomFollowDecisions) {
         var remainingDistancePx = 0f
         var requestIndex: Int? = null
@@ -775,8 +775,8 @@ internal fun AgentConversationMessages(
         }
     }
 
-    // 滚动层保持整屏，输入器作为后绘制浮层；输入器高度进入列表的
-    // afterContentPadding，确保跟到底部时最后一行停在输入器上方。
+    // The scroll layer stays full-screen with the input bar as a post-draw overlay; the input bar height enters the list's
+    // afterContentPadding, so the last line stops above the input bar when hugging the bottom.
     val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
     val messagesBackdrop = if (isCoui || assistantOverlay) null else rememberGlassBackdrop()
     CompositionLocalProvider(LocalOnChatItemExpand provides onExpandItem) {
@@ -813,8 +813,8 @@ internal fun AgentConversationMessages(
                     val itemModifier = Modifier.animateItem(
                         fadeInSpec = tween(durationMillis = 180),
                         placementSpec = null,
-                        // 历史轮次被编辑、删除或重新生成时必须立即退出；退出动画会让已从
-                        // 状态中裁掉的旧消息继续绘制，并与同位置的新流式消息短暂重叠。
+                        // When a historical turn is edited, deleted, or regenerated, exit immediately; the exit animation would let old messages already
+                        // trimmed from state keep drawing and briefly overlap the new streaming message at the same position.
                         fadeOutSpec = null,
                     )
                     when (entry) {
@@ -998,8 +998,8 @@ internal sealed interface AgentTimelineEntry {
 }
 
 /**
- * 投影层只替换真正变化的消息实例；工作过程分组若成员实例全部未变，就复用上一版条目，
- * 让已结束的分组在正文流式刷新时保持参数同一性并跳过重组。
+ * The projection layer replaces only genuinely changed message instances; if a work-process group's member instances are all unchanged, it reuses the previous entry,
+ * keeping finished groups' parameter identity and skipping recomposition while the body streams.
  */
 internal fun List<AgentChatMessageUi>.toTimelineEntries(
     previous: List<AgentTimelineEntry> = emptyList(),
@@ -1012,7 +1012,7 @@ internal fun List<AgentChatMessageUi>.toTimelineEntries(
 
     fun flushWorkProcess() {
         if (workMessages.isEmpty()) return
-        // 历史页可能从同一工作过程的中间开始；前插补齐后保留已显示分组的身份和滚动锚点。
+        // A history page may start mid-way through the same work process; after front-filling, keep the displayed group's identity and scroll anchor.
         val messageIds = workMessages.mapTo(HashSet()) { it.id }
         val previousEntry = workMessages.firstNotNullOfOrNull { previousWorkByMessageId[it.id] }
             ?.takeIf { entry -> entry.messages.all { it.id in messageIds } }
@@ -1047,9 +1047,9 @@ private fun AgentChatMessageUi.isWorkProcessMessage(): Boolean =
         (this is ToolActivityMessageUi && toolName != ImageGenToolCatalog.TOOL_NAME)
 
 /**
- * 一轮对话（两条用户消息之间）里最后一条 Agent 正文视为最终结果，其余为中间步骤。
- * 流式传输期间当前轮次尚未结束，最后一轮不标记，等传输结束后复制按钮才出现；
- * 之前已结束轮次的最终结果不受影响。
+ * In a turn (between two user messages), the last Agent body is the final result and the rest are intermediate steps.
+ * During streaming the current turn hasn't ended, so the last turn isn't marked and the copy button appears only after transfer ends;
+ * final results of previously finished turns are unaffected.
  */
 internal fun resolveFinalResultMessageIds(
     messages: List<AgentChatMessageUi>,
@@ -1117,7 +1117,7 @@ private fun AgentChatBottomBar(
             .fillMaxWidth()
             .imePadding(),
     ) {
-        // 底部以连续垂直渐隐承接悬浮输入胶囊，避免一整块不透明实心矩形把消息流生硬截断。
+        // The bottom uses a continuous vertical fade to receive the floating input capsule, avoiding a hard opaque rectangle cutting off the message stream.
         Box(
             modifier = Modifier
                 .matchParentSize()

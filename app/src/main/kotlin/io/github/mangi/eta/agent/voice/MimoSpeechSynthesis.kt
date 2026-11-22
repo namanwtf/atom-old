@@ -26,7 +26,7 @@ internal fun mimoTtsRequest(config: MimoTtsConfig, key: String, text: String): R
     if (config.style.isNotBlank()) {
         messages.put(JSONObject().put("role", "user").put("content", config.style.trim()))
     }
-    // MiMo 将 assistant 内容作为朗读正文，user 内容只控制风格。
+    // MiMo uses the assistant content as the read-aloud body; the user content only controls style.
     messages.put(JSONObject().put("role", "assistant").put("content", text))
     return SpeechHttp.jsonRequest(
         speechBaseUrl(config.baseUrl) + "/chat/completions",
@@ -76,7 +76,7 @@ internal class MimoTtsDecoder(onAudio: (ByteArray) -> Unit) {
                 AppStrings.get(R.string.voice_i18n_mimo_tts_unknown_status, "MiMo returned an unknown voice status"),
             )
         }
-        // 音频标识等元数据不代表音频增量，终止事件也不一定携带 delta。
+        // Metadata such as audio identifiers does not represent an audio increment, and the termination event may not carry a delta either.
         val encoded = choice.optionalField<JSONObject>("delta")
             ?.optionalField<JSONObject>("audio")
             ?.optionalField<String>("data")

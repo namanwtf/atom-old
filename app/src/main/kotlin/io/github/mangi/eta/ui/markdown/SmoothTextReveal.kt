@@ -37,32 +37,32 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 
 /**
- * 一条回答只使用一个显现时钟，按源码顺序在 Markdown 块之间分配同一帧的推进量。
+ * One answer uses a single reveal clock, distributing each frame's advance across Markdown blocks in source order.
  *
- * 解析和文本排版仅在目标文本变化时发生；帧间推进只更新普通字段并调用
- * [invalidateDraw]。只有显现跨入新行时才额外请求一次测量以增长消息高度，
- * 全程不写 Compose State，因此字符帧不会触发重组或重新排版。
+ * Parsing and text layout happen only when the target text changes; frame advances only update plain fields and call
+ * [invalidateDraw]. A measurement is requested only when reveal crosses into a new line to grow the message height,
+ * and no Compose State is written throughout, so character frames don't trigger recomposition or re-layout.
  */
 @Stable
 internal class SmoothTextRevealCoordinator {
     private val records = sortedMapOf<RevealBlockKey, RevealRecord>()
     private val wakeups = Channel<Unit>(capacity = Channel.CONFLATED)
     private val drainedState = MutableStateFlow(true)
-    // 列表 marker 在绘制阶段读取它；用快照状态而非 Flow，块开始显现只让 marker 图层重绘，
-    // 不会让整个列表随之重组。
+    // List markers read it in the draw phase; using snapshot state rather than Flow means a block starting to reveal only redraws the marker layer,
+    // not recomposing the whole list.
     private val startedState = mutableStateOf<Set<RevealBlockKey>>(emptySet())
     private var animationsPaused = false
 
     val drained: StateFlow<Boolean> = drainedState
-    /** 已经开始显现的块，用于让列表 marker 与正文保持同一生命周期。 */
+    /** Blocks that have started revealing, used to keep list markers on the same lifecycle as the body. */
     val started: State<Set<RevealBlockKey>> get() = startedState
 
     val isAnimationPaused: Boolean
         get() = animationsPaused
 
     /**
-     * 页面不可见时帧时钟会停，但 Runtime 仍可能继续追加文本。此时直接追平当前目标，
-     * 并让后续排版结果同样立即完成，避免回到页面后补播后台积压的显现动画。
+     * The frame clock stops when the page is invisible, but Runtime may keep appending text. Catch up to the current target directly,
+     * and let subsequent layout results complete immediately too, so returning to the page doesn't replay a backlog of reveal animation.
      */
     fun pauseAnimationsAndCatchUp() {
         animationsPaused = true
@@ -116,7 +116,7 @@ internal class SmoothTextRevealCoordinator {
     fun detach(key: RevealBlockKey, node: SmoothTextRevealNode) {
         val record = records[key]?.takeIf { it.node === node } ?: return
         record.node = null
-        // 已离开组合的块不再消费帧时钟；保留完成进度，重挂载时只显现后续新增文本。
+        // Blocks that left composition no longer consume the frame clock; keep the completed progress, and only reveal later-added text on remount.
         completeRecord(record)
         updateDrainedState()
         wakeups.trySend(Unit)
@@ -169,7 +169,7 @@ internal class SmoothTextRevealCoordinator {
                     totalBacklog = totalBacklog,
                 )
                 val newlyStarted = mutableSetOf<RevealBlockKey>()
-                // 块结束后剩余的推进量继续用于下一块，避免短段落把追赶速度限制为每帧一块。
+                // Leftover advance after a block ends carries into the next block, so short paragraphs don't cap the catch-up speed to one block per frame.
                 for (record in records.values) {
                     if (remainingAdvance <= 0f) break
                     if (record.node == null || record.layoutResult == null) continue
@@ -195,8 +195,8 @@ internal class SmoothTextRevealCoordinator {
     ) {
         val spansChanged = atomicSpans != record.atomicSpans
         if (text != record.text || spansChanged) {
-            // 流式文本只追加不修改，但行内语法或公式闭合会让渲染文本变短或把多字符区间折叠为
-            // 单个原子步。按已显现字符偏移保序映射，既不回退重打已显示文字，也不跳过公式后的新字。
+            // Streaming text only appends, but inline syntax or formula closure can shorten the rendered text or fold a multi-character range into
+            // a single atomic step. Map order-preservingly by revealed character offset: never re-type already-shown text, never skip new characters after a formula.
             val oldFullIndex = floor(record.progress).toInt().coerceIn(0, record.boundaries.lastIndex)
             val oldCharOffset = record.boundaries[oldFullIndex]
             val oldFraction = (record.progress - oldFullIndex).coerceIn(0f, 1f)
@@ -551,17 +551,17 @@ internal fun mapProgressAcrossAtomicChange(
     return if (newBoundaries[mappedIndex] == oldCharOffset) {
         (mappedIndex + oldFraction).coerceAtMost(targetCount)
     } else {
-        // 旧进度正处于刚闭合折叠为原子的公式区间内部：直接对齐到公式结束处，继续逐字显现后续新字。
+        // Old progress sits inside a formula range that just closed into an atom: align directly to the formula's end and continue revealing later characters.
         mappedIndex.toFloat().coerceAtMost(targetCount)
     }
 }
 
 /**
- * 为只追加文本增量维护字素边界。
+ * Maintains grapheme boundaries for append-only text increments.
  *
- * 新内容可能把旧文本的最后一个字素继续延长，例如组合音标、ZWJ emoji、旗帜和 CRLF。
- * 因此保留倒数第二个边界之前的结果，只重算最后一个旧字素和新增后缀，避免每个流式
- * 分片都从头扫描整条回答。
+ * New content may extend the old text's last grapheme, e.g. combining marks, ZWJ emoji, flags, and CRLF.
+ * So keep the results before the second-to-last boundary and recompute only the last old grapheme plus the new suffix, avoiding rescanning the whole answer
+ * from scratch on every streaming chunk.
  */
 internal fun updateGraphemeBoundaries(
     previousText: String,
@@ -602,8 +602,8 @@ internal fun advanceSmoothReveal(
     totalBacklog: Float,
 ): Float {
     if (current >= target) return target
-    // 帧间隔已在调用侧限制在 MAX_FRAME_DELTA_SECONDS 内，单帧推进量由自适应速度决定。
-    // 不能再加每帧 1 字素的硬上限，否则积压时追赶速度失效，输出会稳定滞后于模型。
+    // Frame interval is already clamped to MAX_FRAME_DELTA_SECONDS on the call side; per-frame advance is decided by the adaptive speed.
+    // Don't add a hard 1-grapheme-per-frame cap, or catch-up speed fails under backlog and output steadily lags the model.
     val advance = (smoothRevealSpeed(totalBacklog) * elapsedSeconds).coerceAtLeast(0f)
     return (current + advance).coerceAtMost(target)
 }

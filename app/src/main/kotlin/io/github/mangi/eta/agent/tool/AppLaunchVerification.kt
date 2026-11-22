@@ -8,7 +8,7 @@ import io.github.mangi.eta.agent.runtime.AgentRunCancelledException
 import java.util.Locale
 import org.json.JSONObject
 
-/** 启动请求被系统接收不代表目标窗口已经出现；确认只读取目标显示屏，不要求抢占输入焦点。 */
+/** The system accepting a launch request does not mean the target window has appeared; confirmation only reads the target display and never requires grabbing input focus. */
 internal object AppLaunchVerification {
     private const val TIMEOUT_MILLIS = 1_500L
     private const val RETRY_INTERVAL_MILLIS = 120L

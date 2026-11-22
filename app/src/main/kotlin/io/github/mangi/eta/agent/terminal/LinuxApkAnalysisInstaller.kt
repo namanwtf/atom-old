@@ -51,7 +51,7 @@ internal fun linuxApkJavaInstallCommand(distribution: LinuxDistribution): String
         LinuxDistribution.DEBIAN -> "/usr/local/bin/eta-apt install openjdk-25-jdk-headless"
     }
 
-/** 为当前 Linux 发行版安装 Java 分析工具；APK 资源回编译仍需 ARM64 AAPT2 支持。 */
+/** Installs the Java analysis tooling for the current Linux distro; APK resource recompilation still needs ARM64 AAPT2 support. */
 internal class LinuxApkAnalysisInstaller(
     private val context: Context,
     private val distribution: LinuxDistribution,

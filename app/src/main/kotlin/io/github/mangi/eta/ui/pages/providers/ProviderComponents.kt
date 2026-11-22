@@ -70,7 +70,7 @@ internal fun ProviderSection(
     }
 }
 
-/** 厂商品牌原色图标；资源已经包含适合圆形裁剪的背景与安全区。 */
+/** Vendor brand primary-color icon; the asset already includes a background and safe area suitable for circular cropping. */
 @Composable
 internal fun ProviderBrandIcon(
     sourceType: String,
@@ -123,7 +123,7 @@ internal fun providerBrandLogoRes(provider: ProviderSetting): Int? =
 internal fun providerBrandLogoRes(sourceType: String): Int? =
     sharedProviderBrandLogoRes(sourceType)
 
-/** 已知厂商使用品牌图标，未知来源继续按协议类型使用通用图标。 */
+/** Known vendors use their brand icon; unknown sources keep using the generic icon by protocol type. */
 @Composable
 internal fun ProviderIcon(
     provider: ProviderSetting,
@@ -174,7 +174,7 @@ internal fun ProviderIcon(
 
 internal enum class TagChipTone { Normal, Emphasized }
 
-/** 小胶囊标签，用于能力标签与状态标记。 */
+/** Small capsule tag for capability labels and status markers. */
 @Composable
 internal fun TagChip(
     text: String,

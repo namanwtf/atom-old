@@ -10,10 +10,10 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 /**
- * Skills 文件树与注册表的跨进程互斥锁。
+ * Cross-process mutex for the Skills file tree and registry.
  *
- * UI 与 Agent Runtime 可能位于不同进程；仅使用 JVM monitor 无法避免两个安装事务同时通过
- * 冲突检查。锁文件位于索引扫描目录之外，线程内同一根目录允许重入。
+ * The UI and Agent Runtime may live in different processes; a JVM monitor alone cannot prevent two install transactions from passing
+ * the conflict check at the same time. The lock file lives outside the index scan directory, and the same root is re-entrant within a thread.
  */
 internal object SkillMutationLock {
     private val processLock = Any()
@@ -77,7 +77,7 @@ internal object SkillMutationLock {
     }
 }
 
-/** 创建或验证只位于 Skills 同级私有目录中的安装工作区，拒绝 symlink 与特殊文件。 */
+/** Creates or validates an install workspace located only in a private sibling directory of Skills, rejecting symlinks and special files. */
 internal fun prepareSkillInstallerWorkRoot(skillsRoot: File): File {
     val canonicalRoot = skillsRoot.canonicalFile
     val parent = requireNotNull(canonicalRoot.parentFile) { "Skills directory must have a parent directory" }
@@ -90,7 +90,7 @@ internal fun prepareSkillInstallerWorkRoot(skillsRoot: File): File {
         try {
             Files.createDirectory(path)
         } catch (error: java.nio.file.FileAlreadyExistsException) {
-            // 与其他进程竞争创建时，交给下面的 NOFOLLOW 校验决定是否可用。
+            // When racing with other processes to create it, let the NOFOLLOW check below decide whether it is usable.
         }
     }
     if (
@@ -104,7 +104,7 @@ internal fun prepareSkillInstallerWorkRoot(skillsRoot: File): File {
     return workRoot
 }
 
-/** 替换事务只能接收可完整复制恢复的普通目录树。 */
+/** A replacement transaction may only accept a plain directory tree that can be fully copied and recovered. */
 internal fun isRecoverableSkillDirectoryTree(skillsRoot: File, target: File): Boolean {
     val canonicalRoot = runCatching { skillsRoot.canonicalFile.toPath() }.getOrNull() ?: return false
     if (Files.isSymbolicLink(target.toPath())) return false
@@ -135,7 +135,7 @@ internal fun moveSkillDirectoryAtomically(source: File, target: File) {
     }
 }
 
-/** 删除 Skills 根目录内的路径，但遇到任意符号链接时只删除链接本身。 */
+/** Deletes a path inside the Skills root, but when any symbolic link is encountered only the link itself is removed. */
 internal fun deleteSkillPathWithoutFollowingLinks(skillsRoot: File, target: File): Boolean {
     val lexicalRoot = skillsRoot.absoluteFile.toPath().normalize()
     val lexicalTarget = target.absoluteFile.toPath().normalize()

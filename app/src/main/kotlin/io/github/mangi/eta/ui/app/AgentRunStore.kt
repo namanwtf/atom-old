@@ -7,7 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** UI 订阅的生命周期和事件缓冲；所有方法在主线程调用，执行事实仍由 Runtime 持有。 */
+/** Lifecycle and event buffer the UI subscribes to; all methods are called on the main thread, while execution facts stay with Runtime. */
 internal class AgentRunStore(
     private val scope: CoroutineScope,
     private val onEvent: (String, AgentEvent) -> Unit,

@@ -32,7 +32,7 @@ internal object AssistantManager {
     private const val SHOW_SOURCE_PUSH_TO_TALK = 1 shl 5
     private const val DEFAULT_SHOW_FLAGS = SHOW_SOURCE_PUSH_TO_TALK
     private const val CONFIG_VERIFY_COOLDOWN_MS = 15_000L
-    // Android 37 RoleControllerManager 自身超时为 15 秒；本地 watchdog 只能晚于它做最终状态核验。
+    // Android 37 RoleControllerManager itself times out at 15 seconds; the local watchdog can only verify the final state after it.
     private const val ROLE_OPERATION_WATCHDOG_MS = 17_000L
     private const val RECOVERY_COOLDOWN_MS = 5_000L
 
@@ -322,7 +322,7 @@ internal object AssistantManager {
         rebuildWhenVerified: Boolean,
     ): Boolean = handler.post {
         try {
-            // 请求入队后目标或开关可能变化，真正执行前必须重新读取 RemotePreferences。
+            // The target or toggle may change after the request is enqueued; re-read RemotePreferences right before actually executing.
             val target = Prefs.powerAssistantTarget()
             if (!shouldConfigureAssistant(
                     autoConfigEnabled = Prefs.isEnabled(Prefs.Keys.ASSISTANT_AUTO_CONFIG),
@@ -543,7 +543,7 @@ internal object AssistantManager {
                 return
             }
 
-            // 先直接写入 Settings.Secure，让系统的 SettingsObserver 立即完成服务切换，不先写 null 触发两次解绑。
+            // Write Settings.Secure directly first so the system SettingsObserver completes the service switch immediately, instead of writing null first and triggering a double unbind.
             val settingsChangedBeforeRole = updateAssistantSettings(
                 context = context,
                 userId = userId,
@@ -620,7 +620,7 @@ internal object AssistantManager {
         roleChanged: Boolean,
     ) {
         try {
-            // RoleManager 请求无法取消；回调到达时必须确认目标和开关仍与入队时一致。
+            // RoleManager requests cannot be cancelled; when the callback arrives we must confirm the target and toggle still match what was enqueued.
             val autoConfigEnabled = Prefs.isEnabled(Prefs.Keys.ASSISTANT_AUTO_CONFIG)
             val currentTarget = Prefs.powerAssistantTarget()
             if (!isAssistantConfigurationCurrent(
@@ -864,7 +864,7 @@ internal object AssistantManager {
         logger: ModuleLogger
     ): Boolean {
         val resolver = context.contentResolver
-        // 与系统 RoleObserver 统一写入 flattenToShortString() 形态，避免短类名与全类名互相覆写。
+        // Write in the same flattenToShortString() form as the system RoleObserver, to avoid the short and full class names overwriting each other.
         val targetComponent = binding.shortComponentName
         val assistantChanged = updateSecureString(
             resolver,

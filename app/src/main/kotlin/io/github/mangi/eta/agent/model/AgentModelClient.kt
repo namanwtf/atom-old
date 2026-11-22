@@ -149,7 +149,7 @@ internal object AgentModelClient {
         }
         if (compactOnly) messages.remove(messages.length() - 1)
         val transcript = JSONArray()
-        // 旧 history 中的无效消息可能在组装时被跳过，系统边界不能由 history 条数倒推。
+        // Invalid messages in old history may be skipped during assembly; the system boundary cannot be inferred backwards from the history item count.
         val systemCount = AgentPromptBuilder.buildSystemMessages(
             config,
             skillContext,
@@ -189,8 +189,8 @@ internal object AgentModelClient {
                 terminalTools = config.terminalTools
             )
         )
-        // 工具目录与系统提示都是请求前缀，按轮重算会让一次瞬时状态抖动废掉整段缓存。
-        // Root 授权真正变化时整体重建；其余能力只增不减：短暂不可用的工具仍保留，执行时自行报告错误码。
+        // The tool catalog and system prompt are both request prefixes; recomputing them each turn would let one transient state blip wipe out the whole cache.
+        // Rebuild entirely only when Root authorization actually changes; other capabilities only grow: briefly unavailable tools are kept and report an error code when executed.
         var promptRootAvailable = initialCapabilities.rootAvailable
         var publishedTools = tools
         fun toolsForRound(): JSONArray {
@@ -232,8 +232,8 @@ internal object AgentModelClient {
             messages = messages,
             tools = tools,
             provider = provider,
-            // 目录在运行内只增不减，可见不再等于可用：执行前用同一规则复核，
-            // 中途失去的能力返回与目录过滤一致的错误码，而不是让底层接口给出含糊的失败。
+            // The catalog only grows within a run, so visible no longer equals usable: re-check with the same rules before executing,
+            // so a capability lost mid-run returns an error code consistent with catalog filtering, rather than a vague failure from the lower-level interface.
             toolExecutor = AgentModelClient.ToolExecutor { call ->
                 val unavailable = AgentToolRequirements.find(call.name)
                     ?.let { capabilitiesProvider().unavailableCode(call.name) }
@@ -400,7 +400,7 @@ internal object AgentModelClient {
         val effectiveReasoningEffort: ReasoningEffort
             get() = reasoningEffort ?: ReasoningEffort.fromLegacy(thinkingEnabled)
 
-        /** 未知窗口不阻断对话：只关闭依赖窗口的自动压缩，手动压缩与服务商溢出错误照常可用。 */
+        /** An unknown window does not block the conversation: it only disables window-dependent auto-compaction, while manual compaction and provider overflow errors remain available. */
         val knownContextWindow: Int?
             get() = contextWindow?.takeIf { it > 0 }
     }
@@ -435,14 +435,14 @@ internal object AgentModelClient {
         val content: String,
         val images: List<ModelImage> = emptyList(),
         /**
-         * 敏感结果仍会供当前 Agent loop 使用，但工具参数与原始结果不会进入持久会话。
-         * 最终 assistant 自己组织的答复不受此标记影响。
+         * Sensitive results are still available to the current Agent loop, but tool parameters and raw results never enter the persistent session.
+         * The final answer composed by the assistant itself is unaffected by this marker.
          */
         val sensitive: Boolean = false,
         val command: String? = null,
     )
 
-    /** 图片引用：入口侧可为本地 URI/路径，进入模型协议前必须解析为远程 URL 或 data URL。 */
+    /** Image reference: at the entry side it may be a local URI/path, but before entering the model protocol it must be resolved to a remote URL or data URL. */
     data class ModelImage(
         val reference: String,
         val mimeType: String,
@@ -450,7 +450,7 @@ internal object AgentModelClient {
         val width: Int? = null,
         val height: Int? = null,
         val source: String = "unknown",
-        /** 截图已具有可上传编码，跨进程物化时保留字节，不走附件转码。 */
+        /** Screenshots already carry an uploadable encoding; when materialized across processes, keep the bytes and skip attachment transcoding. */
         val preserveOriginal: Boolean = false,
     )
 

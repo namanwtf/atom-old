@@ -29,7 +29,7 @@ internal data class SearchPage(
 
 internal class WebSearchException(val code: String, message: String) : IllegalArgumentException(message)
 
-/** 公开搜索页只作为链接发现来源；页面挑战和解析失败不能伪装成零条结果。 */
+/** The public search page is only a link-discovery source; page challenges and parse failures must not be disguised as zero results. */
 internal object PublicWebSearch {
     const val PROVIDER = "duckduckgo_html"
     const val MAX_QUERY_CHARS = 2_000

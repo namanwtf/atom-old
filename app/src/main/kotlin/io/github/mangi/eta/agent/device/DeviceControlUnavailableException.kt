@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.device
 
-/** 在坐标换算与动作之间断连时，仍向工具边界返回可识别的无障碍状态。 */
+/** When the connection drops between coordinate conversion and the action, still return a recognizable accessibility status to the tool boundary. */
 internal class DeviceControlUnavailableException : IllegalStateException(
     "Eta accessibility service disconnected; re-enable the service and observe the screen",
 )

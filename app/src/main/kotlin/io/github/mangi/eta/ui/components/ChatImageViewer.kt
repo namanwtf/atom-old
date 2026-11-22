@@ -125,7 +125,7 @@ internal class ChatImagePreviewer {
         targetOpen = false
     }
 
-    /** 绘制阶段读取：当前正在飞行或全屏展示的缩略图隐藏原位，避免开合过渡出现重影。 */
+    /** Read in the draw phase: the thumbnail currently flying or shown full-screen hides in place, avoiding ghosting during the open/close transition. */
     fun isPresenting(groupKey: Any?, index: Int): Boolean {
         val current = request ?: return false
         return groupKey != null && current.groupKey == groupKey && activePage == index
@@ -151,10 +151,10 @@ internal class ChatImagePreviewRequest(
 internal val LocalChatImagePreviewer = compositionLocalOf<ChatImagePreviewer?> { null }
 
 /**
- * 壳层顶部的全屏图片查看器宿主。
+ * Full-screen image viewer host at the top of the shell.
  *
- * 采用单 Animatable 驱动的原位共享边界过渡：从缩略图的真实窗口矩形（Crop 裁剪）平滑展开到全屏居中（Fit），
- * 全程只在绘制阶段读取动画进度，不创建 Dialog 子窗口、不改动系统栏触发整树重排，保证 120Hz 满帧过渡。
+ * Uses a single Animatable-driven in-place shared-boundary transition: smoothly expanding from the thumbnail's real window rect (Crop) to full-screen centered (Fit),
+ * reading animation progress only in the draw phase throughout, creating no Dialog sub-window and not touching system bars (which would reflow the whole tree), guaranteeing a 120Hz full-frame transition.
  */
 @Composable
 internal fun ChatImagePreviewHost(
@@ -613,7 +613,7 @@ private fun HeroZoomableImageCanvas(
 
         val src = sourceRect?.takeIf { it.width > 1f && it.height > 1f }
         if (src != null && p < 0.999f) {
-            // 从缩略图的 Crop 矩形连续插值到全屏 Fit 矩形，亚像素浮点矩阵变换无抖动。
+            // Continuously interpolate from the thumbnail's Crop rect to the full-screen Fit rect; sub-pixel float matrix transforms stay jitter-free.
             val cropScale = maxOf(src.width / fitW, src.height / fitH)
             val currentScale = lerp(cropScale, 1f, p) * scale.value
             val centerX = lerp(src.center.x, viewW / 2f, p) + offsetX.value * p

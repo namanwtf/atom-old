@@ -76,8 +76,8 @@ internal fun CouiBottomSheet(
         backgroundColor = if (blur == null) BottomSheetDefaults.backgroundColor() else Color.Transparent,
         materialStroke = blur != null,
     ) {
-        // COUI OverlayBottomSheet 仅在外层处理 imePadding()，不消费底部导航栏 Insets；
-        // 贴底态统一补上 navigationBars 排除 IME 后的底边距，键盘弹起时不双倍留白。
+        // COUI OverlayBottomSheet only handles imePadding() at the outer layer and doesn't consume bottom-nav Insets;
+        // in the bottom-hugging state, add the navigationBars bottom inset (minus IME) uniformly, so the keyboard popping up doesn't double the spacing.
         if (centered) {
             content()
         } else {

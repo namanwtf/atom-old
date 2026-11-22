@@ -9,10 +9,10 @@ import android.os.PowerManager
 import android.provider.Settings
 
 /**
- * 定时任务后台运行可靠度自检。
+ * Scheduled-task background reliability self-check.
  *
- * 重点检查 Android Doze 10 秒临时豁免窗口下最容易导致长推理失败的三项系统授权：
- * 精确闹钟、电池优化白名单与系统通知权限。
+ * Focuses on the three system grants most likely to cause long-inference failures under the Android Doze 10-second temporary exemption window:
+ * the exact alarm, the battery-optimization whitelist, and the system notification permission.
  */
 internal data class ScheduledTaskHealthSnapshot(
     val canScheduleExactAlarms: Boolean,

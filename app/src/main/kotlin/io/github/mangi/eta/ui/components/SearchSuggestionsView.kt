@@ -29,7 +29,7 @@ import io.github.mangi.eta.R
 import io.github.mangi.eta.agent.runtime.SearchSuggestionsPayload
 import java.io.ByteArrayInputStream
 
-/** 官方建议保留原始 HTML/CSS，仅在独立、无脚本的展示视图中加载。 */
+/** Official suggestions keep their raw HTML/CSS and are loaded only in an isolated, script-free display view. */
 @Composable
 internal fun SearchSuggestionsView(html: String, modifier: Modifier = Modifier) {
     if (!SearchSuggestionsPayload.isValidHtml(html)) return
@@ -112,7 +112,7 @@ internal class SearchSuggestionsWebView(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // WebView 的正文高度在布局后才能确定；只在实际改变时异步通知 Compose，避免绘制时写状态。
+        // The WebView's body height is known only after layout; notify Compose asynchronously only when it actually changes, avoiding writing state during draw.
         if (!released && !heightReportPending && contentHeightPx != reportedHeight) {
             heightReportPending = true
             post(reportHeight)

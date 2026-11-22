@@ -297,11 +297,11 @@ internal object RemoteModelFetcher {
     }
 
     /**
-     * 判断远端目录中的模型是否可用于 Agent 对话。
+     * Determine whether a model in the remote catalog can be used for agent conversations.
      *
-     * OpenAI 兼容平台的 /models 会混入语音识别、语音合成、图像/视频生成、
-     * embedding、rerank 等非对话模型（例如阿里百炼一次返回数百个）。这些模型
-     * 无法参与 Agent 的文本工具调用循环，拉取时按 id 命名特征与输出模态过滤掉。
+     * The /models endpoint of OpenAI-compatible platforms mixes in speech recognition, speech synthesis, image/video generation,
+     * embedding, rerank, and other non-conversation models (for example, Alibaba Bailian returns hundreds at once). These models
+     * cannot participate in the agent's text tool-call loop, so they are filtered out at fetch time by id naming patterns and output modality.
      */
     internal fun isChatCapableModel(model: Model): Boolean {
         if (model.outputModalities.isNotEmpty() &&
@@ -314,17 +314,17 @@ internal object RemoteModelFetcher {
     }
 
     private val NON_CHAT_MODEL_ID_MARKERS = listOf(
-        // 语音识别
+        // Speech recognition
         "asr", "whisper", "paraformer", "sensevoice", "gummy",
-        // 语音合成与声音模型
+        // Speech synthesis and voice models
         "tts", "speech", "voice", "cosyvoice", "sambert",
-        // 向量与排序
+        // Embeddings and ranking
         "embedding", "rerank",
-        // 图像生成与理解外的图像专用模型
+        // Image generation and image-specialized models beyond understanding
         "image", "dall-e", "flux", "stable-diffusion", "wanx", "hidream",
-        // 视频生成
+        // Video generation
         "video", "veo-",
-        // 其他非对话专用模型
+        // Other non-conversation specialized models
         "ocr", "music", "moderation",
     )
 
@@ -497,10 +497,10 @@ internal object RemoteModelFetcher {
         takeIf { supported -> names.any(supported::contains) }?.let { true }
 
     /**
-     * 空列表表示远端没有提供输入模态元数据，后续才允许官方目录补齐。
+     * An empty list means the remote did not provide input modality metadata; only then is the official catalog allowed to fill it in.
      *
-     * 不能把缺失字段直接折叠成 text：否则无法区分“远端明确声明仅文本”和
-     * “标准 /models 根本未返回能力字段”，官方目录会错误覆盖前一种情况。
+     * A missing field must not be collapsed directly into text: otherwise there is no way to distinguish "the remote explicitly declared text-only" from
+     * "the standard /models did not return the capability field at all", and the official catalog would wrongly override the former case.
      */
     private fun JsonObject.inputModalities(architecture: JsonObject?): List<String> {
         stringList("input_modalities", "inputModalities")?.let { return it }

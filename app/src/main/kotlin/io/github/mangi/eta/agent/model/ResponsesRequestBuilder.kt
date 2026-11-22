@@ -18,7 +18,7 @@ internal object ResponsesRequestBuilder {
         mergeExtraBody(request, config.extraBodyJson)
         RequestBodyMerge.mergeCustomBody(request, config.customBody)
 
-        // 这些字段决定协议正确性、隐私边界和 Eta 本轮行为，必须由运行时最终写入。
+        // These fields determine protocol correctness, privacy boundaries, and Eta's behavior this turn, so the runtime must write them last.
         if (purpose == ProviderRequestPurpose.COMPACTION) {
             listOf("messages", "system", "system_instruction").forEach(request::remove)
         }

@@ -20,7 +20,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import io.github.mangi.eta.ui.app.LocalEtaTopLayer
 
 /**
- * 全窗口顶层承载器状态：将页内弹层提升到根宿主，避免被顶栏、导航容器或侧栏裁剪或遮挡。
+ * Full-window top-layer host state: promotes in-page overlays to the root host so they aren't clipped or covered by the top bar, nav container, or sidebar.
  */
 @Stable
 internal class EtaTopLayerState {
@@ -33,7 +33,7 @@ internal class EtaTopLayerEntry {
 }
 
 /**
- * 将 [content] 提升到最近的 [EtaTopLayerHost] 渲染；在独立测试等无顶层宿主的环境中回退为原地全尺寸容器。
+ * Promotes [content] to render in the nearest [EtaTopLayerHost]; in environments without a top-layer host (e.g. standalone tests) it falls back to an in-place full-size container.
  */
 @Composable
 internal fun EtaTopLayer(content: @Composable BoxScope.() -> Unit) {

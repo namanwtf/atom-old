@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.terminal
 import java.io.File
 import org.json.JSONObject
 
-/** 同一次运行固定目录和 Linux 环境；Android 默认身份根据已确认的授权选择。 */
+/** Fixes the directory and Linux environment for a single run; the Android default identity is chosen by confirmed authorization. */
 internal data class TerminalExecutionContext(
     val linuxEnvironment: TerminalEnvironment,
     val linuxRootfsPath: String?,

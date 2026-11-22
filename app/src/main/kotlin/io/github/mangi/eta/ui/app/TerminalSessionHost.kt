@@ -9,7 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-/** 终端会话属于运行任务；Activity 重建或退出只断开界面，不终止用户启动的进程。 */
+/** Terminal sessions belong to the running task; Activity recreation or exit only disconnects the UI, not terminating user-launched processes. */
 internal class TerminalSessionHost private constructor(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val terminal = UserTerminalStore(context.applicationContext, scope)
@@ -23,7 +23,7 @@ internal class TerminalSessionHost private constructor(context: Context) {
     }
 }
 
-/** 先取得前台执行资格，进程建立后再绑定 session，覆盖两者之间用户按停止的竞态。 */
+/** Acquire foreground-execution eligibility first and bind the session after the process is established, covering the race where the user taps stop in between. */
 internal class TerminalSessionLease private constructor(
     private val id: String,
     private val onStop: (String) -> Unit,

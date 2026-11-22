@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 
-/** Codex 账号目录是独立协议，不按公共 API 的预设或 supported_in_api 筛选。 */
+/** The Codex account catalog is a separate protocol and is not filtered by the public API's presets or supported_in_api. */
 internal object CodexModelCatalog {
     fun parse(entries: JsonArray): List<Model> = entries.mapIndexedNotNull { index, element ->
         val item = element as? JsonObject ?: error(

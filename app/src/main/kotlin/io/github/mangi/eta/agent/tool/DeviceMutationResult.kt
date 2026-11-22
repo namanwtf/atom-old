@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.tool
 
 import org.json.JSONObject
 
-/** 命令返回和状态读回分开报告，未知结果不能伪装成已改变。 */
+/** The command result and the state read-back are reported separately; an unknown result must not be disguised as a change. */
 internal object DeviceMutationResult {
     fun observed(
         tool: String,

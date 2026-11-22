@@ -194,7 +194,7 @@ internal fun EtaVoicePanel(
                 )
             }
         }
-        // 焦点会主动唤起 IME；必须等显现和位移都结束，不能在仍透明时交出输入焦点。
+        // Focus actively summons the IME; we must wait for both the appearance and translation to finish, and not hand over input focus while still transparent.
         contentReady()
     }
 
@@ -235,7 +235,7 @@ internal fun EtaVoicePanel(
 
                 val textCushion = scrimProgress.value * textCushionAlpha * exitFade
                 if (textCushion > 0.005f) {
-                    // 仅在输入胶囊与软键盘交界处铺一层柔和羽化托底，避免大面积灰雾截断壁纸。
+                    // Lay a soft feathered backing only where the input pill meets the soft keyboard, to avoid a large gray haze cutting off the wallpaper.
                     val bandPx = 136.dp.toPx()
                     val startY = (size.height - bottomInsetPx - bandPx).coerceAtLeast(0f)
                     drawRect(
@@ -375,7 +375,7 @@ private fun BoxScope.AssistantPanel(
     var handoffPullPx by remember { mutableFloatStateOf(0f) }
     var thresholdHapticSent by remember { mutableStateOf(false) }
     var keepBottomAnchored by remember { mutableStateOf(true) }
-    // 满高时把手与状态栏之间的空间有限，需在扣除触摸 slop 后仍能完成过顶手势。
+    // At full height there is limited room between the handle and the status bar, so the overscroll gesture must still complete after accounting for touch slop.
     val handoffThresholdPx = with(density) { 24.dp.toPx() }
     val dismissThresholdPx = with(density) { 92.dp.toPx() }
     val maxHandoffVisualPx = with(density) { 40.dp.toPx() }
@@ -415,7 +415,7 @@ private fun BoxScope.AssistantPanel(
     } else {
         0f
     }
-    // 接管只认把手发起的过顶拉取：列表滚动与惯性 fling 不再触发，避免读回复时误入本体。
+    // Takeover only recognizes an overscroll pull initiated from the handle: list scrolling and fling inertia no longer trigger it, avoiding accidentally entering the body while reading replies.
     val handoffReady = canOpenConversation &&
         sheetHeightPx >= availableMaxHeightPx - 1f &&
         handoffPullPx >= handoffThresholdPx
@@ -472,8 +472,8 @@ private fun BoxScope.AssistantPanel(
             rubberAnim.snapTo(0f)
         }
     }
-    // 单向连续生长：随实测内容高度平滑推高面板（弹簧保持速度连续），只增不减，
-    // 避免分档等待造成的顿挫以及流式结束后的二次弹起与回落。
+    // One-way continuous growth: smoothly raise the panel with the measured content height (the spring keeps velocity continuous), only ever increasing,
+    // to avoid the jerkiness of tiered waiting and a second pop-then-drop after streaming ends.
     LaunchedEffect(hasMessages, keyboardVisible, baseContentHeightPx, availableMaxHeightPx, listState) {
         if (!hasMessages || keyboardVisible) return@LaunchedEffect
         snapshotFlow {
@@ -570,7 +570,7 @@ private fun BoxScope.AssistantPanel(
                 isDragging = false
                 onClose()
             }
-            // 松手可能与最后一个位移在同一帧内到达，直接读取状态，不依赖重组后的派生值。
+            // The release may arrive in the same frame as the last movement; read state directly instead of relying on derived values after recomposition.
             commit && allowHandoff && canOpenConversation &&
                 current >= availableMaxHeightPx - 1f && handoffPullPx >= handoffThresholdPx -> {
                 triggerHandoff()
@@ -615,8 +615,8 @@ private fun BoxScope.AssistantPanel(
             .drawBehind {
                 val sheetAlpha = sheetBackgroundAlpha.value
                 if (sheetAlpha > 0.01f && size.height > 8f) {
-                    // 沿着 G2 连续顶部圆角外侧绘制渐隐环境投影，切出面板内部后贴合左右切点收束至 0，
-                    // 避免矩形阴影在圆角外侧露馅。
+                    // Draw a fading ambient shadow outside the G2 continuous top corners; after cutting out the panel interior, converge to 0 at the left/right tangent points,
+                    // so the rectangular shadow doesn't show outside the rounded corners.
                     val shadowRisePx = 28.dp.toPx()
                     val cornerPx = sheetCornerRadius.toPx().coerceIn(0f, minOf(size.width * 0.5f, size.height))
                     val maxAlpha = (if (colors.dark) 0.30f else 0.10f) * sheetAlpha
@@ -642,7 +642,7 @@ private fun BoxScope.AssistantPanel(
                     }
                 }
             }
-            // 未展开回复面板时不启用面板轮廓裁剪，避免把空状态下的悬浮胶囊顶部与阴影裁掉。
+            // Don't enable panel-outline clipping while the reply panel is collapsed, to avoid clipping the top and shadow of the floating pill in the empty state.
             .then(if (sheetSurfaceVisible) Modifier.clip(sheetShape) else Modifier)
             .drawWithContent {
                 val sheetAlpha = sheetBackgroundAlpha.value
@@ -669,8 +669,8 @@ private fun BoxScope.AssistantPanel(
                     )
                 }
             }
-            // 背景先覆盖导航区域，再让内容避开系统栏；否则底部 Insets 会露出下层窗口。
-            // IME 与导航栏取并集，布局阶段消费一次，跟随系统键盘动画。
+            // The background first covers the navigation area, then content avoids the system bars; otherwise the bottom insets would reveal the window underneath.
+            // Take the union of the IME and the navigation bar, consume it once during layout, and follow the system keyboard animation.
             .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom))
             .windowInsetsPadding(
                 WindowInsets.navigationBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Horizontal),
@@ -871,7 +871,7 @@ private fun DragHandle(
     handoffProgress: Float,
     modifier: Modifier = Modifier,
 ) {
-    // 把手是接管的唯一入口：拉到阈值时变宽并染成主色，配合微文案与触觉反馈提示松手进入本体。
+    // The handle is the only entry point for takeover: past the threshold it widens and takes on the primary color, pairing with a micro-caption and haptic feedback to prompt releasing into the body.
     val handleWidth by animateDpAsState(
         targetValue = if (handoffReady) 52.dp else 36.dp,
         animationSpec = folmeSpring(damping = 0.88f, response = 0.26f),
@@ -954,6 +954,6 @@ private fun assistantBaseHeightPx(
     density: Float,
 ): Float {
     if (messages.isEmpty()) return 0f
-    // 回复增量只改变列表内容，不重新估算浮窗高度，避免与跟底滚动互相追赶。
+    // Reply increments only change list content without re-estimating the overlay height, avoiding a chase between itself and stick-to-bottom scrolling.
     return (304f * density).coerceAtMost(maxHeightPx)
 }

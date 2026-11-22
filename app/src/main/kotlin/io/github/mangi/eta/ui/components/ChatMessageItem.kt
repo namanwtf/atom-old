@@ -152,9 +152,9 @@ internal fun rememberDataUrlBitmap(dataUrl: String): ImageBitmap? =
     rememberChatImageBitmap(source = dataUrl, maxDimensionPx = 1600)
 
 /**
- * 统一聊天图片解码器：
- * - `data:image/...;base64,...` 同步命中/写入 LRU 缓存，保持现有用户预览图零首帧闪烁；
- * - 本地原图文件（含 AI 生图 1K~4K 高清图）在 IO 线程按 [maxDimensionPx] 采样解码，避免主线程卡顿与 OOM。
+ * Unified chat image decoder:
+ * - `data:image/...;base64,...` hits/writes the LRU cache synchronously, keeping existing user previews free of first-frame flicker;
+ * - local original files (including AI-generated 1K~4K images) are sample-decoded on an IO thread by [maxDimensionPx], avoiding main-thread jank and OOM.
  */
 @Composable
 internal fun rememberChatImageBitmap(
@@ -215,7 +215,7 @@ private fun decodeLocalFileBitmap(source: String, maxDimensionPx: Int): ImageBit
 }
 
 /**
- * 等待首个文本片段时的轻量反馈。
+ * Lightweight feedback while waiting for the first text chunk.
  */
 @Composable
 fun AITypingIndicator(modifier: Modifier = Modifier) {
@@ -247,8 +247,8 @@ fun AITypingIndicator(modifier: Modifier = Modifier) {
 }
 
 /**
- * 只有正在执行的状态才持有无限动画。历史思考和工具条目保持静态，避免长会话里
- * 每个已完成节点都持续产生帧时钟与状态更新。
+ * Only the executing state holds an infinite animation. Historical thinking and tool entries stay static, so in long sessions
+ * every completed node doesn't keep producing frame clocks and state updates.
  */
 @Composable
 internal fun rememberActivePulse(
@@ -382,7 +382,7 @@ internal fun ChatMessageItem(
     }
 }
 
-// ── 用户消息：轻盈美观气泡 ──────────────────────────────────────────────
+// ── User message: light, attractive bubble ──────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -679,7 +679,7 @@ private fun UserMessageBubble(
     }
 }
 
-/** 单行时左侧呈完整半胶囊弧度，右下角保留利落的 4dp 对话收角。 */
+/** In single-line form the left side is a full half-capsule arc, while the bottom-right keeps a crisp 4dp conversation corner. */
 private val UserBubbleShape = RoundedCornerShape(
     topStart = 22.dp,
     topEnd = 22.dp,
@@ -702,8 +702,8 @@ private val OverlayCouiUserBubbleShape = RoundedCornerShape(
 )
 
 /**
- * 用户消息的图片附件独立于文字气泡右对齐排布，避免单张缩略图撑在宽文字气泡左上角留出大片空白。
- * 单图按原图比例自适应尺寸，多图采用紧凑圆角图组，点击进入全屏预览。
+ * User-message image attachments are laid out right-aligned and independent of the text bubble, so a single thumbnail doesn't sit at the top-left of a wide bubble leaving a large blank.
+ * Single images size themselves to the original aspect ratio; multiple images form a compact rounded group; tapping opens full-screen preview.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -727,7 +727,7 @@ private fun UserMessageImages(
         single -> 16.dp
         else -> 14.dp
     }
-    // 普通 HashMap 只在点击瞬间或飞行绘制时读取，列表滚动更新坐标不触发任何组合状态写入。
+    // A plain HashMap is read only at tap time or during flight drawing; list-scroll coordinate updates trigger no composition state writes.
     val itemBounds = remember(messageId) { HashMap<Int, Rect>() }
 
     if (single) {
@@ -905,7 +905,7 @@ private fun UserMessageImageCard(
             modifier = Modifier.matchParentSize(),
         )
         if (!assistantOverlay && !isCoui) {
-            // squircleBorder 在 onDrawBehind 中绘制，置于前景层才能叠在位图之上收边。
+            // squircleBorder is drawn in onDrawBehind; it must be on the foreground layer to edge over the bitmap.
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -930,7 +930,7 @@ private fun MessageTooltipAction(
     ) {
         Icon(
             imageVector = icon,
-            // 下方文字已经命名该操作，图标不再重复朗读。
+            // The text below already names the action, so the icon isn't read aloud again.
             contentDescription = null,
             modifier = Modifier.size(16.dp),
             tint = MiuixTheme.colorScheme.onSurface,
@@ -943,11 +943,11 @@ private fun MessageTooltipAction(
     }
 }
 
-// ── 上下文压缩：时间线中的轻量胶囊标记 ─────────────────────────────────
+// ── Context compaction: lightweight capsule marker in the timeline ─────────────────────────────────
 
 /**
- * 压缩不是一轮对话结果，而是上下文维护事件；用居中胶囊标记与助手正文区分，
- * 进行中通过图标脉冲反馈，结束后保留压缩前后的 token 信息。
+ * Compaction isn't a turn result but a context-maintenance event; a centered capsule marker distinguishes it from assistant body,
+ * pulsing the icon while in progress and retaining before/after token info once finished.
  */
 @Composable
 private fun ContextCompactionMarker(
@@ -998,7 +998,7 @@ private fun ContextCompactionMarker(
     }
 }
 
-// ── Agent 结果 ───────────────────────────────────────────────────────
+// ── Agent result ───────────────────────────────────────────────────────
 
 @Composable
 private fun AgentMessageBlock(
@@ -1029,8 +1029,8 @@ private fun AgentMessageBlock(
     var streamingRevealComplete by remember(message.id) {
         mutableStateOf(!keepStreamingMarkdown)
     }
-    // 渲染会话由列表层按 message.id 持有，item 滚出视口被销毁后滑回时复用同一
-    // 会话；没有外部持有者时（如嵌套条目）退回组合内 remember，行为与之前一致。
+    // The render session is held by the list layer keyed by message.id; when an item scrolls out and is destroyed, sliding back reuses the same
+    // session; without an external holder (e.g. nested entries) it falls back to in-composition remember, behaving as before.
     val streamingState = if (keepStreamingMarkdown) {
         retainedStreamingState ?: remember(message.id) { StreamingMarkdownState() }
     } else {
@@ -1104,7 +1104,7 @@ private fun AgentMessageBlock(
             SearchSuggestionsView(html = html, modifier = Modifier.padding(top = 8.dp))
         }
 
-        // 回答显现完成后才出现操作行；淡入展开避免贴底滚动时整页突然跳动一行高度。
+        // The action row appears only after the answer's reveal completes; fade-in expansion avoids the whole page jumping a line height during bottom-hugging scroll.
         AnimatedVisibility(
             visible = showCopyAction &&
                 !message.isStreaming &&
@@ -1116,7 +1116,7 @@ private fun AgentMessageBlock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // 抵消首个按钮的内部水平留白，使图标与上方正文及工作过程图标共用左侧中心线。
+                    // Offset the first button's internal horizontal padding so the icon shares the left centerline with the body above and the work-process icons.
                     .offset(x = -AnswerActionCenterOffset)
                     .padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1197,15 +1197,15 @@ private fun AgentMessageBlock(
     }
 }
 
-/** 思考卡片与运行记录等全宽描边卡片共用的圆角与描边强度，相邻时轮廓一致。 */
+/** Corner radius and stroke weight shared by full-width outlined cards like thinking cards and run records, keeping adjacent outlines consistent. */
 private val ChatCardCorner = 12.dp
 private const val ChatCardOutlineAlpha = 0.5f
 
-/** 回答操作按钮的紧凑触控尺寸（28.dp 盒 + 16.dp 图标）；行整体左移 6.dp 对齐正文左边缘。 */
+/** Compact touch size of answer action buttons (28.dp box + 16.dp icon); the row shifts left 6.dp to align with the body's left edge. */
 internal val AnswerActionSize = 28.dp
 private val AnswerActionCenterOffset = 6.dp
 
-/** 回答下方的轻量操作：图标显式着色，因此禁用态需要自己换成禁用色，否则看起来仍可点。 */
+/** Lightweight actions under the answer: icons are explicitly tinted, so the disabled state must swap in a disabled color, or they'd still look tappable. */
 @Composable
 internal fun AnswerActionButton(
     icon: ImageVector,
@@ -1287,7 +1287,7 @@ private fun CandidateSwitcher(
     }
 }
 
-// ── 思考过程 ─────────────────────────────────────────────────────────
+// ── Thinking process ─────────────────────────────────────────────────────────
 
 @Composable
 internal fun ThinkingRow(
@@ -1300,7 +1300,7 @@ internal fun ThinkingRow(
         retainedStreamingState?.attachContent()
         onDispose { retainedStreamingState?.detachContent() }
     }
-    // null 表示跟随思考生命周期；用户点过之后只认手动选择。
+    // null means follow the thinking lifecycle; after the user taps, only the manual choice is honored.
     var manualExpanded by rememberSaveable(message.id) { mutableStateOf<Boolean?>(null) }
     val onExpandItem = LocalOnChatItemExpand.current
     val streamingState = retainedStreamingState ?: if (message.isStreaming) {
@@ -1309,10 +1309,10 @@ internal fun ThinkingRow(
         null
     }
     val completedDocument = streamingState?.snapshot?.completedDocumentFor(message.content)
-    // 展开态必须在组合期同步推导：若经 LaunchedEffect 晚一帧收起，思考结束的那一帧尾部窗口
-    // 已解除而正文仍展开，会以全文高度闪现一帧，再从该高度执行收起动画。
+    // The expanded state must be derived synchronously in composition: if collapsed one frame late via LaunchedEffect, the frame where thinking ends would
+    // already have its tail window lifted while the body is still expanded, flashing one frame at full height before the collapse animation runs from that height.
     val expanded = manualExpanded ?: message.isStreaming
-    // 自动模式下高度上限覆盖到收起动画结束，退出过程不会先撑开再收拢。
+    // In auto mode the height cap extends through the collapse animation, so the exit never first expands then collapses.
     val tailWindow = manualExpanded == null
 
     val pulseAlpha = rememberActivePulse(
@@ -1320,7 +1320,7 @@ internal fun ThinkingRow(
         label = "thinking_pulse",
     )
 
-    // compact 模式渲染在工作过程时间线内，节点徽章已承担图标，这里只保留文字与展开控制。
+    // In compact mode it renders inside the work-process timeline; the node badge already carries the icon, so only text and the expand control remain here.
     val containerModifier = if (compact) {
         modifier.fillMaxWidth()
     } else {
@@ -1344,7 +1344,7 @@ internal fun ThinkingRow(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(10.dp))
                 .clickable {
-                    // 尾部窗口下点击视为要看全文，保持展开并放开高度限制。
+                    // A tap under the tail window is treated as wanting the full text: stay expanded and lift the height limit.
                     val expanding = (tailWindow && expanded) || !expanded
                     if (expanding) onExpandItem()
                     manualExpanded = expanding
@@ -1453,8 +1453,8 @@ internal fun ThinkingRow(
 }
 
 /**
- * 进行中的思考只露出最近几行：内容按底部对齐超出部分向上裁掉，顶部渐隐提示还有更早内容。
- * 高度封顶后增量不再推高工作过程卡片，列表也不必随每次思考快照重新跟底。
+ * In-progress thinking reveals only the last few lines: content is bottom-aligned and overflow is clipped upward, with a top fade hinting at earlier content.
+ * Once height is capped, increments no longer grow the work-process card, and the list needn't re-hug the bottom on every thinking snapshot.
  */
 @Composable
 private fun ThinkingTailWindow(
@@ -1473,7 +1473,7 @@ private fun ThinkingTailWindow(
         modifier = modifier
             .heightIn(max = maxHeight)
             .clipToBounds()
-            // 离屏合成只覆盖这块有界区域，用于让渐隐遮罩作用在文字 alpha 上。
+            // Offscreen compositing covers only this bounded region, so the fade mask acts on the text alpha.
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithContent {
                 drawContent()
@@ -1500,7 +1500,7 @@ private fun ThinkingTailWindow(
 
 private const val THINKING_TAIL_WINDOW_LINES = 4
 
-// ── Run trace：轻量入口行 ─────────────────────────────────────────────
+// ── Run trace: lightweight entry row ─────────────────────────────────────────────
 
 @Composable
 private fun RunTraceRow(
@@ -1544,7 +1544,7 @@ private fun RunTraceRow(
     }
 }
 
-// ── 工具摘要 ──────────────────────────────────────────────────────────
+// ── Tool summary ──────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1590,7 +1590,7 @@ private fun ToolSummaryInline(
     }
 }
 
-// ── 建议语 ────────────────────────────────────────────────────────────
+// ── Suggestions ────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

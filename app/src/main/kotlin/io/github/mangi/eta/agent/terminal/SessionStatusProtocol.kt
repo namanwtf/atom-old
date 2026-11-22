@@ -5,9 +5,9 @@ import java.io.IOException
 import java.util.UUID
 
 /**
- * 持久 shell 会话的状态行协议：每条命令结束后向同一 stdin 追加一个随机 marker 的 printf，
- * 输出退出码与执行后的 PWD。宿主侧据此切分输出、跟踪 cwd；marker 含随机 UUID，
- * 正常命令输出不会与之混淆。
+ * Status-line protocol for long-lived shell sessions: after each command, a printf with a random marker is appended to the same stdin,
+ * printing the exit code and the post-execution PWD. The host side uses it to split output and track cwd; the marker contains a random UUID,
+ * so normal command output won't collide with it.
  */
 internal object SessionStatusProtocol {
 
@@ -17,16 +17,16 @@ internal object SessionStatusProtocol {
         "printf '\\n$marker:%s:%s\\n' \"\$?\" \"\$PWD\""
 
     /**
-     * 单逻辑行协议：命令经 eval 执行，状态 printf 与命令在同一行，由 shell 在命令退出后自己输出。
-     * 状态行不作为独立行进入 stdin——交互式命令（read、REPL 等）读 stdin 时不会吃掉标记，
-     * 会话运行期间写入的用户输入也完整留给前台进程。
+     * Single-logical-line protocol: the command runs via eval, the status printf sits on the same line as the command, and the shell prints it after the command exits.
+     * The status line doesn't enter stdin as a separate line - interactive commands (read, REPL, etc.) reading stdin won't consume the marker,
+     * and user input written while the session runs is left intact for the foreground process.
      */
     fun commandLine(marker: String, command: String): String =
         "eval ${shellQuote(command)}; eta_ec=\$?; printf '\\n$marker:%s:%s\\n' \"\$eta_ec\" \"\$PWD\""
 
     fun isStatusLine(line: String, marker: String): Boolean = line.startsWith("$marker:")
 
-    /** 解析状态行；cwd 为空（空行段）时返回 null，由调用方回退到会话当前 cwd。 */
+    /** Parses the status line; returns null when cwd is empty (empty segment), letting the caller fall back to the session's current cwd. */
     fun parseStatusLine(line: String, marker: String): Status? {
         if (!isStatusLine(line, marker)) return null
         val status = line.removePrefix("$marker:")
@@ -41,7 +41,7 @@ internal object SessionStatusProtocol {
     data class Status(val exitCode: Int, val cwd: String?)
 }
 
-/** 有界输出收集器：读取线程持续排空管道，超过上限后丢弃后续内容并标记截断。 */
+/** Bounded output collector: the reader thread keeps draining the pipe, dropping further content past the limit and marking truncation. */
 internal class ByteArrayOutputCollector {
     private val output = ByteArrayOutputStream()
     private var totalBytesRead = 0L

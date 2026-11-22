@@ -10,10 +10,10 @@ import io.github.mangi.eta.core.ModuleLogger
 import io.github.libxposed.api.XposedModule
 
 /**
- * 在 SystemServer 完成其他系统服务启动后接入无障碍保护。
+ * Attach accessibility protection after SystemServer finishes starting the other system services.
  *
- * 当前 ColorOS 16 目标已由 contextual_search 启动链路验证
- * SystemServer.startOtherServices(TimingsTraceAndSlog) 的类名、签名与调用时机。
+ * The current ColorOS 16 target has been verified by the contextual_search startup chain for
+ * the class name, signature, and invocation timing of SystemServer.startOtherServices(TimingsTraceAndSlog).
  */
 internal object AccessibilityProtectionHooks {
     @Volatile
@@ -92,8 +92,8 @@ internal object AccessibilityProtectionHooks {
     }
 
     /**
-     * Android 37 源码中的 com.android.internal.os.BackgroundThread 是每进程共享线程；
-     * 复用它可以让组件校验和 Settings I/O 离开 system_server 主线程，同时不创建模块线程。
+     * com.android.internal.os.BackgroundThread in the Android 37 source is a per-process shared thread;
+     * reusing it moves component validation and Settings I/O off the system_server main thread without creating a module thread.
      */
     private fun resolveSystemBackgroundHandler(classLoader: ClassLoader): Handler? =
         runCatching {

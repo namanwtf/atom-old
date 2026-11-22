@@ -7,8 +7,8 @@ import io.github.mangi.eta.core.AppStrings
 import org.json.JSONObject
 
 /**
- * 个人数据检索与记忆工具结果摘要。
- * 面向用户展示自然流畅的结论，不暴露私密正文，不堆砌底层字节数或行数等机器指标。
+ * Result summaries for personal-data retrieval and memory tools.
+ * Presents natural, fluent conclusions to the user, never exposing private content or piling up machine metrics like raw byte or line counts.
  */
 internal object AgentPersonalResultFormatter {
     fun summarizeArguments(toolName: String, argumentsJson: String): String? = runCatching {

@@ -53,8 +53,8 @@ internal sealed interface AlpineInstallResult {
 }
 
 /**
- * 下载官方 Alpine minirootfs，并在 Root 授权边界内完成原子解压。
- * 下载内容先校验固定 SHA-256；安装过程不会扩大到 App 私有环境目录之外。
+ * Downloads the official Alpine minirootfs and performs an atomic extraction within the Root authorization boundary.
+ * Downloaded content is verified against a fixed SHA-256 first; the install never expands outside the app's private environment directory.
  */
 internal class AlpineEnvironmentInstaller(
     private val context: Context,
@@ -354,7 +354,7 @@ internal class AlpineEnvironmentInstaller(
             "https://dl-cdn.alpinelinux.org/alpine",
         )
 
-        /** 逐个尝试镜像并把成功者写回 repositories，后续 profile 安装会复用它。 */
+        /** Tries mirrors one by one and writes the successful one back to repositories, which later profile installs reuse. */
         internal fun apkMirrorScript(): String = "#!/bin/sh\n${apkMirrorScriptBody()}"
 
         private fun apkMirrorScriptBody(): String = buildString {

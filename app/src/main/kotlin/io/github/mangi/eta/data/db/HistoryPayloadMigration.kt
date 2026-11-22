@@ -2,7 +2,7 @@ package io.github.mangi.eta.data.db
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/** 旧大字段按 SQL 子串搬迁，迁移本身也不把整行装入 CursorWindow。 */
+/** Legacy large fields are migrated by SQL substring, and the migration itself never loads an entire row into a CursorWindow. */
 internal object HistoryPayloadMigration {
     fun migrate(database: SupportSQLiteDatabase) {
         move(database, "conversations", "id", mapOf("applied_runtime_run_ids_json" to "runs"))

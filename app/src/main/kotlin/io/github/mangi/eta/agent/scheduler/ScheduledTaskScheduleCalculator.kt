@@ -17,9 +17,9 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /**
- * 定时任务排期、Cron 解析、安静时段与漏跑窗口的纯函数计算引擎。
+ * Pure-function computation engine for scheduled-task scheduling, Cron parsing, quiet hours, and missed-run windows.
  *
- * 所有计算显式接收 [nowMs] 与 [defaultZone]，保证在不同时区、夏令时切换与单元测试中确定性一致。
+ * All computations explicitly accept [nowMs] and [defaultZone] to stay deterministic across timezones, daylight-saving changes, and unit tests.
  */
 internal object ScheduledTaskScheduleCalculator {
     const val MIN_INTERVAL_MINUTES = 5
@@ -47,7 +47,7 @@ internal object ScheduledTaskScheduleCalculator {
                 domWildcard && dowWildcard -> true
                 domWildcard -> dowMatch
                 dowWildcard -> domMatch
-                // 标准 Vixie-cron 语义：dom 与 dow 均非通配时为 OR 关系。
+                // Standard Vixie-cron semantics: when both dom and dow are non-wildcards, they form an OR relationship.
                 else -> domMatch || dowMatch
             }
         }
@@ -65,7 +65,7 @@ internal object ScheduledTaskScheduleCalculator {
         return runCatching { ZoneId.of(raw) }.getOrElse { defaultZone }
     }
 
-    /** 计算晚于 [afterMs] 的下一次合法触发时间；无后续触发（如已过期一次性任务或无效 Cron）返回 null。 */
+    /** Computes the next valid trigger time after [afterMs]; returns null when there is no subsequent trigger (e.g. an expired one-shot task or an invalid Cron). */
     fun computeNextRunAt(
         schedule: ScheduledTaskSchedule,
         afterMs: Long,
@@ -101,7 +101,7 @@ internal object ScheduledTaskScheduleCalculator {
                 val intervalMinutes = schedule.intervalMinutes.coerceIn(MIN_INTERVAL_MINUTES, MAX_INTERVAL_MINUTES)
                 val stepMs = intervalMinutes * 60_000L
                 var candidate = afterMs + stepMs
-                // 若命中安静时段，则按步长顺延出安静时段，避免无意义空转。
+                // If it lands in quiet hours, advance by the step out of the quiet period to avoid pointless idling.
                 if (quietHours.enabled) {
                     var guard = 0
                     while (guard < 288 && isInQuietHours(candidate, quietHours, zone)) {
@@ -119,7 +119,7 @@ internal object ScheduledTaskScheduleCalculator {
         }
     }
 
-    /** 校验排期配置是否有效，返回面向用户的本地化错误提示或 null。 */
+    /** Validates whether the schedule config is valid, returning a user-facing localized error message or null. */
     fun validateSchedule(
         schedule: ScheduledTaskSchedule,
         nowMs: Long,
@@ -189,7 +189,7 @@ internal object ScheduledTaskScheduleCalculator {
         }
     }
 
-    /** 判断到期任务是准点运行、窗口内补跑还是跳过。 */
+    /** Determines whether a due task runs on time, is backfilled within the window, or is skipped. */
     fun evaluateMisfire(
         task: ScheduledTask,
         scheduledForAt: Long,
@@ -205,7 +205,7 @@ internal object ScheduledTaskScheduleCalculator {
             )
         }
         val delayMs = (nowMs - scheduledForAt).coerceAtLeast(0L)
-        // 2 分钟以内视为正常系统抖动（Android Doze / 精确闹钟唤醒耗时），按准点执行处理。
+        // Within 2 minutes is treated as normal system jitter (Android Doze / exact-alarm wake-up latency) and handled as on-time execution.
         if (delayMs <= 2 * 60_000L) return MisfireDecision.RunNow
         return when (task.misfirePolicy) {
             ScheduledTaskMisfirePolicy.SKIP -> MisfireDecision.Skip(
@@ -241,12 +241,12 @@ internal object ScheduledTaskScheduleCalculator {
         return if (start < end) {
             current in start until end
         } else {
-            // 跨午夜窗口，如 23:00 ~ 07:30
+            // Cross-midnight window, e.g. 23:00 ~ 07:30
             current >= start || current < end
         }
     }
 
-    /** 解析标准 5 字段 Vixie Cron 表达式：minute hour day-of-month month day-of-week。 */
+    /** Parses a standard 5-field Vixie Cron expression: minute hour day-of-month month day-of-week. */
     fun parseCron(expression: String): CronExpression? {
         val fields = expression.trim().split(Regex("\\s+"))
         if (fields.size != 5) return null
@@ -267,7 +267,7 @@ internal object ScheduledTaskScheduleCalculator {
         )
     }
 
-    /** 生成简洁的排期摘要，供卡片、确认话术和通知展示。 */
+    /** Generates a concise schedule summary for cards, confirmation copy, and notifications. */
     fun describeSchedule(
         schedule: ScheduledTaskSchedule,
         defaultZone: ZoneId = ZoneId.systemDefault(),
@@ -312,7 +312,7 @@ internal object ScheduledTaskScheduleCalculator {
         }
     }
 
-    /** 将下一次执行时间格式化为易读的相对+绝对文本，如 “今天 22:00” / “明天 08:00” / “30 分钟后”。 */
+    /** Formats the next execution time into readable relative + absolute text, e.g. "today 22:00" / "tomorrow 08:00" / "in 30 minutes". */
     fun formatNextRunLabel(
         nextRunAt: Long?,
         nowMs: Long,
@@ -535,7 +535,7 @@ internal object ScheduledTaskScheduleCalculator {
 
     private val HH_MM_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
 
-    /** 将 ISO-8601 或本地 `yyyy-MM-dd HH:mm` 解析为 epochMs，供模型工具使用。 */
+    /** Parses ISO-8601 or local `yyyy-MM-dd HH:mm` into epochMs for model tools to use. */
     fun parseIsoOrLocalDateTime(raw: String, defaultZone: ZoneId = ZoneId.systemDefault()): Long? {
         val text = raw.trim()
         if (text.isEmpty()) return null

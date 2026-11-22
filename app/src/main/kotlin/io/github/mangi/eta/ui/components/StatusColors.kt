@@ -8,14 +8,14 @@ import io.github.mangi.eta.ui.model.PermissionStatusUi
 import io.github.mangi.eta.ui.model.RunStatusUi
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-// 语义状态色（对齐 Google 标准色系，饱和度克制柔和）
+// Semantic status colors (aligned to Google's standard palette, restrained and soft saturation)
 val StatusSuccess = Color(0xFF34A853)
 val StatusWarning = Color(0xFFF9AB00)
 val StatusError: Color @Composable get() = MiuixTheme.colorScheme.error
 val StatusRunning: Color @Composable get() = MiuixTheme.colorScheme.primary
 val StatusIdle: Color @Composable get() = MiuixTheme.colorScheme.onSurfaceVariantSummary
 
-// ── RunStatusUi 映射 ──────────────────────────────────────────────────
+// ── RunStatusUi mapping ──────────────────────────────────────────────────
 
 @Composable
 fun RunStatusUi.color(): Color = when (this) {
@@ -33,7 +33,7 @@ fun RunStatusUi.label(): String = stringResource(when (this) {
     RunStatusUi.Cancelled -> R.string.status_cancelled
 })
 
-// ── PermissionStatusUi 映射 ───────────────────────────────────────────
+// ── PermissionStatusUi mapping ───────────────────────────────────────────
 
 @Composable
 fun PermissionStatusUi.color(): Color = when (this) {

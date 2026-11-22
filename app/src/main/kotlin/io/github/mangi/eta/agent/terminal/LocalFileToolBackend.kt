@@ -108,7 +108,7 @@ internal class LocalFileToolBackend(
         }
         verifyExpected(target, existing, expectedRevision, expectedSha256)
         Files.createDirectories(target.parent)
-        // 创建父目录后再次解析，防止已有符号链接把写入引向允许根之外。
+        // Re-resolve after creating parent directories, so an existing symlink can't steer the write outside the allowed root.
         if (File(resolve(path)).toPath() != target) throw FileToolException("FILE_CHANGED", "Write target has changed")
         if (append) {
             checkActive()
@@ -131,7 +131,7 @@ internal class LocalFileToolBackend(
                     } catch (_: UnsupportedOperationException) {
                         null
                     }
-                    // 共享存储可能合成固定权限；相同权限无需再发起无意义的 chmod。
+                    // Shared storage may synthesize fixed permissions; identical permissions need no pointless chmod.
                     if (permissions != null && Files.getPosixFilePermissions(temporary) != permissions) {
                         Files.setPosixFilePermissions(temporary, permissions)
                         if (Files.getPosixFilePermissions(temporary) != permissions) {

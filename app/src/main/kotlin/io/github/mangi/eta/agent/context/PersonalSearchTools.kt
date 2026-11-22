@@ -6,7 +6,7 @@ import io.github.mangi.eta.core.AppStrings
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 模型面对领域名称；索引资源与协议仅在这里映射，不成为公开工具参数。 */
+/** Model-facing domain names; index resources and protocols are mapped only here and never become public tool parameters. */
 internal object PersonalSearchTools {
     data class Search(
         val name: String,

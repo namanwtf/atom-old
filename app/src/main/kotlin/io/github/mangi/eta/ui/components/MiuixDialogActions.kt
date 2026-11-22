@@ -15,16 +15,16 @@ import top.yukonga.miuix.kmp.glass.GlassDialogButtonRole
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 弹窗底部 OS4 操作按钮行：取消在左、确认在右，平分整行。
+ * OS4 action-button row at the bottom of a dialog: cancel on the left, confirm on the right, splitting the row evenly.
  *
- * @param confirmText 确认按钮文案。
- * @param onCancel 取消回调。
- * @param onConfirm 确认回调。
- * @param modifier 根修饰符。
- * @param cancelText 取消按钮文案。
- * @param cancelEnabled 取消按钮是否可用。
- * @param confirmEnabled 确认按钮是否可用。
- * @param destructive 确认是否为破坏性操作（使用 error 配色）。
+ * @param confirmText Text for the confirm button.
+ * @param onCancel Cancel callback.
+ * @param onConfirm Confirm callback.
+ * @param modifier Root modifier.
+ * @param cancelText Text for the cancel button.
+ * @param cancelEnabled Whether the cancel button is enabled.
+ * @param confirmEnabled Whether the confirm button is enabled.
+ * @param destructive Whether confirm is a destructive action (uses the error color).
  */
 @Composable
 fun MiuixDialogActions(

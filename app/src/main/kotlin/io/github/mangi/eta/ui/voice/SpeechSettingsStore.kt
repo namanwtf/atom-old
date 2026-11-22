@@ -18,8 +18,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * 单个子页面的语音配置草稿：进入页面时加载，编辑只改内存，点击保存先执行页面自己的
- * 校验再整体落盘。跨页面不共享草稿，未保存的修改离开页面即丢弃。
+ * Voice settings draft for a single sub-page: loaded on page entry, edits only mutate memory, and save first runs the page's own
+ * validation before persisting as a whole. Drafts are not shared across pages; unsaved edits are discarded when leaving the page.
  */
 internal class SpeechSettingsStore(
     private val context: Context,
@@ -82,7 +82,7 @@ internal class SpeechSettingsStore(
         playback.stop()
     }
 
-    /** [validate] 由页面按自己的方向提供（识别 / 播报 / 不校验），校验失败即中断保存。 */
+    /** [validate] is provided by the page according to its own direction (recognition / speech / no validation); a failed validation aborts the save. */
     fun save(validate: () -> Unit) {
         if (!loaded || saving) return
         val config = settings

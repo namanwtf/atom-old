@@ -15,8 +15,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 定时任务模型工具执行器：处理常规对话中的 `scheduled_tasks` 管理调用，
- * 以及定时任务执行期的 `scheduled_task_update_memo` / `scheduled_task_report` 自作用域调用。
+ * Scheduled-task model-tool executor: handles the `scheduled_tasks` management call in routine conversations,
+ * as well as the self-scoped `scheduled_task_update_memo` / `scheduled_task_report` calls during a scheduled-task run.
  */
 internal class ScheduledTaskToolExecutor(
     context: Context,

@@ -33,7 +33,7 @@ internal data class CommunityCatalogModel(
     val supportsTemperature: Boolean?,
 )
 
-/** 社区目录仅负责候选项；Eta 的请求协议与认证地址由本地过滤规则决定。 */
+/** The community catalog only provides candidates; Eta's request protocol and auth address are decided by local filtering rules. */
 internal object CommunityCatalogParser {
     private const val COMPATIBLE_NPM = "@ai-sdk/openai-compatible"
     private val providerIdPattern = Regex("[a-z0-9][a-z0-9_-]{0,79}")

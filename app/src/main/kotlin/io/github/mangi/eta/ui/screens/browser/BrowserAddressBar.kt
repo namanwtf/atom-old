@@ -207,7 +207,7 @@ private fun BrowserRefreshButton(
         enabled = enabled,
         modifier = Modifier.semantics { contentDescription = description },
     ) {
-        // 只交叉淡化图标，点击区域和地址框宽度不参与加载状态切换。
+        // Only cross-fade the icon; the hit area and address-box width don't participate in the loading-state switch.
         Crossfade(
             targetState = loading,
             animationSpec = tween(180),
@@ -230,7 +230,7 @@ private fun BrowserSubmitAction(
     canSubmit: Boolean,
     onGo: () -> Unit,
 ) {
-    // 操作槽保持固定宽度，输入动画只作用于图标，不改变网页的布局尺寸。
+    // The action slot keeps a fixed width; the input animation applies only to the icon, not changing the web page's layout size.
     Box(modifier = Modifier.size(36.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = focused,

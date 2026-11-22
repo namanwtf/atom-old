@@ -32,7 +32,7 @@ internal class SpeechPlaybackController(
     private val interruptOnScreenOff: Boolean = true,
     private val afterPlayback: () -> Unit = {},
     private val synthesize: suspend (SpeechSettings, SpeechCredentials, String, (ByteArray) -> Unit) -> Unit = ::synthesizeSpeech,
-    /** 整篇单会话流式合成；为 null 时只用逐段请求。 */
+    /** Whole-passage single-session streaming synthesis; when null only per-segment requests are used. */
     private val streamSynthesize: (suspend (SpeechSettings, SpeechCredentials, List<String>, (ByteArray) -> Unit) -> Unit)? = ::streamSpeech,
     private val createOutput: () -> SpeechAudioOutput = ::SpeechPcmOutput,
 ) {
@@ -94,13 +94,13 @@ internal class SpeechPlaybackController(
     }
 
     /**
-     * 合成按网络速度下载，播放按实时速度写入音轨，两者经队列解耦。若在合成回调里直接写音轨，
-     * 读流会被播放节奏拖住，服务端也会长时间等待客户端读取。
+     * Synthesis downloads at network speed and playback writes to the track at real-time speed, decoupled via a queue. If audio were written to the track directly in the synthesis callback,
+     * the read stream would be dragged by the playback pace, and the server would wait a long time for the client to read.
      *
-     * 优先把整篇放进一个流式合成会话，音频是一条连续的流，整体只在首尾淡入淡出。
-     * 流式会话在出声前失败（例如账号未开通实时模型、自定义地址不支持 WebSocket）时，
-     * 回落到逐段请求：最多领先播放 [PREFETCH_CHUNKS] 段，接缝处由 [SpeechSegmentFade] 淡入淡出。
-     * 已经出声后再失败则直接报错，不从头重读。
+     * Prefer putting the whole passage into one streaming synthesis session; the audio is one continuous stream, fading in and out only at the very start and end.
+     * When the streaming session fails before audio starts (e.g., the account has no realtime model, or the custom endpoint doesn't support WebSocket),
+     * fall back to per-segment requests: lead playback by at most [PREFETCH_CHUNKS] segments, with [SpeechSegmentFade] doing fade-in/out at the seams.
+     * If it fails again after audio has already started, report the error directly rather than re-reading from the beginning.
      */
     private suspend fun playChunks(
         config: SpeechSettings,
@@ -138,14 +138,14 @@ internal class SpeechPlaybackController(
                 }
                 queue.close()
             } catch (error: Throwable) {
-                // 合成超时是 CancellationException，子协程以它结束不会取消父作用域，必须经队列交给播放端。
+                // A synthesis timeout is a CancellationException; the child coroutine ending with it does not cancel the parent scope, so it must be handed to the playback side via the queue.
                 queue.close(error)
             }
         }
         withContext(Dispatchers.IO) {
             var announced = false
             val fade = SpeechSegmentFade()
-            // 音轨写满时 write 会休眠重试；可中断才能让宿主取消立即结束这里，随后关闭音轨。
+            // When the track is full, write sleeps and retries; only by being interruptible can a host cancellation end this immediately, after which the track is closed.
             suspend fun play(bytes: ByteArray) {
                 if (bytes.isNotEmpty()) runInterruptible { player.write(bytes) }
             }

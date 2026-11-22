@@ -12,7 +12,7 @@ internal enum class PersonalContextTimeUnit(val unitsPerSecond: Long, val requir
     SECONDS(1),
     TEXT_MILLISECONDS(1_000, requiresNumericCast = true);
 
-    /** 整数时间戳的左右边界都取 ceil，才能精确保留原始左闭右开区间。 */
+    /** Both boundaries of the integer timestamp are ceiling-rounded so the original half-open [start, end) interval is preserved exactly. */
     fun toBounds(start: Instant?, end: Instant?): PersonalContextTimeBounds = try {
         PersonalContextTimeBounds(start?.let(::ceiling), end?.let(::ceiling))
     } catch (_: ArithmeticException) {
@@ -66,7 +66,7 @@ internal data class PersonalContextSource(
 
     fun field(logicalName: String): PersonalContextField? = fields.firstOrNull { it.logicalName == logicalName }
 
-    /** 所有 action 都必须先确认这些列，不能因保护列缺失而移除过滤条件。 */
+    /** Every action must confirm these columns first; filters must not be removed because a protection column is missing. */
     val probeRequired: List<PersonalContextField> get() = fields.filter { it.required }
     val exposedFields: List<PersonalContextField> get() = fields.filter { it.exposed }
     val sortField: String? get() = timeField ?: field("indexed_time")?.logicalName

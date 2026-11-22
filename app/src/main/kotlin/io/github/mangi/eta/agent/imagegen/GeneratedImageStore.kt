@@ -46,10 +46,10 @@ internal data class GeneratedImageBatchInput(
 )
 
 /**
- * 管理 AI 生图落盘原图、元数据索引、相册导出与系统分享。
+ * Manages AI-generated originals on disk, the metadata index, gallery export, and system sharing.
  *
- * 多张生成结果先全部写入临时文件，再在 `indexLock` 内整批原子 rename + `AtomicFile` 提交索引，
- * 避免与「清空」/「删除」或取消交错产生半截入库或悬空卡片。
+ * Multiple generated results are first written entirely to temp files, then atomically renamed as a batch and committed to the index via `AtomicFile` inside `indexLock`,
+ * avoiding interleaving with "clear" / "delete" or cancellation that would produce half-ingested entries or dangling cards.
  */
 internal object GeneratedImageStore {
     private const val DIR_NAME = "generated_images"
@@ -59,7 +59,7 @@ internal object GeneratedImageStore {
     private val indexLock = Any()
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
-    /** 仅用于无 Room conversationId 的入口（例如助手浮层、定时任务）的最近生成图追踪。 */
+    /** Tracks recent generated images only for entries without a Room conversationId (e.g. assistant overlay, scheduled tasks). */
     private val latestBySession = ConcurrentHashMap<String, String>()
 
     fun storageDir(context: Context): File =
@@ -90,8 +90,8 @@ internal object GeneratedImageStore {
     ).single()
 
     /**
-     * 整批原子提交：先将全部图片写到临时文件，再在单一锁边界内一次性发布原图并原子更新索引；
-     * 任一环节失败或取消时完整回滚并清理所有临时与已移动文件。
+     * Whole-batch atomic commit: first write all images to temp files, then publish the originals once and atomically update the index within a single lock boundary;
+     * on failure or cancellation of any step, fully roll back and clean up all temp and already-moved files.
      */
     fun saveGeneratedImagesBatch(
         context: Context,

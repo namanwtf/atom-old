@@ -20,7 +20,7 @@ import io.github.mangi.eta.core.safeLogType
 import io.github.mangi.eta.ui.MainActivity
 import java.util.concurrent.atomic.AtomicLong
 
-/** 只在用户任务存活期间持有前台执行生命周期；进程被系统停止后不重放任务。 */
+/** Hold the foreground execution lifecycle only while a user task is alive; tasks are not replayed after the process is stopped by the system. */
 internal class AgentExecutionService : Service() {
     private val stopQueue = ExecutionStopQueue { failure ->
         AndroidAgentLogger.warn("Execution task stop failed: type=${failure.safeLogType()}")
@@ -67,7 +67,7 @@ internal class AgentExecutionService : Service() {
 
     override fun onDestroy() {
         if (instance === this) instance = null
-        // 销毁时同样收回本服务拥有的任务。回收在独立有界工作线程上完成，不阻塞 Main。
+        // On destruction, reclaim the tasks owned by this service too. Reclamation runs on an independent bounded worker thread and does not block Main.
         stopQueue.close(leases.drainOwner(owner))
         super.onDestroy()
     }
@@ -139,8 +139,8 @@ internal class AgentExecutionService : Service() {
                 .addAction(Notification.Action.Builder(null, getString(R.string.execution_stop), stop).build())
         }
 
-        // 只有 Agent run 在跑、且当前未由 GUI 悬浮窗接管顶部视觉位时才申请提升为 Live Update；
-        // GUI 运行或虚拟屏微缩镜显示期间退回普通前台通知，避免顶部同时出现两个胶囊冲突。
+        // Request promotion to a Live Update only when an Agent run is running and the top visual slot is not currently taken over by the GUI overlay;
+        // fall back to a normal foreground notification during GUI runs or virtual-screen minimap display, to avoid two colliding capsules at the top.
         if (status != null && !suppressLiveUpdate && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             builder
                 .setStyle(Notification.BigTextStyle().bigText(""))
@@ -151,7 +151,7 @@ internal class AgentExecutionService : Service() {
                     .setShowWhen(true)
                     .setUsesChronometer(true)
             }
-            // 请求方法从 API 36.1 才公开；标准 extra 也可供支持该协议的 API 36 系统读取。
+            // The request method is only public from API 36.1; the standard extra is also readable by API 36 systems that support this protocol.
             builder.extras.putBoolean("android.requestPromotedOngoing", true)
         } else if (status != null) {
             builder.setContentText(resources.getQuantityString(R.plurals.execution_summary, taskCount, taskCount))
@@ -159,7 +159,7 @@ internal class AgentExecutionService : Service() {
         return builder.build()
     }
 
-    /** 状态栏胶囊约 7 个字符可完整显示；更长时只取动作，具体目标留在应用内。 */
+    /** The status-bar capsule can fully display about 7 characters; when longer, keep only the action and leave the specific target inside the app. */
     private fun AgentOverlayStatus.shortText(): String = when (this) {
         is AgentOverlayStatus.RunningTool, is AgentOverlayStatus.HostedToolRunning -> getString(R.string.execution_chip_running)
         AgentOverlayStatus.Paused -> getString(R.string.overlay_paused)
@@ -187,8 +187,8 @@ internal class AgentExecutionService : Service() {
         private var publishedSignature: String? = null
 
         /**
-         * Agent run 的当前状态，供通知与状态栏胶囊展示；null 表示没有 Agent run 在跑。
-         * 只在离散展示字段变化时刷新通知，避免流式事件把通知更新频率推到系统限流。
+         * Current state of the Agent run, for notification and status-bar capsule display; null means no Agent run is active.
+         * Refresh the notification only when a discrete display field changes, so streaming events do not push notification update frequency into system rate limiting.
          */
         fun updateRunStatus(
             context: Context,
@@ -227,7 +227,7 @@ internal class AgentExecutionService : Service() {
             return if (taskCount > 1) "$statusLabel · $taskCount" else statusLabel
         }
 
-        /** 必须从有效的用户入口取得引用，再创建会话或子进程；失败时调用方不启动任务。 */
+        /** Must obtain the reference from a valid user entry before creating the session or subprocess; on failure the caller does not start the task. */
         fun acquire(
             context: Context,
             id: String,

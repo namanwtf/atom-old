@@ -50,10 +50,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 单次 Runtime run 的阻塞执行器。
+ * Blocking executor for a single Runtime run.
  *
- * 它只拥有模型、工具和终态提交，不持有 Service、Messenger、Compose 或 WindowManager 状态。
- * 所有外部副作用都通过窄回调交回宿主。
+ * It owns only the model, tools, and terminal-state commit; it holds no Service, Messenger, Compose, or WindowManager state.
+ * All external side effects are handed back to the host through narrow callbacks.
  */
 internal class AgentRuntimeRunExecutor(
     context: Context,
@@ -93,7 +93,7 @@ internal class AgentRuntimeRunExecutor(
         var checkpointRecorder: AgentRunCheckpointRecorder? = null
         val timing = AgentRunTiming(AndroidAgentLogger)
 
-        // 失败清理需要在 try 外拿到会话 id。
+        // Failure cleanup needs the session id from outside the try.
         var memoryConversationId: String? = null
         val result = try {
             val contextWindow = request.config.knownContextWindow
@@ -170,7 +170,7 @@ internal class AgentRuntimeRunExecutor(
                 AgentMemoryContext.DISABLED
             }
             if (request.config.terminalTools || request.config.deviceDirectTools) {
-                // 启动探测由 App 拥有；模型首轮等待其结果，并在历史曾授权但临时未就绪时自动复检。
+                // Startup probing is owned by the App; the model's first turn waits for its result and auto-rechecks when historically authorized but temporarily not ready.
                 runController.throwIfCancelled()
                 io.github.mangi.eta.agent.device.RootAccess.awaitOrRetryIfPreviouslyGranted(appContext)
             }
@@ -271,7 +271,7 @@ internal class AgentRuntimeRunExecutor(
             toolExecutor = routingExecutor
             toolsBinding = runController.register(routingExecutor::close)
             timing.preparationFinished(skillContext.installedSkills.size)
-            // 手动压缩复用主会话工具目录以保持 Provider 前缀缓存，必须暴露与 OP_CHAT 一致的 conversation_history。
+            // Manual compaction reuses the main-session tool directory to keep Provider prefix caching; it must expose conversation_history consistent with OP_CHAT.
             val historyTool = if (supportsHistoryTool(request.operation)) {
                 val id = conversationId
                 if (id != null) {
@@ -333,7 +333,7 @@ internal class AgentRuntimeRunExecutor(
                 conversationId = conversationId,
                 sessionKey = conversationId ?: request.effectiveModelSessionId,
                 currentTurnUserImages = {
-                    // 助手浮层自动采集的屏幕截图不属于用户授权附件，避免误传给第三方生图服务。
+                    // Screenshots auto-captured by the assistant overlay are not user-authorized attachments; avoid accidentally passing them to third-party image-generation services.
                     if (isVoiceOverlay) emptyList()
                     else request.images.filterNot { it.preserveOriginal }
                 },
@@ -439,7 +439,7 @@ internal class AgentRuntimeRunExecutor(
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 onContextSnapshot = { snapshot ->
-                    // 压缩会把历史里的记忆写入摘要掉，下一轮需要重新注入最新记忆。
+                    // Compaction writes memories from history into the summary; the next turn needs to re-inject the latest memories.
                     ConversationMemoryPins.forget(conversationId)
                     val committed = snapshot.copy(operationId = request.runId)
                     AgentRunCheckpointStore.saveContext(appContext, request.runId, committed)
@@ -484,7 +484,7 @@ internal class AgentRuntimeRunExecutor(
                 rewriteTargetMessageId = request.rewriteTargetMessageId,
             )
         } catch (throwable: Throwable) {
-            // 失败时历史是否完整落盘不确定，放弃固定的记忆快照；记忆未变时重新注入的内容逐字节相同。
+            // On failure it is uncertain whether history was fully persisted, so discard the fixed memory snapshot; when memory is unchanged, the re-injected content is byte-identical.
             ConversationMemoryPins.forget(memoryConversationId)
             cancelled = runController.isCancelled || throwable is AgentRunCancelledException
             val modelFailure = throwable as? AgentModelExecutionException
@@ -592,7 +592,7 @@ internal class AgentRuntimeRunExecutor(
     ) {
         checkpointRecorder?.accept(event)
         if (!session.emit(event)) return
-        // 多 Subagent 并发会跨线程回调 acceptEvent；只缓存可落盘事件，避免瞬态进度堆积内存。
+        // Concurrent Subagents may call back acceptEvent across threads; cache only persistable events to avoid transient progress piling up in memory.
         if (archivedEvents != null) {
             event.recoveryProjection()?.let { durable ->
                 synchronized(archivedEvents) {

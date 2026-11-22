@@ -31,7 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Text
 
-/** 角色在对话与列表中的身份信息；头像路径为空时用名字生成字标头像。 */
+/** A character's identity info in conversations and lists; when the avatar path is empty, a monogram avatar is generated from the name. */
 @Immutable
 internal data class RoleplayChatUi(
     val characterName: String,
@@ -39,12 +39,12 @@ internal data class RoleplayChatUi(
     val userName: String,
 )
 
-/** 当前对话绑定的角色；普通 Agent 对话为 null，消息与空态据此切换为角色样式。 */
+/** The character bound to the current conversation; null for ordinary Agent conversations, and messages/empty state switch to the character style accordingly. */
 internal val LocalRoleplayChat = staticCompositionLocalOf<RoleplayChatUi?> { null }
 
 /**
- * 角色图片解码缓存。角色卡原图常为 1024px 以上的 PNG，按显示尺寸降采样后缓存，
- * 列表滚动与消息重组都只命中内存；键包含目标尺寸，避免小头像复用大图浪费内存。
+ * Character image decode cache. Character card sources are often PNGs above 1024px; they're downsampled to display size and cached,
+ * so list scrolling and message recomposition only hit memory; the key includes the target size, avoiding small avatars reusing large images and wasting memory.
  */
 private object CharacterImageCache {
     private val cache = object : LruCache<String, ImageBitmap>(48 * 1024 * 1024) {
@@ -67,11 +67,11 @@ private object CharacterImageCache {
         bitmap.asImageBitmap().also { cache.put(key(path, maxPx), it) }
     }
 
-    // 编辑头像会生成新文件名，同一路径内容不变，文件修改时间纳入键只为防御外部覆盖。
+    // Editing the avatar generates a new filename; same-path content never changes, and mtime is included in the key only to guard against external overwrites.
     private fun key(path: String, maxPx: Int) = "$path#${File(path).lastModified()}#$maxPx"
 }
 
-/** 按显示尺寸异步解码角色图片；缓存命中时首帧即有图，不闪字标占位。 */
+/** Asynchronously decodes the character image at display size; on a cache hit the first frame already has the image, with no monogram-placeholder flash. */
 @Composable
 internal fun rememberCharacterImage(path: String?, displaySize: Dp): ImageBitmap? {
     val maxPx = with(LocalDensity.current) { displaySize.roundToPx() }.coerceIn(32, 1024)
@@ -82,8 +82,8 @@ internal fun rememberCharacterImage(path: String?, displaySize: Dp): ImageBitmap
 }
 
 /**
- * 角色头像：有图时按裁剪填满，人物脸部通常在画面上方，因此纵向对齐顶部；
- * 无图时用名字首字与稳定配色生成字标，同一角色在所有页面颜色一致。
+ * Character avatar: when there's an image, crop to fill; faces are usually in the upper part, so align to the top vertically;
+ * without an image, generate a monogram from the name's first character with a stable palette, keeping the same color for a character across all pages.
  */
 @Composable
 internal fun CharacterAvatar(
@@ -96,8 +96,8 @@ internal fun CharacterAvatar(
     borderColor: Color = Color.Unspecified,
     image: ImageBitmap? = rememberCharacterImage(avatarPath, size),
 ) {
-    // size 决定解码分辨率与默认正方形尺寸；调用方传 fillMaxSize/matchParentSize/明确宽高时遵循外层约束，
-    // 仅附加非尺寸修饰符时仍稳定兜底为 size，避免内部 matchParentSize 把容器压成 0x0。
+    // size determines the decode resolution and default square size; when the caller passes fillMaxSize/matchParentSize/explicit dimensions, follow the outer constraints,
+    // and when only non-size modifiers are attached, still fall back stably to size, so an internal matchParentSize doesn't collapse the container to 0x0.
     Box(
         modifier = modifier
             .size(size)
@@ -141,7 +141,7 @@ internal fun CharacterMonogram(name: String, size: Dp, modifier: Modifier = Modi
     }
 }
 
-/** 字标配色：低饱和的双色渐变，深浅色主题下白字都清晰；按名字散列取色，结果稳定。 */
+/** Monogram palette: a low-saturation two-color gradient keeping white text legible in both themes; colors are chosen by hashing the name, so results are stable. */
 private val MonogramPalette = listOf(
     listOf(Color(0xFFF58FA8), Color(0xFFC56CD6)),
     listOf(Color(0xFF7FA7F5), Color(0xFF6A6FE0)),

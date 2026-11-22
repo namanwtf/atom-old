@@ -12,7 +12,7 @@ import java.net.URI
 import java.util.Locale
 import org.json.JSONObject
 
-/** 工具摘要面向用户展示，不包含敏感参数；终端命令通过独立字段提供给用户核对。 */
+/** Tool summaries are shown to the user without sensitive parameters; terminal commands are provided via a separate field for the user to review. */
 internal class AgentTraceFormatter {
     fun summarizeArguments(toolCall: AgentModelClient.ToolCall): String =
         when (toolCall.name) {
@@ -130,7 +130,7 @@ internal class AgentTraceFormatter {
             }
         }
 
-    /** 命令以脱敏后的用户可见投影进入运行轨迹；日志仍只记录长度。 */
+    /** Commands enter the run trace as a redacted, user-visible projection; logs still record only the length. */
     fun displayCommand(toolCall: AgentModelClient.ToolCall): String? =
         if (toolCall.name == AgentSubagentToolCatalog.TOOL_NAME) {
             SubagentActivitySnapshot.initialFromArguments(toolCall.argumentsJson)?.encodeForWire()
@@ -161,7 +161,7 @@ internal class AgentTraceFormatter {
             }
     }
 
-    /** 外部 URI 摘要不记录 path, query, fragment 或用户信息。 */
+    /** External URI summaries never record path, query, fragment, or user info. */
     private fun summarizeImageGenArguments(argumentsJson: String): String =
         runCatching {
             val args = JSONObject(argumentsJson)
@@ -190,7 +190,7 @@ internal class AgentTraceFormatter {
         }.getOrDefault(label)
     }
 
-    /** browser_use 摘要只暴露动作和安全提取的 host。 */
+    /** browser_use summaries expose only the action and a safely extracted host. */
     fun summarizeBrowserArguments(argumentsJson: String): String =
         runCatching {
             val arguments = JSONObject(argumentsJson)
@@ -247,7 +247,7 @@ internal class AgentTraceFormatter {
             "$label · $countText"
         }.getOrDefault(label)
 
-    /** 只展示动作与长度，不回显正文：输入内容可能是密码或私人消息。 */
+    /** Shows only the action and length, never echoing the body: the input may be a password or a private message. */
     private fun summarizeTypeText(argumentsJson: String): String =
         runCatching {
             val args = JSONObject(argumentsJson)
@@ -275,7 +275,7 @@ internal class AgentTraceFormatter {
             }
         }.getOrDefault(AppStrings.get(R.string.trace_arg_input_text, "Enter text"))
 
-    /** 搜索关键词是用户自己发起的查询，直接展示；仍做单行化与长度截断。 */
+    /** Search keywords are queries the user initiated, shown directly; still single-lined and length-truncated. */
     private fun summarizeQueryArguments(label: String, argumentsJson: String): String =
         runCatching {
             val query = sanitizeSummaryValue(
@@ -353,7 +353,7 @@ internal class AgentTraceFormatter {
         }.getOrDefault(label)
     }
 
-    /** 结果成败供事件与 UI 状态使用，不再依赖摘要文本里的标记。 */
+    /** Outcome success/failure serves events and UI state, no longer relying on markers in the summary text. */
     fun isSuccessResult(result: AgentModelClient.ToolResult): Boolean =
         parseResultJson(result)?.optBoolean("ok", true) ?: true
 
@@ -363,7 +363,7 @@ internal class AgentTraceFormatter {
     ): String {
         val json = parseResultJson(result)
         if (toolName == "web_search" || toolName == "fetch_url") return summarizeWebResult(toolName, json)
-        // 终端 exit_code != 0 时 ok=false 但没有 code 字段，必须走专用分支保留退出码与输出
+        // When the terminal exit_code != 0, ok=false but there is no code field, so it must take the dedicated branch to preserve the exit code and output
         if (toolName in AgentTerminalToolCatalog.names || toolName == "run_command") {
             return summarizeTerminalResult(toolName, json)
         }
@@ -435,8 +435,8 @@ internal class AgentTraceFormatter {
         runCatching { JSONObject(result.content) }.getOrNull()
 
     /**
-     * 网页错误正文、搜索词和页面标题可能回显私密 URL，只保留计数。动作与主机已在参数摘要中，
-     * 结果只给出结论，避免工作过程同一行重复。
+     * Web error bodies, search terms, and page titles may echo private URLs, so keep only counts. Actions and hosts are already in the parameter summary,
+     * so the result gives only the conclusion, avoiding repeating the same line for the working process.
      */
     private fun summarizeWebResult(toolName: String, json: JSONObject?): String {
         val done = AppStrings.get(R.string.trace_res_done, "Done")
@@ -475,7 +475,7 @@ internal class AgentTraceFormatter {
         }
     }
 
-    /** 失败摘要保留 code= 标记，供运行日志提取稳定错误码；message 是工具侧给出的原因。 */
+    /** Failure summaries keep the code= marker so run logs can extract a stable error code; message is the reason given by the tool side. */
     private fun summarizeFailure(json: JSONObject?): String {
         val code = json?.optString("code")?.takeIf { it.isNotBlank() }
         val reason = json?.optString("message")
@@ -782,8 +782,8 @@ internal class AgentTraceFormatter {
     }
 
     /**
-     * 终端结果面向用户展示退出状态与输出预览；输出可能很长，
-     * 只保留开头几行，截断时追加省略标记。
+     * Terminal results show the user the exit status and an output preview; the output may be very long,
+     * so keep only the first few lines and append an ellipsis marker when truncated.
      */
     private fun summarizeTerminalResult(toolName: String, json: JSONObject?): String {
         if (json == null) return terminalLabel(toolName)
@@ -1073,7 +1073,7 @@ internal class AgentTraceFormatter {
         )
         val BROWSER_TEXT_ACTIONS = setOf("get_readable", "get_text")
 
-        /** 结构化设备工具只展示动作标签，不暴露任何参数。 */
+        /** Structured device tools show only the action label, exposing no parameters. */
         val DEVICE_ACTION_LABELS = mapOf(
             "set_alarm" to LocalizedLabel(R.string.trace_act_set_alarm, "Set alarm"),
             "set_timer" to LocalizedLabel(R.string.trace_act_set_timer, "Set timer"),

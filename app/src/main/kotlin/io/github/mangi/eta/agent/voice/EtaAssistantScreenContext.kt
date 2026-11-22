@@ -18,7 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
-/** Session 与浮窗同进程共享一次唤醒的快照，关闭或替换后不再接纳迟到结果。 */
+/** The session and the overlay share one wake snapshot in the same process; late results are no longer accepted after close or replacement. */
 internal class EtaAssistantScreenContext(
     showFlags: Int,
     private val foregroundApps: List<ComponentName>,
@@ -87,7 +87,7 @@ internal class EtaAssistantScreenContext(
                 completeIfReady()
             }
         }
-        // 即使任务在执行前取消，也要释放系统回调交付的 Bitmap。
+        // Even if the task is cancelled before it runs, release the Bitmap delivered by the system callback.
         job.invokeOnCompletion { if (bitmap != null && !bitmap.isRecycled) bitmap.recycle() }
     }
 
@@ -133,7 +133,7 @@ internal class EtaAssistantScreenContext(
     }
 }
 
-/** 最多保留当前一次唤醒，Intent 只传 ID，不传图片或界面树。 */
+/** At most the current wake is retained; the Intent carries only an ID, never images or the UI tree. */
 internal object EtaAssistantScreenContexts {
     private var current: EtaAssistantScreenContext? = null
 

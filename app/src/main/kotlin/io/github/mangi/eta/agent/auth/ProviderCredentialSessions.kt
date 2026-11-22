@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/** 刷新锁只合并同一账号的网络请求；注销不等待网络，并使旧请求的回写失效。 */
+/** The refresh lock only coalesces network requests for the same account; sign-out does not wait for the network and invalidates writes from old requests. */
 internal class ProviderCredentialSessions(
     private val storage: ProviderCredentialStorage,
     private val oauth: ProviderOAuthClient,
@@ -53,7 +53,7 @@ internal class ProviderCredentialSessions(
         controller.throwIfCancelled()
         val saved = session.stateLock.withLock {
             controller.throwIfCancelled()
-            // 浏览器登录尚未成功时，原会话仍可刷新；取消登录不能丢掉已经轮换的凭据。
+            // While browser sign-in has not yet succeeded, the existing session can still be refreshed; cancelling sign-in must not discard already-rotated credentials.
             requireGeneration(session.loginGeneration, loginGeneration)
             storage.write(providerId, credential)
             ++session.generation
@@ -88,7 +88,7 @@ internal class ProviderCredentialSessions(
                 if (error.code == "oauth_session_expired") invalidate(providerId, session, generation)
                 throw error
             }
-            // 轮换已在服务端完成，即使调用方刚取消，也先保存有效结果，避免丢失新的 refresh token。
+            // Rotation has already completed server-side; even if the caller just cancelled, persist the valid result first to avoid losing the new refresh token.
             session.stateLock.withLock {
                 requireGeneration(session.generation, generation)
                 storage.write(providerId, refreshed)

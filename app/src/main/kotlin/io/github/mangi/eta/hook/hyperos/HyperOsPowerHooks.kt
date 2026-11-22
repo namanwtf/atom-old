@@ -42,7 +42,7 @@ internal object HyperOsPowerHooks {
                     continue
                 }
                 intercept(id, method, "ShortCutActionsUtils.triggerFunction/${signature.size}") { chain ->
-                    // 同时匹配功能与来源，不能把关机菜单、SOS 或其他快捷动作改成助理。
+                    // Match both the function and the source, so we don't turn the power menu, SOS, or other shortcut actions into the assistant.
                     val function = chain.getArg(0) as? String
                     val source = chain.getArg(1) as? String
                     if (!HyperOsPowerPolicy.isAssistantShortcut(function, source)) {
@@ -53,8 +53,8 @@ internal object HyperOsPowerHooks {
                     if (target == PowerAssistantTarget.OEM || context == null) return@intercept chain.proceed()
                     val now = SystemClock.uptimeMillis()
                     if (dispatchGate.shouldSuppressDuplicate(now)) {
-                        // HyperOS 同一次按压会派发 imperceptible 与 long_press 等多路触发，命中窗口直接消费，
-                        // 避免重复唤起会话并阻止后续路径回落到系统原生助手。
+                        // HyperOS dispatches multiple triggers (imperceptible, long_press, etc.) for a single press; consume them directly when the window is hit,
+                        // avoiding repeated session launches and preventing later paths from falling back to the system native assistant.
                         hooks.logger.debug { "HyperOsPower: hit dedup window, swallowing duplicate power-key assistant trigger ($source)" }
                         return@intercept true
                     }

@@ -145,7 +145,7 @@ internal object BuiltinProviders {
         PROVIDERS.firstOrNull { it.id == id }
 
     /**
-     * 仅当内置 Provider 名称仍为默认名称时返回对应多语言资源；用户手动改名后保留用户自定义名称。
+     * Return the corresponding localized resource only when the built-in provider name is still the default name; after the user renames it manually, the custom name is preserved.
      */
     @StringRes
     fun defaultNameRes(id: String, storedName: String): Int? {

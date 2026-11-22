@@ -95,9 +95,9 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     ): JSONObject {
         val systemParts = mutableListOf<String>()
         val anthropicMessages = JSONArray()
-        // 当前轮（最后一条真实用户消息之后）的助手消息都原样带回签名块：工具循环中逐轮保持
-        // 同一前缀，缓存才能在每一轮续用；压缩指令与运行内 steering 补充不推进当前轮起点，
-        // 以免剥离此前已缓存轮次的思考签名导致前缀缓存失效。
+        // Assistant messages in the current turn (after the last real user message) all carry their signature blocks back unchanged: keeping the same
+        // prefix across each turn of the tool loop lets the cache be reused each turn; compaction instructions and in-run steering additions do not advance the current turn's start,
+        // so as not to strip thinking signatures from previously cached turns and invalidate the prefix cache.
         val currentTurnStart = (messages.length() - 1 downTo 0).firstOrNull { index ->
             messages.optJSONObject(index)?.let {
                 it.optString("role") == "user" &&
@@ -139,8 +139,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
             }
         }
 
-        // Anthropic 修改 tool_choice 会使整个 messages 缓存失效；压缩主路径保持与对话一致的 tool_choice，
-        // 靠指令禁止调用工具并在流中拦截，从而兼顾 tools/system/messages 全链路缓存命中。
+        // Anthropic invalidates the entire messages cache when tool_choice changes; the compaction main path keeps tool_choice consistent with the conversation,
+        // forbidding tool calls via instructions and intercepting them in the stream, so cache hits are preserved across the whole tools/system/messages chain.
         val customBody = if (purpose == ProviderRequestPurpose.COMPACTION) {
             config.customBody.filterNot { it.key in COMPACTION_PROTECTED_FIELDS }
         } else {
@@ -170,8 +170,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     }
 
     /**
-     * Anthropic 只缓存显式标记的前缀。工具目录与系统提示各设一个断点，跨会话复用；
-     * 最后一条消息再设一个随轮前移的断点，下一轮按最长匹配前缀读取，覆盖整个工具循环。
+     * Anthropic only caches explicitly marked prefixes. A breakpoint is set on the tool catalog and another on the system prompt, reused across sessions;
+     * a further breakpoint is set on the last message and advances with each turn, so the next turn reads by the longest matching prefix and covers the whole tool loop.
      */
     private fun cacheBreakpoint(block: JSONObject): JSONObject =
         block.put("cache_control", JSONObject().put("type", "ephemeral"))
@@ -179,7 +179,7 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     private fun markConversationBreakpoint(messages: JSONArray) {
         val content = messages.optJSONObject(messages.length() - 1)?.optJSONArray("content") ?: return
         val blocks = (0 until content.length()).mapNotNull(content::optJSONObject)
-        // 观察截图只活一轮，断点落在它之前才能被下一轮命中；思考块不可标记，空文本标记会被拒绝。
+        // Observation screenshots live only one turn; the breakpoint must fall before them to be hit by the next turn. Thinking blocks cannot be marked, and empty-text markers are rejected.
         val target = blocks.lastOrNull { block ->
             !block.optBoolean(TRANSIENT_BLOCK) && when (block.optString("type")) {
                 "text" -> block.optString("text").isNotEmpty()
@@ -188,7 +188,7 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
             }
         }
         target?.let(::cacheBreakpoint)
-        // 标记只服务于选断点，发送前从所有消息中清除。
+        // Markers serve only breakpoint selection and are removed from all messages before sending.
         for (message in 0 until messages.length()) {
             val blocksOfMessage = messages.optJSONObject(message)?.optJSONArray("content") ?: continue
             for (block in 0 until blocksOfMessage.length()) blocksOfMessage.optJSONObject(block)?.remove(TRANSIENT_BLOCK)
@@ -196,8 +196,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     }
 
     /**
-     * 同一批工具结果、随后的观察图片与用户补充必须落在同一条 user 消息里，且 tool_result 在前。
-     * 官方接口会合并连续同角色消息，但兼容端点不一定这样做，会把第二条 tool_result 判为孤立块。
+     * The same batch of tool results, the following observation images, and user additions must land in a single user message with tool_result first.
+     * The official API merges consecutive same-role messages, but compatible endpoints may not, judging the second tool_result as an orphaned block.
      */
     private fun appendTurn(target: JSONArray, role: String, content: JSONArray) {
         val previous = target.optJSONObject(target.length() - 1)
@@ -280,8 +280,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     }
 
     /**
-     * input_schema 顶层不接受 oneOf/anyOf/allOf，否则整个请求 400。只在发送副本上移除；
-     * 参数交给对应工具执行，执行结果随工具回合返回模型。
+     * The top level of input_schema rejects oneOf/anyOf/allOf, otherwise the whole request returns 400. They are removed only on the outgoing copy;
+     * parameters are handed to the corresponding tool for execution, and the execution results return to the model with the tool turn.
      */
     private fun inputSchema(parameters: JSONObject?): JSONObject {
         parameters ?: return JSONObject().put("type", "object")
@@ -584,8 +584,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     )
 
     /**
-     * Anthropic 不返回 total_tokens；本次请求实际占用的上下文是未缓存输入与缓存读写之和，
-     * 自动压缩与输入框用量都以它为准。
+     * Anthropic does not return total_tokens; the context actually consumed by this request is the sum of uncached input and cache reads/writes,
+     * and both auto-compaction and the input box usage are based on it.
      */
     private fun parseUsage(usage: JSONObject?): AgentTokenUsage? {
         usage ?: return null
@@ -603,8 +603,8 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
     }
 
     /**
-     * message_start 给出输入用量，message_delta 给出累计输出，部分兼容端点只在 delta 中补发部分字段；
-     * 后到的非空字段覆盖先到的，避免输出用量把输入与上下文占用清空。
+     * message_start gives input usage and message_delta gives cumulative output; some compatible endpoints re-send only part of the fields in delta.
+     * Later non-empty fields override earlier ones, preventing output usage from clearing input and context usage.
      */
     private fun AgentTokenUsage.mergedWith(later: AgentTokenUsage) = AgentTokenUsage(
         contextTokens = later.contextTokens ?: contextTokens,
@@ -641,7 +641,7 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
 
 }
 
-/** 只在当前 Agent run 的工具回合保留 Anthropic 签名块；稳定会话 DTO 不序列化该字段。 */
+/** Anthropic signature blocks are kept only for tool turns in the current Agent run; the stable session DTO does not serialize this field. */
 internal object AnthropicEphemeralState {
     private const val CONTENT_BLOCKS_KEY = "_eta_anthropic_content_blocks"
 

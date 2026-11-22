@@ -30,8 +30,8 @@ import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 列表空态：有说明时标题用正文色作为主信息、说明退为次级；只有一句话时整体弱化，
- * 避免一条“暂无内容”在页面里显得比真实内容还醒目。
+ * List empty state: with a description, the title uses the body color as primary info and the description steps down to secondary; with a single line, the whole thing is softened,
+ * so a lone "nothing here" doesn't look more prominent than real content on the page.
  */
 @Composable
 internal fun ListEmptyState(

@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.terminal
 import java.io.File
 import java.security.MessageDigest
 
-/** 文件操作在所选命名空间内执行，Linux 的链接不能交给 Android 宿主解析。 */
+/** File operations run inside the selected namespace; Linux links must not be resolved by the Android host. */
 internal class ShellFileToolBackend(
     override val environment: String,
     override val identity: String,
@@ -24,7 +24,7 @@ internal class ShellFileToolBackend(
             raw.startsWith('/') -> raw
             else -> "$cwd/$raw"
         }
-        // 先让目标命名空间解析链接；提前折叠 link/.. 会改变内核实际访问的目录。
+        // Let the target namespace resolve links first; folding link/.. early would change the directory the kernel actually accesses.
         val result = run("readlink -f -- ${shellQuote(absolute)}", maxOutputBytes = 8192, allowFailure = true)
         return if (result.exitCode == 0) {
             decode(result.output).removeSuffix("\n").takeIf { it.startsWith('/') }
@@ -106,7 +106,7 @@ internal class ShellFileToolBackend(
         return FileToolDirectoryPage(selected, next, next < sorted.size, before.revision)
     }
 
-    /** 一页条目的元数据共用一次命名空间；路径经 stdin 传入，避免撑满 exec 参数。 */
+    /** Metadata for one page of entries shares a single namespace; paths go through stdin to avoid overflowing exec arguments. */
     private fun statPage(paths: List<String>): List<FileToolStat> {
         if (paths.isEmpty()) return emptyList()
         val script = buildString {
@@ -150,7 +150,7 @@ internal class ShellFileToolBackend(
             "eta_hash=${'$'}(sha256sum < $quoted) || exit 45; " +
                 "[ \"${'$'}{eta_hash%% *}\" = ${shellQuote(it)} ] || exit 44; "
         }.orEmpty()
-        // 保留既有 inode 的属主、模式和 SELinux 标签；如实报告非原子写入。
+        // Preserve the existing inode's owner, mode, and SELinux label; honestly report non-atomic writes.
         run(
             "mkdir -p -- $parent || exit 43; " +
                 "if [ -e $quoted ] && [ ! -f $quoted ]; then exit 42; fi; " +

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** 查询超时不能中断 Binder；旧查询退出前拒绝新查询，避免线程和请求积压。仅运行无副作用读取。 */
+/** A query timeout cannot interrupt the Binder; reject new queries until the old query exits to avoid piling up threads and requests. Only side-effect-free reads run. */
 internal class AccessibilityQueryExecutor : AutoCloseable {
     sealed interface Result<out T> {
         data class Completed<T>(val value: T) : Result<T>
@@ -72,7 +72,7 @@ internal class AccessibilityQueryExecutor : AutoCloseable {
         }
     }
 
-    /** 当前 Binder 返回后，遍历必须在下一次远端读取前检查取消；不依赖 interrupt 能中断 Binder。 */
+    /** After the current Binder returns, traversal must check cancellation before the next remote read; it must not rely on interrupt being able to interrupt the Binder. */
     fun ensureActive() {
         val context = currentQuery.get() ?: return
         if (closed.get() || context.cancelled.get() || !context.isActive() || Thread.currentThread().isInterrupted) {

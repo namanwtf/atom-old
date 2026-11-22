@@ -8,7 +8,7 @@ import io.github.mangi.eta.ui.model.ThinkingMessageUi
 import io.github.mangi.eta.ui.model.ToolActivityMessageUi
 import io.github.mangi.eta.ui.model.ToolActivityStatusUi
 
-/** 工作过程卡片内的一个时间线节点：单条消息，或连续调用同一工具形成的分组。 */
+/** One timeline node inside the work-process card: a single message, or a group formed by consecutive calls to the same tool. */
 @Immutable
 internal sealed interface AgentWorkStep {
     val key: String
@@ -28,8 +28,8 @@ internal sealed interface AgentWorkStep {
 }
 
 /**
- * Agent 常连续读取多个文件或多次观察屏幕；同名工具连续出现时合并为一个节点，
- * 时间线只保留“做了什么”的层级，细节按需展开。浏览器条目携带实时预览，保持独立。
+ * The Agent often reads multiple files or observes the screen repeatedly; consecutive same-name tool calls merge into one node,
+ * so the timeline keeps only the "what was done" level and details expand on demand. Browser entries carry a live preview and stay separate.
  */
 internal fun List<AgentChatMessageUi>.toWorkSteps(): List<AgentWorkStep> = buildList {
     val run = mutableListOf<ToolActivityMessageUi>()
@@ -57,7 +57,7 @@ internal fun List<AgentChatMessageUi>.toWorkSteps(): List<AgentWorkStep> = build
 
 private val UNGROUPED_TOOLS = setOf("browser_use", "subagent")
 
-/** 折叠后的工作过程摘要所需计数。 */
+/** Counts needed for the collapsed work-process summary. */
 internal data class AgentWorkSummary(
     val thinkingCount: Int,
     val toolCount: Int,
@@ -71,8 +71,8 @@ internal fun List<AgentChatMessageUi>.workSummary(): AgentWorkSummary = AgentWor
 )
 
 /**
- * 折叠行下方的一行结果。成功的常态结果（如“完成”）不占行；终端输出取最后一行，
- * 因为命令的结论通常在末尾；失败去掉重复的“失败”前缀与日志用的 code= 尾巴。
+ * One result line under the collapsed row. A successful ordinary result (like "done") takes no line; terminal output takes the last line,
+ * because a command's conclusion is usually at the end; failures drop the repeated "failed" prefix and the code= tail used for logs.
  */
 internal fun ToolActivityMessageUi.outcomeLine(): String? {
     val summary = resultSummary?.trim()?.takeIf { it.isNotEmpty() } ?: return null
@@ -131,6 +131,6 @@ private fun successPrefixes(): List<String> = listOf(
     "${AppStrings.get(R.string.workstep_success_label, "done")} · ",
 ).distinct()
 
-// 与 Runtime 侧结果摘要的固定格式对应，同时兼容历史多语言持久化记录。
+// Matches the fixed format of the Runtime-side result summary, while staying compatible with historical multi-language persisted records.
 private const val FAILURE_CODE_SEPARATOR = " · code="
 private const val TRUNCATION_MARK = "…"

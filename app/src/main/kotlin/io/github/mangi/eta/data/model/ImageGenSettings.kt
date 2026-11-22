@@ -250,7 +250,7 @@ internal object ImageGenModelPresets {
 
 @Serializable
 internal data class GeminiImageConfig(
-    /** 为空时Auto匹配已配置的内置 Gemini 服务商；显式设为 [ImageGenSettings.STANDALONE_LINK_ID] 表示独立配置。 */
+    /** When empty, auto-match a configured built-in Gemini provider; explicitly set to [ImageGenSettings.STANDALONE_LINK_ID] to indicate a standalone configuration. */
     val linkedProviderId: String = "",
     val model: String = DEFAULT_MODEL,
     val baseUrl: String = "",
@@ -349,7 +349,7 @@ internal data class ImageGenSettings(
     }
 }
 
-/** 独立凭据不随普通设置写入明文 DataStore，统一使用 AndroidKeyStore AES-GCM 加密。 */
+/** Standalone credentials are not written in plaintext to the normal DataStore; they are uniformly encrypted with AndroidKeyStore AES-GCM. */
 @Serializable
 internal data class ImageGenCredentials(
     val geminiApiKey: String = "",

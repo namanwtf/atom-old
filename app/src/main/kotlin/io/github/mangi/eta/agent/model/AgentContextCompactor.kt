@@ -7,7 +7,7 @@ import io.github.mangi.eta.core.AppStrings
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 只在完整工具交换之间生成候选摘要；全部验证通过后由会话一次性提交。 */
+/** Candidate summaries are produced only between complete tool exchanges; once fully validated, the session commits them in a single step. */
 internal class AgentContextCompactor(
     private val config: AgentModelClient.ModelConfig,
     private val provider: AgentProviderClient,
@@ -45,7 +45,7 @@ internal class AgentContextCompactor(
         val latestUser = history.indexOfLast {
             it.optString("role") == "user" && !it.has("_eta_observation")
         }
-        // 最新用户请求及其后尚在进行的工具链必须可以继续；长任务允许压缩该请求之后的已完成批次。
+        // The latest user request and the in-flight tool chain after it must remain continuable; long tasks may compact completed batches that follow that request.
         val end = (history.size downTo 1).firstOrNull { canSplit(history, it) }
             ?: throw failure(
                 "CONTEXT_NOT_COMPACTABLE",
@@ -73,7 +73,7 @@ internal class AgentContextCompactor(
             message.copy(content = text, contentJson = "", reasoningContent = "")
         }
 
-        // 沿用当前会话前缀与工具目录发起摘要请求以复用缓存；不投影屏幕上下文与待消费截图。
+        // Reuse the current session prefix and tool catalog for the summary request to reuse the cache; do not project screen context or pending screenshots.
         val mainPrefixMessages = if (enableCacheReuse) {
             val rawPrefix = JSONArray()
             for (index in 0 until systemCount) {
@@ -144,7 +144,7 @@ internal class AgentContextCompactor(
         )
         protectedUser?.let(result::put)
         history.drop(end).forEach { message ->
-            // 新摘要改变了前缀；旧 opaque items 不再代表同一份 Provider 上下文。
+            // The new summary changed the prefix; old opaque items no longer represent the same Provider context.
             val withoutResponsesItems = if (ResponsesEphemeralState.outputItems(message) != null) {
                 AgentConversationCodec.toJsonObject(AgentConversationCodec.fromJsonObject(message))
             } else message

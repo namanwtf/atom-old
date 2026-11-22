@@ -55,8 +55,8 @@ internal object AgentConversationStore {
         val updatedAt: Map<String, Long>,
         val pinnedIds: Set<String> = emptySet(),
         /**
-         * 加载后列表下标与库中 sort_index 不一致的会话。流式占位等未入库消息会在排序中留下空洞，
-         * 重启后列表被压紧；增量保存按下标截断后缀，这些会话必须先整段重写一次。
+         * Conversations whose post-load list index disagrees with the library sort_index. Unpersisted messages like streaming placeholders leave holes in the ordering,
+         * and the list compacts after restart; since incremental saves truncate the suffix by index, these conversations must first be rewritten in full.
          */
         val unalignedConversationIds: Set<String> = emptySet(),
     )

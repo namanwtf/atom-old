@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 
-/** Store 持有可保存的草稿，编辑器独占选区和输入法组合区。相同文本回写时不能重置编辑器。 */
+/** The Store holds the savable draft; the editor owns the selection and IME composition range exclusively. Writing back identical text must not reset the editor. */
 @Composable
 internal fun rememberDraftTextFieldState(value: String, onEdit: (String) -> Unit): TextFieldState {
     val state = remember { TextFieldState(value) }

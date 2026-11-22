@@ -110,7 +110,7 @@ private suspend fun awaitQwenFileTranscript(base: String, key: String, task: Str
             "SUCCEEDED" -> {
                 val url = result.getJSONObject("result").getString("transcription_url")
                     .toHttpUrl().newBuilder().scheme("https").build()
-                // 下载签名结果链接时不附带百炼认证，避免凭据随跨域请求外传。
+                // When downloading the signed result URL, do not attach Bailian credentials, to avoid leaking them with a cross-origin request.
                 val transcription = SpeechHttp.json(Request.Builder().url(url).build())
                 return fileTranscript(transcription)
             }

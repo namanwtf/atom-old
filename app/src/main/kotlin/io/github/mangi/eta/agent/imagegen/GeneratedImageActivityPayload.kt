@@ -6,8 +6,8 @@ import kotlinx.serialization.json.Json
 import org.json.JSONObject
 
 /**
- * 通过既有的 `ToolActivityMessageUi.command` / `AgentEvent.ToolFinished.command` 通道传输的
- * AI 生图展示负载，零协议破坏、零数据库迁移，同时完整支持实时流、历史恢复与归档回放。
+ * AI image-generation display payload transported through the existing `ToolActivityMessageUi.command` / `AgentEvent.ToolFinished.command` channels,
+ * with zero protocol breakage and zero database migration, while fully supporting live streaming, history recovery, and archive replay.
  */
 @Immutable
 @Serializable

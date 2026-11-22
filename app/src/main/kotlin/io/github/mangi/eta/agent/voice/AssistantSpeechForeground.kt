@@ -10,7 +10,7 @@ import android.content.pm.ServiceInfo
 import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 
-/** Overlay 不等同于前台 Activity；只在可见浮窗采集或播放音频期间提升服务类型。 */
+/** An overlay is not equivalent to a foreground Activity; the service type is only raised while a visible overlay is capturing or playing audio. */
 internal class AssistantSpeechForeground(private val service: Service) {
     fun recording() = start(
         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,

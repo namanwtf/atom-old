@@ -60,7 +60,7 @@ internal object GeminiInteractionsRequest {
         if (converted.length() > 0) body.put("tools", converted)
 
         val generation = body.optJSONObject("generation_config") ?: JSONObject()
-        // 工具选择与思考档位由运行配置决定，自定义 JSON 不能绕过入口能力与开关。
+        // Tool selection and thinking tier are decided by run configuration; custom JSON cannot bypass the entry-point capabilities and switches.
         generation.remove("tool_choice")
         generation.remove("thinking_level")
         generation.remove("thinking_summaries")
@@ -91,7 +91,7 @@ internal object GeminiInteractionsRequest {
     }
 }
 
-/** 缺少签名的持久历史只作为明确标注的记录，不伪造原生工具调用链。 */
+/** Persistent history without a signature is kept only as an explicitly annotated record, never faking a native tool-call chain. */
 internal object GeminiInteractionHistory {
     fun input(messages: JSONArray): JSONArray {
         val start = (0 until messages.length()).firstOrNull {

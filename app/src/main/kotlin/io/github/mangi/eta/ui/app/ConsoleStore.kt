@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 控制台一帧画面：行快照不可变，渲染层按 id 复用条目、按 version 判断是否重绘。 */
+/** One console frame: row snapshots are immutable; the render layer reuses entries by id and decides redraw by version. */
 @Immutable
 internal data class ConsoleFrame(
     val lines: List<TerminalScreenBuffer.RenderLine> = emptyList(),
@@ -50,22 +50,22 @@ internal data class ConsoleSessionUi(
 internal data class ConsoleUiState(
     val sessions: List<ConsoleSessionUi> = emptyList(),
     val activeSessionId: String? = null,
-    /** 环境 tab 的选择；与当前会话环境一致，无会话时表示新建会话的目标环境。 */
+    /** Environment tab selection; matches the current session's environment, or the target environment for a new session when none exists. */
     val environment: TerminalEnvironment = TerminalEnvironment.DEBIAN,
     val linuxEnvironment: TerminalEnvironment = TerminalEnvironment.DEBIAN,
     val connected: Boolean = false,
     val exited: Boolean = false,
-    /** null = 探测中；false 时入口回退到块式终端。 */
+    /** null = probing; when false the entry falls back to the block terminal. */
     val ptySupported: Boolean? = null,
     val failMessage: String? = null,
-    /** 当前会话的画面；每个会话的屏幕缓冲区独立保存。 */
+    /** The current session's frame; each session's screen buffer is saved independently. */
     val frame: ConsoleFrame = ConsoleFrame(),
 )
 
 /**
- * 控制台页面的 App 级状态所有者：持有多个 PTY 会话与各自独立的屏幕缓冲区，
- * 字节流在 IO 线程喂入 [TerminalScreenBuffer]，按节流节奏向 UI 发布当前会话的帧。
- * 离开页面会话仍存活；普通会话由前台执行服务持有，用户停止后回收。
+ * App-level state owner for the console page: holds multiple PTY sessions and their independent screen buffers,
+ * feeds byte streams into [TerminalScreenBuffer] on the IO thread, and publishes the current session's frames to the UI on a throttled cadence.
+ * Sessions stay alive after leaving the page; ordinary sessions are held by the foreground execution service and reclaimed after the user stops them.
  */
 internal class ConsoleStore(
     context: Context,
@@ -73,12 +73,12 @@ internal class ConsoleStore(
 ) {
     private companion object {
         const val FLUSH_INTERVAL_MS = 50L
-        /** 同步输出期间暂缓发布帧的上限；程序漏发结束标记时不至于让画面一直停住。 */
+        /** Cap on holding back frame publication during synchronous output; if the program omits the end marker, the screen doesn't stay frozen forever. */
         const val SYNCHRONIZED_OUTPUT_TIMEOUT_MS = 200L
         const val SCROLLBACK_LINES = 1000
     }
 
-    /** 按键与查询应答必须按产生顺序写入 stdin；单并发调度保证 FIFO，又不占用主线程。 */
+    /** Key presses and query responses must be written to stdin in production order; single-concurrency dispatch guarantees FIFO without occupying the main thread. */
     private val inputDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     private val appContext = context.applicationContext
@@ -96,10 +96,10 @@ internal class ConsoleStore(
     private val initialLinuxEnvironment =
         LinuxEnvironmentSettingsRepository.current(appContext).terminalEnvironment
 
-    /** 每个会话独立的屏幕缓冲区；写入只能在 IO 线程持锁进行，UI 线程持锁读快照。 */
+    /** Per-session screen buffer; writes only happen under lock on the IO thread, while the UI thread reads snapshots under lock. */
     private val buffers = mutableMapOf<String, TerminalScreenBuffer>()
 
-    /** 界面当前的默认前景/背景色，供 TUI 查询深浅主题；随系统深浅色切换更新到所有会话。 */
+    /** The UI's current default foreground/background colors for TUIs to query light/dark theme; updated to all sessions on system theme switch. */
     private var themeColors = 0xFF000000L to 0xFFFFFFFFL
     private val sessionSizes = ConcurrentHashMap<String, Pair<Int, Int>>()
 
@@ -115,10 +115,10 @@ internal class ConsoleStore(
     )
     val uiState: StateFlow<ConsoleUiState> = _uiState.asStateFlow()
 
-    // PTY 读线程与主线程都会触发发布帧。
+    // Both the PTY read thread and the main thread trigger frame publication.
     /**
-     * 会话启动期间（Root 授权与 chroot 准备可能耗时数秒）网格尺寸仍会随软键盘变化；
-     * 这期间只记录最新尺寸，就绪后再同步，避免每次尺寸变化都另起一个会话。只在主线程读写。
+     * During session startup (Root grant and chroot preparation can take seconds), grid size still changes with the soft keyboard;
+     * only the latest size is recorded during this window and synced once ready, avoiding starting a new session on every size change. Read/written only on the main thread.
      */
     private var creatingSession = false
 
@@ -127,7 +127,7 @@ internal class ConsoleStore(
     private var lastCols = 0
     private var lastRows = 0
 
-    /** 探测 PTY 前提；结果缓存进状态，不支持时入口回退到块式终端。 */
+    /** Probes PTY prerequisites; the result is cached in state, and the entry falls back to the block terminal when unsupported. */
     fun probePtySupport() {
         scope.launch {
             val supported = withContext(Dispatchers.IO) { ptySupported() }
@@ -146,8 +146,8 @@ internal class ConsoleStore(
     }
 
     /**
-     * 确保当前有存活会话；网格尺寸变化重入时只同步尺寸，不重建会话。
-     * [environment] 仅用于没有可复用会话时的新建。
+     * Ensures a live current session exists; on grid-size re-entry it only syncs the size, not rebuilding the session.
+     * [environment] is used only when creating a new session because none is reusable.
      */
     fun open(environment: TerminalEnvironment, cols: Int, rows: Int) {
         if (cols <= 0 || rows <= 0) return
@@ -170,7 +170,7 @@ internal class ConsoleStore(
         createSession(environment, cols, rows)
     }
 
-    /** 以当前环境与最近一次网格尺寸新建会话。 */
+    /** Creates a session with the current environment and the most recent grid size. */
     fun newSession() {
         if (lastCols <= 0 || lastRows <= 0) return
         createSession(_uiState.value.environment, lastCols, lastRows)
@@ -187,12 +187,12 @@ internal class ConsoleStore(
                 failMessage = null,
             )
         }
-        // 会话在后台期间网格可能已变化（横竖屏、软键盘），切回时按当前网格同步。
+        // The grid may have changed while the session was backgrounded (rotation, soft keyboard); sync to the current grid when switching back.
         if (lastCols > 0 && lastRows > 0) resizeSession(sessionId, lastCols, lastRows)
         flushFrame(sessionId)
     }
 
-    /** 关闭指定会话；关闭当前会话时切换到剩余最近的会话，没有则回到空态。 */
+    /** Closes the given session; when closing the current one, switch to the nearest remaining session, or the empty state if none remain. */
     fun closeSession(sessionId: String) {
         scope.launch(Dispatchers.IO) {
             controller.closeSession(sessionId)
@@ -220,7 +220,7 @@ internal class ConsoleStore(
         _uiState.value.activeSessionId?.let { flushFrame(it) }
     }
 
-    /** 重启指定会话：终止后按原环境与原网格尺寸重开。 */
+    /** Restarts the given session: terminate, then reopen with the original environment and grid size. */
     fun restartSession(sessionId: String) {
         if (creatingSession) return
         val session = _uiState.value.sessions.find { it.id == sessionId } ?: return
@@ -238,7 +238,7 @@ internal class ConsoleStore(
         createSession(session.environment, size.first, size.second)
     }
 
-    /** 切换环境 tab：只改目标环境；有该环境的存活会话则切过去，否则由网格回调新建。 */
+    /** Switches the environment tab: only the target environment changes; switch to a live session of that environment if any, otherwise the grid callback creates one. */
     fun switchEnvironment(environment: TerminalEnvironment) {
         val state = _uiState.value
         if (state.environment == environment && state.activeSessionId != null) return
@@ -259,7 +259,7 @@ internal class ConsoleStore(
         }
     }
 
-    /** 当前会话断开后以同一环境与网格尺寸重连。 */
+    /** Reconnects with the same environment and grid size after the current session disconnects. */
     fun reconnect() {
         val activeId = _uiState.value.activeSessionId ?: return
         restartSession(activeId)
@@ -271,7 +271,7 @@ internal class ConsoleStore(
         scope.launch(inputDispatcher) { controller.write(sessionId, text) }
     }
 
-    /** 功能键按当前会话的光标键模式编码，程序切换 DECCKM 后无需界面感知。 */
+    /** Function keys are encoded per the current session's cursor-key mode, so the UI needs no awareness after a program toggles DECCKM. */
     fun sendKey(key: TerminalKey, modifiers: TerminalModifiers = TerminalModifiers.NONE) {
         val applicationCursorKeys = activeBuffer { it.applicationCursorKeys } ?: return
         write(TerminalKeyEncoder.key(key, modifiers, applicationCursorKeys))
@@ -303,7 +303,7 @@ internal class ConsoleStore(
         return synchronized(bufferLock) { buffers[sessionId]?.let(read) }
     }
 
-    /** 屏幕缓冲区与 PTY 同步改尺寸；内核随后通知程序重绘，缓冲区先按新尺寸承接旧画面。 */
+    /** The screen buffer and PTY resize in sync; the kernel then tells the program to redraw, while the buffer first carries the old picture at the new size. */
     private fun resizeSession(sessionId: String, cols: Int, rows: Int) {
         if (sessionSizes[sessionId] == (cols to rows)) return
         sessionSizes[sessionId] = cols to rows
@@ -331,7 +331,7 @@ internal class ConsoleStore(
                 withContext(NonCancellable + Dispatchers.Main) { creatingSession = false }
             }
             withContext(Dispatchers.Main) {
-                // 启动期间网格可能已变化，按最新尺寸同步一次。
+                // The grid may have changed during startup; sync once to the latest size.
                 _uiState.value.activeSessionId?.let { resizeSession(it, lastCols, lastRows) }
             }
         }
@@ -404,7 +404,7 @@ internal class ConsoleStore(
             responses = buffer.drainResponses()
             synchronizing = buffer.synchronizedOutput
         }
-        // 查询应答不经过界面，后台会话也要及时回复，否则程序会阻塞在等待上。
+        // Query responses bypass the UI; background sessions must reply promptly too, or the program blocks waiting.
         responses?.let { reply -> scope.launch(inputDispatcher) { controller.write(sessionId, reply) } }
         if (sessionId != _uiState.value.activeSessionId) return
         val now = System.currentTimeMillis()

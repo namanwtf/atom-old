@@ -6,9 +6,9 @@ import androidx.compose.ui.text.font.FontWeight
 import io.github.mangi.eta.R
 
 /**
- * 随包的等宽字体。部分系统会把 [FontFamily.Monospace] 替换成比例字体，终端列宽与对齐随之失效；
- * 终端界面统一使用这份字体，CJK 等缺失字形由系统字体回退，网格对齐由按单元格绘制保证。
- * 采用无连字版本，避免 `->`、`!=` 在命令与代码里被合成单个字形。
+ * Bundled monospace font. Some systems replace [FontFamily.Monospace] with a proportional font, breaking terminal column width and alignment;
+ * the terminal UI uses this font uniformly, missing glyphs like CJK fall back to the system font, and grid alignment is guaranteed by cell-based drawing.
+ * Uses the ligature-free version so `->` and `!=` aren't fused into single glyphs in commands and code.
  */
 internal val EtaMonospace = FontFamily(
     Font(R.font.jetbrains_mono_regular, FontWeight.Normal),

@@ -4,7 +4,7 @@ import io.github.mangi.eta.data.provider.ProviderConnectionProfile
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 订阅连接在无服务端存储的 Responses 中显式携带推理状态。 */
+/** Subscription connections carry reasoning state explicitly in Responses that have no server-side storage. */
 internal object SubscriptionResponsesRequest {
     fun configure(request: JSONObject, config: AgentModelClient.ModelConfig) {
         val profile = ProviderConnectionProfile.forAuthMode(config.authMode) ?: return

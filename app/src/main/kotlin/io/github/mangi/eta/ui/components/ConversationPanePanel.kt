@@ -146,7 +146,7 @@ internal fun ConversationPanePanel(
     onOpenPermissions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // state.conversations 已由 AgentAppState 按标题、预览与消息内容过滤。
+    // state.conversations is already filtered by AgentAppState by title, preview, and message content.
     val query = state.searchQuery.trim()
     val isSearching = query.isNotBlank()
     val groups = remember(state.conversations) { state.conversations.groupForDrawer() }
@@ -182,8 +182,8 @@ internal fun ConversationPanePanel(
             .background(containerColor),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 测量顶栏与底栏真实高度（含安全区与 IME），同步给滚动画布的 contentPadding，
-            // 使列表自然穿梭于顶底浮层之下并分别被各自 backdrop 采样，同时避免 Subcompose 重组开销。
+            // Measure the real heights of the top and bottom bars (including safe area and IME), sync them to the scroll canvas contentPadding,
+            // so the list passes naturally beneath the top/bottom overlays and is sampled by each backdrop, while avoiding Subcompose recomposition overhead.
             Layout(
                 modifier = Modifier.fillMaxSize(),
                 content = {
@@ -289,7 +289,7 @@ internal fun ConversationPanePanel(
                 }
             }
 
-            // 侧栏物理右侧细微收边，保证浅/深/纯黑模式下与右侧聊天舞台始终保持利落边界。
+            // Slight physical right edge trim on the sidebar keeps a crisp boundary with the right chat stage in light/dark/pure-black modes.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -653,7 +653,7 @@ private fun ConversationHistoryRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // 标题与角色名相同（如未改名的角色会话）时不再重复第二行。
+                // Don't repeat the second line when the title equals the character name (e.g. an unrenamed character conversation).
                 conversation.characterName?.takeIf { it != title }?.let { name ->
                     Text(
                         text = name,
@@ -722,7 +722,7 @@ private fun ConversationHistoryRow(
             }
         }
 
-        // 将选中指示条放在左内边距留白区，普通与角色会话共用同一套选中反馈语言与左对齐节奏。
+        // Put the selection indicator in the left inner-padding whitespace; ordinary and roleplay conversations share the same selection feedback language and left-alignment rhythm.
         if (selected) {
             Box(
                 modifier = Modifier

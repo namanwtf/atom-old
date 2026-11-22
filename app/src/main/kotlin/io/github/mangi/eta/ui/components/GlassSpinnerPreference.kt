@@ -45,8 +45,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.MiuixPopupUtils.Companion.PopupLayout
 
 /**
- * 支持双行摘要（[DropdownItem.summary]）与单行禁用态的 OS4 玻璃下拉设置行。
- * 存在顶层承载器时直接挂载在 [EtaTopLayer] 上以保持完整退场动效；独立测试环境回退至 [PopupLayout]。
+ * An OS4 glass dropdown settings row supporting a two-line summary ([DropdownItem.summary]) and a single-line disabled state.
+ * When a top-layer host exists, mount directly on [EtaTopLayer] to keep the full exit animation; standalone test environments fall back to [PopupLayout].
  */
 @Composable
 internal fun EtaGlassSpinnerPreference(

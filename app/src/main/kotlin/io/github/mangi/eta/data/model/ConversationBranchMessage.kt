@@ -1,6 +1,6 @@
 package io.github.mangi.eta.data.model
 
-/** 分支边界只读取消息结构，避免为定位旧轮次加载全部正文和图片。 */
+/** Branch boundaries only read the message structure, avoiding loading all bodies and images to locate old turns. */
 internal data class ConversationBranchMessage(
     val id: String,
     val sortIndex: Int,

@@ -12,7 +12,7 @@ import io.github.mangi.eta.agent.auth.ProviderLoginPrompt
 import io.github.mangi.eta.agent.runtime.AgentRunController
 import io.github.mangi.eta.core.AppStrings
 
-/** 仅由 Eta 主进程初始化和访问；调用方在 I/O 线程执行，不将返回的令牌写入配置。 */
+/** Initialized and accessed only by the Eta main process; callers run on an I/O thread and never write the returned token into configuration. */
 internal object ProviderCredentialRepository {
     @Volatile private var sessions: ProviderCredentialSessions? = null
 

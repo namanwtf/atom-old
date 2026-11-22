@@ -41,13 +41,13 @@ import top.yukonga.miuix.kmp.squircle.squircleBorder
 import top.yukonga.miuix.kmp.squircle.squircleClip
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 角色卡竖版比例与原版角色卡图一致（2:3），裁剪时保留人物上半身。 */
+/** The portrait card's aspect matches the original character-card art (2:3), cropping to keep the character's upper body. */
 internal const val CharacterPortraitAspect = 2f / 3f
 internal val CharacterPortraitCorner = 20.dp
 
 /**
- * 角色库卡片：整张图铺满，底部渐暗承载名字与标签，避免图文分栏显得像设置项。
- * 收藏星标悬浮在右上角，点击不进入详情。
+ * Character library card: the whole image fills the card, with a bottom darkening carrying the name and tags, avoiding a text/image split that looks like a settings item.
+ * The favorite star floats at the top-right; tapping it doesn't enter details.
  */
 @Composable
 internal fun CharacterPortraitCard(
@@ -145,12 +145,12 @@ private fun PortraitTag(text: String) {
     )
 }
 
-/** 收藏星标的暖金色，固定值保证落在任意头像上都可辨认。 */
+/** Warm gold of the favorite star; a fixed value keeps it recognizable over any avatar. */
 internal val FavoriteColor = Color(0xFFFFC94D)
 
 /**
- * 网格末尾的新建卡：与角色卡同尺寸的描边占位，上半区新建、下方导入两个入口，
- * 视觉上弱于真实角色，不抢主内容。
+ * New-card slot at the grid's end: an outlined placeholder the same size as a character card, with create in the upper half and import below,
+ * visually weaker than real characters so it doesn't compete with the main content.
  */
 @Composable
 internal fun CharacterAddTile(

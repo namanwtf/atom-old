@@ -17,8 +17,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 会话导出：把内存消息流投影为自持的 Markdown 文档。
- * 文案全部由调用方注入，保持可本地化、可纯 JVM 测试。
+ * Conversation export: projects the in-memory message stream into a self-contained Markdown document.
+ * All copy is injected by the caller, keeping it localizable and pure-JVM-testable.
  */
 internal object ConversationMarkdownExporter {
 
@@ -100,7 +100,7 @@ internal object ConversationMarkdownExporter {
                 append("\n\n- ").append(reference.absolutePath)
             }
             if (images.isNotEmpty()) {
-                // 图片在消息里是 data URL，体积达 MB 级，导出只保留数量说明。
+                // Images in messages are data URLs reaching megabytes; export only keeps a count note.
                 append("\n\n_").append(labels.imagesFormat.format(images.size)).append('_')
             }
         }

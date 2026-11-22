@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 internal const val ChatHistoryBoundaryKey = "agent-chat-earlier-messages"
 internal const val ChatBottomSentinelKey = "agent-chat-bottom-sentinel"
 
-/** 每次真实上翻最多消费一次预取机会；数据插入和重新测量不产生新的阅读请求。 */
+/** Each real upward scroll consumes at most one prefetch opportunity; data insertion and remeasurement produce no new read requests. */
 internal class HistoryScrollDemand {
     private var pending by mutableStateOf(false)
 
@@ -113,7 +113,7 @@ internal fun rememberChatHistoryPaging(
             }
 
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                // 惯性滚动可继续预取；requestScrollToItem 的布局恢复不经过此路径。
+                // Fling scrolling may keep prefetching; requestScrollToItem's layout restore doesn't go through this path.
                 demand.onScroll(consumed.y)
                 if (readingPosition.anchor != null) readingPosition.anchor = captureAnchor()
                 return Offset.Zero
@@ -139,7 +139,7 @@ internal fun rememberChatHistoryPaging(
         val anchor = readingPosition.anchor
         if (anchor != null && messageStartIndex < anchor.startIndex) {
             readingPosition.anchor = null
-            // 手指或惯性仍在滚动时由 LazyColumn 的稳定 key 维持位置，不取消正在进行的滚动。
+            // While a finger or fling is still scrolling, LazyColumn's stable keys hold position and the ongoing scroll isn't cancelled.
             if (!scrollState.isScrollInProgress && !configuration.keepBottomAnchored) {
                 val index = entries.indexOfFirst { it.key == anchor.key }
                 if (index >= 0) scrollState.requestScrollToItem(index + if (hasEarlier) 1 else 0, -anchor.offset)

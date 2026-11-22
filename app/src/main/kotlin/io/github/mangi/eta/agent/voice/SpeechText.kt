@@ -72,7 +72,7 @@ internal object SpeechText {
                         label?.children?.filterNot { it.type == MarkdownTokenTypes.LBRACKET ||
                             it.type == MarkdownTokenTypes.RBRACKET }?.forEach { appendNode(it) }
                     }
-                    // 先处理链接内部，避免去掉 Markdown 边界后网址吞并相邻正文。
+                    // Process the inside of links first to avoid the URL swallowing adjacent text once Markdown boundaries are stripped.
                     append(withoutUrls(text).ifBlank { " " })
                 }
                 MarkdownElementTypes.AUTOLINK -> append(withoutUrls(
@@ -83,13 +83,13 @@ internal object SpeechText {
                     else node.children.forEach { appendNode(it) }
             }
         }
-        // 普通文本和行内代码也可能含有未被识别为链接的网址。
+        // Plain text and inline code may also contain URLs that were not recognized as links.
         return withoutUrls(buildString { appendNode(root) })
             .lineSequence().map { it.replace(HORIZONTAL_SPACE, " ").trim() }.joinToString("\n")
             .replace(BLANK_LINES, "\n\n").trim()
     }
 
-    // 自动链接节点可能包含网址后的中文正文，只过滤到明确的文本分隔处。
+    // Auto-link nodes may contain Chinese prose after the URL; filter only up to a clear text boundary.
     private fun withoutUrls(text: String): String = URL.replace(text) { match ->
         " " + match.value.takeLastWhile { it in ".,!?;:" }
     }

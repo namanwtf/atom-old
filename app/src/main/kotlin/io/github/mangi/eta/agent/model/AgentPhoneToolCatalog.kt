@@ -8,7 +8,7 @@ import io.github.mangi.eta.core.AppStrings
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 同一份领域目录用于模型、权限元数据和工具页，避免新增入口时漏接一端。 */
+/** The same domain catalog is used for the model, permission metadata, and the tools page, avoiding a missed wiring on any side when a new entry is added. */
 internal object AgentPhoneToolCatalog {
     data class Entry(
         val name: String,

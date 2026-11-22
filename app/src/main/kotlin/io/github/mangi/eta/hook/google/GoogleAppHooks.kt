@@ -19,8 +19,8 @@ internal object GoogleAppHooks {
         val hooks = HookRegistrar(module, rootLogger, "GoogleApp")
         val logger = hooks.logger
         return hooks.install {
-            // 机型伪装：在 Google 进程内伪装为 Samsung S24 Ultra，以放开一圈即搜能力。
-            // Build 字段是启动时一次性写入的副作用，作为一圈即搜的底层依赖始终执行。
+            // Device spoofing: masquerade as a Samsung S24 Ultra inside the Google process to unlock the Circle to Search capability.
+            // The Build fields are a one-time side effect written at startup, and are always applied as a low-level dependency of Circle to Search.
             setBuildField(logger, Build::class.java, "MANUFACTURER", ModuleConfig.SPOOF_MANUFACTURER)
             setBuildField(logger, Build::class.java, "BRAND", ModuleConfig.SPOOF_BRAND)
             setBuildField(logger, Build::class.java, "MODEL", ModuleConfig.SPOOF_MODEL)
@@ -46,7 +46,7 @@ internal object GoogleAppHooks {
             try {
                 field.set(null, value)
             } catch (_: IllegalAccessException) {
-                // Android 17 禁止反射写入这些静态 final 字段；静态字段 API 位于内部 Unsafe。
+                // Android 17 forbids reflecting writes to these static final fields; the static-field API lives on the internal Unsafe.
                 val unsafeClass = Class.forName("jdk.internal.misc.Unsafe")
                 val theUnsafe = unsafeClass.getDeclaredField("theUnsafe").apply {
                     isAccessible = true

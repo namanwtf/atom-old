@@ -16,11 +16,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 单次 Agent run 的纯编排循环。
+ * Pure orchestration loop for a single Agent run.
  *
- * 一次 assistant 响应及其完整工具批次构成一个 turn；
- * steering 只在 turn 结束后注入，不能用取消网络或关闭工具资源来模拟。循环不设置本地轮次上限，
- * 由模型自然结束、取消或错误终止。
+ * One assistant response together with its complete tool batch forms a turn;
+ * steering is injected only after a turn ends and cannot be simulated by cancelling the network or closing tool resources. The loop sets no local turn limit
+ * and is terminated by the model finishing naturally, cancellation, or an error.
  */
 internal class AgentLoop(
     private val config: AgentModelClient.ModelConfig,
@@ -105,7 +105,7 @@ internal class AgentLoop(
             runController.throwIfCancelled()
             if (purpose.allowsTools) appendPendingSteeringMessage()
 
-            // 带签名的工具链沿用发出调用时的请求前缀，工具链完成后再刷新目录。
+            // A signed tool chain keeps the request prefix it had when the call was issued; refresh the catalog only after the tool chain completes.
             val roundTools = if (SignedToolContext.hasPendingResponse(messages)) {
                 precedingTools ?: tools
             } else if (purpose.allowsTools) {
@@ -190,7 +190,7 @@ internal class AgentLoop(
                     if (purpose == ProviderRequestPurpose.CHAT) validateChatResponse(response.response)
                 }
             } finally {
-                // 同一回合的重试仍需原始观察；整个回合结束后才移除截图。
+                // Retries in the same turn still need the original observation; the screenshot is removed only after the whole turn ends.
                 clearPendingToolImages()
             }
             val completedAtMs = monotonicNowMs()
@@ -271,7 +271,7 @@ internal class AgentLoop(
 
             publishTranscript()
 
-            // assistant 已自然结束时再检查 steering。这样补充消息不会丢掉刚完成的回答。
+            // Check steering only after the assistant has finished naturally; this way the supplementary message does not drop the just-completed answer.
             if (purpose.allowsTools && appendPendingSteeringOrSeal()) {
                 round += 1
                 continue
@@ -309,9 +309,9 @@ internal class AgentLoop(
     }
 
     /**
-     * 拒答或过滤会在流中途截断回复，半截正文、思考块和工具调用都不能进入上下文：
-     * 带着被截断的签名块继续请求会被上游判定为改动了 thinking 块，同一会话随后每轮都会 400。
-     * 因此不写入 history、不执行工具，直接结束本次运行，由用户改写请求或换模型。
+     * A refusal or filter truncates the reply mid-stream; the half text, thinking blocks, and tool calls must not enter the context:
+     * continuing the request with a truncated signature block is judged by upstream as a modified thinking block, and every subsequent turn of the same session returns 400.
+     * Therefore do not write to history and do not execute tools; end this run directly and let the user rewrite the request or switch models.
      */
     private fun rejectContentFilter(response: ProviderResponse) {
         if (response.stopReason != AssistantStopReason.CONTENT_FILTER) return
@@ -594,13 +594,13 @@ internal class AgentLoop(
         round: Int,
         outcomes: List<ToolOutcome>,
     ) {
-        // 每个已完成结果立即落盘；图片观察仍统一放在完整工具批次之后。
+        // Each completed result is persisted immediately; image observations are still placed uniformly after the complete tool batch.
         val imageOutcomes = outcomes.filter { outcome -> outcome.result.images.isNotEmpty() }
         if (imageOutcomes.isEmpty()) {
             return
         }
 
-        // 工具截图是瞬时观察，不是会话资产。下一次思考消费后立即删除。
+        // Tool screenshots are transient observations, not session assets. Delete them immediately after the next thinking consumes them.
         if (provider.capabilities.toolResultImages) {
             pendingToolResultImages = imageOutcomes.associate { it.call.id to it.result.images }
         } else {

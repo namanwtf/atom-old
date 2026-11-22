@@ -112,10 +112,10 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 聊天首页顶栏的复合标题与模型切换入口：
- * - 新对话：居中呈现轻盈的模型胶囊 `[ ✦ 模型名 ▾ ]`
- * - 对话进行中：上行会话标题，下行紧凑模型副标题，整块可点切换模型
- * - 角色对话：左侧头像直达角色详情，右侧双行展示角色名与当前模型
+ * Composite title and model-switch entry of the chat home top bar:
+ * - New conversation: a centered light model capsule `[ ✦ model name ▾ ]`
+ * - Conversation in progress: conversation title on top, compact model subtitle below, the whole block tappable to switch models
+ * - Roleplay conversation: avatar on the left goes to character details, two lines on the right show the character name and current model
  */
 @Composable
 internal fun AgentTopBarChatHeader(
@@ -662,7 +662,7 @@ internal fun ModelPickerSheetContent(
         val groupEntries = pickerState.filterGroups(query)
             .filter { providerFilter == null || it.providerId == providerFilter }
             .flatMap { group ->
-                // 只看一个服务商时，筛选标签已经说明了归属，分组标题只会重复。
+                // When viewing a single provider, the filter label already states ownership, so a group title would only repeat.
                 val header = if (providerFilter == null) {
                     listOf(ModelSheetEntry.Header(group.providerId, group.providerName))
                 } else {
@@ -809,8 +809,8 @@ internal fun ModelPickerSheetContent(
 private class PendingModelSelection(val modelId: String?)
 
 /**
- * 点选后先把对勾移到新模型上，停留片刻再收起弹层，让人看清选中了谁。
- * 弹层收起会让作用域随组合一起离开，未完成的确认随之取消，不会回写已关闭的界面。
+ * After selection, move the checkmark to the new model first, pause briefly, then collapse the popup, so the user sees what was selected.
+ * Collapsing the popup makes the scope leave with composition; an unfinished confirmation is cancelled and never written back to the closed UI.
  */
 private class ConfirmedSelection(
     private val onConfirm: (String?) -> Unit,
@@ -826,7 +826,7 @@ private class ConfirmedSelection(
             try {
                 delay(SelectionConfirmMs)
                 onConfirm(modelId)
-                // 等待关闭动画完成后再清状态，避免淡出期间对勾回跳，也防止未销毁宿主再次打开时锁定点击。
+                // Wait for the close animation to finish before clearing state, so the checkmark doesn't jump back during fade-out and a not-yet-destroyed host isn't locked when reopened.
                 delay(400L)
             } finally {
                 pending = null
@@ -968,7 +968,7 @@ internal fun ModelBrandMark(
 
 private val ModelPopupWidth = 248.dp
 
-/** 不超过这个数量时弹窗一眼就能看完，不需要搜索。 */
+/** At or below this count the popup can be read at a glance and doesn't need search. */
 private const val ModelPopupLimit = 8
 
 private const val SelectionConfirmMs = 140L

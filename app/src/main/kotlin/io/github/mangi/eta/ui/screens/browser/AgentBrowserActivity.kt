@@ -15,7 +15,7 @@ import io.github.mangi.eta.data.repository.AppearanceSettingsRepository
 import io.github.mangi.eta.ui.app.AgentAppTheme
 import kotlinx.coroutines.launch
 
-/** WebView 保持在固定窗口内，进出动画由系统合成窗口，避免整页绘制裁剪介入网页渲染。 */
+/** The WebView stays in a fixed window; entry/exit animations are composed by the system window, so whole-page draw clipping doesn't interfere with page rendering. */
 class AgentBrowserActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

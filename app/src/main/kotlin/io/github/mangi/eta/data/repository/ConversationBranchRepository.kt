@@ -13,7 +13,7 @@ import io.github.mangi.eta.data.db.openTextStream
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-/** 调用方将创建操作纳入会话保存队列，数据库事务保证前缀和上下文一起提交。 */
+/** Callers enqueue the creation operation into the conversation save queue; the database transaction guarantees the prefix and context are committed together. */
 internal object ConversationBranchRepository {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private const val PAGE_SIZE = 128
@@ -44,7 +44,7 @@ internal object ConversationBranchRepository {
                 decodeCheckpoint(dao, sourceId, "history", stored)
             }
         }.orEmpty()
-        // 分支点落在摘要之后时保留源对话已压缩的活跃上下文，避免把全量 journal 误恢复给新分支。
+        // When the branch point falls after the summary, keep the source conversation's already-compacted active context, avoiding restoring the full journal into the new branch by mistake.
         val historyPrefix = rawHistory.takeIf { it.isNotEmpty() }?.let {
             ConversationBranchBoundary.resolveOrNull(outline, it, roleplay, targetMessageId)
         }
@@ -97,7 +97,7 @@ internal object ConversationBranchRepository {
                 val row = dao.restoreMessage(stored)
                 row.copy(id = remap(row.id), conversationId = branchId, sortIndex = index++)
             }
-            // restore/store 会为新 owner 重建长文本块，不能复制指向源消息的分块引用。
+            // restore/store will rebuild long-text chunks for the new owner; chunk references pointing to source messages must not be copied.
             dao.insertMessages(copies)
             after = page.last().sortIndex
         }

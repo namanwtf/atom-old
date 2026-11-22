@@ -4,7 +4,7 @@ import io.github.mangi.eta.data.repository.AgentMemoryStore
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 声明持久记忆的有界读取与原子局部更新工具。 */
+/** Declares bounded-read and atomic partial-update tools for persistent memory. */
 internal object AgentMemoryToolCatalog {
     fun appendTo(tools: JSONArray, writable: Boolean = true) {
         tools

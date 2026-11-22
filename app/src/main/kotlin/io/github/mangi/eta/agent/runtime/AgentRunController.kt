@@ -41,7 +41,7 @@ internal class AgentRunController {
     }
 
     /**
-     * 将补充指令排入下一个 turn。steering 不取消当前模型请求或工具批次。
+     * Queue the supplement into the next turn. Steering does not cancel the current model request or tool batch.
      */
     fun steer(text: String): Boolean {
         val prompt = text.trim()
@@ -53,13 +53,13 @@ internal class AgentRunController {
         return true
     }
 
-    /** 默认逐条消费，避免后来的补充指令越过前一条的模型回合。 */
+    /** Consume one at a time by default, so a later supplement does not overtake the previous one's model turn. */
     fun pollSteeringMessage(): String? =
         lock.withLock { steeringMessages.pollFirst() }
 
     /**
-     * 自然结束前原子地消费最后一条 steering；若队列为空则永久关闭本 run 的接收入口。
-     * 这样 Service 不会在 loop 已返回后仍把补充指令误报为已接收。
+     * Atomically consume the last steering before natural completion; if the queue is empty, permanently close this run's intake.
+     * This way the Service does not still misreport a supplement as accepted after the loop has already returned.
      */
     fun pollSteeringOrSeal(): String? =
         lock.withLock {
@@ -72,15 +72,15 @@ internal class AgentRunController {
         get() = lock.withLock { steeringMessages.isNotEmpty() }
 
     /**
-     * 暂停执行：后续 [throwIfCancelled] 调用会阻塞挂起，直到 [resume] 或 [cancel]。
-     * 在工作线程的检查点调用，不会阻塞调用方线程。
+     * Pause execution: subsequent [throwIfCancelled] calls will block and suspend until [resume] or [cancel].
+     * Called at checkpoints on the worker thread; it does not block the caller's thread.
      */
     fun pause() {
         lock.withLock { paused = true }
     }
 
     /**
-     * 恢复执行：唤醒被 [throwIfCancelled] 阻塞的工作线程，从挂起点继续。
+     * Resume execution: wake the worker thread blocked on [throwIfCancelled] and continue from the suspension point.
      */
     fun resume() {
         lock.withLock {
@@ -90,8 +90,8 @@ internal class AgentRunController {
     }
 
     /**
-     * 检查点：若已取消则抛异常；若已暂停则阻塞挂起直到恢复或取消。
-     * 在 agent 循环的每轮/每步调用，实现暂停可恢复、取消即终止。
+     * Checkpoint: throw if already cancelled; if paused, block and suspend until resume or cancel.
+     * Called at every round/step of the agent loop, implementing pausable-resumable execution and immediate termination on cancel.
      */
     fun throwIfCancelled() {
         lock.withLock {

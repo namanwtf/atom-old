@@ -22,7 +22,7 @@ internal data class LocalToolRequirement(
     val freshObservation: Boolean = false,
 )
 
-/** 展示、模型目录与执行边界共同使用的本地工具能力合同。未登记的工具不能发布。 */
+/** The local tool capability contract shared by presentation, the model catalog, and the execution boundary. Unregistered tools cannot be published. */
 internal object AgentToolRequirements {
     private val definitions = buildMap {
         fun register(root: RootRequirement, vararg names: String) {
@@ -97,7 +97,7 @@ internal object AgentToolRequirements {
             "search_notes", "search_coloros_recordings", "search_recording_summaries",
             "search_system_memories", "search_saved_places",
         ).forEach { name -> put(name, getValue(name).copy(colorOs = true)) }
-        // 系统记忆优先使用 Hook 桥接，框架失联时仍有独立的 Root 快照来源。
+        // System memory prefers the Hook bridge, but an independent Root snapshot source remains when the framework loses connection.
         listOf("search_system_memories", "search_saved_places", "search_personal_orders").forEach { name ->
             put(name, getValue(name).copy(lsposedRequirement = LsposedRequirement.OPTIONAL))
         }
@@ -127,7 +127,7 @@ internal object AgentToolRequirements {
         }
     }
 
-    /** 复制后收窄，不能修改下一轮或另一个 run 共用的原始 Schema。 */
+    /** Copy and then narrow; the original Schema shared by the next turn or another run must not be modified. */
     fun project(tools: JSONArray, rootAvailable: Boolean): JSONArray = JSONArray().also { result ->
         for (index in 0 until tools.length()) {
             val original = tools.getJSONObject(index)

@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.model
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 将 Eta 会话消息投影为 OpenAI-compatible 请求所需的系统指令结构。 */
+/** Projects Eta session messages into the system-instruction structure required by OpenAI-compatible requests. */
 internal object OpenAiRequestMessages {
     fun forChatCompletions(source: JSONArray): JSONArray {
         val system = collectInstructions(source, SYSTEM_ROLES)
@@ -13,7 +13,7 @@ internal object OpenAiRequestMessages {
                 messages.put(if (item is JSONObject) JSONObject(item.toString()) else item)
             }
         }
-        // system 合并前保留原始边界，不能把跨消息的工具结果误配为完整批次。
+        // Preserve the original boundaries before merging system, so tool results spanning messages are not mis-paired into a complete batch.
         ChatToolCallHistory.repairCompleteBatches(copied)
         return JSONArray().also { messages ->
             if (system.isNotBlank()) {

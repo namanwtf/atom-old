@@ -26,7 +26,7 @@ internal class CommunityCatalogViewModel(application: Application) : AndroidView
     val store = CommunityCatalogStore(application, viewModelScope)
 }
 
-/** 目录浏览页和模型选择页共用同一份已读取数据，避免导航时重新请求。 */
+/** The catalog browse page and model picker page share the same already-read data, avoiding re-fetching on navigation. */
 internal class CommunityCatalogStore(
     context: Context,
     private val scope: CoroutineScope,

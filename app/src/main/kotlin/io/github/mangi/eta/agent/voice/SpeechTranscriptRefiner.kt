@@ -23,8 +23,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 用当前对话模型保守修正识别文字。纠错是可选增强：任何失败、超时或可疑输出都返回原文，
- * 不阻断用户的语音输入；调用方只记录受控错误码。
+ * Conservatively corrects recognized text using the current conversation model. Correction is an optional enhancement: any failure, timeout, or suspicious output returns the original text,
+ * never blocking the user's voice input; callers only record a controlled error code.
  */
 internal class SpeechTranscriptRefiner(
     private val loadConfig: suspend () -> AgentModelClient.ModelConfig? = RuntimeConfigRepository::currentRuntimeConfig,
@@ -47,7 +47,7 @@ internal class SpeechTranscriptRefiner(
         val messages = JSONArray()
             .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
             .put(AgentConversationCodec.userTextMessage(input))
-        // Provider 调用阻塞在 HTTP 上，不响应协程取消；等待方被取消或超时时由这里取消底层调用。
+        // The provider call blocks on HTTP and does not respond to coroutine cancellation; when the waiter is cancelled or times out, the underlying call is cancelled here.
         val work = async(Dispatchers.IO) {
             val response = providerFor(config).complete(
                 ProviderRequest(config, messages, JSONArray(), purpose = ProviderRequestPurpose.TRANSCRIPT_REFINE),
@@ -77,7 +77,7 @@ internal class SpeechTranscriptRefiner(
         }
     }
 
-    /** 纠错只需几十字的短输出，避免沿用用户为对话选择的深度思考拖慢语音提交。 */
+    /** Correction only needs a short output of a few dozen characters, so it avoids inheriting the deep-think mode the user chose for conversation and slowing down voice submission. */
     private fun lightweight(config: AgentModelClient.ModelConfig): AgentModelClient.ModelConfig {
         val capabilities = config.reasoningCapabilities ?: return config
         val selectable = capabilities.selectableEfforts
@@ -95,7 +95,7 @@ internal class SpeechTranscriptRefiner(
         private const val MIN_CHARS = 2
         private const val MAX_CHARS = 2_000
 
-        /** 模型偶尔会附加解释或改写整段；长度剧烈变化时视为越权，保留原文。 */
+        /** The model occasionally appends explanations or rewrites the whole passage; when the length changes drastically it is treated as overreach and the original is kept. */
         fun plausible(input: String, output: String): Boolean {
             if (output.isBlank() || output == "null") return false
             val limit = input.length * 3 / 2 + 12

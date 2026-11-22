@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.runtime
 import io.github.mangi.eta.agent.model.AgentModelClient
 import java.util.UUID
 
-/** 用完整增量 transcript 构造已完成 run 的后续用户回合。 */
+/** Build the follow-up user turn of a completed run from the full incremental transcript. */
 internal object AgentContinuationBuilder {
     fun build(
         request: AgentRuntimeWire.RunRequest,

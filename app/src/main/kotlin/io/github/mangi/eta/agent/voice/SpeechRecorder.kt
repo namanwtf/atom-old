@@ -94,7 +94,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
 
     override fun finish() {
         finishing.set(true)
-        // stop 解除阻塞 read；由录音协程在 finally 中唯一释放实例。
+        // stop unblocks the read; the recording coroutine is the sole place that releases the instance in its finally.
         try { recorder?.stop() } catch (_: IllegalStateException) { /* Initialization not yet complete or already stopped. */ }
     }
 

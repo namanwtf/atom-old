@@ -4,9 +4,9 @@ import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 /**
- * 模块全局 OkHttp 客户端。
+ * Module-wide OkHttp client.
  *
- * 模型流与普通 HTTP 请求共享连接池，但独立设置读取等待与重试策略。
+ * Model streams and ordinary HTTP requests share the connection pool but configure read timeouts and retry policies independently.
  */
 internal object AgentHttpClient {
 

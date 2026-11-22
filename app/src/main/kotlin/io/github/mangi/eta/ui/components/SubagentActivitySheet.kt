@@ -56,7 +56,7 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 聊天时间线中的 Subagent 节点行：保持内联极简与留白，点击呼出实时检视面板。
+ * Subagent node row in the chat timeline: stays inline, minimal, and airy; tapping summons the live inspection panel.
  */
 @Composable
 internal fun SubagentActivityRow(
@@ -241,7 +241,7 @@ private fun SubagentInspectorContent(
 ) {
     val density = LocalDensity.current
     val maxSheetHeight = with(density) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.76f
-    // 使用稳定 messageId 作 key，避免启动瞬间 subagentId 从空变为 sub_1 时重置展开状态。
+    // Use the stable messageId as key, so the expanded state isn't reset when subagentId flips from empty to sub_1 at launch.
     var promptExpanded by rememberSaveable(messageId) { mutableStateOf(false) }
     val pulse = rememberDrawPhasePulse(active = running)
     val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
@@ -266,7 +266,7 @@ private fun SubagentInspectorContent(
             ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 顶部状态与元信息横条：留白克制，只展示关键身份与实时状态
+        // Top status and metadata bar: restrained spacing, showing only key identity and live status
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -306,7 +306,7 @@ private fun SubagentInspectorContent(
             }
         }
 
-        // 任务指令（Prompt）：浅色容器，长文本默认收起，点按展开
+        // Task instruction (Prompt): light container, long text collapsed by default, tap to expand
         if (snapshot.prompt.isNotBlank()) {
             Column(
                 modifier = Modifier
@@ -346,7 +346,7 @@ private fun SubagentInspectorContent(
             }
         }
 
-        // 内部执行时间线：沿用主聊天界面的 1dp 细线与圆点徽章
+        // Internal execution timeline: reuses the main chat's 1dp hairlines and dot badges
         if (snapshot.steps.isNotEmpty() || snapshot.omittedSteps > 0 || running) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (snapshot.omittedSteps > 0) {
@@ -404,7 +404,7 @@ private fun SubagentInspectorContent(
             }
         }
 
-        // 失败或停止提示
+        // Failure or stop hint
         if (failed) {
             val error = snapshot.error?.takeIf { it.isNotBlank() }
                 ?: stringResource(R.string.subagent_status_incomplete)
@@ -436,7 +436,7 @@ private fun SubagentInspectorContent(
             )
         }
 
-        // 实时或最终汇报（Output）
+        // Live or final report (Output)
         if (snapshot.output.isNotBlank()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
@@ -463,7 +463,7 @@ private fun SubagentInspectorContent(
             }
         }
 
-        // 轻量用量摘要：单行克制展示，不打断主时间线阅读
+        // Lightweight usage summary: restrained single-line display that doesn't interrupt reading the main timeline
         snapshot.usage?.let { usage ->
             val usageParts = buildList {
                 if (usage.inputTokens > 0) {

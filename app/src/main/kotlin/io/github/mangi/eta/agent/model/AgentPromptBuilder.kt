@@ -7,7 +7,7 @@ import io.github.mangi.eta.agent.terminal.TerminalExecutionContext
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 组装每次 run 的系统约束、历史与当前用户输入。 */
+/** Assembles the system constraints, history, and current user input for each run. */
 internal object AgentPromptBuilder {
     fun buildInitialMessages(
         config: AgentModelClient.ModelConfig,
@@ -38,9 +38,9 @@ internal object AgentPromptBuilder {
     }
 
     /**
-     * 系统提示是请求前缀的开头，任何字节变化都会让其后的全部历史失去缓存。
-     * 因此这里只放会话内稳定的事实：Root 只区分“已授权/未授权”，检测进度、失败原因等
-     * 瞬时状态由 check_root 的工具结果告知模型，不进入系统提示。
+     * The system prompt is the head of the request prefix; any byte change invalidates the cache for all history after it.
+     * So only session-stable facts live here: Root is only distinguished as "authorized/unauthorized"; detection progress, failure reasons, etc.
+     * Transient states are told to the model via check_root's tool result and never enter the system prompt.
      */
     fun buildSystemMessages(
         config: AgentModelClient.ModelConfig,
@@ -211,7 +211,7 @@ internal object AgentPromptBuilder {
             } else {
                 appendLine("This is the user's real-world memory and is read-only in role sessions; call memory_get as needed, and do not write fictional personas or plot into this file. For plot memory use character_memory_get/character_memory_write.")
             }
-            // 快照在会话内保持不变，以免记忆写入后系统提示变化导致历史缓存失效。
+            // The snapshot stays unchanged within the session, so that memory writes do not change the system prompt and invalidate the history cache.
             appendLine("The following is the memory snapshot at the start of this session; if memory was written during this session, the revision and content returned by the most recent memory_write or memory_get prevail.")
             appendLine("revision=${context.revision} | bytes=${context.byteSize} | core_budget_chars=${context.coreBudgetChars}")
             if (context.coreContent.isNotBlank()) {

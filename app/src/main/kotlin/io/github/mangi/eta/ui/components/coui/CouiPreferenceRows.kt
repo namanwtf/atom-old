@@ -189,7 +189,7 @@ internal fun CouiSwitchPreference(
     loadingDescription: String? = null,
     hapticFeedbackEnabled: Boolean = true,
 ) {
-    // 直接透传业务态 checked，避免异步校验拒绝切换时乐观本地态卡在错误位置。
+    // Pass the business checked state straight through, so an optimistic local state doesn't get stuck when async validation rejects the toggle.
     when {
         loading -> SwitchLoadingPreference(
             checked = checked,
@@ -364,7 +364,7 @@ internal fun CouiPreferenceGroup(
     }
 }
 
-/** 逐项组合长列表，首尾条目沿用设置卡片的位置语义。 */
+/** Composes long lists item by item; first/last items inherit the positional semantics of a settings card. */
 @Composable
 internal fun CouiGroupItem(
     isFirst: Boolean,

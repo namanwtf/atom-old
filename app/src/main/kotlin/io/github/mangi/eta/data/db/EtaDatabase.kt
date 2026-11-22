@@ -288,9 +288,9 @@ internal abstract class EtaDatabase : RoomDatabase() {
             database.execSQL(
                 "UPDATE provider_models SET source = 'catalog' WHERE is_built_in = 1"
             )
-            // 旧版“添加自定义模型”会在打开编辑框时提前落下一条空记录。
+            // The legacy "Add custom model" flow would drop an empty record in advance when opening the editor.
             database.execSQL("DELETE FROM provider_models WHERE TRIM(model_id) = ''")
-            // 只清理由旧版“新建对话”产生、且用户从未真正使用或命名过的占位记录。
+            // Only clean placeholder records created by the legacy "New conversation" flow that the user never actually used or named.
             database.execSQL(
                 "DELETE FROM conversations " +
                     "WHERE title = 'New chat' " +
@@ -334,7 +334,7 @@ internal abstract class EtaDatabase : RoomDatabase() {
                 "INSERT INTO conversation_context_checkpoints (conversation_id, history_json) " +
                     "SELECT id, history_json FROM conversations"
             )
-            // SQL 内搬移完整正文；后续分块迁移负责行大小，不能因旧字段过大丢弃历史。
+            // Move the full body in SQL; the later chunk migration handles row size, and history must not be dropped just because a legacy field is too large.
             database.execSQL("UPDATE conversations SET history_json = '[]'")
         }
 

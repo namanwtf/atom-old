@@ -6,7 +6,7 @@ import java.io.EOFException
 import okhttp3.Response
 import okio.BufferedSource
 
-/** 只处理有界分帧；事件类型、结束条件与音频编码由各家协议解释。 */
+/** Only handles bounded frame splitting; event types, end conditions, and audio encoding are interpreted by each vendor's protocol. */
 internal fun readSpeechSse(source: BufferedSource, onEvent: (String, String) -> Boolean) {
     var reading = true
     val decoder = SpeechSseDecoder { event, data -> reading = onEvent(event, data) }
@@ -58,7 +58,7 @@ internal class SpeechSseDecoder(private val onEvent: (String, String) -> Unit) {
     }
 }
 
-/** 部分服务以 HTTP 200 + JSON 返回业务错误，必须让协议层读取错误码。 */
+/** Some services return business errors as HTTP 200 + JSON, so the protocol layer must read the error code. */
 internal fun readSpeechEvents(response: Response, onEvent: (String, String) -> Boolean) {
     val source = response.body.source()
     if (response.body.contentType()?.subtype == "json") {

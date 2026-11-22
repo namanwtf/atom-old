@@ -9,7 +9,7 @@ import io.github.mangi.eta.data.model.OpenAiCompatibleProviderSetting
 import io.github.mangi.eta.data.model.ProviderSetting
 import io.github.mangi.eta.data.model.runtimeProviderType
 
-/** 目录属于发起读取时的连接与账号；导入确认时必须再次核对，不能套用到后来切换的账号。 */
+/** The catalog belongs to the connection and account at read time; it must be re-verified at import confirmation and cannot be applied to an account switched later. */
 internal class RemoteModelCatalog(
     val models: List<Model>,
     val connection: ProviderSetting,

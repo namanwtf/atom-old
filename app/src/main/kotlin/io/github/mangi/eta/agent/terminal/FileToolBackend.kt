@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.terminal
 
-/** revision 是后端生成的不透明值，只在同一后端内比较；目录内容变化必须使其失效。 */
+/** revision is an opaque backend-generated value compared only within the same backend; directory content changes must invalidate it. */
 internal data class FileToolStat(
     val path: String,
     val name: String,
@@ -27,7 +27,7 @@ internal data class FileToolWriteResult(
 
 internal class FileToolException(val code: String, message: String) : Exception(message)
 
-/** 参数中的路径均属于后端自身的命名空间；实现必须在每次操作时重新检查访问边界。 */
+/** All paths in parameters belong to the backend's own namespace; implementations must re-check access boundaries on every operation. */
 internal interface FileToolBackend {
     val environment: String
     val identity: String
@@ -36,12 +36,12 @@ internal interface FileToolBackend {
     fun stat(path: String): FileToolStat
     fun readBytes(path: String, offset: Long, limit: Int): ByteArray
 
-    /** offset 为目录原始枚举位置，不能在分页前过滤。顺序由后端保持，变动通过 revision 检测。 */
+    /** offset is the raw directory enumeration position and must not be filtered before paging. Order is maintained by the backend, and changes are detected via revision. */
     fun list(path: String, offset: Int, limit: Int, expectedRevision: String? = null): FileToolDirectoryPage
 
     /**
-     * expectedSha256 用于编辑时校验读到的完整旧内容；不匹配必须返回 FILE_CHANGED 且不写入。
-     * expectedRevision 为可选元数据前置条件；atomic 只描述替换可见性，不承诺跨进程互斥。
+     * expectedSha256 validates the full old content read for an edit; on mismatch it must return FILE_CHANGED without writing.
+     * expectedRevision is an optional metadata precondition; atomic only describes replacement visibility and promises no cross-process mutual exclusion.
      */
     fun write(
         path: String,

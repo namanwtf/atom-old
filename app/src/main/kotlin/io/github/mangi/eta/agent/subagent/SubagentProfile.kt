@@ -11,10 +11,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Subagent 角色定义与工具白名单（涵盖内置 Profile 与用户在 `agents/<name>.md` 定义的自定义 Profile）。
+ * Subagent role definition and tool whitelist (covers built-in profiles and custom profiles defined by users in `agents/<name>.md`).
  *
- * 所有 Subagent 均剥夺 `subagent` / `subagent_profile` 自身（禁止递归派发与自修改）
- * 以及独占式物理屏幕 GUI 与交互式浏览器工具，确保多个 Subagent 并发运行时互不干扰。
+ * All Subagents are stripped of `subagent` / `subagent_profile` themselves (no recursive dispatch or self-modification)
+ * as well as the exclusive physical-screen GUI and interactive browser tools, ensuring concurrent Subagents don't interfere with each other.
  */
 internal data class SubagentProfile(
     val name: String,
@@ -176,9 +176,9 @@ internal data class SubagentProfile(
         )
 
         /**
-         * 设备状态修改与动作类写工具。未显式点名授权时，通配 `*` 默认排除这些工具，
-         * 避免多个并发 Subagent 互相修改系统设置、音量或应用状态；仍允许在自定义 Profile
-         * 的 `tools` 列表里显式点名放行（`FORBIDDEN_TOOLS` 除外）。
+         * Device-state modification and action-type write tools. When not explicitly named, the `*` wildcard excludes these tools by default,
+         * preventing concurrent Subagents from mutating each other's system settings, volume, or app state; they may still be explicitly
+         * allowed by name in a custom profile's `tools` list (except `FORBIDDEN_TOOLS`).
          */
         val DEFAULT_DEVICE_WRITE_TOOLS: Set<String> = AgentPhoneToolCatalog.writes + setOf(
             "set_setting",
@@ -255,7 +255,7 @@ internal data class SubagentProfile(
                 .orEmpty()
 
             if (matched != null) {
-                // 对已有预设（尤其是 explore / plan 等只读预设），附加的 tools 只能收紧原允许集，不能提权扩张。
+                // For existing presets (especially read-only presets like explore / plan), extra tools can only narrow the allowed set, never escalate it.
                 val narrowedTools = cleanTools.filter { tool ->
                     when (tool) {
                         "*" -> false
@@ -276,7 +276,7 @@ internal data class SubagentProfile(
                 )
             }
 
-            // 未命中预设时，当场创建仅用于本次会话的临时专职 Subagent，不落盘保存。
+            // When no preset matches, create a temporary, dedicated Subagent on the spot for this session only, without persisting it.
             val ephemeralName = normalized.ifEmpty { "general" }
             val instruction = cleanRole.ifEmpty {
                 "You are a subagent ($ephemeralName) dedicated to the current subtask. Use available tools efficiently to gather evidence or complete the operation," +

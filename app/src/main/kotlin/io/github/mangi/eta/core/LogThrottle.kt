@@ -3,7 +3,7 @@ package io.github.mangi.eta.core
 import android.os.SystemClock
 import java.util.concurrent.ConcurrentHashMap
 
-/** 进程内日志节流器；使用单调时钟，不受系统时间调整影响。 */
+/** In-process log throttler; uses a monotonic clock so it is unaffected by system time adjustments. */
 internal class LogThrottle(
     private val uptimeMillis: () -> Long = SystemClock::uptimeMillis
 ) {

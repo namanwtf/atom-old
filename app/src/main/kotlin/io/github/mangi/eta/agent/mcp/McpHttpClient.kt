@@ -228,8 +228,8 @@ internal class McpHttpClient(
             ).json ?: error(AppStrings.get(R.string.mcp_err_tools_list_empty, "MCP tools/list returned empty"))
             val result = unwrapResult(response)
             if (protocolVersion == McpProtocolMode.LATEST) {
-                // 旧服务可能忽略现代协议元数据并仍以 200 返回，
-                // 此时需要改走 initialize 协商。
+                // Older services may ignore modern protocol metadata and still return 200,
+                // in which case we must fall back to the initialize negotiation.
                 if (!result.has("resultType") || result.isNull("resultType")) {
                     throw McpProtocolCompatibilityException(
                         IOException(AppStrings.get(R.string.mcp_err_tools_list_legacy, "MCP tools/list returned a legacy protocol result"))
@@ -255,7 +255,7 @@ internal class McpHttpClient(
                 tools += parsed
                 catalogChars += estimatedChars
             }
-            // MCP 规范要求将游标视为不透明字符串：空字符串也是合法游标，仅缺失或 null 表示结束。
+            // The MCP spec requires treating the cursor as an opaque string: an empty string is also a valid cursor, and only absence or null signals the end.
             val nextCursor = if (result.has("nextCursor") && !result.isNull("nextCursor")) {
                 result.optString("nextCursor")
             } else {

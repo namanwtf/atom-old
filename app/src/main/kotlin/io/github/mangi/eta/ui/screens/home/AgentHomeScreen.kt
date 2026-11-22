@@ -20,10 +20,10 @@ import io.github.mangi.eta.ui.model.AgentModelPickerUiState
 import io.github.mangi.eta.ui.model.roleplayChatUi
 
 /**
- * AgentChatHome：首屏为聊天主舞台。
+ * AgentChatHome: the first screen is the main chat stage.
  *
- * 顶部入口统一由 [io.github.mangi.eta.ui.app.AgentAppShell] 提供，
- * 本 Screen 只负责消息流、Run trace、工具摘要和底部输入框。
+ * Top entries are uniformly provided by [io.github.mangi.eta.ui.app.AgentAppShell];
+ * this Screen only handles the message stream, Run trace, tool summary, and bottom input box.
  */
 @Composable
 internal fun AgentHomeScreen(
@@ -39,7 +39,7 @@ internal fun AgentHomeScreen(
     topInset: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
-    // key 内保持完整分支，避免提前返回遗留无法转换为 DEX 的编译器标记。
+    // Keep the full branch inside the key, so an early return doesn't leave compiler markers that can't be converted to DEX.
     key(chatConversationCompositionKey(conversationKey)) {
         if (!state.isConversationLoaded) {
             AgentConversationLoadState(

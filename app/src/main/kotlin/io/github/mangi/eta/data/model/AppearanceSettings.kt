@@ -27,7 +27,7 @@ enum class AppearanceUiStyle(val persistedValue: String) {
 
     companion object {
         val Default = MIUIX
-        // 仅在需要让已有用户重新采用默认样式时递增。
+        // Increment only when existing users need to re-adopt the default style.
         internal const val DEFAULT_REVISION = 1
 
         fun fromPersistedValue(value: String?): AppearanceUiStyle =

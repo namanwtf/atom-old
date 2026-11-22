@@ -5,7 +5,7 @@ import java.math.BigInteger
 import java.util.Base64
 import org.json.JSONObject
 
-/** 将现代 MCP schema 中可直接定位的 x-mcp-header 参数映射到请求头。 */
+/** Maps the directly locatable x-mcp-header parameters in a modern MCP schema onto request headers. */
 internal class McpToolHeaders private constructor(
     private val bindings: List<Binding>,
 ) {

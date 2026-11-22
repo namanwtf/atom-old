@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 每次 run 冻结角色内容；编辑卡片只影响之后启动的 run。 */
+/** Freezes character content per run; editing the card only affects runs started afterwards. */
 internal data class RoleplayRunContext(
     val characterId: String,
     val card: CharacterCard,
@@ -24,7 +24,7 @@ internal data class RoleplayRunContext(
     fun personaMessage(): JSONObject = JSONObject().put("role", "system")
         .put(PERSONA_MARKER, true).put("content", personaPrompt("", ""))
 
-    /** 世界书与深度提示只投影到当前请求，不写入 transcript 或覆盖历史。 */
+    /** Worldbook and depth prompts are projected only into the current request, not written into the transcript or over history. */
     fun projectMessages(source: JSONArray): JSONArray {
         val conversationText = (0 until source.length()).mapNotNull { index ->
             source.optJSONObject(index)?.takeIf(::isDialogue)

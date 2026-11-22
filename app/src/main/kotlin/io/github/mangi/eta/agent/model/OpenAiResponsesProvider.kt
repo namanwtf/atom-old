@@ -370,8 +370,8 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
         val hasTerminalOutput = terminalOutput != null && terminalOutput.length() > 0
         val output = terminalOutput ?: JSONArray()
         val finalResult = if (terminalType == "response.completed" && !hasTerminalOutput) {
-            // 部分兼容接口只流式下发正文，终态 output 为空。这里只恢复本轮已经收到的
-            // 标准增量；不对非空终态做字段级拼补，也不把本地结果冒充为 opaque items。
+            // Some compatible interfaces stream only the text, leaving the terminal output empty. Here we restore only the standard
+            // increments already received this turn; we do not do field-level patching for a non-empty terminal state, nor pass local results off as opaque items.
             finalOutputFromStream(streamedText, streamedReasoning, toolCalls.values)
         } else {
             extractFinalOutput(output)
@@ -566,7 +566,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
                         if (part.optString("type") != "reasoning_text") return@mapNotNull null
                         contentIndex to part.optString("text")
                     }.ifEmpty {
-                        // 兼容旧接口的单字段形式；已有标准 content 时不再重复追加别名。
+                        // Compatible with the single-field form of older interfaces; when a standard content already exists, do not append the alias again.
                         item.optString("reasoning_text").takeIf { it.isNotEmpty() }
                             ?.let { listOf(0 to it) }.orEmpty()
                     }

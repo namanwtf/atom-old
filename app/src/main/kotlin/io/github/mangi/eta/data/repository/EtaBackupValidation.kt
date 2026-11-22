@@ -5,7 +5,7 @@ import io.github.mangi.eta.core.AppStrings
 import io.github.mangi.eta.data.db.ConversationStateEntity
 import io.github.mangi.eta.data.model.ProviderAuthModes
 
-/** 校验只保留标识与角色关联所需的消息类型，正文和检查点逐条读取后释放。 */
+/** Validation keeps only the message types needed for identity and character association; bodies and checkpoints are read one at a time and released. */
 internal object EtaBackupValidation {
     suspend fun validate(staged: EtaBackupJsonStreams.StagedDocument): EtaBackupSummary {
         val header = staged.header

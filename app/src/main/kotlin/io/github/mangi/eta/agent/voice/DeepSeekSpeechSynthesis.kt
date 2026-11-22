@@ -69,8 +69,8 @@ internal suspend fun streamDeepSeekSpeech(
     chunks: List<String>,
     onAudio: (ByteArray) -> Unit,
 ) = coroutineScope {
-    // DeepSeek WebSocket 单次会话上限为 10,000 计费字符（汉字算 2 个）与 64 KiB 文本；
-    // 超出时在出声前抛出配置异常，由 SpeechPlaybackController 无缝回落到逐段 HTTP 合成。
+    // DeepSeek WebSocket has a per-session limit of 10,000 billable characters (each Han character counts as 2) and 64 KiB of text;
+    // when exceeded, throw a configuration exception before audio starts and let SpeechPlaybackController fall back seamlessly to per-segment HTTP synthesis.
     val totalBillingChars = chunks.sumOf(::deepSeekBillingCharCount)
     val totalBytes = chunks.sumOf { it.toByteArray(Charsets.UTF_8).size }
     if (totalBillingChars > MAX_WS_BILLING_CHARS || totalBytes > MAX_WS_UTF8_BYTES) {

@@ -71,7 +71,7 @@ internal object WebToolsSettingsRepository {
         }
     }
 
-    /** 查找模型提供商中已配置的 DeepSeek API Key 与 Base URL，供网页工具零配置复用。 */
+    /** Find a configured DeepSeek API Key and Base URL among model providers for zero-config reuse by web tools. */
     suspend fun deepSeekProviderCredentials(): Pair<String, String>? = withContext(Dispatchers.IO) {
         runCatching {
             val builtin = ProviderRepository.providerById(BuiltinProviders.DEEPSEEK_ID)

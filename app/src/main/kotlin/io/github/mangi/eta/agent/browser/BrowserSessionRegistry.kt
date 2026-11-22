@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** 页面按会话保留，运行引用与挂载容器共同决定何时可以回收。 */
+/** Pages are retained per session; run references and the mounted container together decide when a page can be reclaimed. */
 internal object BrowserSessionRegistry {
     const val MANUAL_SESSION_KEY = "browser:manual"
 
@@ -57,7 +57,7 @@ internal object BrowserSessionRegistry {
         }
     }
 
-    /** 全局清理先唤醒动作等待，再在后台逐页重置，主线程从不等待页面操作锁。 */
+    /** Global cleanup first wakes the action waiters, then resets pages one by one in the background; the main thread never waits on a page operation lock. */
     fun clearSharedBrowsingData(context: Context) {
         check(Looper.myLooper() != Looper.getMainLooper()) { "Browser data clearing requires a worker thread" }
         check(clearingData.compareAndSet(false, true)) { "Browser data clearing is already in progress" }

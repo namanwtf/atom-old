@@ -35,13 +35,13 @@ internal data class SubagentUsageSnapshot(
 )
 
 /**
- * Subagent 实时与持久化的结构化活动快照。
+ * Live and persisted structured activity snapshot of a Subagent.
  *
- * 保存在父级 `subagent` 工具消息的 `command` 字段中，既支持运行中点击实时检视，
- * 也支持会话归档与重启后直接点开回看完整内部过程。
+ * Stored in the `command` field of the parent `subagent` tool message, supporting both live inspection while running,
+ * and clicking through to review the full internal process after archiving and restart.
  *
- * 所有跨进程或落盘传输必须经由 [encodeForWire] / [boundedForWire]，按序列化后的真实 UTF-16
- * 长度控制在 Wire 预算内，避免底层截断破坏 JSON 结构。
+ * All cross-process or persisted transfers must go through [encodeForWire] / [boundedForWire], keeping the real UTF-16
+ * length after serialization within the wire budget to avoid underlying truncation breaking the JSON structure.
  */
 @Serializable
 internal data class SubagentActivitySnapshot(
@@ -57,9 +57,9 @@ internal data class SubagentActivitySnapshot(
     val output: String = "",
     val error: String? = null,
     val usage: SubagentUsageSnapshot? = null,
-    /** 删减早期步骤前的累计工具调用数；旧快照缺省为 0，读取时回退到 [steps] 计数。 */
+    /** Cumulative tool-call count before early steps were dropped; defaults to 0 in old snapshots, falling back to the [steps] count on read. */
     val totalToolSteps: Int = 0,
-    /** 因步骤上限或 Wire 预算折叠的早期步骤数。 */
+    /** Number of early steps collapsed due to the step limit or wire budget. */
     val omittedSteps: Int = 0,
 ) {
     val toolStepCount: Int
@@ -71,8 +71,8 @@ internal data class SubagentActivitySnapshot(
         boundedForWire(maxChars).encode()
 
     /**
-     * 按真实序列化长度将快照收敛到 [maxChars] 个 UTF-16 单元内，同时保持 JSON 合法。
-     * 优先保留状态、用量、累计工具步数和最近步骤，逐级压缩长汇报、提示词和早期步骤详情。
+     * Shrinks the snapshot to within [maxChars] UTF-16 units based on its real serialized length while keeping the JSON valid.
+     * Preferentially keeps status, usage, cumulative tool steps, and the latest steps, progressively compressing long reports, prompts, and early step details.
      */
     fun boundedForWire(maxChars: Int = WIRE_BUDGET_CHARS): SubagentActivitySnapshot {
         val budget = maxChars.coerceAtLeast(MIN_WIRE_BUDGET_CHARS)
@@ -97,7 +97,7 @@ internal data class SubagentActivitySnapshot(
         )
         if (candidate.encode().length <= budget) return candidate
 
-        // 第一级：先压缩长汇报与提示词，保留完整步骤时间线。
+        // Level 1: first compress long reports and prompts, keeping the full step timeline.
         val textTiers = listOf(
             6_000 to 1_500,
             3_000 to 600,
@@ -112,7 +112,7 @@ internal data class SubagentActivitySnapshot(
             if (candidate.encode().length <= budget) return candidate
         }
 
-        // 第二级：优先保留最近步骤的详情，压缩早期步骤详情。
+        // Level 2: keep details of the latest steps first, compressing early step details.
         if (candidate.steps.isNotEmpty()) {
             val detailTiers = listOf(
                 Triple(240, 800, 160),
@@ -137,7 +137,7 @@ internal data class SubagentActivitySnapshot(
             }
         }
 
-        // 第三级：丢弃最早步骤，累计 omittedSteps，保留最近步骤与总工具步数。
+        // Level 3: drop the earliest steps, accumulate omittedSteps, keep the latest steps and total tool-step count.
         if (candidate.steps.isNotEmpty()) {
             val allSteps = candidate.steps
             val baseOmitted = candidate.omittedSteps
@@ -149,7 +149,7 @@ internal data class SubagentActivitySnapshot(
                     omittedSteps = baseOmitted + dropCount,
                 )
                 if (shrunk.encode().length <= budget) return shrunk
-                // 步骤较多时步进加速，最后确保能落到清空 steps。
+                // Accelerate the step size when there are many steps, finally ensuring it can reach clearing all steps.
                 val step = ((allSteps.size - dropCount) / 3).coerceAtLeast(1)
                 dropCount = if (dropCount == allSteps.size) {
                     allSteps.size + 1
@@ -164,7 +164,7 @@ internal data class SubagentActivitySnapshot(
             if (candidate.encode().length <= budget) return candidate
         }
 
-        // 第四级：极端转义元数据兜底，清空正文并逐步收紧各元数据长度，确保永不超限。
+        // Level 4: fall back to extreme escaping of metadata, clear the body, and progressively tighten each metadata length to ensure it never exceeds the limit.
         candidate = candidate.copy(
             prompt = "",
             output = "",
@@ -202,7 +202,7 @@ internal data class SubagentActivitySnapshot(
         const val STATUS_FAILED = "failed"
         const val STATUS_CANCELLED = "cancelled"
 
-        /** 默认 Wire 序列化上限，留足余量避免触达 IPC 通用 16,000 字符裁剪线。 */
+        /** Default wire serialization limit, leaving enough margin to avoid hitting the IPC's common 16,000-character clipping threshold. */
         const val WIRE_BUDGET_CHARS = 12_000
 
         private const val MIN_WIRE_BUDGET_CHARS = 512
@@ -229,8 +229,8 @@ internal data class SubagentActivitySnapshot(
         }
 
         /**
-         * Wire 层兜底：当快照 JSON 超过 [maxChars] 时按结构化预算重编码，避免硬切破坏 JSON；
-         * 如果原始字符串本就不是合法快照，返回 null 交由调用方走通用策略。
+         * Wire-level fallback: when the snapshot JSON exceeds [maxChars], re-encode it by the structured budget to avoid hard truncation breaking the JSON;
+         * if the original string isn't a valid snapshot to begin with, return null and let the caller use a generic strategy.
          */
         fun sanitizeForWire(raw: String?, maxChars: Int = WIRE_BUDGET_CHARS): String? {
             if (raw == null) return null
@@ -264,7 +264,7 @@ internal data class SubagentActivitySnapshot(
     }
 }
 
-/** 按 UTF-16 单元安全截取前缀，不在高/低代理对中间切开。 */
+/** Safely truncates the prefix by UTF-16 units, never splitting a surrogate pair. */
 internal fun String.takeUtf16Safe(maxChars: Int): String {
     if (maxChars <= 0) return ""
     if (length <= maxChars) return this
@@ -272,7 +272,7 @@ internal fun String.takeUtf16Safe(maxChars: Int): String {
     return if (end <= 0) "" else substring(0, end)
 }
 
-/** 按 UTF-16 单元安全截取后缀，不在高/低代理对中间切开。 */
+/** Safely truncates the suffix by UTF-16 units, never splitting a surrogate pair. */
 internal fun String.takeLastUtf16Safe(maxChars: Int): String {
     if (maxChars <= 0) return ""
     if (length <= maxChars) return this

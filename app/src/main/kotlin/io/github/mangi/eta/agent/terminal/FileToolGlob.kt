@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.terminal
 
-/** 路径段使用动态规划，段内通配符使用有界回退；不把模型输入交给正则引擎。 */
+/** Path segments use dynamic programming and in-segment wildcards use bounded backtracking; model input is never handed to a regex engine. */
 internal class FileToolGlob(pattern: String) {
     private val components: List<String>
 

@@ -188,8 +188,8 @@ fun ConversationSidePaneScaffold(
             }
         }
 
-        // NavDisplay 的退出条目在转场期间仍会保留组合；仅允许已稳定显示的首页
-        // 处理侧栏返回，避免它抢先消费二级页面的第一次返回事件。
+        // NavDisplay's exiting entry stays composed during the transition; only the already-stably-displayed home screen
+        // handles the sidebar back, so it doesn't preemptively consume a secondary page's first back event.
         NavigationBackHandler(
             state = navigationEventState,
             isBackEnabled = isRevealed &&
@@ -202,7 +202,7 @@ fun ConversationSidePaneScaffold(
             modifier = Modifier.fillMaxSize()
                 .clipToBounds()
                 .background(conversationPaneContainerColor())
-                // 手势由共同容器拥有，侧栏和聊天舞台均可拖动；子级先处理滚动与选择。
+                // The gesture is owned by the shared container; both sidebar and chat stage can be dragged; children handle scroll and selection first.
                 .anchoredDraggable(
                     state = paneDragState,
                     reverseDirection = false,
@@ -213,8 +213,8 @@ fun ConversationSidePaneScaffold(
                 ),
             contentAlignment = AbsoluteAlignment.TopLeft,
         ) {
-            // 两个槽位并排测量和放置，由同一位移推移；不在聊天内容下面叠放侧栏。
-            // 侧栏保留组合，避免每次起手重新创建列表和搜索框。
+            // The two slots are measured and placed side by side, pushed by one offset; the sidebar isn't stacked beneath chat content.
+            // The sidebar stays composed, avoiding recreating the list and search box on every open.
             Layout(
                 modifier = Modifier.fillMaxSize(),
                 content = {
@@ -283,7 +283,7 @@ fun ConversationSidePaneScaffold(
                     Constraints.fixed(constraints.maxWidth, constraints.maxHeight),
                 )
                 layout(constraints.maxWidth, constraints.maxHeight) {
-                    // 物理左侧是会话区；不随 RTL 改变两个槽位的关系。
+                    // The physical left is the conversation area; the two slots' relationship doesn't change with RTL.
                     val motion = conversationPaneMotion(paneDragState.offset, paneWidthPx)
                     val offset = motion.foregroundOffset.roundToInt()
                     panel.placeWithLayer(offset - panel.width, 0)

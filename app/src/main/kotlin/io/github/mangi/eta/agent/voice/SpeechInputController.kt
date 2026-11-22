@@ -71,8 +71,8 @@ internal class SpeechInputController(
     private var capturing = false
 
     /**
-     * [holdToTalk] 表示用户按住说话：松手才结束，期间的停顿不会自动发送。
-     * 停顿自动发送只对构造时声明 [automaticEndpoint] 的入口生效，聊天听写始终等待用户确认。
+     * [holdToTalk] means the user holds to talk: it ends only on release, and pauses in between are never auto-sent.
+     * Auto-send on pause only applies to entries that declared [automaticEndpoint] at construction; chat dictation always waits for user confirmation.
      */
     fun start(settings: SpeechSettings? = null, credentials: SpeechCredentials? = null, holdToTalk: Boolean = false) {
         cancel()
@@ -162,7 +162,7 @@ internal class SpeechInputController(
                         } else {
                             begin()
                             val wav = withTimeout(65_000) { collectSpeechAudio(audio.frames) }
-                            // 关闭通道可能同步唤醒收集器，旧会话不能在取消传播完成前启动请求。
+                            // Closing the channel may synchronously wake the collector; the old session must not start a request before cancellation propagation completes.
                             coroutineContext.ensureActive()
                             if (generation != session) throw CancellationException("Speech session replaced")
                             recognizeFile(context, config, secrets, wav) { progress ->
@@ -209,7 +209,7 @@ internal class SpeechInputController(
         }
     }
 
-    /** 纠错失败不影响交付；只有纠错仍属于当前会话时才展示进度。 */
+    /** Correction failure does not affect delivery; progress is shown only while the correction still belongs to the current session. */
     private suspend fun refined(session: Long, refineTranscript: Boolean, text: String): String {
         if (!refineTranscript || generation != session) return text
         mutableState.value = mutableState.value.copy(
@@ -244,7 +244,7 @@ internal class SpeechInputController(
     fun cancel() {
         generation++
         finishRequested = false
-        // 先取消识别协程，避免关闭录音通道被当作正常录音完成而提交请求。
+        // Cancel the recognition coroutine first, so closing the recording channel isn't treated as a normal recording completion and submitted as a request.
         job?.cancel(); job = null
         recorder?.cancel(); recorder = null
         releaseCapture()

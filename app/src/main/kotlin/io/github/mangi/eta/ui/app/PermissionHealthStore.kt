@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 权限健康检查；Root 授权状态变化时自动刷新。 */
+/** Permission health check; refreshes automatically when the Root grant state changes. */
 internal class PermissionHealthStore(
     context: Context,
     private val scope: CoroutineScope,

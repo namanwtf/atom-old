@@ -15,11 +15,11 @@ import io.github.mangi.eta.data.model.ScheduledTaskRun
 import io.github.mangi.eta.ui.MainActivity
 
 /**
- * 定时任务结果与告警通知管理。
+ * Scheduled-task result and alert notification management.
  *
- * - 常规结果推送使用独立渠道，支持展开阅读 1~3 行核心结论，点击直接进入完整对话继续追问；
- * - 失败与连续失败熔断使用独立告警渠道；
- * - 需物理主屏解锁执行的 GUI 任务发出可交互的“立即执行”提醒，不半夜强闯锁屏。
+ * - Routine result pushes use a dedicated channel, support expanded reading of the 1~3 line core conclusion, and open the full conversation on tap to continue asking;
+ * - Failures and consecutive-failure circuit breaking use a dedicated alert channel;
+ * - GUI tasks that require the physical main screen to be unlocked issue an interactive "Run now" reminder instead of barging through the lock screen in the middle of the night.
  */
 internal object ScheduledTaskNotificationManager {
     private const val CHANNEL_RESULTS = "eta_scheduled_results"
@@ -119,7 +119,7 @@ internal object ScheduledTaskNotificationManager {
         }
     }
 
-    /** 锁屏状态下需要物理主屏 GUI 操作的定时任务，发送可交互提醒通知由用户点按执行。 */
+    /** Scheduled tasks that need physical main-screen GUI actions while locked send an interactive reminder notification for the user to tap and run. */
     fun notifyGuiReadyForUser(
         context: Context,
         task: ScheduledTask,

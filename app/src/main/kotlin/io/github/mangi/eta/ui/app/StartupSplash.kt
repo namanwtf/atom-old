@@ -20,7 +20,7 @@ private class StartupSplash(
 
     fun install() {
         activity.lifecycle.addObserver(this)
-        // 外观配置异步读取完成后才允许首帧，避免系统启动画面先退到空白窗口。
+        // Allow the first frame only after appearance config finishes loading asynchronously, so the system splash doesn't exit into a blank window.
         content.viewTreeObserver.addOnPreDrawListener(this)
     }
 

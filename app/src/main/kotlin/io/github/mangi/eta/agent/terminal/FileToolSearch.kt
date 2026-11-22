@@ -6,7 +6,7 @@ import java.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 游标保留有限深度的目录栈和当前文本位置；每轮只扫描有界条目与字节。 */
+/** The cursor keeps a bounded-depth directory stack and the current text position; each round scans only a bounded number of entries and bytes. */
 internal class FileToolSearch(
     private val backend: FileToolBackend,
     private val nanoTime: () -> Long = System::nanoTime,
@@ -163,7 +163,7 @@ internal class FileToolSearch(
         var visited = 0
         while (state.frames.isNotEmpty() && visited < budget) {
             backend.checkActive()
-            // 一次列表返回后至少消费一个条目，避免慢文件系统让同一游标反复停在原地。
+            // Consume at least one entry per list return, so a slow filesystem can't leave the same cursor stuck in place.
             if (visited > 0 && timeExpired()) return NextFile(null, visited, timeLimited = true)
             val frame = state.frames.last()
             val cached = pages[frame.relative]

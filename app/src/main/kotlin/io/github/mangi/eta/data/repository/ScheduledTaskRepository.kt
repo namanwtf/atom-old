@@ -74,9 +74,9 @@ internal object ScheduledTaskRepository {
         dao(context).getRun(runId)?.toDomain()
 
     /**
-     * 新建或更新定时任务，并自动重算下一次触发时间与系统闹钟。
+     * Create or update a scheduled task, and automatically recompute the next trigger time and system alarm.
      *
-     * 手动启用或修改排期时会清除旧的自动熔断原因和连续失败计数。
+     * Manually enabling or modifying the schedule clears the old auto circuit-breaker reason and consecutive failure count.
      */
     suspend fun saveTask(
         task: ScheduledTask,
@@ -196,9 +196,9 @@ internal object ScheduledTaskRepository {
     }
 
     /**
-     * 提交单次执行结果，更新任务状态、推进下一次触发时间，并在连续失败达阈值时自动熔断暂停。
+     * Submit a single run's result, update the task state, advance the next trigger time, and auto-trip (pause) when consecutive failures reach the threshold.
      *
-     * 返回更新后的任务快照（含是否触发了自动熔断）。
+     * Returns the updated task snapshot (including whether an auto circuit-break was triggered).
      */
     suspend fun recordRunFinished(
         run: ScheduledTaskRun,
@@ -270,7 +270,7 @@ internal object ScheduledTaskRepository {
         return FinishedRunCommit(task = updatedTask, autoDisabledNow = autoDisabled)
     }
 
-    /** 进程重启或系统时间/时区变化时，清理上次进程残留的 running 状态并重算所有已启用任务的下次触发点。 */
+    /** On process restart or system time / time zone change, clear the running state left over from the previous process and recompute the next trigger point for all enabled tasks. */
     suspend fun reconcileAfterRestartOrClockChange(
         nowMs: Long = System.currentTimeMillis(),
         defaultZone: ZoneId = ZoneId.systemDefault(),

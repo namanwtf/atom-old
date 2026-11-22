@@ -27,7 +27,7 @@ internal fun isSafeBuiltinSkillInstallation(targetDir: File): Boolean {
         skillFile.isFile
 }
 
-/** 内置技能 manifest 条目。 */
+/** A built-in skill manifest entry. */
 private data class BuiltinSkillAsset(
     val id: String = "",
     val name: String = "",
@@ -39,7 +39,7 @@ private data class BuiltinSkillAsset(
     val hasEvals: Boolean = false,
 )
 
-/** 注册表中的技能状态记录。 */
+/** A skill state record in the registry. */
 private data class SkillRegistryEntry(
     val enabled: Boolean = true,
     val source: String = USER_SOURCE,
@@ -47,7 +47,7 @@ private data class SkillRegistryEntry(
 )
 
 // =====================================================================================
-// SkillRegistryStore — 持久化技能安装元数据；技能正文仍保留在文件树中。
+// SkillRegistryStore — persists skill installation metadata; skill content remains in the file tree.
 // =====================================================================================
 
 private class SkillRegistryStore(
@@ -114,7 +114,7 @@ private class SkillRegistryStore(
 }
 
 // =====================================================================================
-// BuiltinSkillAssetStore — 从 assets 读取并安装内置技能
+// BuiltinSkillAssetStore — reads and installs built-in skills from assets
 // =====================================================================================
 
 private class BuiltinSkillAssetStore(
@@ -209,7 +209,7 @@ private class BuiltinSkillAssetStore(
 }
 
 // =====================================================================================
-// SkillIndexService — 扫描、索引、管理技能
+// SkillIndexService — scans, indexes, and manages skills
 // =====================================================================================
 
 class SkillIndexService(
@@ -227,8 +227,8 @@ class SkillIndexService(
     private var cachedManagementEntries: List<SkillIndexEntry>? = null
 
     /**
-     * 所有可读写索引的入口都先在同一把跨进程锁内完成待处理文件事务与 Room 快照恢复。
-     * 仅能读取文件、不具备 registry 恢复能力的 Loader 会由锁实现保持 fail-closed。
+     * Every read/write index entry first completes pending file transactions and Room snapshot recovery inside the same cross-process lock.
+     * Loaders that can only read files and lack registry recovery are kept fail-closed by the lock implementation.
      */
     internal fun <T> withMutationLock(block: () -> T): T = SkillMutationLock.withLock(
         skillsRoot = skillsRoot,
@@ -358,7 +358,7 @@ class SkillIndexService(
                             LinkOption.NOFOLLOW_LINKS,
                         )
                     ) {
-                        // 成功删除时备份内可能含历史 symlink，必须只 unlink，不能递归跟随。
+                        // On successful deletion the backup may contain historical symlinks, so we must only unlink and never follow them recursively.
                         deleteSkillPathWithoutFollowingLinks(workRoot, operation)
                     }
                 }
@@ -377,7 +377,7 @@ class SkillIndexService(
         }
     }
 
-    /** 文件提交成功后，以单次 Room 事务登记用户 Skill，并同步清除索引缓存。 */
+    /** After the files are committed, registers the user Skill in a single Room transaction and clears the index cache. */
     internal fun registerInstalledUserSkills(skillIds: List<String>) {
         withMutationLock {
             synchronized(indexLock) {
@@ -398,7 +398,7 @@ class SkillIndexService(
         }
     }
 
-    /** 在正式目录发生任何移动前，持久化事务涉及 id 的完整旧 registry 状态。 */
+    /** Persists the complete prior registry state for the ids involved in the transaction before any move in the official directory. */
     internal fun captureRegistryRecoverySnapshots(
         skillIds: List<String>,
     ): List<SkillRegistryRecoverySnapshot> = synchronized(indexLock) {
@@ -419,7 +419,7 @@ class SkillIndexService(
         }
     }
 
-    /** 文件恢复完成后，以单次 Room 事务还原全部旧快照；失败时调用方保留 journal。 */
+    /** After file recovery completes, restores all old snapshots in a single Room transaction; on failure the caller keeps the journal. */
     internal fun restoreRecoveredRegistry(recovered: List<RecoveredSkillOperation>) {
         if (recovered.isEmpty()) return
         synchronized(indexLock) {
@@ -573,7 +573,7 @@ class SkillIndexService(
 }
 
 // =====================================================================================
-// SkillLoader — 加载技能正文和附属资源
+// SkillLoader — loads skill content and attached resources
 // =====================================================================================
 
 class SkillLoader(private val skillsRoot: File) {
@@ -617,7 +617,7 @@ class SkillLoader(private val skillsRoot: File) {
 }
 
 // =====================================================================================
-// SkillCompatibilityChecker — 兼容性检查
+// SkillCompatibilityChecker — compatibility checks
 // =====================================================================================
 
 object SkillCompatibilityChecker {
@@ -642,7 +642,7 @@ object SkillCompatibilityChecker {
 }
 
 // =====================================================================================
-// SkillRuntime — 工厂入口
+// SkillRuntime — factory entry point
 // =====================================================================================
 
 object SkillRuntime {

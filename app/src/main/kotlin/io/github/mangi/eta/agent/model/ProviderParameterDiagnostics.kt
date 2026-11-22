@@ -4,9 +4,9 @@ import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 import org.json.JSONObject
 
-/** 有界的服务端参数诊断，不承载失败分类或重试策略。 */
+/** Bounded server-side parameter diagnostics; carries no failure classification or retry policy. */
 internal object ProviderParameterDiagnostics {
-    /** 只投影协议枚举和已知字段位置，服务端 message/description 可能回显请求内容。 */
+    /** Projects only protocol enums and known field locations; server message/description may echo request content. */
     fun describe(error: JSONObject?): String? {
         if (error == null) return null
         val codes = listOf("status", "code", "type").map(error::optString)

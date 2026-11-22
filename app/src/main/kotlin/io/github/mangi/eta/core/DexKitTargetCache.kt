@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.util.Properties
 import java.util.zip.ZipFile
 
-/** 缓存只保存当前 APK 的描述符，反射签名仍由 Hook 目标解析器校验。 */
+/** The cache only stores descriptors for the current APK; reflective signatures are still verified by the Hook target resolver. */
 internal class DexKitTargetCache(
     private val apkPath: String,
     private val directory: File,
@@ -42,7 +42,7 @@ internal class DexKitTargetCache(
                 setProperty("method", descriptor)
             }
             temporary.outputStream().use { values.store(it, null) }
-            // 独立临时文件配合原子替换，避免不同宿主进程读到半份描述符。
+            // A separate temp file with atomic replace prevents different host processes from reading a half-written descriptor.
             Files.move(
                 temporary.toPath(),
                 cacheFile(key).toPath(),
@@ -62,7 +62,7 @@ internal class DexKitTargetCache(
 
     private fun readSourceIdentity(): String? = try {
         val apk = File(apkPath)
-        // ROM 更新可能保留版本号与文件时间；中央目录中的 DEX 校验值也参与失效判断。
+        // A ROM update may keep the version number and file times; the DEX checksums in the central directory also contribute to invalidation.
         val dexEntries = ZipFile(apk).use { zip ->
             zip.entries().asSequence()
                 .filter { DEX_ENTRY_PATTERN.matches(it.name) }

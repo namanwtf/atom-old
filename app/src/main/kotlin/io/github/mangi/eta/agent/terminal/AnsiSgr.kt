@@ -1,8 +1,8 @@
 package io.github.mangi.eta.agent.terminal
 
 /**
- * 终端单元格样式的中性表示：颜色为 0xAARRGGBB 的 Long，不依赖 Compose。
- * 块式输出渲染（ui 层）与控制台屏幕缓冲区共用同一份 SGR 解释，避免两套调色板漂移。
+ * Neutral representation of terminal cell styling: colors are 0xAARRGGBB Longs, independent of Compose.
+ * Block output rendering (ui layer) and the console screen buffer share one SGR interpretation to avoid two palettes drifting apart.
  */
 internal data class SgrStyle(
     val fg: Long? = null,
@@ -11,7 +11,7 @@ internal data class SgrStyle(
     val dim: Boolean = false,
     val italic: Boolean = false,
     val underline: Boolean = false,
-    /** 反显：前景与背景互换，TUI 用它标记列表选中项与光标所在条目。 */
+    /** Reverse video: swaps foreground and background; TUIs use it to mark selected list items and the entry under the cursor. */
     val inverse: Boolean = false,
     val strikethrough: Boolean = false,
 ) {
@@ -23,13 +23,13 @@ internal data class SgrStyle(
     }
 }
 
-/** SGR 参数序列解释器；[params] 为 CSI 与结尾 m 之间的原文（空串等价于 0）。 */
+/** SGR parameter-sequence interpreter; [params] is the raw text between the CSI and the terminating m (an empty string equals 0). */
 internal object AnsiSgr {
 
     /**
-     * 参数以 ; 分组、组内以 : 分隔子参数（ITU T.416），两种扩展颜色写法都要识别：
-     * `38;5;n` / `38;2;r;g;b` 跨组读取，`38:5:n` / `38:2::r:g:b` 只在组内读取。
-     * 子参数不能当作独立参数解释，否则 `4:3`（波浪下划线）会被误读成下划线加斜体。
+     * Parameters group by ; and sub-parameters separate by : within a group (ITU T.416); both extended-color forms must be recognized:
+     * `38;5;n` / `38;2;r;g;b` read across groups; `38:5:n` / `38:2::r:g:b` read only within the group.
+     * Sub-parameters must not be interpreted as standalone parameters, or `4:3` (curly underline) would be misread as underline plus italic.
      */
     fun apply(params: String, style: SgrStyle): SgrStyle {
         val groups = if (params.isEmpty()) {
@@ -62,7 +62,7 @@ internal object AnsiSgr {
                 49 -> current = current.copy(bg = null)
                 in 90..97 -> current = current.copy(fg = BRIGHT[code - 90])
                 in 100..107 -> current = current.copy(bg = BRIGHT[code - 100])
-                // 58 为下划线颜色：不渲染，但必须按同样规则吞掉其颜色参数。
+                // 58 is the underline color: not rendered, but its color parameters must still be consumed by the same rules.
                 38, 48, 58 -> {
                     val (color, consumed) = if (group.size > 1) {
                         readSubparameterColor(group) to 0
@@ -81,7 +81,7 @@ internal object AnsiSgr {
         return current
     }
 
-    /** `38:5:n`、`38:2:r:g:b` 与带色彩空间 ID 的 `38:2::r:g:b`。 */
+    /** `38:5:n`, `38:2:r:g:b`, and `38:2::r:g:b` with a color-space ID. */
     private fun readSubparameterColor(group: List<Int>): Long? = when (group.getOrNull(1)) {
         5 -> group.getOrNull(2)?.let(::color256)
         2 -> {
@@ -91,7 +91,7 @@ internal object AnsiSgr {
         else -> null
     }
 
-    /** `38;5;n` 与 `38;2;r;g;b`：返回颜色与额外消费的组数；参数不足时不消费。 */
+    /** `38;5;n` and `38;2;r;g;b`: returns the color and the number of extra groups consumed; consumes none when parameters are insufficient. */
     private fun readLegacyColor(groups: List<List<Int>>, index: Int): Pair<Long?, Int> {
         fun at(offset: Int): Int? = groups.getOrNull(index + offset)?.getOrNull(0)
         return when (at(1)) {

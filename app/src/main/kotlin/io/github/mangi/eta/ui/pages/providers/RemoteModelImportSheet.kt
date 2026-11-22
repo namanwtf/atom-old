@@ -51,7 +51,7 @@ import top.yukonga.miuix.kmp.glass.GlassBottomSheet
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 一次拉取的待选结果；确认时保留连接和账号绑定，避免将过期目录写到另一连接。 */
+/** Candidate results from one fetch; on confirm, keep the connection and account binding, so a stale catalog isn't written to another connection. */
 internal data class RemoteModelImport(
     val catalog: RemoteModelCatalog,
     val candidates: List<Model>,

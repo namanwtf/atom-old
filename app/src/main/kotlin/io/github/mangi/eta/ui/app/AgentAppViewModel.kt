@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 
-/** Activity 级状态所有者；配置变更只重建 UI，不替换正在运行的 Agent 会话。 */
+/** Activity-level state owner; config changes only rebuild the UI without replacing the running Agent session. */
 internal class AgentAppViewModel(application: Application) : AndroidViewModel(application) {
     val state = AgentAppState(
         context = application,

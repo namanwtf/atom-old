@@ -11,7 +11,7 @@ internal data class FileToolTextChunk(
     val eof: Boolean,
 )
 
-/** 字节游标只能越过已完整解码并输出成文本的字符，不把解码器内部暂存的半个 UTF-8 字符记为已读。 */
+/** The byte cursor may only advance past characters that were fully decoded and output as text, never counting a half-UTF-8 character buffered inside the decoder as read. */
 internal class FileToolTextReader(
     private val backend: FileToolBackend,
     private val decoderFactory: () -> CharsetDecoder = {

@@ -68,7 +68,7 @@ internal fun EtaAssistantSuggestions(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                // 阴影与按压回弹留在横向滚动裁剪框内部，避免上下边缘被水平视口截平。
+                // Keep the shadow and press rebound inside the horizontal scroll clipping box, so the top/bottom edges aren't cut flat by the horizontal viewport.
                 .padding(top = 6.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,

@@ -269,7 +269,7 @@ internal object AgentPhoneResultFormatter {
     private fun calendarValue(json: JSONObject, key: String): Any? {
         val value = json.opt(key)
         if (key != "reminders" || value !is JSONArray) return value
-        // 提醒顺序不影响效果，只比较分钟数与提醒方式，忽略 Provider 返回的记录标识。
+        // Reminder order does not affect behavior; compare only the minute and reminder method, ignoring the record identifiers returned by the Provider.
         return (0 until value.length()).map { index ->
             value.optJSONObject(index)?.let { reminder ->
                 "${reminder.opt("minutes")}:${reminder.opt("method")}"

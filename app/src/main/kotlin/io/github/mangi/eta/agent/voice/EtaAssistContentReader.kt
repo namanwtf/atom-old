@@ -8,7 +8,7 @@ import android.text.InputType
 import android.view.View
 import org.json.JSONObject
 
-/** 在后台展开系统提供的 Assist 数据；不读取无障碍节点，也不执行应用附带的 Intent。 */
+/** Expands the system-provided Assist data in the background; it reads no accessibility nodes and executes no Intent supplied by apps. */
 internal object EtaAssistContentReader {
     fun read(context: Context, state: VoiceInteractionSession.AssistState): String {
         val output = BoundedText()
@@ -21,7 +21,7 @@ internal object EtaAssistContentReader {
                 val info = context.packageManager.getApplicationInfo(it.packageName, 0)
                 output.line("App name", context.packageManager.getApplicationLabel(info).toString())
             } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
-                // 包在采集后卸载时仍保留系统提供的组件信息。
+                // The system-provided component info is kept even if the package is uninstalled after capture.
             }
         }
         state.assistContent?.let { content ->
@@ -75,7 +75,7 @@ internal object EtaAssistContentReader {
 
     private fun appendData(output: BoundedText, data: Bundle?) {
         if (data == null) return
-        // Bundle 可能包含任意 Parcelable；只接收有界的简单文本和基础值。
+        // The Bundle may contain arbitrary Parcelables; only accept bounded simple text and primitive values.
         @Suppress("DEPRECATION")
         for (key in data.keySet().sorted().take(24)) {
             val value = data.get(key)

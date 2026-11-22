@@ -129,7 +129,7 @@ import top.yukonga.miuix.kmp.nav.transition.NavSwipeDirection
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * Agent App 根组件：持有本地导航栈，并把 Screen actions 交给 [AgentAppState]。
+ * Agent App root component: holds the local navigation stack and hands Screen actions to [AgentAppState].
  */
 @Composable
 fun AgentAppRoot(
@@ -254,7 +254,7 @@ fun AgentAppRoot(
 
     LaunchedEffect(requestedArchivedConversation) {
         val request = requestedArchivedConversation ?: return@LaunchedEffect
-        // 外部入口的结果要先导入归档才有会话；找不到时停在当前界面，不切到无关的会话。
+        // An external entry's result must be imported into the archive first to have a conversation; if not found, stay on the current screen rather than switching to an unrelated one.
         if (agentState.openArchivedConversation(request.source, request.conversationKey)) {
             conversationPaneOpen = false
             navigator.popToHome()
@@ -274,7 +274,7 @@ fun AgentAppRoot(
         val opened = agentState.openAssistantConversation(conversationKey)
         if (opened) {
             conversationPaneOpen = false
-            // 接管落到主聊天舞台：与主界面同一页面、同一侧边对话列表，不再开独立对话页。
+            // The handoff lands on the main chat stage: same page and same sidebar conversation list as the main UI, no separate conversation page.
             navigator.popToHome()
         }
         onAssistantConversationOpened(opened)
@@ -476,7 +476,7 @@ fun AgentAppRoot(
                         }
                     }
                     entry<AppRoute.Browser> { route ->
-                        // 保留已保存路由的恢复入口；新打开操作直接进入原生浏览器窗口。
+                        // Keep the restore entry for saved routes; new opens go straight into the native browser window.
                         LaunchedEffect(route) {
                             context.startActivity(AgentBrowserActivity.createIntent(context, route.sessionKey))
                             backStack.remove(route)
@@ -564,7 +564,7 @@ fun AgentAppRoot(
                                 agentState.startCharacterConversation(binding, greeting)
                                 conversationPaneOpen = false
                                 navigator.popToHome()
-                                // 开始新故事直接呈现首页；重置导航呈现态，避免多层退栈扫过角色列表。
+                                // Starting a new story presents the home screen directly; reset the nav presentation state, avoiding popping through the character list.
                                 navigationResetKey++
                             }
                         }

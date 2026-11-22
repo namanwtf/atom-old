@@ -5,10 +5,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 定时任务相关的模型工具 Schema。
+ * Model-tool Schema related to scheduled tasks.
  *
- * - 常规对话中暴露 [TOOL_MANAGE]（`scheduled_tasks`），支持自然语言创建、查看、开关、修改、删除与立即试跑；
- * - 无人值守定时任务执行期间隐藏创建能力以防递归自繁殖，仅暴露自作用域的 [TOOL_UPDATE_MEMO] 与 [TOOL_REPORT]。
+ * - Exposes [TOOL_MANAGE] (`scheduled_tasks`) in routine conversations, supporting natural-language create, view, toggle, edit, delete, and immediate trial run;
+ * - Hides the create capability during unattended scheduled-task runs to prevent recursive self-proliferation, exposing only the self-scoped [TOOL_UPDATE_MEMO] and [TOOL_REPORT].
  */
 internal object ScheduledTaskToolCatalog {
     const val TOOL_MANAGE = "scheduled_tasks"

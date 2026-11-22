@@ -140,7 +140,7 @@ private val SendIconSize = 16.dp
 private val StopIconSize = 10.dp
 
 /**
- * Agent 输入器始终保持同一空间结构，聚焦、输入和执行过程只改变状态，不搬动操作入口。
+ * The Agent input bar keeps the same spatial structure; focusing, typing, and executing only change state, never moving the action entries.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -228,8 +228,8 @@ internal fun AgentChatInputBar(
         pendingFileReferences.isNotEmpty()
 
     LaunchedEffect(isEditingMessage, inputSyncVersion) {
-        // 编辑态与排队消息撤回由外部业务状态驱动；普通输入只保留在本地，避免每个字符把聊天舞台
-        // 的消息流、滚动和 Markdown 一起带入重组。
+        // Edit state and queued-message recall are driven by external business state; ordinary input stays local, so each character doesn't drag the chat stage's
+        // message stream, scroll, and Markdown into recomposition.
         val versionChanged = inputSyncVersion != syncedVersion
         if (isEditingMessage || wasEditingMessage || versionChanged) {
             textFieldState.setTextAndPlaceCursorAtEnd(input)
@@ -330,7 +330,7 @@ internal fun AgentChatInputBar(
                 },
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                // 与输入框内正文同一起点（容器 10dp + 文本 8dp）。
+                // Same start point as the body inside the input box (container 10dp + text 8dp).
                 modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 8.dp),
             )
         }
@@ -443,7 +443,7 @@ internal fun AgentChatInputBar(
                         .padding(horizontal = 6.dp, vertical = 5.dp),
                     contentAlignment = Alignment.TopStart,
                 ) {
-                    // 占位文字与输入正文共用同一行高，首字输入时基线不跳动。
+                    // Placeholder and input body share the same line height, so the baseline doesn't jump on first character input.
                     val inputTextStyle = MiuixTheme.textStyles.body1.copy(
                         lineHeight = 22.sp,
                         lineHeightStyle = EditorialLineHeightStyle,
@@ -464,7 +464,7 @@ internal fun AgentChatInputBar(
                                 isHoldingSpeech && holdCancelling ->
                                     stringResource(R.string.speech_hold_release_to_cancel)
                                 isHoldingSpeech -> stringResource(R.string.voice_release_to_send)
-                                // 角色对话的占位文字跟随角色，避免“交给 Eta”打断沉浸感。
+                                // The placeholder follows the character in roleplay conversations, so "hand it to Eta" doesn't break immersion.
                                 character != null && isStreaming ->
                                     stringResource(R.string.chat_character_typing, character.characterName)
                                 character != null -> stringResource(R.string.chat_character_input_hint, character.characterName)
@@ -676,7 +676,7 @@ internal fun AgentChatInputBar(
 }
 
 /**
- * 思考强度胶囊：仅含开关两态时单击直接切换，支持多档强度时展开菜单并在胶囊上直接标明英文档位。
+ * Thinking-intensity capsule: with only two states a tap toggles directly; with multiple levels it expands a menu and labels the English level directly on the capsule.
  */
 @Composable
 private fun ThinkingEffortChip(
@@ -967,7 +967,7 @@ private fun PendingImageStrip(
                         contentScale = ContentScale.Crop,
                     )
                 }
-                // 可见圆点保持小巧，触控区放大到右上角 32dp，避免误触缩略图。
+                // Keep the visible dot small while enlarging the touch area to 32dp at the top-right, avoiding accidental taps on the thumbnail.
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)

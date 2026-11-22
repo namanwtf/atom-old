@@ -26,12 +26,12 @@ import java.io.File
 import kotlinx.serialization.json.Json
 
 /**
- * AgentRuntime 跨进程通信协议。
+ * AgentRuntime cross-process communication protocol.
  *
- * 入口进程通过 bind + Messenger 与模块自身进程的 [AgentRuntimeService] 通信：
- * 发送一次运行请求，接收事件流和最终结果。
+ * The entry process communicates with the module's own [AgentRuntimeService] via bind + Messenger:
+ * sends one run request and receives the event stream and final result.
  *
- * 不引入 AIDL：结构化字段使用 [Bundle]，图片正文使用 [ParcelFileDescriptor]，避免占用 Binder 事务缓冲区。
+ * No AIDL is introduced: structured fields use [Bundle] and image bodies use [ParcelFileDescriptor], avoiding consumption of the Binder transaction buffer.
  */
 internal object AgentRuntimeWire {
     const val MSG_READ_CONTEXT_RESULT = 15
@@ -47,56 +47,56 @@ internal object AgentRuntimeWire {
         "Agent Runtime request metadata is too large ($sizeBytes bytes); shorten the input or session history and retry"
     )
 
-    /** bind 获取服务端 Messenger 的 Intent action。 */
+    /** Intent action used by bind to obtain the server Messenger. */
     const val ACTION_BIND = "io.github.mangi.eta.agent.runtime.BIND"
 
     // Messenger.what
-    /** client -> service：开始一次 Agent 运行，[Message.replyTo] 携带 client Messenger。 */
+    /** client -> service: start one Agent run; [Message.replyTo] carries the client Messenger. */
     const val MSG_START_RUN = 1
 
-    /** service -> client：推送一个 [AgentEvent]。 */
+    /** service -> client: push one [AgentEvent]. */
     const val MSG_EVENT = 2
 
-    /** service -> client：最终结果。 */
+    /** service -> client: the final result. */
     const val MSG_RESULT = 3
 
-    /** client -> service：取消当前运行。 */
+    /** client -> service: cancel the current run. */
     const val MSG_CANCEL = 4
 
-    /** client -> service：确认一个最终结果已经被入口层成功展示。 */
+    /** client -> service: confirm that a final result has been successfully displayed by the entry layer. */
     const val MSG_ACK_RESULT = 5
 
-    /** client -> service：拉取尚未被入口层确认展示的最终结果。 */
+    /** client -> service: pull final results that have not yet been confirmed as displayed by the entry layer. */
     const val MSG_DRAIN_RESULTS = 6
 
-    /** service -> client：返回一组尚未确认展示的最终结果。 */
+    /** service -> client: return a set of final results not yet confirmed as displayed. */
     const val MSG_DRAIN_RESULTS_RESPONSE = 7
 
-    /** service -> client：请求图片已经摄取，入口进程可以关闭文件描述符并删除临时文件。 */
+    /** service -> client: the requested image has been ingested; the entry process may close the file descriptor and delete the temp file. */
     const val MSG_REQUEST_INGESTED = 8
 
-    /** client -> service：查询当前仍在执行或提交终态的 run。 */
+    /** client -> service: query runs currently still executing or committing terminal state. */
     const val MSG_QUERY_ACTIVE_RUN = 9
 
-    /** service -> client：返回当前 active runId；空字符串表示没有。 */
+    /** service -> client: return the current active runId; an empty string means none. */
     const val MSG_QUERY_ACTIVE_RUN_RESPONSE = 10
 
-    /** client -> service：重新订阅指定 run 的安全事件重放、实时事件和最终结果。 */
+    /** client -> service: resubscribe to the specified run's safe event replay, live events, and final result. */
     const val MSG_ATTACH_RUN = 11
 
-    /** service -> client：返回是否成功重新订阅指定 run。 */
+    /** service -> client: return whether resubscribing to the specified run succeeded. */
     const val MSG_ATTACH_RUN_RESPONSE = 12
 
-    /** client -> service：枚举已接纳、尚未发布终态的运行。 */
+    /** client -> service: enumerate runs that have been accepted but not yet published a terminal state. */
     const val MSG_QUERY_ACTIVE_RUNS = 16
 
-    /** service -> client：返回各运行的会话归属与当前阶段。 */
+    /** service -> client: return each run's session ownership and current stage. */
     const val MSG_QUERY_ACTIVE_RUNS_RESPONSE = 17
 
-    /** client -> service：向运行中的 run 追加下一回合 steering 补充指令，不取消当前请求或工具。 */
+    /** client -> service: append a next-turn steering supplement to a running run, without cancelling the current request or tools. */
     const val MSG_STEER = 18
 
-    /** service -> client：返回 steering 是否已被当前活跃 run 接纳及分配的补充序号。 */
+    /** service -> client: return whether the steering was accepted by the current active run and the assigned supplement sequence number. */
     const val MSG_STEER_RESPONSE = 19
 
     private const val MODULE_PACKAGE = "io.github.mangi.eta"
@@ -188,7 +188,7 @@ internal object AgentRuntimeWire {
         val rewriteTargetMessageId: String? = null,
         val assistantScreenContext: String = "",
     ) {
-        // 旧入口沿用会话 handoff；无持久会话的入口以首个 run 为会话起点。
+        // Legacy entries keep using session handoff; entries without a persistent session use the first run as the session start.
         val effectiveModelSessionId: String
             get() = modelSessionId.ifBlank {
                 handoff?.takeIf { it.source == AGENT_UI_HANDOFF_SOURCE }
@@ -218,7 +218,7 @@ internal object AgentRuntimeWire {
     )
 
     /**
-     * 单张图片在 IPC 层的表示。远程 URL 可直接放入 Bundle，本地或内联图片只传只读文件描述符。
+     * Representation of a single image at the IPC layer. A remote URL can go directly into the Bundle; local or inline images pass only a read-only file descriptor.
      */
     data class WireImage(
         val remoteUrl: String? = null,
@@ -231,7 +231,7 @@ internal object AgentRuntimeWire {
         val preserveOriginal: Boolean = false,
     )
 
-    /** 接收端在后台完成图片物化前持有文件描述符；关闭后不可再次使用。 */
+    /** The receiver holds the file descriptor until image materialization completes in the background; it cannot be used again after closing. */
     class IncomingRunRequest internal constructor(
         val request: RunRequest,
         val images: List<WireImage>,
@@ -308,7 +308,7 @@ internal object AgentRuntimeWire {
         return requestBundle(request, imageBundles, payloadDirectory)
     }
 
-    /** 兼容旧客户端与协议测试；新请求不得通过 Binder 内联图片正文。 */
+    /** Compatible with legacy clients and protocol tests; new requests must not inline image bodies over Binder. */
     fun toLegacyBundle(request: RunRequest): Bundle = requestBundle(
         request = request,
         imageBundles = request.images.map { image ->
@@ -425,7 +425,7 @@ internal object AgentRuntimeWire {
         }
     }
 
-    /** 拒绝或解析失败的请求不会进入 [IncomingRunRequest]，需显式释放其中的描述符。 */
+    /** Rejected or parse-failed requests never enter [IncomingRunRequest]; their descriptors must be released explicitly. */
     fun closeImageDescriptors(bundle: Bundle?) {
         bundle?.let(AgentWireText::close)
         runCatching {
@@ -435,7 +435,7 @@ internal object AgentRuntimeWire {
         }
     }
 
-    /** 只用于无文件描述符的旧协议读取。 */
+    /** Used only for legacy-protocol reads without a file descriptor. */
     fun runRequestFromBundle(bundle: Bundle): RunRequest =
         incomingRunRequestFromBundle(bundle).use { incoming ->
             require(incoming.images.none { it.fileDescriptor != null }) {
@@ -727,7 +727,7 @@ internal object AgentRuntimeWire {
         }
     }
 
-    /** 将 [AgentEvent] 打包为可跨进程传递的 [Bundle]。 */
+    /** Pack an [AgentEvent] into a [Bundle] that can cross processes. */
     fun eventToBundle(event: AgentEvent): Bundle = Bundle().apply {
         when (event) {
             is AgentEvent.GuiControlChanged -> {
@@ -923,7 +923,7 @@ internal object AgentRuntimeWire {
         }
     }
 
-    /** 将 [Bundle] 还原为 [AgentEvent]，无法识别时返回 null。 */
+    /** Restore a [Bundle] into an [AgentEvent]; return null when it cannot be recognized. */
     fun eventFromBundle(bundle: Bundle): AgentEvent? = when (bundle.getString(KEY_TYPE)) {
         "gui_control_changed" -> GuiControlStatus.fromWireValue(bundle.getString("status").orEmpty())
             ?.let { AgentEvent.GuiControlChanged(it) }
@@ -1038,7 +1038,7 @@ internal object AgentRuntimeWire {
             resultSummary = bundle.getString("result_summary").orEmpty(),
             imageCount = bundle.getInt("image_count"),
             imageBytes = bundle.getInt("image_bytes"),
-            // 旧版本 Runtime 不发送 success，缺省为 null 由消费端回退判断
+            // Older Runtime versions do not send success; default to null and let the consumer fall back and decide
             success = if (bundle.containsKey("success")) bundle.getBoolean("success") else null,
             command = bundle.getString("command"),
         )

@@ -5,7 +5,7 @@ import io.github.mangi.eta.agent.overlay.AgentOverlayState
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.CountDownLatch
 
-/** 请求摄取前占位；同一会话直到终态提交完成都只有一个写入者。 */
+/** Placeholder before request ingestion; a session has only one writer until terminal-state commit completes. */
 internal class RuntimeRunRegistry(private val capacity: Int = MAX_ACTIVE_RUNS) {
     init {
         require(capacity > 0)
@@ -56,7 +56,7 @@ internal class RuntimeRunRegistry(private val capacity: Int = MAX_ACTIVE_RUNS) {
             releaseIncoming()
         }
 
-        /** 外部助手替换自己的请求时，先等已取消前任排空，不能与其工具清理并行写会话。 */
+        /** When an external assistant replaces its own request, first wait for the cancelled predecessor to drain; it must not write the session concurrently with that run's tool cleanup. */
         fun awaitPredecessors() {
             if (predecessors.isEmpty()) return
             val worker = Thread.currentThread()
@@ -164,7 +164,7 @@ internal class RuntimeRunRegistry(private val capacity: Int = MAX_ACTIVE_RUNS) {
         }
     }
 
-    // 不持登记锁读取 Session 状态，终态发布回调会反向移除登记。
+    // Read Session state without holding the registry lock; the terminal publish callback removes the registration in reverse.
     fun snapshots(): List<AgentRuntimeWire.ActiveRunSnapshot> = all()
         .filterNot { it.session.isTerminal }
         .map(Run::snapshot)

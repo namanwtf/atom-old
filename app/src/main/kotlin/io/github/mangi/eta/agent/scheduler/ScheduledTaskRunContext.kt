@@ -12,9 +12,9 @@ import java.util.Locale
 import org.json.JSONObject
 
 /**
- * 定时任务传递给 Runtime 的受控运行上下文（嵌入在 `AgentExternalArchivePayload.adapterPayload` 中）。
+ * Controlled run context passed to Runtime for a scheduled task (embedded in `AgentExternalArchivePayload.adapterPayload`).
  *
- * 保持 `AgentRuntimeWire` 协议完全向后兼容，不新增破坏性顶层字段。
+ * Keeps the `AgentRuntimeWire` protocol fully backward compatible without adding breaking top-level fields.
  */
 internal data class ScheduledTaskRunContext(
     val taskId: String,
@@ -50,7 +50,7 @@ internal data class ScheduledTaskRunContext(
             scheduledForAt?.let { json.put(KEY_SCHEDULED_FOR_AT, it) }
         }
 
-    /** 构建注入模型系统提示的无人值守运行契约与任务小记事本。 */
+    /** Builds the unattended run contract and task notepad injected into the model system prompt. */
     fun buildSystemGuidance(zone: ZoneId = ZoneId.systemDefault()): String {
         val nowText = Instant.ofEpochMilli(startedAt).atZone(zone).format(DATETIME_FORMATTER)
         val triggerDesc = when (triggerSource) {

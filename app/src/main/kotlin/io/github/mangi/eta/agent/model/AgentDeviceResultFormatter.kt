@@ -313,7 +313,7 @@ internal object AgentDeviceResultFormatter {
                 dndMode(after.toIntOrNull()),
             )
         }
-        // 任意设置值可能含认证信息或用户正文，摘要只保留是否变化。
+        // Arbitrary setting values may contain credentials or user content; the summary only records whether it changed.
         return if (before == after) {
             AppStrings.get(R.string.trace_dev_setting_unchanged, "System setting unchanged")
         } else {

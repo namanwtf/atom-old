@@ -36,7 +36,7 @@ import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 常用设备能力的执行路由；Root 脚本由对应执行器固定生成。 */
+/** Execution routing for common device capabilities; Root scripts are generated in a fixed way by the corresponding executor. */
 internal class AgentStructuredDeviceTools(
     private val context: Context,
     private val logger: AgentLogger,

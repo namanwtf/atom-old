@@ -67,7 +67,7 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 工作过程之外单独出现的工具条目（例如旧会话或语音浮层），沿用时间线节点外观。
+ * A tool entry that appears standalone outside the work process (e.g. old sessions or the voice overlay), reusing the timeline-node appearance.
  */
 @Composable
 internal fun ToolActivityInline(
@@ -94,8 +94,8 @@ internal fun ToolActivityInline(
 }
 
 /**
- * 工具的折叠形态是两行：做了什么，以及一行结论。命令、完整结果和浏览器预览只在展开后
- * 组合，长会话中成百上千个工具行保持轻量。
+ * A tool's collapsed form is two lines: what was done, plus a one-line conclusion. Command, full result, and browser preview are composed only after expansion,
+ * so hundreds or thousands of tool rows stay lightweight in long sessions.
  */
 @Composable
 internal fun ToolActivityRow(
@@ -131,7 +131,7 @@ internal fun ToolActivityRow(
     }
     var expanded by rememberSaveable(message.id) { mutableStateOf(false) }
     val onExpandItem = LocalOnChatItemExpand.current
-    // 只有「当前浏览器」条目订阅实时会话快照，避免每个工具行都跟随快照重组。
+    // Only the "current browser" entry subscribes to the live session snapshot, so not every tool row recomposes with it.
     val browser = LocalAgentBrowserSession.current
     val browserSnapshot = if (showBrowserShortcut && browser != null) {
         browser.snapshots.collectAsState().value
@@ -150,7 +150,7 @@ internal fun ToolActivityRow(
         }
     }
     val subtitle = browserLine ?: outcome
-    // 结果只有一行且已作为结论显示时，展开不会带来新信息，不提供展开入口。
+    // When the result is a single line already shown as the conclusion, expanding adds no information, so no expand entry is offered.
     val resultDetail = message.resultSummary?.trim()?.takeIf { it.isNotEmpty() && it != outcome }
     val hasDetail = !message.command.isNullOrBlank() ||
         resultDetail != null ||
@@ -244,7 +244,7 @@ internal fun ToolActivityRow(
 }
 
 /**
- * 连续调用同一工具的分组：标题汇总次数，展开后每次调用只占一行，失败的调用仍可单独展开。
+ * Group of consecutive calls to the same tool: the title sums the count, each call takes one line when expanded, and failed calls can still be expanded individually.
  */
 @Composable
 internal fun ToolGroupRow(
@@ -402,8 +402,8 @@ private fun ToolActivityDetail(
 }
 
 /**
- * 运行计时只在工具执行中组合，每秒仅使这一小段文字重组。起点按条目身份保存，
- * 滚出视口再回来时继续计时；它是界面侧的近似值，不写入归档。
+ * The run timer composes only while the tool is executing, recomposing just this small text once per second. The start point is saved by entry identity,
+ * so it keeps timing after scrolling out and back; it's a UI-side approximation, not written into the archive.
  */
 @Composable
 private fun rememberRunningSeconds(id: String, running: Boolean): Int? {
@@ -434,10 +434,10 @@ private const val RUNNING_TIMER_THRESHOLD_SECONDS = 3
 private const val MAX_RESULT_LINES = 12
 
 /**
- * 浏览器工具的实时页面预览：迷你地址条 + 当前视口截图。
+ * Live page preview for the browser tool: mini address bar + current viewport screenshot.
  *
- * 截图只在页面加载中或内容稳定后的低频节拍刷新；组合销毁即停止，
- * 不做后台轮询。截图不可用时退化为图标占位。
+ * The screenshot refreshes only on a low-frequency beat while the page loads or after content stabilizes; it stops when composition is destroyed,
+ * with no background polling. When a screenshot is unavailable it degrades to an icon placeholder.
  */
 @Composable
 private fun BrowserPagePreview(

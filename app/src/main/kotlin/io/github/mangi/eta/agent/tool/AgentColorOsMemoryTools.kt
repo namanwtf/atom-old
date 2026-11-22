@@ -37,7 +37,8 @@ internal fun buildColorOsMemorySnapshotCommand(source: String, snapshot: File): 
 }
 
 /**
- * 优先让小布记忆 Hook 在目标进程内执行只读查询；Hook 不可用时兼容旧的 Root 快照路径。
+ * Prefer running the read-only query inside the target process via the Breeno Memory hook;
+ * when the hook is unavailable, fall back to the legacy Root snapshot path.
  */
 internal class AgentColorOsMemoryTools(
     private val context: Context,

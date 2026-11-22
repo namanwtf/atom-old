@@ -5,7 +5,7 @@ import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 汇总完整的有界查询结果；金额保持十进制精度，不推断退款、冲正或重复账单。 */
+/** Aggregates the complete, bounded query result; amounts keep decimal precision and refunds, reversals, or duplicate bills are not inferred. */
 internal object PersonalContextBillSummary {
     const val MAX_RECORDS = 1_000
     private const val MAX_CATEGORIES = 20

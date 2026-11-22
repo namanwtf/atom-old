@@ -100,7 +100,7 @@ internal fun rememberEtaVoicePanelColors(): EtaVoicePanelColors {
                 accent = accent,
                 onAccent = Color.White,
                 error = destructive,
-                // 回复面板底色保持完全不透明，确保向下连续覆盖导航栏区域时不透出桌面残影。
+                // The reply panel background stays fully opaque so that, while continuously covering the navigation bar downward, no desktop ghosting shows through.
                 content = Color(0xFF17191E),
                 input = Color(0xF023262E),
                 focusedInput = Color(0xFA2B2F39),
@@ -124,7 +124,7 @@ internal fun rememberEtaVoicePanelColors(): EtaVoicePanelColors {
                 onAccent = Color.White,
                 error = destructive,
                 content = Color(0xFFF7F8FA),
-                // 柔和瓷白略带通透感，配合逆裁剪阴影在深色壁纸上不过曝、浅色背景上层次分明。
+                // A soft porcelain white with a slight translucency, which with the inverted-clip shadow neither overexposes on dark wallpapers nor loses layering on light backgrounds.
                 input = Color(0xF2FAFAFC),
                 focusedInput = Color(0xFCFFFFFF),
                 chipBackground = Color(0xEEFAFAFC),
@@ -137,7 +137,7 @@ internal fun rememberEtaVoicePanelColors(): EtaVoicePanelColors {
                 chipStroke = Color(0x12000000),
                 idleScrim = Color(0x0A000000),
                 sheetScrim = Color(0x30000000),
-                // 语音态底部以渐进暗调柔化桌面 Dock 高饱和图标，让底部流光与悬浮胶囊干净浮现。
+                // In the voice state, the bottom uses a progressive dark tone to soften the desktop Dock's high-saturation icons, letting the bottom flowing light and floating pill emerge cleanly.
                 voiceBottomCushion = Color(0x98080B14),
                 textBottomCushion = Color(0x7CF3F5F9),
             )
@@ -146,7 +146,7 @@ internal fun rememberEtaVoicePanelColors(): EtaVoicePanelColors {
 }
 
 /**
- * 顶部采用 Oplus G2 连续曲率、底部保持直角的半屏面板轮廓，使面板底边能完整贴合屏幕与导航区。
+ * A half-screen panel outline using Oplus G2 continuous curvature at the top and right angles at the bottom, so the panel's bottom edge sits flush against the screen and navigation area.
  */
 @Immutable
 internal data class TopCouiSheetShape(
@@ -221,14 +221,14 @@ private fun appendTopCouiRim(
         topSheetCornerSamples.put(key, it)
     }
     val count = points.size / 2
-    // 左上连续圆角：i 递增时 (r - y, r - x) 从 (0, r) 顺时针过渡到 (r, 0)。
+    // Top-left continuous corner: as i increases, (r - y, r - x) transitions clockwise from (0, r) to (r, 0).
     for (i in 0 until count) {
         val x = points[i * 2]
         val y = points[i * 2 + 1]
         path.lineTo(r - y, r - x)
     }
     path.lineTo(width - r, 0f)
-    // 右上连续圆角：i 递增时 (width - r + x, r - y) 从 (width - r, 0) 顺时针过渡到 (width, r)。
+    // Top-right continuous corner: as i increases, (width - r + x, r - y) transitions clockwise from (width - r, 0) to (width, r).
     for (i in 0 until count) {
         val x = points[i * 2]
         val y = points[i * 2 + 1]
@@ -265,7 +265,7 @@ internal enum class AssistantCapsuleElevation {
 }
 
 /**
- * 语音助手悬浮胶囊表面：硬件加速画布上启用投影，软件画布或窗口切换期回退为同轮廓纯色填充与细描边。
+ * The voice-assistant floating pill surface: shadows are enabled on the hardware-accelerated canvas, and it falls back to a solid fill and thin stroke of the same outline on a software canvas or during window transitions.
  */
 @Composable
 internal fun Modifier.couiAssistantCapsule(
@@ -335,7 +335,7 @@ internal enum class AssistantGlyphKind {
 }
 
 /**
- * 助手胶囊内部动作图标，避免旧矢量自带实心外圈放进圆形按钮后形成双层套环。
+ * The action icon inside the assistant pill, avoiding the double-ring effect when an old vector with its own solid outer ring is placed in a circular button.
  */
 @Composable
 internal fun AssistantActionGlyph(
@@ -438,8 +438,8 @@ private val AiOrbColors = listOf(
 )
 
 /**
- * 语音胶囊前导流体律动指示器：在绘制阶段直接读取麦克风电平，聆听时驱动四根多彩声波柱，
- * 识别阶段平滑切入旋转光环，不叠加浑浊底圈。
+ * The fluid-rhythm leading indicator of the voice pill: reads the mic level directly during the draw phase, drives four colorful waveform bars while listening,
+ * and smoothly transitions into a rotating halo during the recognition phase, without overlaying a muddy base ring.
  */
 @Composable
 internal fun AssistantVoiceOrb(

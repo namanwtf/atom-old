@@ -85,10 +85,10 @@ import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 
 /**
- * Eta 数字助理的用户界面窗口。
+ * The UI window of the Eta digital assistant.
  *
- * 系统助理会话承接电源键入口并采集上下文；这里固定使用全屏 TYPE_APPLICATION_OVERLAY，
- * 让输入法、动画和厂商助手式浮窗拥有同一个窗口生命周期。
+ * The system assistant session takes over the power-key entry and captures context; here a full-screen TYPE_APPLICATION_OVERLAY is used,
+ * so the IME, animations, and the vendor-assistant-style overlay share one window lifecycle.
  */
 internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private val lifecycleRegistry = LifecycleRegistry(this)
@@ -180,8 +180,8 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
                 }
                 speechState = EtaSpeechState(
                     phase = state.phase,
-                    // 连接、聆听、识别中的阶段播报由语音条目与波形承担，反馈条只保留错误提示，
-                    // 避免与语音界面重复叙事。
+                    // Stage announcements for connecting, listening, and recognizing are handled by the voice item and waveform; the feedback bar keeps only error hints,
+                    // to avoid duplicating the voice UI's narrative.
                     message = state.error,
                     configureAvailable = state.configureAvailable,
                     feedbackIsError = state.error != null,
@@ -226,8 +226,8 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
             stopSelf()
             return
         }
-        // 长按电源键的按下/松开或双路派发可能跨越 1s 去重窗后再次到达，
-        // 浮窗仍处于刚唤起的初始空闲态时直接合并，避免重建窗口重播入场光效。
+        // The press/release of a long power-key press or dual-path dispatch may arrive again after crossing the 1s dedup window,
+        // so merge directly while the overlay is still in the freshly-awakened initial idle state, to avoid rebuilding the window and replaying the entrance effect.
         if (isFreshVisibleEntry()) {
             if (entryScreenContext == null && screenContextId != null) {
                 entryScreenContext = EtaAssistantScreenContexts.find(screenContextId)
@@ -290,7 +290,7 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
         val settings = speechSettings ?: return
         val canRecord = settings.recognitionEnabled &&
             checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        // 文字模式先完成唤醒光效和输入栏显现，最后才交接焦点并请求键盘。
+        // In text mode, first complete the wake effect and the input bar appearance, and only hand over focus and request the keyboard at the end.
         if (!canRecord && (!entryEntranceComplete || !entryContentReady)) return
         entryInputPending = false
         if (canRecord) {
@@ -354,8 +354,8 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
                 appearance = appearance,
                 systemOverlay = true,
             ) {
-                // ColorOS 在 Overlay 窗口切换期间可能短暂使用软件画布；RuntimeShader
-                // 无法在该画布绘制，因此浮窗统一使用 Miuix 的圆角回退路径。
+                // ColorOS may briefly use a software canvas during overlay window transitions; RuntimeShader
+                // cannot draw on that canvas, so the overlay uniformly uses Miuix's rounded-corner fallback path.
                 CompositionLocalProvider(LocalSquircleEnabled provides false,
                     LocalSpeechPlayback provides playback,
                     LocalSpeechPlaybackEnabled provides (speechSettings?.let { it.tts != TtsProvider.NONE } == true)) {
@@ -414,7 +414,7 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
                 }
             }
         }
-        // 窗口由 Service 通过 WindowManager 挂载，Activity.setShowWhenLocked 无法作用于该窗口。
+        // The window is mounted by the Service via WindowManager, so Activity.setShowWhenLocked cannot affect it.
         @Suppress("DEPRECATION")
         val showWhenLocked = WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
         val params = WindowManager.LayoutParams(
@@ -929,8 +929,8 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
         }
 
         /**
-         * Eta 自己拥有入口浮层，直接关闭并等待具体 View detach；不能按包名猜测，
-         * 因为入口、Runtime 与结果浮层都属于同一个包。
+         * Eta owns the entry overlay itself, so close it directly and wait for the specific View to detach; we can't guess by package name,
+         * because the entry, Runtime, and result overlays all belong to the same package.
          */
         fun dismissForForegroundOperation(context: Context): Boolean {
             val service = activeService

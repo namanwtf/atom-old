@@ -72,12 +72,12 @@ internal object HyperOsScreenSearchHooks {
 
     private fun finishHandledStart(service: Service, startId: Int, logger: ModuleLogger) {
         try {
-            // 仅在本次仍是最新启动时清理服务，不能用无条件 stopSelf 丢弃后续请求。
+            // Only clean up the service when this is still the latest start; do not use an unconditional stopSelf that would drop subsequent requests.
             if (service.stopSelfResult(startId)) {
                 service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
             }
         } catch (exception: Exception) {
-            // 搜索已经发出，清理失败也不能再执行原识屏入口导致双重唤起。
+            // The search has already been dispatched; even if cleanup fails, do not re-run the original screen-recognition entry and cause a double invocation.
             logger.warnThrottled("hyperos_screen_search_cleanup_failed") {
                 "HyperOS: screen-recognition service startup cleanup failed, type=${exception.safeLogType()}"
             }

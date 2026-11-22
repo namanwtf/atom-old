@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.glass.GlassDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 挂载会话原有的 WebView，页面自身持有地址栏及系统栏 Insets。 */
+/** Mounts the session's existing WebView; the page itself holds the address bar and system-bar insets. */
 @Composable
 internal fun AgentBrowserScreen(
     session: AgentBrowserSession,
@@ -64,7 +64,7 @@ internal fun AgentBrowserScreen(
     var actionPending by remember(session) { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
 
-    // 编辑期间不覆盖用户输入；非编辑态仅显示域名，进入编辑时还原完整地址。
+    // Don't overwrite user input while editing; in non-editing state show only the domain, and restore the full address when entering edit.
     LaunchedEffect(address, addressFocused) {
         if (addressFocused) {
             address.setTextAndSelectAll(snapshot.displayUrl)

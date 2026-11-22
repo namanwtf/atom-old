@@ -3,10 +3,10 @@ package io.github.mangi.eta.data.model
 import kotlinx.serialization.Serializable
 
 /**
- * Subagent 模型与思考配置。
+ * Model and reasoning configuration for the subagent.
  *
- * [modelId] 为空表示跟随主 Agent 当前生效的模型；指定具体 Model.id 且对应服务商与模型仍启用时，
- * Subagent 优先使用该模型运行。
+ * An empty [modelId] means it follows the main agent's currently active model; when a specific Model.id is set and the corresponding provider and model are still enabled,
+ * the subagent preferentially runs with that model.
  */
 @Serializable
 internal data class SubagentSettings(

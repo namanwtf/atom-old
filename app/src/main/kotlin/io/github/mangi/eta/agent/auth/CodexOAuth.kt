@@ -4,7 +4,7 @@ import com.nimbusds.jwt.SignedJWT
 import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 
-/** Codex 授权和请求共享同一客户端与工作区上下文，不能复用其他授权通道的令牌。 */
+/** Codex authorization and requests share the same client and workspace context; tokens from other authorization channels must not be reused. */
 internal object CodexOAuth {
     const val CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
     const val CALLBACK_PORT = 1455

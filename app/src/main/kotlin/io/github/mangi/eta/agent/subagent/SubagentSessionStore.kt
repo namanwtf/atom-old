@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 会话内 Subagent 实例上下文缓存，供主 Agent 通过 `resume` 续接已有的 Subagent。
+ * In-session cache of Subagent instance contexts, used by the main Agent to resume existing Subagents via `resume`.
  */
 internal object SubagentSessionStore {
     private const val MAX_CONVERSATIONS = 16
@@ -72,7 +72,7 @@ internal object SubagentSessionStore {
         }
     }
 
-    /** 保留最近窗口并从完整的 user 边界切齐，避免孤立 tool 消息破坏下次 resume 协议。 */
+    /** Keep the recent window and align it to complete user boundaries, so orphaned tool messages don't break the next resume protocol. */
     private fun boundHistory(
         history: List<AgentModelClient.ConversationMessage>,
     ): List<AgentModelClient.ConversationMessage> {

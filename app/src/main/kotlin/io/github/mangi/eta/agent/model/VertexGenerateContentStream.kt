@@ -11,7 +11,7 @@ import kotlinx.serialization.json.JsonObject
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 解析 Vertex AI `streamGenerateContent?alt=sse` 响应，完整保留同轮回放所需的 `thoughtSignature`。 */
+/** Parses Vertex AI `streamGenerateContent?alt=sse` responses, fully preserving the `thoughtSignature` required for same-turn replay. */
 internal class VertexGenerateContentStream(
     private val onEvent: (ProviderEvent) -> Unit,
 ) {
@@ -135,7 +135,7 @@ internal class VertexGenerateContentStream(
             }
 
             hasText -> {
-                // 忽略末尾仅携带 thoughtSignature 或 finishReason 的空字符串块，避免展示空正文。
+                // Ignore trailing empty-string chunks that only carry thoughtSignature or finishReason, to avoid showing empty text.
                 if (text.isNotEmpty()) {
                     closeActiveThinking()
                     val block = activeTextBlock ?: TextBlock(nextBlockIndex++).also {
@@ -157,7 +157,7 @@ internal class VertexGenerateContentStream(
         hasSignature: Boolean,
     ) {
         if (rawParts.size >= MAX_PARTS) malformed("GEMINI_STREAM_LIMIT")
-        // 仅合并相邻、同类型且均不含 thoughtSignature 的纯文本分片；含签名或工具调用的 part 始终原样独立保留。
+        // Only merge adjacent plain-text parts of the same type that both lack thoughtSignature; parts carrying signatures or tool calls are always kept intact and separate.
         val previous = rawParts.lastOrNull()
         val canMergeText = previous != null &&
             !isFunctionCall &&

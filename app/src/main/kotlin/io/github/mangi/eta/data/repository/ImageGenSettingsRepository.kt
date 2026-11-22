@@ -96,7 +96,7 @@ internal object ImageGenSettingsRepository {
         }
     }
 
-    /** 返回可用于指定生图渠道一键复用的模型服务商列表（过滤掉不支持 API Key 的 OAuth 账号）。 */
+    /** Returns the list of model providers usable for one-click reuse with the given image channel (filtering out OAuth accounts that don't support API keys). */
     suspend fun availableLinkedProviders(backend: ImageGenBackend): List<LinkedImageProviderOption> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -147,9 +147,9 @@ internal object ImageGenSettingsRepository {
     }
 
     /**
-     * 凭据与目标地址必须绑定同一连接配置，避免 A 服务商的 Key/Header 误发给 B 主机：
-     * - 独立模式（选了「独立填写」或填入了非空独立 API Key）完全使用独立配置的地址与地域，不继承任何关联服务商的地址和 Header；
-     * - 关联模式完全使用所选关联服务商的 API Key、Base URL、CustomHeaders 及平台字段。
+     * Credentials and the target address must be bound to the same connection configuration, so provider A's Key/Header is never sent to host B by mistake:
+     * - Standalone mode (chose "fill in separately" or entered a non-empty standalone API key) uses the standalone config's address and region entirely, inheriting no associated provider's address or headers;
+     * - Linked mode uses the selected associated provider's API Key, Base URL, CustomHeaders, and platform fields entirely.
      */
     internal fun resolveRuntimeConfigPure(
         settings: ImageGenSettings,
@@ -335,7 +335,7 @@ internal object ImageGenSettingsRepository {
                 }
             }
         }
-        // 独立模式按用户所选地域与自定义域名决定地址，绝不继承关联北京服务商地址。
+        // Standalone mode determines the address from the user-selected region and custom domain, never inheriting the associated Beijing provider's address.
         val baseUrl = if (linked != null) {
             normalizeDashScopeEndpoint(linked.baseUrl, cfg.defaultEndpoint())
         } else {
@@ -404,7 +404,7 @@ internal object ImageGenSettingsRepository {
         return autoMatch(allProviders)
     }
 
-    /** 校验带凭据的接口地址：公网必须使用 HTTPS，仅本机与局域网私网允许 HTTP。 */
+    /** Validate an endpoint address that carries credentials: public internet must use HTTPS, and HTTP is allowed only for localhost and LAN private networks. */
     internal fun validateEndpointUrl(baseUrl: String): String? {
         val trimmed = baseUrl.trim()
         if (trimmed.isEmpty()) {
@@ -430,7 +430,7 @@ internal object ImageGenSettingsRepository {
         return addr.isLoopbackAddress || addr.isSiteLocalAddress || addr.isLinkLocalAddress
     }
 
-    /** 将阿里百炼 OpenAI 兼容端点规范化为 DashScope 原生接口根域名，保留用户专属业务空间域名。 */
+    /** Normalize an Alibaba Bailian OpenAI-compatible endpoint to the DashScope native API root domain, preserving the user's dedicated workspace domain. */
     internal fun normalizeDashScopeEndpoint(raw: String, fallback: String): String {
         val trimmed = raw.trim().trimEnd('/')
         if (trimmed.isEmpty()) return fallback.trimEnd('/')

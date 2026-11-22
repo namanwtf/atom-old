@@ -5,9 +5,9 @@ import io.github.mangi.eta.R
 import kotlinx.serialization.Serializable
 
 /**
- * 定时任务触发类型。
+ * Scheduled task trigger type.
  *
- * 与任务执行体解耦，便于后续在不改动执行和通知链路的前提下扩展事件触发器。
+ * Decoupled from the task execution body, making it easy to extend event triggers later without changing the execution and notification paths.
  */
 @Serializable
 enum class ScheduledTaskTriggerKind(val wireValue: String) {
@@ -24,14 +24,14 @@ enum class ScheduledTaskTriggerKind(val wireValue: String) {
     }
 }
 
-/** 定时任务结果交付方式。 */
+/** How scheduled task results are delivered. */
 @Serializable
 enum class ScheduledTaskDeliveryMode(val wireValue: String) {
-    /** 每次完成后发送结论通知（早报、晚报、提醒）。 */
+    /** Send a summary notification after each completion (morning digest, evening digest, reminders). */
     ALWAYS("always"),
-    /** 仅发现值得关注的变化时发送通知，无变化静默归档（监控、巡检）。 */
+    /** Send a notification only when a noteworthy change is found; archive silently when nothing changed (monitoring, inspection). */
     ON_CHANGE("on_change"),
-    /** 仅后台执行并归档，不发常规完成通知（失败告警除外）。 */
+    /** Execute and archive in the background only, without sending the usual completion notification (except failure alerts). */
     SILENT("silent");
 
     companion object {
@@ -40,12 +40,12 @@ enum class ScheduledTaskDeliveryMode(val wireValue: String) {
     }
 }
 
-/** 定时任务结果会话归属模式。 */
+/** Conversation ownership mode for scheduled task results. */
 @Serializable
 enum class ScheduledTaskSessionMode(val wireValue: String) {
-    /** 每次运行生成独立归档，不刷屏主聊天列表；点通知或时间线可随时打开并继续追问。 */
+    /** Each run creates an independent archive without spamming the main chat list; tapping the notification or timeline can open it at any time to continue asking. */
     ISOLATED("isolated"),
-    /** 固定归属到该任务的专属会话频道，每次运行按时间续写。 */
+    /** Fixed to the task's dedicated conversation channel, appended chronologically on each run. */
     DEDICATED("dedicated");
 
     companion object {
@@ -54,12 +54,12 @@ enum class ScheduledTaskSessionMode(val wireValue: String) {
     }
 }
 
-/** 设备关机/休眠错过触发点后的处理策略。 */
+/** Handling strategy when the device powered off or slept past a trigger point. */
 @Serializable
 enum class ScheduledTaskMisfirePolicy(val wireValue: String) {
-    /** 在过期窗口内最多补跑最近一次，超出窗口跳过（避免早报半夜补发）。 */
+    /** Within the expiry window, catch up at most the most recent run; skip when beyond the window (to avoid a morning digest firing in the middle of the night). */
     RUN_ONCE_WITHIN_WINDOW("run_once_within_window"),
-    /** 错过即跳过，等待下一个排期点。 */
+    /** Skip when missed and wait for the next scheduled point. */
     SKIP("skip");
 
     companion object {
@@ -68,27 +68,27 @@ enum class ScheduledTaskMisfirePolicy(val wireValue: String) {
     }
 }
 
-/** 任务触发排期参数。 */
+/** Task trigger scheduling parameters. */
 @Serializable
 data class ScheduledTaskSchedule(
     val kind: ScheduledTaskTriggerKind = ScheduledTaskTriggerKind.DAILY,
-    /** 一次性任务的绝对触发时间戳（毫秒）。 */
+    /** Absolute trigger timestamp (milliseconds) for one-shot tasks. */
     val triggerAtEpochMs: Long? = null,
-    /** 本地小时（0..23），用于 DAILY / WEEKDAYS / WEEKLY。 */
+    /** Local hour (0..23), used for DAILY / WEEKDAYS / WEEKLY. */
     val hour: Int = 9,
-    /** 本地分钟（0..59），用于 DAILY / WEEKDAYS / WEEKLY。 */
+    /** Local minute (0..59), used for DAILY / WEEKDAYS / WEEKLY. */
     val minute: Int = 0,
-    /** ISO-8601 星期集合（1=周一 .. 7=周日），用于 WEEKLY。 */
+    /** ISO-8601 day-of-week set (1=Monday .. 7=Sunday), used for WEEKLY. */
     val daysOfWeek: Set<Int> = setOf(1, 2, 3, 4, 5),
-    /** 固定间隔分钟数（最少 5 分钟），用于 INTERVAL。 */
+    /** Fixed interval in minutes (minimum 5 minutes), used for INTERVAL. */
     val intervalMinutes: Int = 60,
-    /** 标准 5 字段 Cron 表达式（minute hour dom month dow），用于 CRON。 */
+    /** Standard 5-field Cron expression (minute hour dom month dow), used for CRON. */
     val cronExpression: String = "",
-    /** IANA 时区 ID；空字符串表示跟随设备当前本地时区。 */
+    /** IANA time zone ID; an empty string means follow the device's current local time zone. */
     val timezoneId: String = "",
 )
 
-/** 可选的安静免打扰时段；处于该窗口内的周期触发将被跳过。 */
+/** Optional quiet (do-not-disturb) period; periodic triggers falling within this window are skipped. */
 @Serializable
 data class ScheduledTaskQuietHours(
     val enabled: Boolean = false,
@@ -99,10 +99,10 @@ data class ScheduledTaskQuietHours(
 )
 
 /**
- * 定时任务的单任务能力裁剪开关。
+ * Per-task capability trimming switches for scheduled tasks.
  *
- * 运行时仍与全局开关取交集，只能收窄权限，不能绕过用户的总开关。
- * 默认关闭 [guiTools]，保证手机锁屏/熄屏时后台静默安全运行。
+ * At runtime they are still intersected with the global switches; they can only narrow permissions and cannot bypass the user's master switch.
+ * [guiTools] is disabled by default to keep background runs silent and safe while the phone is locked or the screen is off.
  */
 @Serializable
 data class ScheduledTaskCapabilities(
@@ -114,7 +114,7 @@ data class ScheduledTaskCapabilities(
     val guiTools: Boolean = false,
 )
 
-/** 定时任务单次执行终态或进行中状态。 */
+/** Terminal or in-progress state of a single scheduled task run. */
 @Serializable
 enum class ScheduledTaskRunStatus(val wireValue: String) {
     RUNNING("running"),
@@ -135,7 +135,7 @@ enum class ScheduledTaskRunStatus(val wireValue: String) {
     }
 }
 
-/** 触发来源。 */
+/** Trigger source. */
 @Serializable
 enum class ScheduledTaskTriggerSource(val wireValue: String) {
     SCHEDULE("schedule"),
@@ -148,7 +148,7 @@ enum class ScheduledTaskTriggerSource(val wireValue: String) {
     }
 }
 
-/** 定时任务领域模型。 */
+/** Scheduled task domain model. */
 data class ScheduledTask(
     val id: String,
     val name: String,
@@ -159,17 +159,17 @@ data class ScheduledTask(
     val misfireWindowMinutes: Int = DEFAULT_MISFIRE_WINDOW_MINUTES,
     val quietHours: ScheduledTaskQuietHours = ScheduledTaskQuietHours(),
     val deliveryMode: ScheduledTaskDeliveryMode = ScheduledTaskDeliveryMode.ALWAYS,
-    /** 执行期间是否展示前台运行进度通知与状态栏胶囊；关闭后具备后台豁免条件时静默运行，仅在完成时按 [deliveryMode] 推送结果。 */
+    /** Whether to show a foreground progress notification and status bar capsule while running; when disabled it runs silently if it qualifies for background exemption, pushing the result only on completion per [deliveryMode]. */
     val showRunningNotification: Boolean = false,
     val sessionMode: ScheduledTaskSessionMode = ScheduledTaskSessionMode.ISOLATED,
     val dedicatedConversationKey: String? = null,
-    /** null 表示跟随全局默认模型。 */
+    /** null means follow the global default model. */
     val modelId: String? = null,
-    /** null 表示跟随全局默认思考设置。 */
+    /** null means follow the global default reasoning settings. */
     val reasoningEffort: String? = null,
     val capabilities: ScheduledTaskCapabilities = ScheduledTaskCapabilities(),
     val timeoutSeconds: Int = DEFAULT_TIMEOUT_SECONDS,
-    /** 任务专属小记事本（游标/上次检查状态），防止重复播报并保持上下文精简。 */
+    /** Task-specific notepad (cursor / last-checked state) that prevents duplicate reporting and keeps context lean. */
     val memo: String = "",
     val memoUpdatedAt: Long = 0L,
     val nextRunAt: Long? = null,
@@ -194,7 +194,7 @@ data class ScheduledTask(
     }
 }
 
-/** 单次定时任务运行记录。 */
+/** Record of a single scheduled task run. */
 data class ScheduledTaskRun(
     val id: String,
     val taskId: String,
@@ -212,7 +212,7 @@ data class ScheduledTaskRun(
         get() = finishedAt?.let { (it - startedAt).coerceAtLeast(0L) }
 }
 
-/** 空状态精选灵感模板。 */
+/** Curated inspiration templates for the empty state. */
 data class ScheduledTaskPreset(
     val id: String,
     @StringRes val titleRes: Int,

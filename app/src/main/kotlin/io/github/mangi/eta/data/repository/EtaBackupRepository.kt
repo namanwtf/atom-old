@@ -30,7 +30,7 @@ import kotlinx.serialization.builtins.serializer
 import java.io.InputStream
 import java.io.OutputStream
 
-/** Eta 用户数据备份；旧备份没有角色字段时保留设备上的角色库。 */
+/** Eta user-data backup; when an old backup has no character field, the device's character library is preserved. */
 @Serializable
 internal data class EtaBackupDocument(
     val format: String = FORMAT,
@@ -49,7 +49,7 @@ internal data class EtaBackupDocument(
 ) {
     companion object {
         const val FORMAT = "eta-backup"
-        // 旧版会把未知原生 Provider 当作 OpenAI-compatible，必须通过备份版本阻止错误恢复。
+        // Legacy versions treated unknown native providers as OpenAI-compatible; the backup version must block incorrect restoration.
         const val SCHEMA_VERSION = 4
     }
 }
@@ -163,7 +163,7 @@ internal object EtaBackupRepository {
                 val oauthProviders = document.providers.map { it.provider }
                     .filter { ProviderAuthModes.isOAuth(it.authMode) }
                 val credentialIds = document.providers.mapTo(linkedSetOf()) { it.provider.id }
-                // 显式检查原任务取消，使 Room 提交到凭据清理之间不留下被取消打断的空隙。
+                // Explicitly check the original task's cancellation so there is no window between Room commit and credential cleanup that could be interrupted by cancellation.
                 withContext(NonCancellable) {
                     var memoryWriteStarted = false
                     try {
@@ -291,7 +291,7 @@ internal object EtaBackupRepository {
 
     private fun ProviderEntity.awaitingCredentialCleanup(): ProviderEntity =
         if (ProviderAuthModes.isOAuth(authMode)) {
-            // 即使提交后进程中断，导入的相同 ID 也不能接上设备中尚未清除的旧授权。
+            // Even if the process dies after commit, an imported identical ID must not attach to the device's not-yet-cleared old authorization.
             copy(authMode = ProviderAuthModes.API_KEY, apiKey = "", isEnabled = false)
         } else withoutOAuthSecrets()
 

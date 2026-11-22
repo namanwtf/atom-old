@@ -7,12 +7,12 @@ import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import java.io.File
 
-/** 大文本通过已取消目录链接的只读文件传输；Binder 只携带描述符与长度。 */
+/** Large text is transferred through a read-only file whose directory link has been removed; the Binder carries only the descriptor and length. */
 internal object AgentWireText {
     private const val INLINE_CHARS = 16_384
     private const val FD_SUFFIX = "_eta_text_fd"
     private const val SIZE_SUFFIX = "_eta_text_bytes"
-    // 单次物化的内存保护，超过时拒绝交付，不截断已落盘的历史。
+    // Memory protection for a single materialization; refuse delivery when exceeded, without truncating history already persisted to disk.
     private const val MAX_TRANSFER_BYTES = 64L * 1024 * 1024
 
     fun put(bundle: Bundle, key: String, text: String, directory: File?) {
@@ -57,7 +57,7 @@ internal object AgentWireText {
         }
     }
 
-    /** 同进程 Messenger 不经过 Parcel；必须显式复制接收端的描述符所有权。 */
+    /** A same-process Messenger does not go through Parcel; the receiver's descriptor ownership must be duplicated explicitly. */
     fun send(target: Messenger?, message: Message) {
         val original = message.data
         var localCopy: Bundle? = null

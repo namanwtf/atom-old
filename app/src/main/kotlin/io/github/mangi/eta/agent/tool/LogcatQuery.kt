@@ -7,7 +7,7 @@ import java.time.format.DateTimeParseException
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 日志是环形缓冲区中的有界样本，返回范围不能被理解成设备全部历史。 */
+/** Logs are a bounded sample from the ring buffer; the returned range must not be read as the device's full history. */
 internal class LogcatQuery(
     private val executeRoot: (String) -> BoundedRootCommandExecutor.Result,
 ) {

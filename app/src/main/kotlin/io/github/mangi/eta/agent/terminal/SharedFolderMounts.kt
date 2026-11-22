@@ -5,18 +5,18 @@ import io.github.mangi.eta.config.Prefs
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 一条共享文件夹配置：Android 侧目录 [sourcePath] 在 Linux 环境中出现在 /workspace/mounts/[name]。 */
+/** A shared-folder configuration: the Android-side directory [sourcePath] appears at /workspace/mounts/[name] in the Linux environment. */
 internal data class SharedFolderMount(
     val name: String,
     val sourcePath: String,
 )
 
 /**
- * 共享文件夹配置的持久化与校验。
+ * Persistence and validation of shared-folder configurations.
  *
- * 挂载不在 Android 全局执行：每个 Linux 会话在自己的 mount namespace 建立时按当前配置做 bind mount，
- * 因此配置改动对下一条命令/下一个会话生效，不留需要卸载或重启后清理的全局状态。
- * 配置存于 localAgent SharedPreferences（JSON），执行路径同步读取。
+ * Mounts are not performed globally on Android: each Linux session bind-mounts per the current configuration when its mount namespace is created,
+ * so config changes apply to the next command/session and leave no global state needing unmount or post-reboot cleanup.
+ * Config lives in the localAgent SharedPreferences (JSON) and is read synchronously on the execution path.
  */
 internal object SharedFolderMounts {
     const val PREFS_KEY = "linux_shared_mounts"
@@ -26,7 +26,7 @@ internal object SharedFolderMounts {
 
     private val NAME_PATTERN = Regex("[A-Za-z0-9._-]{1,48}")
 
-    /** 挂载源禁区：系统关键树、workspace 自身（环境里本就完整可见）与 /。 */
+    /** Forbidden mount sources: system-critical trees, the workspace itself (already fully visible in the environment), and /. */
     private val FORBIDDEN_ROOTS = listOf(
         "/",
         "/proc",
@@ -63,7 +63,7 @@ internal object SharedFolderMounts {
         return runCatching { prefs.edit().putString(PREFS_KEY, encode(mounts)).commit() }.getOrDefault(false)
     }
 
-    /** 词法归一化：不解析符号链接，保留用户选择时的路径形态（/sdcard 不被改写）。 */
+    /** Lexical normalization: doesn't resolve symlinks and keeps the path form the user picked (/sdcard is not rewritten). */
     fun normalizeSourcePath(raw: String): String? {
         val trimmed = raw.trim()
         if (trimmed.isEmpty() || !trimmed.startsWith("/") || '\n' in trimmed || '\r' in trimmed) return null
@@ -100,7 +100,7 @@ internal object SharedFolderMounts {
         return null
     }
 
-    /** 从源目录 basename 推导默认挂载名；非 ASCII 字符剔除后为空时退化为 share。 */
+    /** Derives the default mount name from the source directory basename; falls back to share when stripping non-ASCII leaves it empty. */
     fun defaultName(sourcePath: String): String {
         val base = sourcePath.trimEnd('/').substringAfterLast('/').trim()
         val candidate = base.filter { char ->
@@ -122,7 +122,7 @@ internal object SharedFolderMounts {
         return array.toString()
     }
 
-    /** 解码失败或条目不合法时跳过该条目；整体损坏返回空列表。 */
+    /** Skips an entry when decoding fails or it's invalid; returns an empty list when the whole thing is corrupt. */
     fun decode(json: String): List<SharedFolderMount> {
         if (json.isBlank()) return emptyList()
         val array = runCatching { JSONArray(json) }.getOrNull() ?: return emptyList()

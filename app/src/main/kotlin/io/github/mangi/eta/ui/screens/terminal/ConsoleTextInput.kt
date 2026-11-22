@@ -27,14 +27,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 
-/** 控制台输入的去向：已上屏文本、功能键与输入法组字预览分开回调。 */
+/** Destination of console input: committed text, function keys, and IME composition preview are dispatched via separate callbacks. */
 internal interface ConsoleInputSink {
     fun onText(text: String, modifiers: TerminalModifiers)
     fun onKey(key: TerminalKey, modifiers: TerminalModifiers)
     fun onComposingChange(text: String)
 }
 
-/** 由界面持有，向已挂载的输入节点请求显示或收起软键盘。 */
+/** Held by the UI; requests the mounted input node to show or hide the soft keyboard. */
 @Stable
 internal class ConsoleKeyboardController {
     internal var node: ConsoleTextInputNode? = null
@@ -49,9 +49,9 @@ internal class ConsoleKeyboardController {
 }
 
 /**
- * 让所在区域成为终端输入目标：获得焦点后直接与输入法建立连接，而不是借助隐藏输入框。
- * 输入框的文本模型会吞掉退格、把组字中的拼音当作输入，也收不到方向键；
- * 这里只把已确认的文本和按键转交 [sink]，编辑器始终保持为空。
+ * Makes the region a terminal input target: on focus it connects to the IME directly, without a hidden input box.
+ * A text-box model would swallow backspaces, treat composing pinyin as input, and miss arrow keys;
+ * here only committed text and key events are handed to [sink], keeping the editor always empty.
  */
 internal fun Modifier.consoleTextInput(
     sink: ConsoleInputSink,
@@ -84,7 +84,7 @@ internal class ConsoleTextInputNode(
 
     private var session: Job? = null
 
-    /** 只保留最近一次显隐请求；会话尚未建立时留待建立后执行。 */
+    /** Keeps only the most recent show/hide request; if the session isn't established yet, defer until it is. */
     private val keyboardRequests = Channel<Boolean>(Channel.CONFLATED)
 
     fun update(sink: ConsoleInputSink, controller: ConsoleKeyboardController) {
@@ -135,7 +135,7 @@ internal class ConsoleTextInputNode(
         }
     }
 
-    // 硬件键盘的按键经视图分发到焦点节点；软键盘按键走 InputConnection.sendKeyEvent。
+    // Hardware-keyboard keys are dispatched through the view to the focused node; soft-keyboard keys go via InputConnection.sendKeyEvent.
     override fun onKeyEvent(event: KeyEvent): Boolean =
         dispatchKeyEvent(event.nativeKeyEvent, sink)
 
@@ -143,9 +143,9 @@ internal class ConsoleTextInputNode(
 }
 
 /**
- * 普通文本类型而非密码类型：密码类型会让多数中文输入法切到英文；
- * 关闭联想与个性化学习，避免自动纠错改写命令，也不让输入法记住终端里敲过的内容。
- * 多行且不带编辑器动作，回车键表现为换行键并由连接转换为终端回车。
+ * Plain text type rather than password type: password type makes most CJK IMEs switch to English;
+ * disable suggestions and personalized learning, so autocorrect doesn't rewrite commands and the IME doesn't remember what was typed in the terminal.
+ * Multiline with no editor action: Enter appears as a newline key and is converted by the connection into a terminal carriage return.
  */
 private fun configureEditorInfo(outAttributes: EditorInfo) {
     outAttributes.inputType = InputType.TYPE_CLASS_TEXT or
@@ -160,8 +160,8 @@ private fun configureEditorInfo(outAttributes: EditorInfo) {
 }
 
 /**
- * 编辑器只承载组字区：组字期间内容留在可编辑缓冲里供输入法改写，
- * 上屏后立即发送并清空。缓冲为空时的删除请求按退格/删除键转发。
+ * The editor carries only the composition region: while composing, content stays in the editable buffer for the IME to rewrite,
+ * and is sent and cleared immediately after commit. Delete requests with an empty buffer are forwarded as backspace/delete keys.
  */
 private class ConsoleInputConnection(
     view: View,
@@ -213,11 +213,11 @@ private class ConsoleInputConnection(
         return true
     }
 
-    // 不让输入法依据空缓冲推断句首而自动大写。
+    // Don't let the IME infer sentence start from an empty buffer and auto-capitalize.
     override fun getCursorCapsMode(reqModes: Int): Int = 0
 }
 
-/** 返回是否消费；只在按下时发送，抬起事件对已识别的按键同样消费，避免触发焦点移动。 */
+/** Returns whether it was consumed; sends only on press, and up events for recognized keys are also consumed to avoid triggering focus movement. */
 private fun dispatchKeyEvent(event: AndroidKeyEvent, sink: ConsoleInputSink): Boolean {
     val modifiers = TerminalModifiers(
         ctrl = event.isCtrlPressed,
@@ -229,11 +229,11 @@ private fun dispatchKeyEvent(event: AndroidKeyEvent, sink: ConsoleInputSink): Bo
         if (event.action == AndroidKeyEvent.ACTION_DOWN) sink.onKey(key, modifiers)
         return true
     }
-    // 去掉 Ctrl/Alt 取得基础字符，再由编码器施加修饰，与软键盘修饰键走同一条编码路径。
+    // Strip Ctrl/Alt to get the base character, then apply modifiers via the encoder, sharing the same encoding path as soft-keyboard modifier keys.
     val unicode = event.getUnicodeChar(event.metaState and MODIFIER_META_MASK.inv())
     if (unicode <= 0 || unicode and KeyCharacterMap.COMBINING_ACCENT != 0) return false
     if (event.action == AndroidKeyEvent.ACTION_DOWN) {
-        // Shift 已体现在字符本身（大写、符号），不再作为修饰传递。
+        // Shift is already reflected in the character itself (uppercase, symbols), so it isn't passed as a modifier.
         sink.onText(String(Character.toChars(unicode)), modifiers.copy(shift = false))
     }
     return true

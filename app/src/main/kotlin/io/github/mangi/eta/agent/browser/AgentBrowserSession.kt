@@ -76,11 +76,11 @@ internal data class BrowserToolResult(
 )
 
 /**
- * 同一会话内由 Agent 与用户共享的浏览器页面。
+ * A browser page shared between the Agent and the user within a single session.
  *
- * WebView 可以离屏工作，也可以临时挂到 App 的浏览器页面供用户接管。
+ * The WebView can work off-screen or be temporarily attached to the App's browser page for the user to take over.
  */
-// 共享 WebView 必须跨工具调用存活；Activity 容器只在浏览器页面可见时持有，并在 dispose 时解绑。
+// The shared WebView must survive across tool calls; the Activity container is only held while the browser page is visible and is unbound on dispose.
 @SuppressLint("StaticFieldLeak")
 internal class AgentBrowserSession(
     private val onIdle: () -> Unit = {},
@@ -214,7 +214,7 @@ internal class AgentBrowserSession(
     fun reloadFromUser(): BrowserToolResult =
         executeFromExistingContext("reload", userInitiated = true)
 
-    /** 停止必须能越过串行操作锁，才能立刻唤醒正在等待导航的工具调用。 */
+    /** Stop must be able to bypass the serial operation lock to immediately wake tool calls waiting on navigation. */
     fun stopFromUser(): BrowserToolResult {
         interruptCurrentAction(force = true)
         return toolResult(baseEnvelope("stop", ok = true, status = "ok"))
@@ -291,7 +291,7 @@ internal class AgentBrowserSession(
         }
     }
 
-    /** 主线程只尝试回收空闲页面，不等待正在执行的导航或脚本。 */
+    /** The main thread only attempts to reclaim idle pages, never waiting on an in-flight navigation or script. */
     internal fun releaseIdlePage(dispose: Boolean = false): Boolean {
         check(Looper.myLooper() == Looper.getMainLooper())
         if (userControlActive || !operationLock.tryLock()) return false
@@ -306,10 +306,10 @@ internal class AgentBrowserSession(
     }
 
     /**
-     * 聊天页工具卡片的实时预览截图。
+     * Live preview screenshot for the chat-page tool card.
      *
-     * 只在主线程绘制当前视口，不占用串行操作锁、不中断 Agent 或用户操作；
-     * 页面不存在或绘制失败时返回 null，由调用方显示占位。
+     * Only draws the current viewport on the main thread, never holding the serial operation lock or interrupting Agent or user actions;
+     * returns null when the page is absent or drawing fails, leaving the caller to show a placeholder.
      */
     fun capturePreview(): BrowserImage? {
         if (Looper.myLooper() == Looper.getMainLooper()) return null
@@ -347,7 +347,7 @@ internal class AgentBrowserSession(
         }
         checkCancellation()
         if (isDataClearing()) return errorResult(action, "BROWSER_DATA_CLEARING", "Clearing browser data，please try again later", "blocked")
-        // 等待另一动作时也响应本 run 的取消，不能获得锁后清掉已经到达的取消信号。
+        // Respond to this run's cancellation even while waiting for another action; don't clear an already-arrived cancellation signal after acquiring the lock.
         while (!operationLock.tryLock(100L, TimeUnit.MILLISECONDS)) checkCancellation()
         return try {
             checkCancellation()
@@ -718,7 +718,7 @@ internal class AgentBrowserSession(
     }
 
     private fun attachWebViewOnMain(view: WebView, container: ViewGroup) {
-        // 前台跟随窗口的硬件加速，不能继承离屏绘制遗留的软件图层。
+        // The foreground follows the window's hardware acceleration; it must not inherit the software layers left over from off-screen drawing.
         view.setLayerType(View.LAYER_TYPE_NONE, null)
         (view.parent as? ViewGroup)?.takeIf { it !== container }?.removeView(view)
         if (view.parent == null) {
@@ -838,7 +838,7 @@ internal class AgentBrowserSession(
         return JSONObject().put("value", value)
     }
 
-    // callOnMain 将 WebView 绘制切到主线程，随后的位图编码留在浏览器执行线程；Lint ThreadConstraint 无法识别跨线程同步桥接。
+    // callOnMain switches WebView drawing to the main thread, while the subsequent bitmap encoding stays on the browser execution thread; Lint's ThreadConstraint cannot recognize the cross-thread synchronous bridge.
     @SuppressLint("ThreadConstraint")
     private fun captureViewport(view: WebView, preview: Boolean = false): BrowserImage {
         val bitmap = captureViewportBitmap(view, preview)
@@ -856,7 +856,7 @@ internal class AgentBrowserSession(
         ) else 1f
         val width = (sourceWidth * scale).roundToInt().coerceAtLeast(1)
         val height = (sourceHeight * scale).roundToInt().coerceAtLeast(1)
-        // Bitmap Canvas 已决定截图采用软件绘制，不能修改共享 WebView 的持久图层类型。
+        // The Bitmap Canvas already decides the screenshot uses software rendering; the shared WebView's persistent layer type must not be modified.
         val captured = createBitmap(width, height)
         try {
             Canvas(captured).also { canvas ->
@@ -1105,7 +1105,7 @@ internal class AgentBrowserSession(
         override fun onProgressChanged(view: WebView, newProgress: Int) {
             if (webView !== view) return
             currentProgress = newProgress.coerceIn(0, 100)
-            // 进度回调可能在主页面结束后继续到达，不能反复切换导航的加载状态。
+            // Progress callbacks may keep arriving after the main page finishes; the navigation loading state must not be toggled repeatedly.
             publishSnapshotOnMain()
         }
     }

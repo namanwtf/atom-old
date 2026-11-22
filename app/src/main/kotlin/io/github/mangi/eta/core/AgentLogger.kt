@@ -4,9 +4,9 @@ import android.util.Log
 
 internal interface AgentLogger {
     /**
-     * 记录仅用于开发期诊断的信息。
+     * Logs information used only for development-time diagnostics.
      *
-     * supplier 只能构造诊断文本，不能承担程序正确性依赖的副作用；Release 构建会删除整次调用。
+     * The supplier may only build diagnostic text, not carry side effects that program correctness depends on; release builds strip the entire call.
      */
     fun debug(message: () -> String)
 

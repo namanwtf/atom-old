@@ -5,12 +5,12 @@ import org.intellij.markdown.parser.LinkMap
 import org.intellij.markdown.parser.MarkdownParser
 
 /**
- * 面向追加式模型输出的 GFM 解析会话。
+ * A GFM parse session for append-style model output.
  *
- * 每次提交都在调用线程完成一次完整 GFM 解析，再转换为 [MarkdownDocument]；调用方应把
- * 会话限制在后台串行 dispatcher。完整解析让块级语法遵循同一套 CommonMark/GFM 规则，
- * 而不是由 UI 猜测节点类型。流尚未结束时，仅在虚拟 EOF 上补齐仍在等待闭合的结构，
- * 虚拟字符不会写回消息，也不会进入最终快照。
+ * Each submission performs one full GFM parse on the calling thread, then converts to [MarkdownDocument]; callers should pin
+ * the session to a background serial dispatcher. Full parsing makes block-level syntax follow the same CommonMark/GFM rules,
+ * instead of the UI guessing node types. While the stream is unfinished, only complete structures still awaiting closure at the virtual EOF,
+ * and the virtual characters are never written back to the message or included in the final snapshot.
  */
 internal class StreamingGfmParserSession(
     mathCache: MarkdownMathLayoutCache = markdownMathLayoutCache,
@@ -33,7 +33,7 @@ internal class StreamingGfmParserSession(
             cancellationToken = CancellationToken.NonCancellable,
         )
         val root = parser.buildMarkdownTreeFromString(renderedSource as CharSequence)
-        // 引用式链接的定义可能出现在文末，只在终态整体解析一次；流式期间引用暂按原文显示。
+        // Reference-style link definitions may appear at the end of the text, so parse them once only in the terminal state; during streaming references display as source text.
         val links = if (isComplete) LinkMap.buildLinkMap(root, renderedSource) else null
         return StreamingGfmSnapshot(
             originalSource = source,
@@ -61,12 +61,12 @@ internal data class StreamingGfmSnapshot(
 }
 
 /**
- * 为真实 EOF 和“暂时没有更多字符”的流式 EOF 建立不同语义。
+ * Establishes distinct semantics for a real EOF versus a streaming EOF meaning "no more characters for now".
  *
- * - 表格在分隔行确认前不发布候选表头，避免先按普通段落显示竖线。
- * - 未闭合链接保留在解析器缓冲区，避免把半截目标地址暴露给 UI。
- * - 已确认开始的围栏代码、代码 span 和强调结构使用只存在于解析快照中的
- *   虚拟闭合符，使其从第一次可判定时就保持同一种节点类型。
+ * - Tables don't publish candidate headers before the separator row is confirmed, avoiding showing pipes as an ordinary paragraph first.
+ * - Unclosed links stay in the parser buffer, so a half-formed target address is never exposed to the UI.
+ * - Fenced code, code spans, and emphasis structures whose start is confirmed use virtual closing tokens that exist
+ *   only in the parse snapshot, keeping the same node type from the first moment it can be decided.
  */
 internal object StreamingGfmProjection {
     fun project(source: String, isComplete: Boolean): String {
@@ -417,7 +417,7 @@ internal object StreamingGfmProjection {
     }
 
     /**
-     * 返回跳过已闭合数学公式后的下一个下标；若命中末尾正在流式输入的未闭合公式则返回 `-1`。
+     * Returns the next index after skipping a closed math formula; returns `-1` if it hits an unclosed formula still streaming at the end.
      */
     private fun String.consumeMathSpanOrTailAt(index: Int): Int {
         val run = runLengthAt(index, '$')

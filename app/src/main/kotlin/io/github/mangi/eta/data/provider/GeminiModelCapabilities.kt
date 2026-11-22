@@ -4,7 +4,7 @@ import io.github.mangi.eta.data.model.ModelReasoningCapabilities
 import io.github.mangi.eta.data.model.Model
 import io.github.mangi.eta.data.model.ReasoningEffort
 
-/** 仅明确确认的模型启用原生能力，不能由 generateContent 目录能力推断工具混用。 */
+/** Native capabilities are enabled only for explicitly confirmed models; tool mixing must not be inferred from the generateContent catalog capabilities. */
 internal object GeminiModelCapabilities {
     private data class Capabilities(
         val reasoning: ModelReasoningCapabilities,
@@ -51,7 +51,7 @@ internal object GeminiModelCapabilities {
         return documented.copy(supportedEfforts = allowed, defaultEffort = documented.defaultEffort?.takeIf { it in allowed })
     }
 
-    // 未知模型只使用服务端默认值；不据此推断支持思考或必须思考。
+    // Unknown models use only server-side defaults; do not infer from this whether reasoning is supported or required.
     fun requestReasoningCapabilities(modelId: String): ModelReasoningCapabilities =
         reasoningCapabilities(modelId) ?: ModelReasoningCapabilities()
 

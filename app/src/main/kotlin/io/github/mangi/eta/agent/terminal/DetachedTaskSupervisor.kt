@@ -11,14 +11,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 守护任务（detached task）宿主：启动脱离任何命令会话进程组的长驻进程，并托管其生命周期。
+ * Host for detached tasks: launches long-running processes that detach from any command-session process group and manages their lifecycle.
  *
- * 与普通终端命令的差别在于回收语义：托管 shell 退出前会清理同组进程，守护任务通过
- * setsid 自立会话脱离这张回收网；输出重定向到工作区日志文件而非内存，任务记录落盘，
- * App 重启后按 pid + ownership token 认领仍存活的进程。
+ * The difference from ordinary terminal commands is reclamation semantics: the managed shell cleans up same-group processes before exiting, while detached tasks use
+ * setsid to create an independent session outside that reclamation net; output goes to a workspace log file rather than memory, the task record is persisted,
+ * and after an app restart surviving processes are reclaimed by pid + ownership token.
  *
- * 手机重启后任务全部失效；App 被强制停止时 user identity 任务会被系统连带终止，
- * root identity 任务不受影响。
+ * All tasks are invalidated after a device reboot; when the app is force-stopped, user-identity tasks are killed along with it,
+ * while root-identity tasks are unaffected.
  */
 internal class DetachedTaskSupervisor(
     private val logger: AgentLogger,
@@ -39,18 +39,18 @@ internal class DetachedTaskSupervisor(
         const val MAX_RETAINED_RECORDS = 32
         const val MAX_LOG_READ_BYTES = 64 * 1024
 
-        // 进程内允许 AI 侧与 UI 侧各持一个实例；记录文件的读-改-写必须经同一把锁串行。
+        // One instance each is allowed for the AI side and UI side in-process; record-file read-modify-write must serialize through one lock.
         private val RECORDS_LOCK = Any()
         private val COMMAND_PROCESSES = java.util.concurrent.ConcurrentHashMap<String, CommandProcess>()
         private val USER_WAITERS = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
 
-        /** AI 工具侧与 UI 侧共用同一份记录文件，路径只能在这里定义一次。 */
+        /** The AI tool side and UI side share one record file; its path may only be defined here. */
         fun defaultRecordsFile(context: Context): File =
             File(context.filesDir, "terminal-daemons.json")
     }
 
 
-    /** command/cwd/identity/environment 必须已由调用方归一化。 */
+    /** command/cwd/identity/environment must already be normalized by the caller. */
     fun start(
         command: String,
         cwd: String,
@@ -78,7 +78,7 @@ internal class DetachedTaskSupervisor(
         val wireDir = wireDaemonDir(environment)
         val wirePidFile = "$wireDir/$id.pid"
         val wireLogFile = "$wireDir/$id.log"
-        // 内层 sh 先落 pidfile 再 exec 目标命令，PID 在 exec 前后不变。
+        // The inner sh writes the pidfile before exec'ing the target command; the PID stays the same across the exec.
         val innerScript = "echo \$\$ > ${shellQuote(wirePidFile)}; " +
             "export $ETA_PROCESS_OWNER_ENV=${shellQuote(token)}; " +
             "exec sh -c ${shellQuote(command)} >> ${shellQuote(wireLogFile)} 2>&1"
@@ -86,7 +86,7 @@ internal class DetachedTaskSupervisor(
             appendLine("mkdir -p ${shellQuote(wireDir)} || exit 1")
             appendLine("rm -f ${shellQuote(wirePidFile)}")
             appendLine("cd ${shellQuote(cwd)} || exit 1")
-            // 两个分支都必须后台化：setsid 只是脱离会话，调用方仍会前台等待长驻命令结束。
+            // Both branches must background the process: setsid only detaches the session, and the caller would still wait in the foreground for a long-running command.
             appendLine("if command -v setsid >/dev/null 2>&1; then")
             appendLine("  setsid sh -c ${shellQuote(innerScript)} < /dev/null &")
             appendLine("else")
@@ -100,7 +100,7 @@ internal class DetachedTaskSupervisor(
             appendLine("done")
             append("cat ${shellQuote(wirePidFile)} 2>/dev/null")
         }
-        // 启动器必须裸跑：托管壳的 wait 会卡住已后台化的子进程，退出前的同组清理也会杀死它们。
+        // The launcher must run bare: the managed shell's wait would hang on an already-backgrounded child, and its pre-exit same-group cleanup would kill them.
         val result = launchRaw(identity, environment, launcherScript, timeoutSeconds = 10)
         val outputText = result.output.decodeToString().trim()
         val pid = outputText.lineSequence().map { it.trim() }.lastOrNull { it.isNotEmpty() }?.toLongOrNull()
@@ -137,11 +137,11 @@ internal class DetachedTaskSupervisor(
         return DaemonStartResult.Started(task)
     }
 
-    /** 巡检全部记录：活着的重新认领，死掉的保留记录供查看日志，并清理超额的已退出记录。 */
+    /** Inspects all records: re-claims the living, keeps records of the dead for log viewing, and prunes excess exited records. */
     fun list(): List<DetachedTaskStatus> {
         val tasks = synchronized(RECORDS_LOCK) { loadTasksLocked() }
         if (tasks.isEmpty()) return emptyList()
-        // 不同身份分组巡检：/proc/<pid>/environ 只有进程属主与 root 可读，用任务自身身份探测最稳。
+        // Inspect by identity group: /proc/<pid>/environ is readable only by the process owner and root, so probing with the task's own identity is most reliable.
         val aliveById = mutableMapOf<String, Boolean>()
         tasks.filter { it.completedAt == null }.groupBy { it.identity }.forEach { (identity, group) ->
             if (identity == "root" && !rootAvailable()) return@forEach
@@ -166,7 +166,7 @@ internal class DetachedTaskSupervisor(
                 )
             }
         }
-        // 探测失败的任务保守视为仍在运行，不误报死亡；确认死亡的才允许被 prune 清掉。
+        // Tasks that fail probing are conservatively treated as still running to avoid false death reports; only confirmed-dead tasks may be pruned.
         val statuses = tasks.map { task ->
             if (task.completedAt != null) return@map DetachedTaskStatus(task, false)
             var running = aliveById[task.id] ?: true
@@ -298,13 +298,13 @@ internal class DetachedTaskSupervisor(
 
     private fun commandPayload(command: String, exitPath: String): String {
         val payload = "$command\neta_command_status=${'$'}?\nwait\nexit ${'$'}eta_command_status"
-        // 命令自身可调用 exit；在子壳执行后由宿主壳原子记录退出码，App 重启后仍可确认结果。
+        // The command itself may call exit; after running in a subshell the host shell records the exit code atomically, so the result stays confirmable after an app restart.
         return "{ sh -c ${shellQuote(payload)}; eta_status=$?; " +
             "printf '%s\\n' \"${'$'}eta_status\" > ${shellQuote("$exitPath.tmp")} && " +
             "mv ${shellQuote("$exitPath.tmp")} ${shellQuote(exitPath)}; exit \"${'$'}eta_status\"; }"
     }
 
-    /** 停止并删除记录与日志；进程已退出时等价于清理记录。 */
+    /** Stops and deletes the record and log; when the process already exited, this is equivalent to cleaning the record. */
     fun stop(id: String): Boolean {
         val tasks = synchronized(RECORDS_LOCK) { loadTasksLocked() }
         val task = tasks.firstOrNull { it.id == id } ?: return false
@@ -330,7 +330,7 @@ internal class DetachedTaskSupervisor(
         val stopScript = buildString {
             appendLine(aliveCheckFunction())
             appendLine("if eta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then")
-            // setsid 路径下 pgid==pid，按组一次收整棵树；无 setsid 的退化环境只杀主进程。
+            // Under setsid, pgid==pid, so kill the whole tree by group at once; in degraded environments without setsid only the main process is killed.
             if (task.isolatedGroup != null) {
                 appendLine("  kill -TERM ${if (task.isolatedGroup) "-" else ""}${task.pid} 2>/dev/null")
             } else appendLine("  if [ -d /proc ]; then kill -TERM -${task.pid} 2>/dev/null; else kill -TERM ${task.pid} 2>/dev/null; fi")
@@ -354,7 +354,7 @@ internal class DetachedTaskSupervisor(
         return result.exitCode == 0
     }
 
-    /** 存活判定校验 ownership token：PID 被系统复用时不会把无关进程当作本任务。无 /proc 的环境退化为存在性探测。 */
+    /** Liveness check verifies the ownership token: when the PID is reused by the system, an unrelated process won't be mistaken for this task. Environments without /proc degrade to existence probing. */
     private fun aliveCheckFunction(): String =
         "eta_alive() { " +
             "if [ -d /proc ]; then " +
@@ -365,7 +365,7 @@ internal class DetachedTaskSupervisor(
 
     private fun ownerProof(task: DetachedTask): String = "$ETA_PROCESS_OWNER_ENV=${task.token}"
 
-    /** 普通守护任务保留完整宿主壳和 tracer；guest 内不能再次脱离 PRoot 的生命周期。 */
+    /** Ordinary daemon tasks keep the full host shell and tracer; inside the guest they can't detach from PRoot's lifecycle again. */
     private fun startUserDaemon(id: String, token: String, command: String, cwd: String, environment: TerminalEnvironment): DaemonStartResult {
         val workspace = if (environment.isLinux || daemonDir == DEFAULT_DAEMON_DIR) TerminalRuntime.userWorkspacePath else File(daemonDir).parent!!
         val hostDir = if (environment.isLinux || daemonDir == DEFAULT_DAEMON_DIR) File(workspace, "daemon") else File(daemonDir)
@@ -382,7 +382,7 @@ internal class DetachedTaskSupervisor(
         val lease = "daemon:$id"
         val stopped = java.util.concurrent.atomic.AtomicBoolean(false)
         val launchLock = Any()
-        // 停止先标记意图，再等启动临界区结束；记录建立前的停止不会被丢弃。
+        // Stop first records intent, then waits for the startup critical section; a stop issued before the record exists is not dropped.
         return synchronized(launchLock) {
             if (!acquireUserLease(lease) {
                     stopped.set(true)
@@ -438,7 +438,7 @@ internal class DetachedTaskSupervisor(
         }
     }
 
-    /** App 进程重建后只认领已确认归属的普通任务，避免后台 tracer 失去通知和停止入口。 */
+    /** After the app process is rebuilt, only claim ordinary tasks whose ownership is confirmed, so a background tracer doesn't lose its notify and stop entry points. */
     private fun adoptUserTask(task: DetachedTask): Boolean {
         if (!USER_WAITERS.add(task.id)) return true
         val lease = "daemon:${task.id}"
@@ -467,8 +467,8 @@ internal class DetachedTaskSupervisor(
     }
 
     /**
-     * 裸启动器：不经过 [ShellProcessSupervisor] 的托管壳（壳的 wait 与退出清理正是守护任务要逃离的回收语义），
-     * 只做启动、输出收集与超时防御。Linux 环境仍复用同一套 unshare + chroot 包装。
+     * Bare launcher: bypasses [ShellProcessSupervisor]'s managed shell (its wait and exit cleanup are exactly the reclamation semantics a daemon task must escape),
+     * doing only launch, output collection, and timeout protection. The Linux environment still reuses the same unshare + chroot wrapper.
      */
     private fun launchRaw(
         identity: String,
@@ -512,8 +512,8 @@ internal class DetachedTaskSupervisor(
         if (environment.isLinux) LINUX_DAEMON_DIR else daemonDir
 
     /**
-     * Linux 任务的 /workspace 是宿主工作目录的 bind 视图，日志与 pid 文件的物理位置仍在宿主。
-     * 读写一律走宿主路径，避免为读日志专门进入 chroot。
+     * A Linux task's /workspace is a bind view of the host working directory; the physical location of the log and pid files is still on the host.
+     * All reads and writes use host paths, avoiding entering the chroot just to read a log.
      */
     internal fun hostDaemonPath(task: DetachedTask, wirePath: String): String =
         if (task.environment.isLinux && wirePath.startsWith(LINUX_DAEMON_DIR)) {

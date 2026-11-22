@@ -4,7 +4,7 @@ import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 import okio.Buffer
 
-/** 每次合成独立识别 WAV 容器或裸 PCM，文件头与采样都可以跨网络片段。 */
+/** Each synthesis independently detects a WAV container or raw PCM; the header and samples can each span network fragments. */
 internal class SpeechPcmDecoder(private val onAudio: (ByteArray) -> Unit) {
     private enum class Phase { DETECT, RIFF_HEADER, WAV_HEADER, PCM }
 
@@ -43,7 +43,7 @@ internal class SpeechPcmDecoder(private val onAudio: (ByteArray) -> Unit) {
             if (id == "data") {
                 if (!formatValidated || headerBytes + 8 > MAX_HEADER_BYTES) invalid()
                 buffer.skip(8)
-                // 云端流式 WAV 的长度字段可能是占位值；音频结束以服务的成功终止事件为准。
+                // The length field of cloud-streamed WAV may be a placeholder; audio ends according to the service's successful termination event.
                 phase = Phase.PCM
                 break
             }

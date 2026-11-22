@@ -4,13 +4,13 @@ import io.github.mangi.eta.ui.model.AgentChatUiState
 import io.github.mangi.eta.ui.model.QueuedMessageUi
 
 /**
- * 会话内排队发送（Queue）与插话发送（Steer）的纯状态转换器。
+ * Pure state reducer for in-conversation queued send (Queue) and interjection send (Steer).
  *
- * - 排队发送追加到队尾，等待当前回合自然结束后按 FIFO 顺序自动发出。
- * - 插话发送优先向当前运行中的 Run 注入 steering 补充指令（不中断工具与请求、保留缓存）；
- *   在 IPC 提交期间暂时带着 [QueuedMessageUi.immediateInterrupt] 占住队首，被接纳后移除，
- *   若当前 Run 已结束或不可接纳则退回队首等待收尾后发出。
- * - 用户主动点击停止按钮时保留队列不自动发出，防止想停下时后续排队指令继续跑起来。
+ * - Queued sends append to the tail and auto-send in FIFO order after the current turn ends naturally.
+ * - Interjection sends prefer to inject a steering supplement into the currently running Run (without interrupting tools/requests, keeping cache);
+ *   during IPC submission they temporarily hold the queue head with [QueuedMessageUi.immediateInterrupt] and are removed once accepted,
+ *   and if the current Run has ended or can't accept them, they fall back to the queue head to send after wrap-up.
+ * - When the user taps stop, keep the queue without auto-sending, so follow-up queued commands don't keep running when the user wants to stop.
  */
 internal object AgentMessageQueueReducer {
 
@@ -32,7 +32,7 @@ internal object AgentMessageQueueReducer {
         )
     }
 
-    /** 将条目置顶到队首并清除插话标记，用于不支持运行时 Steer（如含图片）时等待当前 Run 结束后优先发送。 */
+    /** Moves the entry to the queue head and clears the interjection flag, used to send it first after the current Run ends when runtime Steer isn't supported (e.g. with images). */
     fun promoteToQueueHead(
         state: AgentChatUiState,
         id: String,
@@ -46,7 +46,7 @@ internal object AgentMessageQueueReducer {
         )
     }
 
-    /** 将刚入队且无法立即 Steer 的条目置顶到队首（清除草稿，不中断当前运行）。 */
+    /** Moves a just-enqueued entry that can't Steer immediately to the queue head (clearing the draft, not interrupting the current run). */
     fun enqueueAtHead(
         state: AgentChatUiState,
         item: QueuedMessageUi,
@@ -63,10 +63,10 @@ internal object AgentMessageQueueReducer {
     }
 
     /**
-     * 将队列中的指定消息提升为立即插话。
+     * Promotes a specified queued message into an immediate interjection.
      *
-     * - 若当前仍在流式运行（非压缩）：将其移至队首并标记 [QueuedMessageUi.immediateInterrupt]，等待当前运行取消后自动发出。
-     * - 若当前已空闲：直接从队列弹出并返回，由调用方立即发起新运行。
+     * - If still streaming (not compacting): move it to the queue head and mark [QueuedMessageUi.immediateInterrupt], auto-sending after the current run is cancelled.
+     * - If already idle: pop it from the queue and return, letting the caller start a new run immediately.
      */
     fun promoteToInterrupt(
         state: AgentChatUiState,
@@ -85,7 +85,7 @@ internal object AgentMessageQueueReducer {
     }
 
     /**
-     * 将排队中的消息撤回输入框继续编辑；若输入框已有未发送草稿则保留并合并，不覆盖用户正在输入的内容。
+     * Recalls a queued message to the input box for editing; if the box already has an unsent draft, keep and merge it rather than overwriting what the user is typing.
      */
     fun recallToDraft(
         state: AgentChatUiState,
@@ -138,10 +138,10 @@ internal object AgentMessageQueueReducer {
     }
 
     /**
-     * 当前运行收尾后决定是否自动弹出下一条排队消息：
-     * - 队首为 [QueuedMessageUi.immediateInterrupt] 时，无论本次是否因取消结束，都立即弹出执行。
-     * - 用户主动点击停止按钮（[stoppedByUser]）时，保留剩余队列，不自动发出。
-     * - 其余情况（正常结束）弹出队首第一条消息自动发出。
+     * After the current run wraps up, decide whether to auto-pop the next queued message:
+     * - If the queue head is [QueuedMessageUi.immediateInterrupt], pop and run it immediately regardless of whether this run ended by cancellation.
+     * - When the user taps stop ([stoppedByUser]), keep the remaining queue and don't auto-send.
+     * - Otherwise (normal end), pop the first queue-head message and auto-send.
      */
     fun pollNextToSendAfterRun(
         state: AgentChatUiState,

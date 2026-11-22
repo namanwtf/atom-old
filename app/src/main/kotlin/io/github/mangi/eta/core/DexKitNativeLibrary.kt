@@ -4,7 +4,7 @@ import android.os.Build
 import android.os.Process
 import java.io.File
 
-/** 原生库必须由模块的 ClassLoader 加载，宿主只提供私有缓存目录。 */
+/** The native library must be loaded by the module's ClassLoader; the host only provides a private cache directory. */
 internal object DexKitNativeLibrary {
     private var loaded = false
 
@@ -27,7 +27,7 @@ internal object DexKitNativeLibrary {
                 logger.debug { "DexKit install directory loading unavailable: reason=${nativeLoadFailureReason(error)}" }
             }
         }
-        // 压缩 APK 条目无法直接 dlopen；框架提供的安装目录也可能不可用于当前进程。
+        // Compressed APK entries can't be dlopen'd directly; the install directory provided by the framework may also be unusable for the current process.
         val abis = if (Process.is64Bit()) Build.SUPPORTED_64_BIT_ABIS else Build.SUPPORTED_32_BIT_ABIS
         val library = DexKitNativeLibraryFile.extract(moduleApkPath, cacheDirectory, abis.toList())
         System.load(library.absolutePath)
@@ -36,7 +36,7 @@ internal object DexKitNativeLibrary {
     }
 }
 
-/** 只记录固定错误分类，避免把 linker 消息中的文件路径写进日志。 */
+/** Logs only a fixed error category, avoiding writing file paths from linker messages into the log. */
 internal fun nativeLoadFailureReason(error: UnsatisfiedLinkError): String {
     val message = error.message.orEmpty().lowercase()
     return when {

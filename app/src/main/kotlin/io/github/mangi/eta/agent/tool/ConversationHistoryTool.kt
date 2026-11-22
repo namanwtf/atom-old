@@ -5,7 +5,7 @@ import io.github.mangi.eta.agent.model.AgentModelClient
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** loader 由 Runtime 绑定当前会话；分页与检索只限制返回内容，不修改持久历史。 */
+/** The loader is bound to the current session by Runtime; pagination and search only limit what is returned and never modify persistent history. */
 internal class ConversationHistoryTool(
     private val loader: () -> List<AgentModelClient.ConversationMessage>,
 ) : AgentModelClient.ToolExecutor {
@@ -19,7 +19,7 @@ internal class ConversationHistoryTool(
         var offset = args.optInt("offset", 0)
         var remaining = args.optInt("max_chars", MAX_PAGE_CHARS)
         require(index >= 0 && offset >= 0 && remaining in MIN_PAGE_CHARS..MAX_PAGE_CHARS)
-        // 续读固定同一份历史，不能追着本工具新产生的日志无限读取；从零开始可刷新以包含最新轮次。
+        // Continuation reads always use the same history snapshot; they must not keep chasing the entries this tool itself produces. Starting from zero refreshes to include the latest turns.
         if (readSnapshot == null || (index == 0 && offset == 0)) readSnapshot = loader()
         val history = checkNotNull(readSnapshot)
         require(index <= history.size)

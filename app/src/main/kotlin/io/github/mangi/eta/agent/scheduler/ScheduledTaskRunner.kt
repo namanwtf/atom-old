@@ -40,12 +40,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * 定时任务执行协调器。
+ * Scheduled-task execution coordinator.
  *
- * - 统一承接精确闹钟到期触发与 UI/工具触发的「立即试跑」；
- * - 严格复用 [AgentRuntimeClient] / [AgentRuntimeService]，共享工具、权限、MCP、虚拟屏、归档与取消链路；
- * - 负责单任务防重入、Android Doze 10 秒窗口内的 FGS 与有界 WakeLock 接管、锁屏 GUI 守门、
- *   单次硬超时守护、连续失败熔断与结果通知。
+ * - Uniformly accepts both exact-alarm expiry triggers and UI/tool-triggered "Run now";
+ * - Strictly reuses [AgentRuntimeClient] / [AgentRuntimeService], sharing the tool, permission, MCP, virtual-screen, archival, and cancellation pipelines;
+ * - Handles per-task re-entry prevention, FGS and bounded WakeLock takeover within the Android Doze 10-second window, lock-screen GUI gating,
+ *   a single hard-timeout guard, consecutive-failure circuit breaking, and result notification.
  */
 internal object ScheduledTaskRunner {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -64,7 +64,7 @@ internal object ScheduledTaskRunner {
 
     fun isTaskRunning(taskId: String): Boolean = activeByTaskId.containsKey(taskId)
 
-    /** 取消某个正在运行的定时任务，并同步通知 AgentRuntimeService 停止模型流与工具资源。 */
+    /** Cancels a running scheduled task and notifies AgentRuntimeService to stop the model stream and tool resources. */
     fun cancelRunningTask(context: Context, taskId: String): Boolean {
         val active = activeByTaskId[taskId] ?: return false
         active.userCancelled.set(true)
@@ -78,7 +78,7 @@ internal object ScheduledTaskRunner {
         return true
     }
 
-    /** 系统闹钟触发入口：扫描全部到期任务并按漏跑/安静时段策略调度，再立刻同步下一次闹钟。 */
+    /** System alarm trigger entry point: scans all due tasks, schedules them per the missed-run/quiet-hours policy, then immediately re-syncs the next alarm. */
     suspend fun onAlarmFired(context: Context) {
         val appContext = context.applicationContext
         val nowMs = System.currentTimeMillis()
@@ -123,7 +123,7 @@ internal object ScheduledTaskRunner {
         ScheduledTaskAlarmScheduler.syncNextAlarm(appContext)
     }
 
-    /** 立即试跑（不修改原计划排期，也不受安静时段限制）。 */
+    /** Run now (does not modify the original schedule and is not subject to quiet-hours restrictions). */
     suspend fun triggerManualRun(context: Context, taskId: String): ManualTriggerResult {
         val appContext = context.applicationContext
         val task = ScheduledTaskRepository.getTask(taskId, appContext)
@@ -157,7 +157,7 @@ internal object ScheduledTaskRunner {
         val startedAt = System.currentTimeMillis()
         val runId = "sched-${UUID.randomUUID()}"
 
-        // 若上次运行仍在进行，记为跳过并推进下次排期，防止重叠并发。
+        // If the previous run is still in progress, record it as skipped and advance the next schedule to prevent overlapping concurrency.
         if (activeByTaskId.containsKey(task.id)) {
             if (advanceSchedule) {
                 recordSkippedAndAdvance(
@@ -171,7 +171,7 @@ internal object ScheduledTaskRunner {
             return false
         }
 
-        // 锁屏状态下保护物理主屏 GUI 任务：非手动触发、开启 GUI、无后台虚拟屏且锁屏时不硬闯。
+        // Protect physical main-screen GUI tasks while locked: don't force entry when not manually triggered, GUI is enabled, there is no background virtual screen, and the screen is locked.
         if (triggerSource != ScheduledTaskTriggerSource.MANUAL &&
             task.capabilities.guiTools &&
             shouldDeferLockedGuiTask(context)
@@ -188,8 +188,8 @@ internal object ScheduledTaskRunner {
             return false
         }
 
-        // 未开启「运行时显示进度通知」且设备具备免 FGS 后台网络豁免（电池无限制 / Root / 前台）时，
-        // 跳过 AgentExecutionService，仅持有有界 WakeLock 与绑定服务，实现运行时 0 通知静默执行。
+        // When "show runtime progress notification" is off and the device has an FGS-free background network exemption (battery unrestricted / Root / foreground),
+        // skip AgentExecutionService and only hold a bounded WakeLock and a bound service, achieving silent runtime execution with zero notifications.
         val leaseId = "scheduled:$runId"
         val executionJobHolder = arrayOfNulls<ActiveExecution>(1)
         val allowBoundFallback = RootAccess.isGranted
@@ -387,7 +387,7 @@ internal object ScheduledTaskRunner {
             modelSessionId = archiveKey,
         )
 
-        // 硬超时看门狗：超出单次任务墙钟预算时主动取消 Runtime run，防止无限耗电或死循环。
+        // Hard-timeout watchdog: proactively cancel the Runtime run once the single-task wall-clock budget is exceeded, preventing unbounded battery drain or infinite loops.
         val watchdog = scope.launch {
             delay(timeoutMs)
             execution?.timedOut?.set(true)
@@ -525,10 +525,10 @@ internal object ScheduledTaskRunner {
     }
 
     /**
-     * 将单任务配置与全局用户开关取交集。
+     * Intersects the per-task config with the global user toggles.
      *
-     * `RuntimeConfigRepository.buildRuntimeConfig()` 不填充本地工具开关（使用 ModelConfig 构造默认值），
-     * 因此这里必须显式以全局开关为基线再按任务能力裁剪，不能直接读取 `base` 的默认布尔值。
+     * `RuntimeConfigRepository.buildRuntimeConfig()` does not populate local tool toggles (it constructs defaults from ModelConfig),
+     * so here we must explicitly use the global toggles as the baseline and then trim by task capability, rather than reading `base`'s default booleans directly.
      */
     internal fun applyTaskPolicyToModelConfig(
         base: AgentModelClient.ModelConfig,
@@ -565,7 +565,7 @@ internal object ScheduledTaskRunner {
         )
     }
 
-    /** 仅当设备处于锁屏状态，且不满足后台受信任虚拟屏条件时，避免后台强闯物理主屏。 */
+    /** Avoid barging into the physical main screen from the background only when the device is locked and the trusted background virtual-screen condition is not met. */
     private fun shouldDeferLockedGuiTask(context: Context): Boolean {
         val keyguard = context.getSystemService(KeyguardManager::class.java)
         val isLocked = keyguard?.isKeyguardLocked == true
@@ -587,8 +587,8 @@ internal object ScheduledTaskRunner {
     }
 
     /**
-     * 判断当前设备是否允许静默定时任务跳过前台执行服务：
-     * 处于前台、已授权 Root，或已加入电池优化白名单（Doze 不在 10 秒后切断后台网络）时安全放行。
+     * Determines whether the current device allows a silent scheduled task to skip the foreground execution service:
+     * safe to allow when in the foreground, Root is granted, or the battery-optimization whitelist is joined (Doze will not cut background network after 10 seconds).
      */
     internal fun canRunSilentlyWithoutForegroundService(context: Context): Boolean =
         MainActivity.isInForeground ||

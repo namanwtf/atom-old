@@ -13,12 +13,12 @@ import io.github.mangi.eta.ui.model.AgentChatMessageUi
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** 只在事务提交后推进保存基线，不持有输入草稿、待发送图片等临时 UI 状态。 */
+/** Advances the save baseline only after a transaction commits; doesn't hold temporary UI state like input drafts or pending images. */
 internal class AgentConversationPersistence(initial: AgentConversationStore.Snapshot? = null) {
     private val mutex = Mutex()
-    // 未对齐的会话不进入基线，首次保存按新会话整段写入，重排 sort_index。
+    // Unaligned conversations don't enter the baseline; the first save writes a new conversation in full and re-sorts sort_index.
     private var saved = initial?.let { snapshot -> project(snapshot) - snapshot.unalignedConversationIds }.orEmpty()
-    // 已提交但尚未进入 Main 状态的分支必须合入旧快照，直到保存队列观察到发布后的状态。
+    // Branches committed but not yet in Main state must merge into the old snapshot until the save queue observes the published state.
     private var unpublishedBranches = emptyMap<String, Content>()
 
     suspend fun save(context: Context, snapshot: AgentConversationStore.Snapshot) = mutex.withLock {

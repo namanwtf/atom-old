@@ -57,7 +57,7 @@ internal class AgentMemoryException(
     cause: Throwable? = null,
 ) : IllegalStateException(message, cause)
 
-/** 单一 MEMORY.md 的有界、原子文件存储。 */
+/** Bounded, atomic file storage for a single MEMORY.md. */
 internal class AgentMemoryStore(
     rootDir: File,
 ) {

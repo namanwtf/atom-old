@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.terminal
 
 import org.json.JSONObject
 
-/** 一条守护任务记录。pid + token 用于跨 App 重启后的认领，以及停止前防止 PID 复用误杀。 */
+/** A daemon-task record. pid + token are used to claim it after an app restart and to avoid killing a reused PID before stopping. */
 internal data class DetachedTask(
     val id: String,
     val pid: Long,

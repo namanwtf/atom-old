@@ -19,10 +19,10 @@ import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.Text
 
 /**
- * 已完成内容的 Markdown：历史消息、思考全文与流式结束后的静态视图共用。
+ * Markdown for completed content: shared by historical messages, full thinking text, and the static view after streaming ends.
  *
- * [parsed] 是流式会话的终态快照，可直接复用，切换时不重解析、不经过占位文字。
- * 其余情况在后台解析；命中缓存时首帧即为最终排版，长会话来回滚动不会反复解析。
+ * [parsed] is the terminal snapshot of the streaming session and can be reused directly; switching neither re-parses nor passes through placeholder text.
+ * Other cases parse in the background; on a cache hit the first frame is already the final layout, so scrolling back and forth through long sessions never re-parses.
  */
 @Composable
 internal fun StaticMarkdown(
@@ -42,7 +42,7 @@ internal fun StaticMarkdown(
             ?: withContext(Dispatchers.Default) { staticMarkdownDocumentCache.parse(content, style.inline) }
     }.value
     if (document == null) {
-        // 解析完成前以同字号原文占位，高度与最终排版接近，避免列表越界绘制。
+        // Until parsing completes, show a same-size source-text placeholder whose height is close to the final layout, avoiding out-of-bounds drawing in the list.
         Text(text = content, style = style.body, modifier = modifier)
     } else {
         MarkdownContent(document = document, style = style, modifier = modifier)
@@ -50,10 +50,10 @@ internal fun StaticMarkdown(
 }
 
 /**
- * 独立滚动视口内的长篇静态 Markdown（如 MEMORY.md 预览）。
+ * Long static Markdown within an independent scroll viewport (e.g. a MEMORY.md preview).
  *
- * 解析未完成前不渲染整篇原文占位（避免几十 KiB 的单节点 MultiParagraph 在页面进入动画中阻塞主线程），
- * 解析后通过 [LazyMarkdownContent] 按视口虚拟化渲染。
+ * Before parsing completes, don't render the whole source as a placeholder (avoiding a tens-of-KiB single-node MultiParagraph blocking the main thread during page entry animation),
+ * and render virtualized per viewport via [LazyMarkdownContent] after parsing.
  */
 @Composable
 internal fun LazyStaticMarkdown(
@@ -82,11 +82,11 @@ internal fun LazyStaticMarkdown(
 }
 
 /**
- * 流式内容的 Markdown。解析在后台串行进行，最新目标覆盖尚未开始的旧目标；
- * 正文语气接入逐字显现，思考语气直接显示每次解析结果。
+ * Markdown for streaming content. Parsing runs serially in the background; the latest target supersedes an old target that hasn't started;
+ * the body tone feeds character-by-character reveal, while the thinking tone shows each parse result directly.
  *
- * [onRevealCompleteChange] 在当前全文的终态快照完成排版、且显现动画排空后回调 true，
- * 调用方据此切换到可选择的静态视图。
+ * [onRevealCompleteChange] calls back true after the terminal snapshot of the full text finishes layout and the reveal animation drains,
+ * letting callers switch to the selectable static view.
  */
 @Composable
 internal fun StreamingMarkdown(
@@ -98,7 +98,7 @@ internal fun StreamingMarkdown(
     onRevealCompleteChange: (Boolean) -> Unit = {},
 ) {
     val style = rememberMarkdownStyle(tone)
-    // 思考紧跟已收到的增量，避免高速思考先排版占位、再受正文逐字速度限制而积压。
+    // Thinking follows the increments already received, so high-rate thinking doesn't first lay out a placeholder and then pile up constrained by the body's reveal speed.
     val reveal = state.revealCoordinator.takeIf { tone == MarkdownTone.Answer }
     val snapshot = state.snapshot
     val currentContent by rememberUpdatedState(content)
@@ -130,7 +130,7 @@ internal fun StreamingMarkdown(
             currentCallback(false)
             return@LaunchedEffect
         }
-        // 等终态文档完成组合与排版后，再等待尾部字符的显现收口。
+        // After the terminal document finishes composition and layout, wait for the trailing characters' reveal to close out.
         withFrameNanos { }
         if (reveal != null && !reveal.drained.value) reveal.drained.filter { it }.first()
         if (isStreamingMarkdownTargetComplete(
@@ -153,7 +153,7 @@ internal fun StreamingMarkdown(
         style = style,
         reveal = reveal,
         modifier = modifier.onGloballyPositioned {
-            // 恢复基线对应的文档真正排版后才开放增量动画，解析耗时不受帧数限制。
+            // Open incremental animation only after the document for the restored baseline actually lays out; parse time isn't limited by frame count.
             if (state.restoreState.completeLayout(
                     generation = restoreGeneration,
                     renderedContent = parsed.originalSource,

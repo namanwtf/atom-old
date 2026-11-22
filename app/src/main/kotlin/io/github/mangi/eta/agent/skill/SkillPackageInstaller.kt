@@ -24,10 +24,10 @@ data class SkillPackageLimits(
 )
 
 /**
- * Skill ZIP 安装器。
+ * Skill ZIP installer.
  *
- * 所有内容先落入 skills 目录外的私有暂存区，完成路径、配额和 Skill 元数据验证后才会
- * 移入正式目录。批量替换会先备份旧目录；任一步失败都会删除新目录并恢复备份。
+ * All content first lands in a private staging area outside the skills directory and is only moved
+ * into the official directory after path, quota, and Skill metadata validation. Batch replacement backs up the old directory first; a failure at any step deletes the new directory and restores the backup.
  */
 class SkillPackageInstaller internal constructor(
     skillsRoot: File,
@@ -129,7 +129,7 @@ class SkillPackageInstaller internal constructor(
         )
     }
 
-    /** 检查仓库 ZIP。单一顶层目录按 GitHub codeload 的 envelope 处理。 */
+    /** Inspects a repository ZIP. A single top-level directory is handled as a GitHub codeload envelope. */
     fun inspectRepositoryZip(
         openStream: () -> InputStream,
         isCancelled: () -> Boolean = { false },
@@ -148,7 +148,7 @@ class SkillPackageInstaller internal constructor(
         SkillArchiveInspectionResult.Success(candidates.map { it.publicModel })
     }
 
-    /** selectedPaths 使用 [inspectRepositoryZip] 返回的仓库相对路径。 */
+    /** selectedPaths uses the repository-relative paths returned by [inspectRepositoryZip]. */
     fun installRepositoryZip(
         openStream: () -> InputStream,
         selectedPaths: List<String>,
@@ -310,7 +310,7 @@ class SkillPackageInstaller internal constructor(
             )
         }
 
-        // 从此处开始进入不可中断的短事务；取消只在任何正式文件变更发生前生效。
+        // From here on we enter a short non-interruptible transaction; cancellation only takes effect before any official file change.
         checkCancelled(isCancelled)
         if (!canonicalSkillsRoot.exists() && !canonicalSkillsRoot.mkdirs()) {
             fail(

@@ -44,7 +44,7 @@ internal fun isWideScreen(containerWidthPx: Int, density: androidx.compose.ui.un
     with(density) { containerWidthPx.toDp() >= WideScreenMinWidth }
 
 /**
- * 列表本身保持全宽，只把内容限制在居中的最大宽度内，避免宽屏两侧形成滚动死区。
+ * The list itself stays full-width; only the content is constrained to a centered max width, avoiding scroll dead zones on either side of wide screens.
  */
 @Composable
 fun WidePageContent(
@@ -63,7 +63,7 @@ fun WidePageContent(
 }
 
 /**
- * 二级页内容只补水平方向的屏幕缺口与手势区；顶部由 TopAppBar、底部由页面末尾留白负责。
+ * Secondary-page content only fills the horizontal screen notch and gesture area; the top is handled by the TopAppBar and the bottom by end-of-page spacing.
  */
 @Composable
 fun Modifier.horizontalCutoutPadding(): Modifier = windowInsetsPadding(
@@ -73,12 +73,12 @@ fun Modifier.horizontalCutoutPadding(): Modifier = windowInsetsPadding(
 )
 
 /**
- * 为贴底悬浮胶囊计算安全 WindowInsets（不含外层自持的 [fixedBottomPadding]）：
- * 隐藏手势提示条时系统导航栏高度为 0，仅靠 navigationBarsPadding 会让大圆角屏幕下的
- * 胶囊左下/右下角贴近物理玻璃圆弧。通过 rootWindowInsets.getRoundedCorner 读取窗口实际
- * 贴近的底角半径（分屏上半窗或悬浮小窗会自动返回 0），按 0.42 倍（上限 26.dp）抬升底边，
- * 并与系统栏高度取 maxOf，避免在开启小白条或三键导航时重复叠加，同时保持与外层 imePadding
- * 连续消费衔接。
+ * Computes safe WindowInsets for the bottom-floating capsule (excluding the outer self-held [fixedBottomPadding]):
+ * when the gesture hint bar is hidden the system nav bar height is 0, and navigationBarsPadding alone would leave the capsule's
+ * bottom-left/right corners hugging the physical glass arc. Read the window's actual
+ * adjacent bottom-corner radius via rootWindowInsets.getRoundedCorner (top half of split-screen or a floating window returns 0), lift the bottom edge by 0.42x (capped at 26.dp),
+ * take maxOf with the system-bar height to avoid double-stacking when the gesture pill or three-button nav is on, while staying continuous with the outer imePadding
+ * consumption.
  */
 @Composable
 fun rememberFloatingBottomBarInsets(
@@ -105,8 +105,8 @@ fun rememberFloatingBottomBarInsets(
         view.addOnAttachStateChangeListener(listener)
         onDispose { view.removeOnAttachStateChangeListener(listener) }
     }
-    // 全面屏隐藏手势条时 navigationBars 始终为 0，attach 前后数值不变可能不触发 Snapshot 更新，
-    // 借 attachVersion 确保首次附着后能读取到完整的 rootWindowInsets 圆角数据。
+    // With the gesture bar hidden on full-screen, navigationBars is always 0; unchanged values around attach may not trigger a Snapshot update,
+    // so attachVersion ensures the full rootWindowInsets corner data is readable after the first attach.
     return remember(
         view,
         attachVersion,

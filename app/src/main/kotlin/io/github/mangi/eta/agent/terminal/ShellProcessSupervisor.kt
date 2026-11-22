@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-/** 负责 Shell 进程的启动接纳、所有权识别、进程树终止与回收。 */
+/** Handles shell process admission, ownership identification, process-tree termination, and reclamation. */
 internal class ShellProcessSupervisor(
     private val allowTreeFallback: Boolean = !isAndroidRuntime(),
     private val setsidCommand: String = "setsid",
@@ -36,8 +36,8 @@ internal class ShellProcessSupervisor(
         private set
 
     /**
-     * ProcessBuilder.start() 必须在锁外执行；启动完成后再以短临界区完成接纳或拒绝。
-     * 每个 Shell 优先进入独立 session，并把真实 Shell PID 写入仅本进程使用的临时文件。
+     * ProcessBuilder.start() must run outside the lock; after startup, a short critical section performs admission or rejection.
+     * Each shell preferably enters its own session and writes its real shell PID into a temp file used only by this process.
      */
     fun startShellProcess(
         identity: String,
@@ -169,7 +169,7 @@ internal class ShellProcessSupervisor(
         metadata?.ownershipFile?.delete()
     }
 
-    /** leader 已退出后只废止所有权；禁止再向可能复用的 PID/PGID 发信号。 */
+    /** After the leader exits, only revoke ownership; never signal a PID/PGID that may have been reused. */
     fun retireExitedProcess(process: Process) {
         unregisterProcess(process)
     }
@@ -208,7 +208,7 @@ internal class ShellProcessSupervisor(
         val path = shellQuote(ownershipFile.absolutePath)
         val exportOwner = "export $ETA_PROCESS_OWNER_ENV=${shellQuote(ownershipToken)}"
         if (pty) {
-            // PTY 会话由原生组件建立独立 session 并在退出时回收整个进程组，Root 与普通身份共用同一入口。
+            // The PTY session is set up by the native component as an independent session that reclaims the whole process group on exit; Root and normal identity share one entry point.
             val executable = ptyExecutable() ?: throw IOException("PTY component is unavailable")
             val script = "printf '%s group\\n' \"${'$'}${'$'}\" > $path; export TERM=$PTY_TERM_TYPE; $payload"
             return "$exportOwner; exec ${shellQuote(executable.absolutePath)} $ptyRows $ptyCols -- sh -c ${shellQuote(script)}"
@@ -245,12 +245,12 @@ internal class ShellProcessSupervisor(
     }
 
     /**
-     * Root 会话优先进入 Magisk/KernelSU/APatch BusyBox standalone ash，补齐 Android PATH 外的 applet。
+     * Root sessions preferably enter Magisk/KernelSU/APatch's BusyBox standalone ash to supply applets outside the Android PATH.
      *
-     * 交互式 PTY 例外：BusyBox 1.35.0–1.36.x 的 ash 在提示符等待输入时，任何信号打断 poll 都会让
-     * 行编辑返回并另起一行新提示符（上游 bug 15256，1.37.0 修复，1.36.1 未回移）。控制台随软键盘和横竖屏
-     * 同步窗口尺寸，每次 SIGWINCH 都会多出一行空提示符。命中这些版本时改用系统 sh（与 su 默认 shell 一致），
-     * 并把 BusyBox applet 链接追加到 PATH 末尾，系统命令仍然优先。
+     * Interactive PTY exception: with BusyBox 1.35.0-1.36.x, while ash waits for input at the prompt, any signal interrupting poll causes
+     * line editing to return and start a fresh prompt on a new line (upstream bug 15256, fixed in 1.37.0, not backported to 1.36.1). The console syncs window size on soft-keyboard and orientation
+     * changes, so each SIGWINCH would add an extra empty prompt. On those versions, fall back to the system sh (matching su's default shell)
+     * and append BusyBox applet links to the end of PATH so system commands still take precedence.
      */
     internal fun buildAndroidPayload(identity: String, command: String?, interactivePty: Boolean = false): String {
         val shellArgument = command?.let { "-c ${shellQuote(it)}" }.orEmpty()
@@ -277,10 +277,10 @@ internal class ShellProcessSupervisor(
     }
 
     /**
-     * Linux 工具环境始终在独立 mount namespace 中启动，避免 bind mount 泄漏到 Android 全局。
-     * chroot 不是安全沙箱；它只负责提供完整 Linux userland，Android 系统操作仍应走 android 环境。
-     * [sharedMounts] 在 namespace 建立时按当前配置逐个 bind 到 rootfs 的 workspace/mounts/<name>，
-     * 会话结束即随 namespace 回收，Android 侧不留需要卸载的全局挂载。
+     * The Linux tool environment always starts in its own mount namespace to avoid bind mounts leaking into the global Android namespace.
+     * chroot is not a security sandbox; it only provides a full Linux userland. Android system operations should still go through the android environment.
+     * At namespace setup, [sharedMounts] are bind-mounted one by one into the rootfs's workspace/mounts/<name> per the current configuration;
+     * they are reclaimed with the namespace when the session ends, leaving no global mounts to unmount on the Android side.
      */
     internal fun buildLinuxPayload(
         rootfsPath: String,
@@ -294,7 +294,7 @@ internal class ShellProcessSupervisor(
         val rootfs = shellQuote(rootfsPath)
         val mode = if (command == null) "session" else "command"
         val payload = shellQuote(command.orEmpty())
-        // name 经 SharedFolderMounts 校验只含 [A-Za-z0-9._-]，可安全拼进双引号路径。
+        // name is validated by SharedFolderMounts to contain only [A-Za-z0-9._-], so it can be safely spliced into a double-quoted path.
         val mountsBlock = sharedMounts.joinToString("\n") { mount ->
             "eta_mount_optional ${shellQuote(mount.sourcePath)} " +
                 "\"\$eta_rootfs${SharedFolderMounts.LINUX_MOUNTS_ROOT}/${mount.name}\" bind"
@@ -363,8 +363,8 @@ internal class ShellProcessSupervisor(
             "$innerScriptHead\n$mountsBlock\n$innerScriptTail"
         }
         val discovery = AndroidBusyBox.discoveryScript()
-        // Alpine 的 /bin/sh 是指向 /bin/busybox 的绝对符号链接，Android 侧 -x 会按宿主根目录
-        // 解析链接目标而误判缺失；符号链接视为存在，真实可执行性由 chroot 后的内核解析兜底。
+        // Alpine's /bin/sh is an absolute symlink to /bin/busybox; on the Android side, -x would resolve the link target against the host root
+        // and wrongly report it missing; treat symlinks as present and let the kernel, after chroot, resolve actual executability.
         return "$discovery; " +
             "[ -n \"${'$'}eta_busybox\" ] || { echo 'ETA_LINUX_BUSYBOX_MISSING' >&2; exit 127; }; " +
             "eta_rootfs=$rootfs; " +
@@ -506,7 +506,7 @@ internal class ShellProcessSupervisor(
 
 internal data class ShellProcessOwnership(val pid: Long, val token: String, val isolatedGroup: Boolean)
 
-/** 写入托管进程环境块的归属标记；巡检与停止前用它防止 PID 复用误杀。 */
+/** Writes an ownership marker into the managed process's environment block; used before inspection and stop to avoid killing a reused PID. */
 internal const val ETA_PROCESS_OWNER_ENV = "ETA_PROCESS_OWNER"
 
 internal fun shellQuote(value: String): String =
@@ -520,15 +520,15 @@ internal data class OneShotShellResult(
     val stderrTruncated: Boolean = false,
 )
 
-/** 控制台 PTY 的前提是随包原生组件已被安装器提取为可执行文件；不启动进程，可在入口直接调用。 */
+/** The console PTY requires the bundled native component to already be extracted as an executable by the installer; starts no process and can be called directly at entry. */
 internal fun ptySupported(): Boolean = TerminalRuntime.nativeExecutable(PTY_EXECUTABLE) != null
 
 internal const val PTY_EXECUTABLE = "libeta_pty.so"
 internal const val SHELL_STDIN_FAILED_EXIT_CODE = -4
 
 /**
- * 一次性 Shell 命令原语：带超时回收与有界输出收集。调用方负责命令构造与输出解释；
- * 超时或 supervisor 关闭时整棵进程树由 [ShellProcessSupervisor] 回收。
+ * One-shot shell command primitive with timeout reclamation and bounded output collection. The caller is responsible for command construction and output interpretation;
+ * on timeout or supervisor shutdown the whole process tree is reclaimed by [ShellProcessSupervisor].
  */
 internal fun runOneShotShell(
     processSupervisor: ShellProcessSupervisor,
@@ -570,7 +570,7 @@ internal fun runOneShotShell(
                     if (stdin != null) out.write(stdin)
                 }
             } catch (_: IOException) {
-                // 校验失败或取消可能先关闭读端；由调用线程结合退出码处理，不能让写线程异常终止 Runtime。
+                // Validation failure or cancellation may close the read end first; the calling thread handles it with the exit code, and the write thread must not crash the Runtime.
                 stdinFailed.set(true)
             }
         }
@@ -589,7 +589,7 @@ internal fun runOneShotShell(
         stderrThread.join(500)
         stdinThread.join(500)
         val exitCode = process.exitValue()
-        // 子进程的失败保留原始语义；声称成功但输入传输失败时不能把不完整写入当作成功。
+        // Child-process failures keep their original semantics; when it claims success but input transfer failed, an incomplete write must not be treated as success.
         if (exitCode == 0 && stdin?.isNotEmpty() == true && stdinFailed.get()) {
             return OneShotShellResult(
                 SHELL_STDIN_FAILED_EXIT_CODE, output.bytes(), "Command input transfer failed".toByteArray(),

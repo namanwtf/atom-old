@@ -142,7 +142,7 @@ internal fun CouiScaffoldPage(
         floatingAction = floatingAction,
         overlay = overlay,
     ) { padding, rawPadding, nestedScroll, sidePadding ->
-        // 延迟到测量阶段读取 Scaffold 顶栏高度，与 COUI 折叠弹簧同帧联动且不截断穿过顶栏的凝光模糊。
+        // Defer reading the Scaffold top-bar height to the measure phase, syncing frame-accurately with the COUI collapse spring without clipping the glow blur passing through the top bar.
         val contentPadding = remember(padding, sidePadding) {
             CouiPageContentPadding(
                 inner = padding,

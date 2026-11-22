@@ -37,7 +37,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 internal object ProviderRepository {
-    /** 配置与模型共用修改锁，避免旧连接的目录在认证方式切换后落库。 */
+    /** Config and models share a modification lock, preventing a stale connection's catalog from being persisted after an auth method switch. */
     internal val mutationMutex = Mutex()
 
     @Volatile
@@ -215,7 +215,7 @@ internal object ProviderRepository {
         val currentPresets = OfficialModelCatalog.modelsForProvider(provider)
         val currentIds = currentPresets.mapTo(mutableSetOf()) { it.modelId.normalizedModelId() }
         val retained = provider.models.filter { it.source != ModelSource.CATALOG || it.modelId.normalizedModelId() in currentIds }
-        // 已有远端目录或用户清空的连接不能再由预设填充。
+        // A connection that already has a remote catalog or was cleared by the user must not be filled by presets again.
         val additions = if (provider.models.any { it.source == ModelSource.CATALOG } &&
             provider.models.none { it.source == ModelSource.REMOTE }
         ) OfficialModelCatalog.modelsAddedSince(provider, revision) else emptyList()

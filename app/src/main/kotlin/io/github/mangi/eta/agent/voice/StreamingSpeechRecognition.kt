@@ -23,8 +23,8 @@ internal suspend fun recognizeSpeechStream(
     onEndpoint: () -> Unit,
     endpointSilenceMs: Int,
 ): String = withTimeout(90_000) {
-    // 服务端在静音达到断句时长后给出确定结果；自动结束时断句时长就是用户可感知的“停顿多久算说完”。
-    // 不自动结束时沿用服务默认断句，只影响预览分段，不会提前结束录音。
+    // The server returns a definitive result once silence reaches the sentence-boundary duration; when auto-ending, that boundary duration is the user-perceived "how long a pause counts as done".
+    // When auto-ending is off, the server's default segmentation is kept; it only affects preview segmentation and never ends recording early.
     val automaticEndpoint = endpointSilenceMs > 0
     val sentenceSilenceMs = if (automaticEndpoint) endpointSilenceMs else DEFAULT_SENTENCE_SILENCE_MS
     if (settings.asr == AsrProvider.DOUBAO) {

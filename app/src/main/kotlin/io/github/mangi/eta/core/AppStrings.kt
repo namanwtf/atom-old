@@ -6,13 +6,13 @@ import androidx.annotation.StringRes
 import java.util.Locale
 
 /**
- * 供非 Compose 层（Runtime、Formatter、Repository、Store 等）按当前应用语言解析字符串资源。
+ * Resolves string resources by the current app language for non-Compose layers (Runtime, Formatter, Repository, Store, etc.).
  *
- * - Android 运行时与 Robolectric 测试通过 [init] 绑定的 Application Context 实时查询 Resources，
- *   跟随 Per-App Language 变更，不缓存已解析文案。
- * - 纯 JVM 单元测试未初始化 Android Context 时回退到传入的 [fallback] 模板，
- *   以保持既有纯 JVM 单元测试的行为契约不变。
- * - Compose 界面层应直接使用 `stringResource` / `pluralStringResource`，不要绕过组合期配置依赖调用本对象。
+ * - Android runtime and Robolectric tests query Resources live through the Application Context bound by [init],
+ *   following Per-App Language changes and caching no resolved strings.
+ * - Pure JVM unit tests without an initialized Android Context fall back to the provided [fallback] template,
+ *   keeping the existing pure JVM unit tests' behavioral contract unchanged.
+ * - Compose UI layers should use `stringResource` / `pluralStringResource` directly and not call this object while bypassing the composition-time configuration dependency.
  */
 internal object AppStrings {
     @Volatile

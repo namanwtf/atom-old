@@ -90,7 +90,7 @@ internal object ColorDirectHooks {
             executable = method,
             description = "CollectInfoActivity Intent handling entry"
         ) { chain ->
-            // 开关关闭则走原双指识屏逻辑。
+            // If the toggle is off, fall back to the original two-finger screen-recognition logic.
             if (!Prefs.isEnabled(Prefs.Keys.DOUBLE_FINGER_CIRCLE_TO_SEARCH)) {
                 return@intercept chain.proceed()
             }

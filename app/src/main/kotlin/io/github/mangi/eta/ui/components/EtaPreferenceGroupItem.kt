@@ -16,7 +16,7 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 长列表保持逐项组合，仅对分组首尾绘制分组卡片标准圆角，避免将大量动态行塞入单个容器。 */
+/** Long lists stay composed item by item, drawing standard group-card corners only on group edges, avoiding stuffing many dynamic rows into a single container. */
 @Composable
 internal fun EtaPreferenceGroupItem(
     isFirst: Boolean,

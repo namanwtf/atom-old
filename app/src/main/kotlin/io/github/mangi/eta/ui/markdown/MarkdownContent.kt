@@ -82,10 +82,10 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 绘制一份已解析的 [MarkdownDocument]。
+ * Draws a parsed [MarkdownDocument].
  *
- * 每个块以源码偏移作为组合 key；未变化的块是同一个实例，组合期直接跳过。传入
- * [reveal] 时文本块接入逐字显现：排版仍然一次完成，帧间推进只让绘制失效。
+ * Each block uses its source offset as the composition key; unchanged blocks are the same instance and are skipped directly in composition. Passing
+ * [reveal] hooks text blocks into character-by-character reveal: layout still completes once, and frame advances only invalidate drawing.
  */
 @Composable
 internal fun MarkdownContent(
@@ -99,10 +99,10 @@ internal fun MarkdownContent(
 }
 
 /**
- * 面向独立滚动视口（如长篇 MEMORY.md 预览）的按需虚拟化 Markdown 视图。
+ * An on-demand virtualized Markdown view for an independent scroll viewport (e.g. a long MEMORY.md preview).
  *
- * 将顶层块与顶层列表项拆分为 LazyColumn 条目，使数十 KiB 的长文档首帧只组合与测量当前视口内的少量节点，
- * 避免页面进入动画期间一次性排版整篇文档造成主线程掉帧。
+ * Splits top-level blocks and top-level list items into LazyColumn entries, so a tens-of-KiB document's first frame only composes and measures a few nodes in the current viewport,
+ * avoiding main-thread frame drops from laying out the whole document at once during page entry animation.
  */
 @Composable
 internal fun LazyMarkdownContent(
@@ -166,7 +166,7 @@ private class MarkdownRenderScope(
     fun quoted() = MarkdownRenderScope(style.quoted(), reveal, inQuote = true)
 }
 
-/** 嵌套列表的层级只影响 marker 字形，用 CompositionLocal 传递，块组件不必逐层转发。 */
+/** Nested list depth only affects the marker glyph; passed via CompositionLocal, so block components don't forward it level by level. */
 private val LocalListDepth = compositionLocalOf { 0 }
 
 @Composable
@@ -251,7 +251,7 @@ private fun MarkdownText(
         )
     }
     val reveal = scope.reveal
-    // 空单元格没有可显现的文字，也不占用显现协调器的 key。
+    // An empty cell has no revealable text and takes no key from the reveal coordinator.
     if (reveal == null || block.text.isEmpty()) {
         Text(
             text = block.text,
@@ -270,7 +270,7 @@ private fun MarkdownText(
             block.inlineMath.map { RevealAtomicSpan(it.rangeStart, it.rangeEnd) }
         }
     }
-    // 显现裁剪按字素边界逐帧变化，关闭像素对齐可避免裁剪边缘抖动。
+    // Reveal clipping changes frame by frame on grapheme boundaries; disabling pixel alignment avoids clipping-edge jitter.
     val animatedStyle = remember(style) { style.copy(textMotion = TextMotion.Animated) }
     Text(
         text = block.text,
@@ -282,7 +282,7 @@ private fun MarkdownText(
     )
 }
 
-// ── 代码块 ──────────────────────────────────────────────────────────────
+// ── Code block ──────────────────────────────────────────────────────────────
 
 @Composable
 private fun MarkdownCodeBlock(block: MarkdownCode, scope: MarkdownRenderScope) {
@@ -321,7 +321,7 @@ private fun MarkdownCodeBlock(block: MarkdownCode, scope: MarkdownRenderScope) {
                 .height(0.5.dp)
                 .background(style.subtleBorderColor),
         )
-        // 代码不折行，长行横向滚动，保留缩进与对齐。
+        // Code doesn't wrap; long lines scroll horizontally, preserving indentation and alignment.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -362,7 +362,7 @@ private fun CopyButton(text: String, tint: Color) {
     }
 }
 
-// ── 引用与提示 ──────────────────────────────────────────────────────────
+// ── Quote and callout ──────────────────────────────────────────────────────────
 
 private val QuoteContainerShape = RoundedCornerShape(
     topStart = 3.dp,
@@ -376,8 +376,8 @@ private fun MarkdownQuoteBlock(block: MarkdownQuote, scope: MarkdownRenderScope)
     val style = scope.style
     val barColor = style.quoteBarColor
     val quotedScope = remember(scope) { scope.quoted() }
-    // 聊天中的顶层引用常承载模型拟好的回复话术或核心摘录，采用轻底色便签容器与细边条；
-    // 嵌套引用只保留细内线，避免多层底色叠加显得笨重。
+    // Top-level quotes in chat often carry the model's drafted reply wording or a core excerpt, using a light-background sticky-note container with a thin edge;
+    // nested quotes keep only a thin inner line, avoiding a heavy look from stacked background tints.
     val quoteModifier = if (scope.inQuote) {
         Modifier
             .fillMaxWidth()
@@ -477,11 +477,11 @@ private fun MarkdownAlertKind.accentColor(): Color = when (this) {
 
 private val AlertImportantColor = Color(0xFF8B5CF6)
 
-// ── 列表 ────────────────────────────────────────────────────────────────
+// ── List ────────────────────────────────────────────────────────────────
 
 private fun listMarkerWidth(block: MarkdownList): Dp = if (block.ordered) {
     val digits = (block.items.lastOrNull()?.number ?: 1).toString().length
-    // 单位数序号起始贴齐正文左边界，多位数按最长序号预留槽位，保证列表项正文左边缘统一。
+    // Single-digit ordinals start flush with the body's left edge; multi-digit ones reserve a slot by the longest ordinal, keeping list-item bodies' left edges uniform.
     if (digits <= 1) 18.dp else (digits * 9 + 6).dp
 } else {
     14.dp
@@ -568,7 +568,7 @@ private fun RowScope.ListMarker(
         style.body.lineHeight
     }
     val topInset = if (firstBlock is MarkdownQuote && !scope.inQuote) 8.dp else 0.dp
-    // 在 graphicsLayer 内读取显现进度：块开始显现只让 marker 图层更新，不触发重组。
+    // Read reveal progress inside a graphicsLayer: a block starting to reveal only updates the marker layer, without triggering recomposition.
     val visibility = Modifier.graphicsLayer {
         alpha = if (listMarkerVisible(reveal != null, item.markerRevealKey, reveal?.started?.value)) 1f else 0f
     }
@@ -608,7 +608,7 @@ private fun RowScope.ListMarker(
                     .padding(top = topInset)
                     .height(lineHeight)
                     .drawBehind {
-                        // 自绘几何圆点替代字体自带的 "•"，跨 ColorOS / HyperOS 字库保持尺寸与视觉重心一致。
+                        // A self-drawn geometric dot replaces the font's own "•", keeping size and visual center consistent across ColorOS / HyperOS font sets.
                         val diameter = (if (answer) 5.dp else 4.dp).toPx()
                         val center = Offset(x = diameter / 2f + 2.dp.toPx(), y = size.height * 0.52f)
                         when (depth % 3) {
@@ -636,8 +636,8 @@ private fun RowScope.ListMarker(
 }
 
 /**
- * 流式正文里 marker 与该项第一段文字同时出现；没有文字的空项在显现期间保持隐藏，
- * 避免先冒出孤立的圆点。
+ * In streaming body, the marker appears together with the item's first text; empty items without text stay hidden during reveal,
+ * so a lone dot doesn't pop out first.
  */
 internal fun listMarkerVisible(
     revealActive: Boolean,
@@ -645,11 +645,11 @@ internal fun listMarkerVisible(
     started: Set<RevealBlockKey>?,
 ): Boolean = !revealActive || (markerKey != null && started?.contains(markerKey) == true)
 
-// ── 表格 ────────────────────────────────────────────────────────────────
+// ── Table ────────────────────────────────────────────────────────────────
 
 /**
- * 列宽按内容自适应：每列取最宽单元格的自然宽度并限制在合理区间；总宽不足时按比例
- * 撑满可用宽度，超出时整体横向滚动。网格线与表头底色在绘制阶段按测量结果画出。
+ * Column widths adapt to content: each column takes its widest cell's natural width, bounded to a reasonable range; when total width is short, columns
+ * expand proportionally to fill available width, and the table scrolls horizontally when overflowing. Grid lines and header tint are drawn in the draw phase from measurements.
  */
 @Composable
 private fun MarkdownTableBlock(block: MarkdownTable, scope: MarkdownRenderScope) {
@@ -702,7 +702,7 @@ private fun MarkdownTableBlock(block: MarkdownTable, scope: MarkdownRenderScope)
                                 block = cell,
                                 style = if (rowIndex == 0) headerStyles[column] else bodyStyles[column],
                                 scope = scope,
-                                // 单元格以固定宽度测量，不需要 fill；fill 会干扰列宽的固有尺寸查询。
+                                // Cells are measured at a fixed width without fill; fill would interfere with intrinsic-size queries for column widths.
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
                                 maxInlineMathWidth = TableMaxColumnWidth - 24.dp,
                             )
@@ -756,7 +756,7 @@ private fun MarkdownTableBlock(block: MarkdownTable, scope: MarkdownRenderScope)
     }
 }
 
-/** 测量结果供绘制阶段画网格；只在绘制中读取，写入不会引起重组。 */
+/** Measurement results for drawing the grid in the draw phase; read only during draw, so writes don't cause recomposition. */
 @Immutable
 private data class TableGrid(val columnWidths: List<Int>, val rowHeights: List<Int>) {
     companion object {

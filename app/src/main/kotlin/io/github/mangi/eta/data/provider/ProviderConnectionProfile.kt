@@ -8,7 +8,7 @@ import io.github.mangi.eta.data.model.ProviderTypes
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
-/** 订阅凭据与官方服务地址绑定，用户配置不能改变其发送目标或计费通道。 */
+/** Subscription credentials are bound to the official service address; user configuration cannot change their send target or billing channel. */
 internal enum class ProviderConnectionProfile(
     val authMode: String,
     val baseUrl: String,

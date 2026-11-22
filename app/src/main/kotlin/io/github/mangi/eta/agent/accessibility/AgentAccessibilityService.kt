@@ -79,7 +79,7 @@ class AgentAccessibilityService : AccessibilityService() {
     private val scrollEventObservationGate = ScrollEventObservationGate(
         uptimeMillis = SystemClock::uptimeMillis,
     )
-    // 远端节点查询可能占住线程数秒；只保留一个最新候选，禁止滚动事件形成积压。
+    // A remote node query may hold the thread for seconds; keep only one latest candidate and forbid scroll events from piling up.
     private val scrollEventExecutor = ThreadPoolExecutor(
         1,
         1,
@@ -149,8 +149,9 @@ class AgentAccessibilityService : AccessibilityService() {
     override fun onInterrupt() = Unit
 
     /**
-     * 一次观察只查询目标显示屏，窗口、包名与节点来自同一次选窗。
-     * 节点动作必须传回同一快照实例，避免其他运行或 wait_for_text 改写 index 含义。
+     * A single observation queries only the target display; window, package name, and nodes all
+     * come from the same window selection. Node actions must pass back the same snapshot instance
+     * so another run or wait_for_text cannot change what an index means.
      */
     fun observeNodeSnapshot(
         maxNodes: Int,
@@ -159,7 +160,7 @@ class AgentAccessibilityService : AccessibilityService() {
         timeoutMillis: Long = 3_000L,
     ): NodeSnapshotObservation {
         if (instance !== this) return NodeSnapshotObservation(NodeSnapshotStatus.SERVICE_UNAVAILABLE)
-        // 同步 API 仅供 Runtime 工作线程使用，不能把等待后台 Binder 重新带回主线程。
+        // The synchronous API is only for Runtime worker threads; it must not bring waiting on a background Binder back onto the main thread.
         if (Looper.myLooper() == Looper.getMainLooper()) {
             return NodeSnapshotObservation(NodeSnapshotStatus.BUSY)
         }
@@ -264,7 +265,7 @@ class AgentAccessibilityService : AccessibilityService() {
         )
     }
 
-    /** 临时查询不发布任何全局节点状态，适用于 wait_for_text。 */
+    /** A temporary query publishes no global node state; it is used by wait_for_text. */
     fun queryNodes(
         maxNodes: Int,
         displayId: Int = android.view.Display.DEFAULT_DISPLAY,
@@ -299,7 +300,7 @@ class AgentAccessibilityService : AccessibilityService() {
                     window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD &&
                     (window.type == AccessibilityWindowInfo.TYPE_APPLICATION || window.isFocused || window.isActive)
             }
-            // 后台显示屏不会抢全局焦点；窗口层级比残留的 focused/active 标记更可靠。
+            // A background display never takes global focus; the window layer is more reliable than stale focused/active flags.
             .sortedWith(
                 compareByDescending<AccessibilityWindowInfo> { it.layer }
                     .thenByDescending { it.isFocused || it.isActive },
@@ -335,8 +336,9 @@ class AgentAccessibilityService : AccessibilityService() {
         } ?: PackageWindowVisibility.UNKNOWN
 
     /**
-     * BACK 只表示系统接收了退出动作；浮窗通常还会执行退出动画。
-     * 等待目标包窗口真正消失并稳定两个采样周期，避免下一步截图抢在 removeView 之前执行。
+     * BACK only means the system accepted the exit action; the overlay usually still runs an exit
+     * animation. Wait for the target package's window to actually disappear and stay stable for two
+     * sampling periods, so the next screenshot is not taken before removeView runs.
      */
     fun awaitPackageWindowGone(
         packageName: String,
@@ -399,7 +401,7 @@ class AgentAccessibilityService : AccessibilityService() {
             windowId = event.windowId,
             eventTimeMillis = event.eventTime,
         ) { observation ->
-            // 系统可能在滚动后清掉节点缓存，source 必须复制事件后在后台解析。
+            // The system may clear the node cache after a scroll; source must copy the event and parse it in the background.
             val eventCopy = try {
                 AccessibilityEvent(event)
             } catch (error: RuntimeException) {
@@ -689,7 +691,7 @@ class AgentAccessibilityService : AccessibilityService() {
         val beforeAnchors = scrollContentAnchors(target)
         val targetIdentity = ScrollTargetIdentity.from(target)
         val beforeSequence = currentScrollEventSequence()
-        // 节点滚动动作固定翻约一屏；小幅滚动只能用手势控制位移。
+        // A node scroll action always pages by roughly one screen; small scrolls can only control displacement via gestures.
         val method = if (amount == ScrollAmount.PAGE) chooseScrollMethod(target, direction) else null
         var methodName = method?.name.orEmpty()
         return withScrollEventObservation(packageName, windowId) {
@@ -939,7 +941,7 @@ class AgentAccessibilityService : AccessibilityService() {
         return setNodeText(node, text, text.length, connectionToken)
     }
 
-    /** 优先直接按选区写入，只有目标拒绝 SET_TEXT 时才回退系统粘贴。 */
+    /** Prefer writing directly by selection, and fall back to system paste only when the target rejects SET_TEXT. */
     fun pasteText(
         text: String,
         displayId: Int = android.view.Display.DEFAULT_DISPLAY,
@@ -986,7 +988,7 @@ class AgentAccessibilityService : AccessibilityService() {
         } catch (_: Throwable) {
             NodeActionResult.outcomeUnknown()
         } finally {
-            // 调用方超时不代表 ACTION_PASTE 已返回；还原必须留在已启动动作内，避免目标读到旧剪贴板。
+            // A caller timeout does not mean ACTION_PASTE has returned; restoration must stay inside the started action so the target does not read the old clipboard.
             restored = restoreClipboardIfStillOwned(clipboard, temporaryLabel, originalClip)
         }
         return (if (restored) result else NodeActionResult.outcomeUnknown()).copy(clipboardWritten = true)
@@ -1000,7 +1002,7 @@ class AgentAccessibilityService : AccessibilityService() {
         val currentClip = runCatching { clipboard.primaryClip }.getOrNull()
             ?: return false
         if (currentClip.description.label?.toString() != temporaryLabel) {
-            // 用户或其他应用已经写入新内容，不能用旧快照覆盖它。
+            // The user or another app has already written new content; do not overwrite it with the old snapshot.
             return true
         }
         return runCatching {
@@ -1124,8 +1126,9 @@ class AgentAccessibilityService : AccessibilityService() {
             .put("package", currentPackageName().orEmpty())
 
     /**
-     * 截取指定 displayId 的完整画面（用于虚拟屏的无障碍截图回退）。
-     * 虚拟屏本身不挂载 Eta 系统浮层，无需逐窗口排除。
+     * Captures the full screen of the given displayId (used as the accessibility screenshot
+     * fallback for virtual displays). The virtual display itself carries no Eta system overlay,
+     * so no per-window exclusion is needed.
      */
     fun captureDisplayScreenshot(displayId: Int): ScreenshotCaptureResult {
         if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -1173,9 +1176,10 @@ class AgentAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 截取当前屏幕，排除 TYPE_ACCESSIBILITY_OVERLAY 浮层（glow/orb/bubble/resultCard/GestureIndicator）。
-     * 从 agent-runtime 子线程调用；takeScreenshotOfWindow 内部 post 到主线程，
-     * callback 在有界后台线程执行位图复制，latch 只阻塞 agent-runtime 工作线程。
+     * Captures the current screen, excluding TYPE_ACCESSIBILITY_OVERLAY overlays
+     * (glow/orb/bubble/resultCard/GestureIndicator). Called from an agent-runtime worker thread;
+     * takeScreenshotOfWindow posts to the main thread internally, the callback performs the bitmap
+     * copy on a bounded background thread, and the latch blocks only the agent-runtime worker thread.
      */
     fun captureScreenshotExcludingOverlays(
         excludedPackages: Set<String> = emptySet(),
@@ -1209,8 +1213,9 @@ class AgentAccessibilityService : AccessibilityService() {
         }
         val screenBounds = Rect(0, 0, screenW, screenH)
 
-        // 只过滤能确认属于 Eta 的无障碍 overlay；第三方 overlay 必须保留，
-        // 否则截图与实际接收坐标手势的窗口会不一致。
+        // Filter only accessibility overlays confirmed to belong to Eta; third-party overlays must
+        // be kept, otherwise the screenshot would diverge from the window that actually receives
+        // coordinate gestures.
         val windowPackages = allWindows.associate { window ->
             window.id to window.root?.packageName?.toString()
         }
@@ -1331,7 +1336,7 @@ class AgentAccessibilityService : AccessibilityService() {
                 latch.countDown()
             }
         }
-        // 窗口 ID 已固定并全部提交后即可显示 Eta；后续合并和编码不会再把入口浮层拍进去。
+        // Eta can be shown once the window IDs are fixed and all submitted; the later merge and encode steps will no longer capture the entry overlay.
         signalWindowsSubmitted()
         val completed = try {
             latch.await(2, TimeUnit.SECONDS)
@@ -1414,13 +1419,14 @@ class AgentAccessibilityService : AccessibilityService() {
             for (window in sortedWindows) {
                 val pair = screenshots[window.id]
                 if (pair == null) {
-                    // 上层窗口抓取失败时必须遮住其区域，不能向模型暴露实际已被遮挡的底层界面。
+                    // When an upper window fails to capture, its region must be blanked out; the underlying UI that is actually obscured must not be exposed to the model.
                     canvas.drawRect(RectF(window.bounds), occlusionPaint)
                 } else {
                     val (bmp, bounds) = pair
                     if (bmp.isRecycled) continue
-                    // 把窗口 bitmap 缩放到其 bounds 尺寸绘制，处理 takeScreenshotOfWindow
-                    // 返回尺寸与 bounds 不一致（逻辑像素 vs 物理像素）的情况。
+                    // Scale the window bitmap to its bounds when drawing, handling the case where
+                    // takeScreenshotOfWindow returns a size that differs from the bounds
+                    // (logical pixels vs physical pixels).
                     val src = Rect(0, 0, bmp.width, bmp.height)
                     canvas.drawBitmap(bmp, src, RectF(bounds), null)
                 }
@@ -1433,8 +1439,9 @@ class AgentAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 输入框的真实内容。空框显示提示文字时 text 返回的是提示语，若当作已有内容，
-     * 追加输入会把提示拼进结果，清空后读回校验也会误报失败。
+     * The real content of an input field. When an empty field shows hint text, text returns the
+     * hint; if it is treated as existing content, appending input would splice the hint into the
+     * result, and the read-back check after clearing would also falsely report failure.
      */
     private fun AccessibilityNodeInfo.realText(): String =
         if (isShowingHintText) "" else text?.toString().orEmpty()
@@ -1921,7 +1928,7 @@ class AgentAccessibilityService : AccessibilityService() {
         }
         traversal.visitedNodes++
         try {
-            // 不可见父节点的后代不会成为可操作目标，尽早裁掉这类大分支。
+            // Descendants of an invisible parent can never become actionable targets; prune such large branches early.
             val visible = node.isVisibleToUser
             if (depth > 0 && !visible) return
 
@@ -2100,7 +2107,7 @@ class AgentAccessibilityService : AccessibilityService() {
                     GESTURE_CALLBACK_HANDLER,
                 )
             } catch (_: Throwable) {
-                // Binder 事务可能已经送达；异常不能证明手势未执行，禁止 Root 重放。
+                // The Binder transaction may already have been delivered; an exception does not prove the gesture did not run, so Root replay is forbidden.
                 outcome.set(GestureDispatch.OUTCOME_UNKNOWN)
                 gate.finish()
                 latch.countDown()
@@ -2166,7 +2173,7 @@ class AgentAccessibilityService : AccessibilityService() {
             return try {
                 MainThreadCallResult.Completed(block())
             } catch (_: Throwable) {
-                // 框架调用抛错时无法证明副作用没有发生，禁止调用方回退重放。
+                // When a framework call throws, side effects cannot be proven absent; the caller must not fall back and replay.
                 MainThreadCallResult.OUTCOME_UNKNOWN
             }
         }
@@ -2197,7 +2204,7 @@ class AgentAccessibilityService : AccessibilityService() {
         }
         if (!completed) {
             if (gate.cancelIfPending()) return MainThreadCallResult.NOT_STARTED
-            // 已开始的副作用不得由调用方回退重做；返回未知结果，让模型先重新观察。
+            // A side effect that already started must not be redone by the caller's fallback; return an unknown result so the model re-observes first.
             return MainThreadCallResult.OUTCOME_UNKNOWN
         }
         if (invalidated) return MainThreadCallResult.NOT_STARTED
@@ -2416,10 +2423,10 @@ class AgentAccessibilityService : AccessibilityService() {
         val editable: Boolean,
         val password: Boolean,
         val enabled: Boolean,
-        /** 开关、勾选框等的状态；null 表示节点不可勾选。 */
+        /** The state of a toggle, checkbox, etc.; null means the node is not checkable. */
         val checked: Boolean? = null,
         val selected: Boolean = false,
-        /** 输入框提示语，只在内容为空时有意义，用于识别"这是哪个输入框"。 */
+        /** The input field's hint, meaningful only when the content is empty, used to identify which input field this is. */
         val hint: String = "",
     )
 
@@ -2650,8 +2657,9 @@ class AgentAccessibilityService : AccessibilityService() {
         private val GESTURE_CALLBACK_HANDLER = Handler(GESTURE_CALLBACK_THREAD.looper)
 
         /**
-         * 进程级 executor 不在 service 重连时 shutdownNow；否则已经由框架创建、
-         * 尚在队列中的 ScreenshotResult 无法进入回调释放 HardwareBuffer。
+         * The process-level executor is not shutdownNow-ed on service reconnect; otherwise
+         * ScreenshotResults already created by the framework and still in the queue could not
+         * enter the callback to release their HardwareBuffer.
          */
         private val SCREENSHOT_EXECUTOR: ExecutorService =
             Executors.newFixedThreadPool(2) { runnable ->

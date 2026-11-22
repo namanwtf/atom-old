@@ -55,7 +55,7 @@ internal object CommunityCatalogRepository {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            // 缓存缺失或损坏时仍可读取随 APK 打包的目录。
+            // When the cache is missing or corrupt, the catalog bundled with the APK can still be read.
         }
         CommunityCatalogParser.parse(
             raw = appContext.assets.open(SNAPSHOT_ASSET).use { asset ->
@@ -73,7 +73,7 @@ internal object CommunityCatalogRepository {
                 .header("User-Agent", "Eta-Model-Catalog (+https://github.com/Mangi-11/Eta)")
                 .get()
                 .build()
-            // 目录请求不读取也不转发任何已保存的模型服务 API Key。
+            // Catalog requests neither read nor forward any saved model-service API key.
             val call = httpClient.newCall(request)
             val cancellation = currentCoroutineContext().job.invokeOnCompletion { cause ->
                 if (cause is CancellationException) call.cancel()

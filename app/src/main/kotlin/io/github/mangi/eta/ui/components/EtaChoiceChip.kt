@@ -33,9 +33,9 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 可选中的胶囊标签：用于筛选与少量互斥/多选项。
- * COUI 与 MIUIX 均使用无硬描边的柔和半透胶囊（未选中轻灰底、选中主题色浅底 + 强调色文字），
- * 避免在玻璃弹层上出现空心线框或高饱和不透明色块的割裂感。
+ * A selectable capsule tag for filters and small exclusive/multi-choice selections.
+ * Both COUI and MIUIX use a soft translucent capsule without hard outlines (unselected light-gray fill; selected theme-tinted light fill + accent text),
+ * avoiding the jarring look of hollow outlines or high-saturation opaque blocks on glass overlays.
  */
 @Composable
 internal fun EtaChoiceChip(

@@ -4,7 +4,7 @@ import io.github.mangi.eta.agent.runtime.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunController
 import org.json.JSONArray
 
-/** 管理可替换的模型上下文；持久快照先提交，运行 transcript 始终追加。 */
+/** Manages replaceable model context; the persistent snapshot is committed first while the run transcript is always appended. */
 internal class AgentContextSession(
     private val config: AgentModelClient.ModelConfig,
     private val messages: JSONArray,
@@ -127,7 +127,7 @@ internal class AgentContextSession(
             onEvent(AgentEvent.ContextCompaction(operation, "failed", before,
                 reasonCode = (failure as? AgentModelFailure)?.code ?: "CONTEXT_SUMMARY_FAILED"))
             if (!final) throw failure
-            // 已完成的回答仍成功交付；完整快照随终态 outbox 保存，不依赖先前检查点写入成功。
+            // The already-completed answer still delivers successfully; the full snapshot is saved with the terminal outbox and does not depend on an earlier checkpoint write succeeding.
             committedSnapshot = createSnapshot(messages)
         }
     }

@@ -3,7 +3,7 @@ package io.github.mangi.eta.ui.app
 import io.github.mangi.eta.R
 import io.github.mangi.eta.core.AppStrings
 
-/** 导入只公开受控分类，文件内容与底层异常文本不进入界面。 */
+/** Import exposes only a controlled category; file content and underlying exception text never reach the UI. */
 internal fun characterCardImportMessage(code: String?): String? = when (code) {
     "CARD_V3_INVALID" -> AppStrings.get(
         R.string.character_import_error_v3_invalid,

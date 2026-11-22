@@ -62,15 +62,15 @@ internal class ImageGenException(
 ) : RuntimeException(message)
 
 /**
- * 统一 AI 生图协议分发层。
+ * Unified AI image-generation protocol dispatch layer.
  *
- * 支持 6 条独立清晰的官方协议通道：
- * - Google Gemini (Nano Banana): AI Studio Interactions API（steps[].model_output.content[]）与 Vertex AI generateContent
- * - OpenAI 及兼容生态: /images/generations 与 /images/edits
- * - xAI (Grok Imagine): /images/generations 与 JSON /images/edits（含 aspect_ratio 与 resolution）
- * - 豆包（火山方舟 Seedream）: /images/generations（文生图与多图参考同接口）
- * - 千问（阿里云百炼 Qwen-Image 2.0）: DashScope 同步 multimodal-generation 接口
- * - 硅基流动（SiliconFlow）: /images/generations（image_size + images[].url）
+ * Supports 6 independent, clearly-defined official protocol channels:
+ * - Google Gemini (Nano Banana): AI Studio Interactions API (steps[].model_output.content[]) and Vertex AI generateContent
+ * - OpenAI and compatible ecosystem: /images/generations and /images/edits
+ * - xAI (Grok Imagine): /images/generations and JSON /images/edits (with aspect_ratio and resolution)
+ * - Doubao (Volcano Ark Seedream): /images/generations (text-to-image and multi-image reference share the same endpoint)
+ * - Qwen (Alibaba Cloud Bailian Qwen-Image 2.0): DashScope synchronous multimodal-generation endpoint
+ * - SiliconFlow: /images/generations (image_size + images[].url)
  */
 internal object ImageGenClient {
     private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
@@ -85,7 +85,7 @@ internal object ImageGenClient {
     private val EXTRA_BLOCKED_HEADERS = setOf("api-revision", "content-type")
     private val SAFE_TOKEN_REGEX = Regex("[A-Za-z0-9._:-]{1,48}")
 
-    /** 认证生图请求禁止任何重定向，防止跨源或降级转发 x-goog-api-key、自定义 Header 与 POST 正文。 */
+    /** Authenticated image-generation requests forbid any redirect, preventing cross-origin or downgraded forwarding of x-goog-api-key, custom headers, and the POST body. */
     internal val authHttpClient: OkHttpClient by lazy {
         AgentHttpClient.client.newBuilder()
             .readTimeout(IMAGE_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -96,7 +96,7 @@ internal object ImageGenClient {
             .build()
     }
 
-    /** 独立的无认证图片下载客户端，禁止 HTTPS 降级到 HTTP。 */
+    /** Standalone unauthenticated image-download client; HTTPS downgrade to HTTP is forbidden. */
     internal val downloadHttpClient: OkHttpClient by lazy {
         AgentHttpClient.client.newBuilder()
             .readTimeout(IMAGE_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -245,7 +245,7 @@ internal object ImageGenClient {
             .put("model", config.model)
             .put("input", inputs)
             .put("response_format", responseFormat)
-            // 无状态单轮生图不依赖 previous_interaction_id，显式关闭服务端交互留存。
+            // Stateless single-turn generation does not depend on previous_interaction_id; explicitly disable server-side interaction retention.
             .put("store", false)
     }
 
@@ -284,7 +284,7 @@ internal object ImageGenClient {
             .put("generationConfig", genConfig)
     }
 
-    /** Vertex Express 模式要求走官方全局主机且无 project/location 路径，构造时即规范化。 */
+    /** Vertex Express mode requires the official global host with no project/location path; normalized at construction time. */
     internal fun resolveVertexImageUrl(config: ImageGenRuntimeConfig): String {
         val trimmedProject = config.vertexProject.trim()
         val effectiveBaseUrl = if (trimmedProject.isEmpty() && ProviderUrls.isOfficialVertexBaseUrl(config.baseUrl)) {
@@ -340,11 +340,11 @@ internal object ImageGenClient {
     }
 
     /**
-     * 解析 Gemini Interactions REST 响应：
-     * 1. 官方 REST 主结构：`steps[]` 中 `type == "model_output"` 的 `content[]`（排除 thought 思考步骤/图像）；
-     * 2. 兼容旧版或代理直出的 `outputs[]`（排除 thought）；
-     * 3. 兼容 SDK / 代理顶层 `output_image`；
-     * 4. 兜底兼容 `generateContent` 的 `candidates[]`。
+     * Parse the Gemini Interactions REST response:
+     * 1. Official REST primary structure: `content[]` within `steps[]` where `type == "model_output"` (excluding thought reasoning steps/images);
+     * 2. Compatible with legacy or proxy-direct `outputs[]` (excluding thought);
+     * 3. Compatible with SDK / proxy top-level `output_image`;
+     * 4. Fall back to `generateContent`'s `candidates[]`.
      */
     internal fun parseGeminiInteractionsResponse(rawJson: String): List<ImageGenOutputImage> {
         val root = JSONObject(rawJson)
@@ -370,7 +370,7 @@ internal object ImageGenClient {
                 if (step.optBoolean("thought", false)) continue
                 val stepType = step.optString("type").trim().lowercase()
                 if (stepType == "thought" || stepType == "thinking") continue
-                // 官方 REST 成品结构：step.type == "model_output" 且成品在 step.content[] 内。
+                // Official REST result structure: step.type == "model_output" and the result is inside step.content[].
                 val content = step.optJSONArray("content")
                 if (content != null) {
                     if (stepType.isEmpty() || stepType == "model_output" || stepType == "output") {
@@ -445,7 +445,7 @@ internal object ImageGenClient {
     }
 
     // -------------------------------------------------------------------------
-    // 2. OpenAI 及兼容生态
+    // 2. OpenAI and compatible ecosystem
     // -------------------------------------------------------------------------
 
     private fun generateOpenAiCompatible(
@@ -609,7 +609,7 @@ internal object ImageGenClient {
     }
 
     // -------------------------------------------------------------------------
-    // 4. 硅基流动（SiliconFlow）
+    // 4. SiliconFlow
     // -------------------------------------------------------------------------
 
     private fun generateSiliconFlow(
@@ -621,7 +621,7 @@ internal object ImageGenClient {
     ): List<ImageGenOutputImage> {
         val results = mutableListOf<ImageGenOutputImage>()
         var totalBytes = 0L
-        // 硅基流动当前已移除 batch_size 参数，多张通过顺序多次请求实现。
+        // SiliconFlow has removed the batch_size parameter; multiple images are produced via sequential repeated requests.
         repeat(request.count) {
             runController?.throwIfCancelled()
             val body = buildSiliconFlowBody(config, request)
@@ -659,7 +659,7 @@ internal object ImageGenClient {
         return body
     }
 
-    /** 统一解析 OpenAI / xAI / 豆包（`data[]`）与硅基流动（`images[]`）图像响应。 */
+    /** Unified parsing of OpenAI / xAI / Doubao (`data[]`) and SiliconFlow (`images[]`) image responses. */
     internal fun parseOpenAiImageResponse(
         rawJson: String,
         runController: AgentRunController?,
@@ -702,7 +702,7 @@ internal object ImageGenClient {
     }
 
     // -------------------------------------------------------------------------
-    // 5. 豆包（火山方舟 Seedream）
+    // 5. Doubao (Volcano Ark Seedream)
     // -------------------------------------------------------------------------
 
     private fun generateDoubao(
@@ -758,7 +758,7 @@ internal object ImageGenClient {
     }
 
     // -------------------------------------------------------------------------
-    // 6. 千问（阿里云百炼 Qwen-Image 2.0 同步多模态接口）
+    // 6. Qwen (Alibaba Cloud Bailian Qwen-Image 2.0 synchronous multimodal endpoint)
     // -------------------------------------------------------------------------
 
     private fun generateQwen(
@@ -810,7 +810,7 @@ internal object ImageGenClient {
             aspectRatio = request.aspectRatio,
             resolution = request.resolution,
             isEdit = request.referenceImages.isNotEmpty(),
-            // 多图编辑按百炼规范以最后一张参考图比例为准。
+            // Multi-image editing follows the Bailian spec: the last reference image's aspect ratio is authoritative.
             referenceAspectRatio = request.referenceImages.lastOrNull()?.aspectRatio,
         )
         if (!size.isNullOrBlank()) {
@@ -868,7 +868,7 @@ internal object ImageGenClient {
     }
 
     // -------------------------------------------------------------------------
-    // 通用 HTTP 执行、有界读取、安全错误提取与参考图严格校验
+    // Common HTTP execution, bounded reads, safe error extraction, and strict reference-image validation
     // -------------------------------------------------------------------------
 
     private fun executeForJsonBody(
@@ -990,8 +990,8 @@ internal object ImageGenClient {
     }
 
     /**
-     * 严格校验并压缩参考图（至 2048px / 4MB 以内）。
-     * 若输入无法被 BitmapFactory 解码为合法图像，直接抛出异常，绝不把未知文件字节外发给上游。
+     * Strictly validate and downscale reference images (to within 2048px / 4MB).
+     * If the input cannot be decoded by BitmapFactory as a valid image, throw immediately — never send unknown file bytes upstream.
      */
     fun prepareReferenceImage(rawBytes: ByteArray, rawMimeType: String): ImageGenInputImage {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -1122,8 +1122,8 @@ internal object ImageGenClient {
     }
 
     /**
-     * 只输出受控状态码、经白名单校验的上游错误码与请求 ID，
-     * 不把上游原始错误正文透传进持久聊天记录或工具结果，避免回显敏感内容。
+     * Only output controlled status codes, whitelist-validated upstream error codes, and the request ID;
+     * never pass the upstream raw error body into persistent chat history or tool results, avoiding echoing sensitive content.
      */
     internal fun buildSafeHttpError(
         label: String,

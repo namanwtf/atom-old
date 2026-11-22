@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.terminal
 
 import java.io.File
 
-/** guest 的 root 只是 UID 映射，宿主进程始终保留 App UID。 */
+/** The guest's root is only a UID mapping; the host process always keeps the app UID. */
 internal object ProotCommandBuilder {
     fun available(): Boolean = TerminalRuntime.nativeExecutable("libproot_exec.so") != null &&
         TerminalRuntime.nativeExecutable("libproot_loader.so") != null

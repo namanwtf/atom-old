@@ -6,7 +6,7 @@ import io.github.mangi.eta.core.AppStrings
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-/** 同一角色的会话共享剧情记忆；现实 MEMORY.md 始终使用独立存储。 */
+/** Sessions of the same character share story memory; the real-world MEMORY.md always uses independent storage. */
 internal object CharacterMemoryRepository {
     private val stores = ConcurrentHashMap<String, AgentMemoryStore>()
 

@@ -13,7 +13,7 @@ data class SkillResourceLimits(
     val maxPathDepth: Int = 16,
 )
 
-/** 在已安装 Skill 根目录内列出和读取有界 UTF-8 文本资源。 */
+/** Lists and reads bounded UTF-8 text resources inside an installed Skill root directory. */
 class SkillResourceReader internal constructor(
     skillsRoot: File,
     private val limits: SkillResourceLimits = SkillResourceLimits(),
@@ -203,7 +203,7 @@ class SkillResourceReader internal constructor(
         SkillResourceReadResult.Failure(SkillResourceError(code, message))
 }
 
-/** 严格 UTF-8 解码；超限、NUL 或除换行/回车/制表符外的控制字符均视为非文本。 */
+/** Strict UTF-8 decoding; over-limit sizes, NUL, or control characters other than newline/carriage-return/tab are treated as non-text. */
 internal fun readStrictUtf8(file: File, maxBytes: Long): String? {
     if (file.length() > maxBytes) return null
     val bytes = file.inputStream().use { input ->

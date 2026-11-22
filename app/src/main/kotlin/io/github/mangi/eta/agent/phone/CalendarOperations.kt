@@ -9,7 +9,7 @@ import android.provider.CalendarContract
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 日程与提醒共用 Provider 事务；写入目标始终是原始事件 ID，而非搜索索引 ID。 */
+/** Events and reminders share a Provider transaction; the write target is always the original event ID, not the search index ID. */
 internal class CalendarOperations(
     private val context: Context,
     private val userId: Int? = null,

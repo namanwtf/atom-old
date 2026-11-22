@@ -14,8 +14,8 @@ import top.yukonga.miuix.kmp.material.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 自适应 OS4 玻璃顶栏：宽屏固定小标题，手机使用可折叠大标题；
- * 支持 `RuntimeShader` 时直接使用 OS4 渐进模糊，否则回落纯色底；传入 [isContentScrolled] 时与列表位置严格同步。
+ * Adaptive OS4 glass top bar: fixed small title on wide screens, collapsible large title on phones;
+ * uses OS4 progressive blur directly when `RuntimeShader` is supported, otherwise falls back to a solid background; when [isContentScrolled] is passed, it stays strictly synced to list position.
  */
 @Composable
 fun AdaptiveTopAppBar(

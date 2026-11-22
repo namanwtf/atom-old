@@ -105,7 +105,7 @@ internal object ModelRepository {
         ProviderRepository.repairSelection()
     }
 
-    /** 拉取结果里尚未添加到该服务商的模型；聚合平台动辄上百个，由用户挑选后再加入。 */
+    /** Models from the fetch result that have not yet been added to this provider; aggregate platforms can return hundreds at once, so the user picks before adding. */
     suspend fun newRemoteModels(providerId: String, fetched: List<Model>): List<Model> {
         val existing = currentModels(providerId).mapTo(mutableSetOf()) { it.modelId.normalizedModelId() }
         return fetched
@@ -114,7 +114,7 @@ internal object ModelRepository {
             .filterNot { it.modelId.normalizedModelId() in existing }
     }
 
-    /** API Key 目录可直接同步；账号目录必须携带认证会话绑定。 */
+    /** API Key catalogs can sync directly; account catalogs must carry the authenticated session binding. */
     suspend fun syncRemoteModels(
         providerId: String,
         fetched: List<Model>,

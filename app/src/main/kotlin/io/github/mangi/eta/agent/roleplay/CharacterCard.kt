@@ -33,7 +33,7 @@ internal data class CharacterProfile(
 
 internal data class CharacterDepthPrompt(val prompt: String, val depth: Int, val role: String)
 
-/** 原始树保留未实现的字段，界面编辑仅覆盖所属字段。 */
+/** The raw tree keeps unimplemented fields; UI editing only overrides the fields it owns. */
 internal data class CharacterCard(val raw: JsonObject) {
     val data: JsonObject get() = raw["data"] as? JsonObject ?: raw
     val name get() = data.text("name")
@@ -52,7 +52,7 @@ internal data class CharacterCard(val raw: JsonObject) {
     val nickname get() = data.text("nickname").ifBlank { name }
     val characterBook get() = data["character_book"] as? JsonObject
     val extensions get() = data["extensions"] as? JsonObject ?: JsonObject(emptyMap())
-    /** 收藏与原版一致记在 extensions.fav；旧卡可能只有顶层 fav，读取时一并兼容。 */
+    /** Favorites are recorded in extensions.fav consistently with the original; old cards may only have a top-level fav, which is also accepted on read. */
     val favorite: Boolean
         get() = (extensions["fav"] as? JsonPrimitive)?.booleanOrNull
             ?: (raw["fav"] as? JsonPrimitive)?.booleanOrNull

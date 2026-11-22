@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // 内置 Kotlin 与 Compose 编译插件共用版本目录，避免编译器版本不一致。
+        // Built-in Kotlin and Compose compiler plugins share the version catalog to avoid compiler version mismatches.
         classpath(libs.kotlin.gradle.plugin)
     }
 }

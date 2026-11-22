@@ -87,7 +87,7 @@ internal class SkillRecoveryRequiredException(
     cause: Throwable? = null,
 ) : IOException(message, cause)
 
-/** 必须在持有 [SkillMutationLock] 的跨进程锁时调用。 */
+/** Must be called while holding the [SkillMutationLock] cross-process lock. */
 internal fun recoverPendingSkillOperations(
     skillsRoot: File,
     directoryMover: SkillDirectoryMover = AtomicSkillDirectoryMover,
@@ -174,8 +174,8 @@ internal fun completeRecoveredSkillOperations(
         val operation = recovery.operationDirectory
         validateOperationDirectory(skillsRoot, operation)
         Files.deleteIfExists(File(operation, JOURNAL_FILE_NAME).toPath())
-        // journal 删除即表示文件与 registry 已共同恢复完成；残留的无 journal 暂存目录
-        // 不再影响索引，清理失败也不能把已经完成的恢复重新标记为待处理。
+        // Deleting the journal means the files and registry have both been recovered; leftover staging directories without a journal
+        // no longer affect the index, and a cleanup failure must not re-mark an already-completed recovery as pending.
         deleteSkillPathWithoutFollowingLinks(workRoot, operation)
     }
 }

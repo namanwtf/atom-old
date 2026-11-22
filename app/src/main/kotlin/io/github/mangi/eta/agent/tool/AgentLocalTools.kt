@@ -271,7 +271,7 @@ internal class AgentLocalTools(
                 "scroll" -> afterAction(deviceController.scroll(args.optString("direction"), args.optString("amount"), currentActiveDisplayId()))
                 "scroll_element" -> afterAction(scrollElement(args))
                 "type_text" -> afterAction(typeText(args))
-                // 旧会话或旧入口仍可能请求这些工具名；保留执行路径，但不再出现在模型目录里。
+                // Old sessions or old entry points may still request these tool names; keep the execution path, but no longer expose them in the model catalog.
                 "input_text" -> afterAction(inputText(args))
                 "replace_text" -> afterAction(replaceText(args))
                 "clear_text" -> afterAction(clearText(args))
@@ -539,9 +539,11 @@ internal class AgentLocalTools(
     }
 
     /**
-     * 成功的 GUI 动作附带一次轻量观察：只读 UI 树、不截图，节点数减半。
-     * 模型据此确认动作生效并直接用新的 observation_id 继续操作，不必再单独 observe_screen；
-     * 失败或结果未知的动作不附带，保持"先重新观察"的既有约束。
+     * A successful GUI action carries a lightweight observation: read only the UI tree, no
+     * screenshot, and half the node count. The model can use it to confirm the action took effect
+     * and continue directly with the new observation_id without calling observe_screen again;
+     * failed or outcome-unknown actions carry none, keeping the existing "re-observe first"
+     * constraint.
      */
     private fun afterAction(raw: String): AgentModelClient.ToolResult {
         checkCancellation()
@@ -574,7 +576,7 @@ internal class AgentLocalTools(
                 elementObservation = null,
             )
         }
-        // 新快照取代动作前的快照：旧 index 在界面变化后本就不可靠，继续保留只会让模型误用。
+        // The new snapshot replaces the pre-action snapshot: the old index is already unreliable once the UI changed, and keeping it would only let the model misuse it.
         publishObservation(
             if (after.elementObservation == null) PublishedObservation()
             else publishedObservation.get().copy(elements = after.elementObservation, coordinateSpace = after.coordinateSpace),
@@ -723,9 +725,11 @@ internal class AgentLocalTools(
     }
 
     /**
-     * 统一的文本输入：replace（默认）整体替换为 text，text 为空即清空；append 在光标处插入。
-     * 指定 index 时先确认节点来自最近一次观察；不指定时作用于当前输入焦点。
-     * submit=true 在写入成功后按输入法回车，用于搜索、发送等提交动作。
+     * Unified text input: replace (default) replaces the whole field with text, and empty text
+     * clears it; append inserts at the cursor. When an index is given, first confirm that the node
+     * comes from the most recent observation; otherwise it applies to the current input focus.
+     * submit=true presses the IME enter key after a successful write, for search, send, and similar
+     * commit actions.
      */
     private fun typeText(args: JSONObject): String {
         val displayId = currentActiveDisplayId()
@@ -738,7 +742,7 @@ internal class AgentLocalTools(
                 if (args.optNullableInt("index") != null) {
                     return errorResult("INVALID_ARGUMENT", "append only applies to the current input focus; use mode=replace to write to a specific input field")
                 }
-                // 长文本走选区插入加粘贴回退，比逐字键入更稳定。
+                // Long text goes through selection insertion plus a paste fallback, which is more stable than typing character by character.
                 if (text.length > TYPE_TEXT_INCREMENTAL_CHARS) pasteText(args) else deviceController.inputText(text, displayId)
             }
             else -> return errorResult("INVALID_ARGUMENT", "mode must be either replace or append")
@@ -749,7 +753,7 @@ internal class AgentLocalTools(
         val submitted = runCatching { JSONObject(deviceController.pressKey("ENTER", displayId)) }.getOrNull()
         json.put("submitted", submitted?.optBoolean("ok") == true)
         if (submitted?.optBoolean("ok") != true) {
-            // 文本已写入但提交失败：整体仍算成功，避免模型重复输入；由 submitted=false 提示单独补按回车或点按钮。
+            // Text was written but submission failed: overall it still counts as success to avoid the model re-entering the text; submitted=false signals that it should press enter or tap the button separately.
             json.put("submit_error", submitted?.optString("code").orEmpty().ifBlank { "SUBMIT_FAILED" })
         }
         return json.toString()
@@ -818,8 +822,10 @@ internal class AgentLocalTools(
         )
 
     /**
-     * 坐标系必须显式声明。旧版按"上一次观察是否带截图"隐式切换默认值，模型无从得知，
-     * 经常把截图像素当成屏幕像素；缺省时直接报参数错误，让模型在下一步改正。
+     * The coordinate space must be declared explicitly. The old version implicitly switched the
+     * default based on whether the last observation included a screenshot, which the model could
+     * not know and often mistook screenshot pixels for screen pixels; when it is omitted we raise
+     * a parameter error so the model corrects it on the next step.
      */
     private fun convertPoint(
         x: Int,
@@ -1717,7 +1723,7 @@ internal class AgentLocalTools(
         val candidatesByPath: Map<String, String>,
     )
 
-    /** 手势经过状态胶囊时让它暂时穿透并淡出；在虚拟屏内操作时不干扰物理屏胶囊。 */
+    /** While a gesture passes over the status capsule, let it temporarily pass through and fade out; when operating inside a virtual display it must not disturb the physical screen's capsule. */
     private fun <T> clearOverlay(displayId: Int, vararg points: ScreenPoint, gesture: () -> T): T {
         if (CanvasRoutingPolicy.isVirtualDisplay(displayId)) {
             return gesture()
@@ -1837,8 +1843,8 @@ private val AFTER_ACTION_OPTIONS = AgentScreenObservationContract.Options(
     maxNodes = 30,
 )
 
-/** append 超过该长度改走粘贴路径；逐字键入的增量重建对长文本既慢又容易被输入法打断。 */
+/** When append exceeds this length it switches to the paste path; incremental character-by-character reconstruction is slow for long text and easily interrupted by the IME. */
 private const val TYPE_TEXT_INCREMENTAL_CHARS = 200
 
-/** 归一化坐标上界：0–999，与主流 GUI 模型的输出习惯一致。 */
+/** Normalized coordinate upper bound: 0–999, consistent with mainstream GUI model output conventions. */
 private const val NORMALIZED_MAX = 999

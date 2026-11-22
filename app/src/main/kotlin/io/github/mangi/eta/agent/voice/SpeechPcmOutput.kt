@@ -35,7 +35,7 @@ internal class SpeechPcmOutput : SpeechAudioOutput {
                     )
                 }
                 frames += count / BYTES_PER_FRAME
-                // 空音轨提前启动会在等待云端首包时超时停用；写满后再启动，短写也表示已达到可写上限。
+                // Starting an empty track early would time out and deactivate while waiting for the first cloud packet; start only after it's full, where a short write also means the writable limit is reached.
                 if (!started && frames > 0 && (frames >= audio.bufferSizeInFrames || count < remaining)) {
                     audio.play()
                     started = true
@@ -50,7 +50,7 @@ internal class SpeechPcmOutput : SpeechAudioOutput {
     @Synchronized override fun finish() {
         val audio = track ?: throw CancellationException("Speech playback stopped")
         if (finished) return
-        // 短音频可能永远填不满启动阈值，结束输入时按实际帧数启动，不补静音或截掉正文。
+        // Short audio may never fill the start threshold; on end-of-input, start with the actual frame count, without padding silence or truncating the content.
         if (!started && frames > 0) {
             audio.setStartThresholdInFrames(frames.toInt())
             audio.play()

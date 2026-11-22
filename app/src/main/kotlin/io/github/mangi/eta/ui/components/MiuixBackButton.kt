@@ -14,7 +14,7 @@ import top.yukonga.miuix.kmp.icon.glass.ChevronBackward
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 二级页面统一 OS4 玻璃返回按钮，保持图标、语义、RTL 方向与点击区域一致。
+ * Unified OS4 glass back button for secondary pages, keeping icon, semantics, RTL direction, and hit area consistent.
  */
 @Composable
 fun MiuixBackButton(

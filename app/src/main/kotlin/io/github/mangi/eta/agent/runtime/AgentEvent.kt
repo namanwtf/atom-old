@@ -49,7 +49,7 @@ internal sealed interface AgentEvent {
         companion object {
             const val PHASE_STARTED = "started"
             const val PHASE_COMPLETED = "completed"
-            /** 进行中的展示文案同时是 UI 判定运行态的依据，改动必须与 UI 侧同步。 */
+            /** The in-progress display text is also the UI's basis for determining running state; changes must be kept in sync with the UI side. */
             const val RUNNING_DETAIL = "Compressing context…"
         }
     }
@@ -198,7 +198,7 @@ internal sealed interface AgentEvent {
         val resultSummary: String,
         val imageCount: Int,
         val imageBytes: Int,
-        /** 可选：旧版本 Runtime 不发送，消费端缺省时回退到摘要文本判断。 */
+        /** Optional: older Runtime versions do not send it; consumers fall back to summary-text judgment when absent. */
         val success: Boolean? = null,
         val command: String? = null,
     ) : AgentEvent {
@@ -268,7 +268,7 @@ internal sealed interface AgentEvent {
 private const val MAX_LOGGED_TOOL_NAMES = 8
 private const val RESULT_CODE_MARKER = "code="
 
-/** 摘要字段分隔符：旧格式用逗号，人文化摘要用间隔号。 */
+/** Summary field separator: the legacy format uses a comma, human-readable summaries use a middle dot (interpunct). */
 private val RESULT_FIELD_SEPARATORS = listOf(", ", " · ")
 
 private fun String.toSafeResultLogFields(): String = buildString {

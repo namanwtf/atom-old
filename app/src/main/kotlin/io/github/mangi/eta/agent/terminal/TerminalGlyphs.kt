@@ -1,8 +1,8 @@
 package io.github.mangi.eta.agent.terminal
 
 /**
- * 终端字符占格：CJK 全角/宽字符与 emoji 占两格；组合附加符与零宽字符占 0 格，
- * 由缓冲区并入前一个单元格，避免把 é、👍🏻 之类的组合序列拆成多格错位。
+ * Terminal character cell widths: CJK fullwidth/wide characters and emoji occupy two cells; combining marks and zero-width characters occupy 0 cells,
+ * and are merged into the previous cell by the buffer, so combining sequences like é or 👍🏻 aren't split into misaligned cells.
  */
 internal fun terminalCharWidth(codePoint: Int): Int = when {
     codePoint < 0x20 || codePoint in 0x7F..0x9F -> 0
@@ -38,8 +38,8 @@ private fun isZeroWidth(codePoint: Int): Boolean =
         codePoint in 0xE0100..0xE01EF
 
 /**
- * DEC Special Graphics：`ESC ( 0` 选入后 0x5F..0x7E 映射为线框与符号。
- * ncurses 类程序按 terminfo 的 acsc 用它画边框，不映射会显示成成排的 q、x。
+ * DEC Special Graphics: after selecting `ESC ( 0`, 0x5F..0x7E map to line-drawing characters and symbols.
+ * ncurses-style programs use it via terminfo's acsc to draw borders; without mapping they render as rows of q and x.
  */
 internal fun decSpecialGraphic(char: Char): Char? =
     if (char in '_'..'~') DEC_SPECIAL_GRAPHICS[char - '_'] else null

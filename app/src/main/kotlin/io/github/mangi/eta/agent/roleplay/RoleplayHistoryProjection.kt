@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.roleplay
 
 import io.github.mangi.eta.agent.model.AgentModelClient.ConversationMessage
 
-/** 正文修订只改变模型投影，原始 journal 和已经发生的工具批次保持不变。 */
+/** Body revisions only change the model projection; the original journal and already-executed tool batches stay unchanged. */
 internal object RoleplayHistoryProjection {
     fun project(
         journal: List<ConversationMessage>,
@@ -16,7 +16,7 @@ internal object RoleplayHistoryProjection {
         journal.forEach { entry ->
             val links = grouped[entry.messageId].orEmpty().sortedBy { it.value.blockOrder }
             if (links.none { it.key in state.revisions }) add(entry) else {
-                // 缺失块意味着本轮投影无法完整重建，不能把剩余片段冒充完整正文。
+                // A missing block means this round's projection can't be fully rebuilt; the remaining fragments must not be passed off as the complete body.
                 val body = links.map { (id, _) -> content(id) ?: return null }.joinToString("\n\n")
                 if (entry.role == "user") add(ConversationMessage(
                     role = "system",

@@ -8,7 +8,7 @@ import io.github.mangi.eta.agent.device.DeviceToolContract
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 包详情通过当前用户的 PackageManager 读取，权限列表单独分页。 */
+/** Package details are read through the current user's PackageManager; the permission list is paginated separately. */
 internal class AppInspectionTool(private val context: Context) {
     fun inspect(args: JSONObject): JSONObject {
         val userId = DeviceToolContract.appUserId(context)

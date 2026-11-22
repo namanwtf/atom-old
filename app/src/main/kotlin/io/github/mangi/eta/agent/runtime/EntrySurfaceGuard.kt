@@ -7,9 +7,9 @@ import io.github.mangi.eta.core.AgentLogger
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 把外部入口从前台工具的真实操作对象中隔离开。
+ * Isolates the external entry from the real operation target of the foreground tool.
  *
- * 关闭动作、窗口稳定确认和首张截图排除共享同一份入口描述，避免各层分别猜测入口状态。
+ * The close action, window-stability confirmation, and first-screenshot exclusion share the same entry description, so each layer does not guess the entry state independently.
  */
 internal class EntrySurfaceGuard private constructor(
     internal val targetPackageName: String?,
@@ -18,7 +18,7 @@ internal class EntrySurfaceGuard private constructor(
 ) {
     private val triggered = AtomicBoolean(false)
     private val dismissalCompleted = AtomicBoolean(false)
-    // 无障碍窗口可能早于退场 Surface 消失；必须由关闭后的首张截图消费，不能在关闭确认时清除。
+    // The accessibility window may disappear before the exiting Surface; it must be consumed by the first screenshot after close, not cleared on close confirmation.
     private val screenshotExclusionPending = AtomicBoolean(targetPackageName != null)
 
     val wasTriggered: Boolean
@@ -38,7 +38,7 @@ internal class EntrySurfaceGuard private constructor(
                         "waitedMs=$waitedMillis"
                 }
             } else {
-                // 自有入口关闭是幂等定向操作，失败后允许再次确认，不会误退底层 App。
+                // Closing our own entry is an idempotent targeted operation; a retry confirmation is allowed after failure, and it will not accidentally dismiss the underlying app.
                 triggered.set(false)
                 logger.warn(
                     "Agent runtime owned entry surface dismiss incomplete before foreground " +

@@ -111,7 +111,7 @@ internal class AgentAppState(
     private val pendingConversationDeletes = mutableSetOf<String>()
     private val persistenceLock = Any()
     private var persistenceJob: Job? = null
-    // 导入期间暂停保存：旧状态的增量保存会删除刚导入的会话；导入成功后整体重载，失败时数据库已回滚。
+    // Pause saving during import: incremental saves of old state would delete just-imported conversations; reload wholesale after a successful import, and the DB has already rolled back on failure.
     private var persistencePaused = false
     private val runtimeRecoveryInProgress = AtomicBoolean(false)
     @Volatile
@@ -217,9 +217,9 @@ internal class AgentAppState(
     }
 
     /**
-     * 选择器、思考强度与上下文窗口统一投影自当前会话的有效模型：
-     * 会话绑定的模型仍可用时用它，否则用默认模型。回落只影响显示与发送，不改写会话绑定，
-     * 模型重新启用后会话自动回到原模型；真正发送后才把实际模型写入绑定。
+     * The picker, thinking intensity, and context window are uniformly projected from the current session's effective model:
+     * use the conversation-bound model when still available, otherwise the default. The fallback only affects display and sending, not the conversation binding,
+     * and the conversation returns to its original model once re-enabled; the actual model is written to the binding only after a real send.
      */
     private fun refreshConversationModel() {
         val bound = providers.enabledModel(homeState.modelId)
@@ -373,11 +373,11 @@ internal class AgentAppState(
                 }
             }
         } finally {
-            // 导入已提交但重载失败时内存仍是旧状态，继续暂停，避免覆盖导入结果；重启后按库内数据加载。
+            // If import committed but reload failed, memory is still the old state; keep pausing to avoid overwriting the import, and reload from the library after restart.
             if (!imported || reloaded) {
                 synchronized(persistenceLock) { persistencePaused = false }
             }
-            // 仅提交前失败才回写旧内存；提交后的清理失败或取消仍以导入数据为准。
+            // Only a pre-commit failure writes back old memory; post-commit cleanup failure or cancel still honors the imported data.
             if (!imported) withContext(Dispatchers.Main.immediate + NonCancellable) { persistConversations() }
         }
     }
@@ -420,7 +420,7 @@ internal class AgentAppState(
         }
     }
 
-    /** 用 checkpoint、终态 outbox 与 active session 一次性对账，避免用进程存活推断 run 状态。 */
+    /** Reconciles using checkpoint, terminal outbox, and active session in one pass, avoiding inferring run state from process liveness. */
     private suspend fun recoverRuntimeRuns() {
         val client = AgentRuntimeClient(appContext, AndroidAgentLogger)
         val checkpoints = withContext(Dispatchers.IO) {
@@ -508,7 +508,7 @@ internal class AgentAppState(
                     val conversationId = payload.conversationId
                     val state = conversationsById[conversationId]
                     if (state == null) {
-                        // App 请求先保存会话才启动；缺失会话的结果已被用户删除或备份替换，不能重新建会话。
+                        // App requests save the conversation before starting; a result whose conversation is missing was deleted or replaced by backup, so don't recreate it.
                         acknowledgeAfterSave += runId
                         return@forEach
                     }
@@ -593,7 +593,7 @@ internal class AgentAppState(
         }
     }
 
-    /** 把安全事件恢复为 UI 轨迹；半截回复不进入模型 history，设备工具也不会重放。 */
+    /** Restores a safety event into a UI trail; a half reply doesn't enter model history, and device tools aren't replayed. */
     private fun restoreCheckpointTrace(
         checkpoint: AgentRunCheckpointStore.Checkpoint,
         interrupted: Boolean,
@@ -744,7 +744,7 @@ internal class AgentAppState(
     suspend fun openAssistantConversation(conversationKey: String): Boolean =
         openArchivedConversation(AgentRuntimeWire.ETA_VOICE_HANDOFF_SOURCE, conversationKey)
 
-    /** 打开外部入口按 [source] 与 [conversationKey] 归档的会话；先导入尚未入库的归档结果。 */
+    /** Opens an external entry's conversation archived by [source] and [conversationKey]; imports any not-yet-persisted archived result first. */
     suspend fun openArchivedConversation(source: String, conversationKey: String): Boolean {
         if (source.isBlank() || conversationKey.isBlank()) return false
         val targetScheduledKey = if (source == AgentRuntimeWire.SCHEDULED_TASK_HANDOFF_SOURCE) {
@@ -767,9 +767,9 @@ internal class AgentAppState(
     }
 
     /**
-     * 打开定时任务的某次运行：
-     * - 若该次 run 正在后台运行，立即在主聊天中挂载实时事件流（回放已有轨迹 + 实时流式更新）；
-     * - 若该次 run 已完成，按需导入归档并切到对应会话以供阅读和继续追问。
+     * Opens a scheduled task's run:
+     * - If the run is running in the background, mount its live event stream in the main chat immediately (replay existing trail + live streaming updates);
+     * - If the run already finished, import the archive as needed and switch to the corresponding conversation for reading and follow-up questions.
      */
     suspend fun openScheduledTaskRun(
         runId: String,
@@ -852,7 +852,7 @@ internal class AgentAppState(
             return true
         }
 
-        // 若刚刚在查询活跃态瞬间结束，再补扫一次归档避免漏掉最后几十毫秒落盘的结果。
+        // If it ended right as we queried active state, re-scan the archive to avoid missing results persisted in the last few dozen milliseconds.
         importArchivedExternalRuns(includeIsolatedScheduledKey = archiveConversationKey)
         val exists = withContext(Dispatchers.Main.immediate) { conversationsById[conversationId] != null }
         if (!exists) return false
@@ -937,7 +937,7 @@ internal class AgentAppState(
         if (selectedConversationId != null) persistConversations()
     }
 
-    /** 聊天内切换同时改当前会话绑定与默认模型；默认模型供新会话和系统助手入口使用。 */
+    /** In-chat switching changes both the current conversation binding and the default model; the default model serves new conversations and the system-assistant entry. */
     fun selectModel(modelId: String) {
         if (
             !homeState.isConversationLoaded ||
@@ -1112,7 +1112,7 @@ internal class AgentAppState(
             try {
                 conversationLoadMutex.withLock {
                     if (historyPageVersion != pageVersion) return@withLock
-                    // 翻页或释放旧页都先提交当前窗口，避免覆盖编辑结果或丢弃未保存的记录。
+                    // Page turns or releasing the old page first commit the current window, avoiding overwriting edits or dropping unsaved records.
                     val state = conversationsById[conversationId] ?: return@withLock
                     val title = conversationTitles[conversationId].orEmpty()
                     val updatedAt = conversationUpdatedAt[conversationId] ?: 0L
@@ -1134,7 +1134,7 @@ internal class AgentAppState(
                     window = window.copy(roleplayOriginalContents = AgentConversationStore.loadRoleplayMessageContents(
                         appContext, conversationId, RoleplayConversationReducer.requiredOriginalContentIds(window),
                     ))
-                    // 取消发生在最后一个挂起点之后时，不再提交已作废的旧窗口，避免回滚刚发起的下一次翻页。
+                    // When cancel happens after the last suspension point, don't commit the invalidated old window, avoiding rolling back the just-started next page turn.
                     if (historyPageVersion != pageVersion) return@withLock
                     conversationPersistence.adoptConversation(
                         conversationId, window, title, updatedAt,
@@ -1178,7 +1178,7 @@ internal class AgentAppState(
     private suspend fun releaseInactiveConversations(saved: Map<String, AgentChatHomeUiState>) {
         conversationLoadMutex.withLock {
             for ((id, state) in saved) {
-                // 较旧的排队保存可能在卸载后重新持有该会话基线，必须再次释放。
+                // An older queued save may re-acquire the conversation baseline after unmount; release it again.
                 if (conversationsById[id]?.isConversationLoaded != true) {
                     conversationPersistence.forgetConversation(id)
                     continue
@@ -1234,7 +1234,7 @@ internal class AgentAppState(
         scope.launch {
             try {
                 check(sourceSaved.await()) { "conversation_branch_source_save_failed" }
-                // 事务提交后必须完成保存基线和 Main 状态的登记；页面销毁不能留下会被旧快照删除的分支。
+                // After a transaction commits, the save baseline and Main-state registration must complete; page destruction can't leave branches that an old snapshot would delete.
                 withContext(NonCancellable) {
                     val now = System.currentTimeMillis()
                     val created = synchronized(persistenceLock) {
@@ -1959,7 +1959,7 @@ internal class AgentAppState(
         rewriteTargetMessageId: String? = null,
     ) {
         if (conversationId in pendingConversationDeletes || !runStore.register(runId, conversationId)) return
-        // 发送即绑定：会话记住本轮实际使用的模型，回落到默认模型时也随之更新。
+        // Sending binds: the conversation remembers the model actually used this turn, updating too when it falls back to the default.
         val runModelId = state.effectiveModelId
         val runReasoningEffort = providers.enabledModel(runModelId)?.let { (provider, model) ->
             RuntimeConfigRepository.reasoningCapabilities(provider, model)?.normalize(reasoningEffort)
@@ -1981,7 +1981,7 @@ internal class AgentAppState(
         val initialPersistence = persistConversations()
 
         val preparationJob = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
-            // write-ahead：用户消息未提交前不把可能产生副作用的 run 交给 Runtime。
+            // Write-ahead: don't hand a possibly side-effecting run to Runtime before the user message commits.
             if (!initialPersistence.await()) {
                 withContext(Dispatchers.Main) {
                     applyRunResult(
@@ -2172,7 +2172,7 @@ internal class AgentAppState(
                 val preview = AgentImageCodec.previewFromReference(appContext, image) ?: image
                 val pending = PendingImageUi(
                     id = "img-${UUID.randomUUID()}",
-                    // 后续发送使用首次读取后的稳定引用，不再依赖 ROM Photo Picker URI 的授权生命周期。
+                    // Later sends use the stable reference from the first read, no longer depending on the ROM Photo Picker URI's grant lifetime.
                     uri = image.reference,
                     dataUrl = preview.reference,
                     mimeType = image.mimeType,
@@ -2481,8 +2481,8 @@ internal class AgentAppState(
         replayEpochMs: Long? = null,
     ) {
         if (isReplyRewrite(runId)) return
-        // 恢复是完整快照：先清除同一 run 的旧投影，再一次发布，避免历史增量重复追加
-        // 或中途的 Running 状态使已结束的思考重新展开、播放动画。
+        // Recovery is a full snapshot: clear the same run's old projection first, then publish once, so historical increments don't append twice
+        // or a mid-way Running state re-expands finished thinking and replays its animation.
         Snapshot.withMutableSnapshot {
             flushPendingRunDelta(runId)
             updateMessages(runId, updateTimestamp = false) { messages ->
@@ -2529,7 +2529,7 @@ internal class AgentAppState(
             is AgentEvent.RunStarted -> if (runStore.isStopRequested(runId)) scope.launch(Dispatchers.IO) {
                 AgentRuntimeClient(appContext, AndroidAgentLogger).cancelRun(runId)
             }
-            // 流式增量与 Subagent 过程快照只刷新消息，不推进会话时间戳，也不重算侧栏摘要；其余可见变化两者都更新。
+            // Streaming increments and Subagent process snapshots only refresh messages, advancing neither the conversation timestamp nor the sidebar summary; other visible changes update both.
             is AgentEvent.AssistantBlockDelta,
             is AgentEvent.SubagentProgress,
             -> updateMessages(runId, updateTimestamp = false) { messages ->
@@ -2781,7 +2781,7 @@ internal class AgentAppState(
         val conversationId = conversationIdForRun(runId) ?: return false
         val state = conversationsById[conversationId] ?: return false
         val messages = transform(state.messages)
-        // 投影对无可见变化的事件返回原列表；此时不推进会话时间戳，避免请求开始、轮次开始等事件改变排序。
+        // Projection returns the original list for events with no visible change; don't advance the conversation timestamp then, so events like request-start or turn-start don't reorder.
         if (messages === state.messages) return false
         updateConversation(
             conversationId = conversationId,
@@ -2936,7 +2936,7 @@ internal class AgentAppState(
         )
     }
 
-    // 内容匹配按（查询词, 会话状态引用）缓存：刷新摘要时未变化的会话不重复全文扫描。
+    // Content matching is cached by (query term, conversation state reference): when refreshing summaries, unchanged conversations don't re-scan full text.
     private val contentMatchCache = mutableMapOf<String, ContentMatchCacheEntry>()
 
     private fun conversationContentMatches(conversationId: String, query: String): Boolean {
@@ -2957,7 +2957,7 @@ internal class AgentAppState(
         val timestamps = conversationUpdatedAt
         val pinned = conversationPinnedIds
         return synchronized(persistenceLock) {
-            // 未保存会阻止结果回执和 write-ahead 运行，由导入后的重载或失败后的补写收尾。
+            // Unsaved state blocks result receipt and write-ahead runs; it's finalized by reload after import or backfill after failure.
             if (persistencePaused) return CompletableDeferred(false)
             val previous = persistenceJob
             val persistence = conversationPersistence

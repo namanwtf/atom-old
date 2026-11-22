@@ -5,8 +5,8 @@ import android.util.LruCache
 internal val staticMarkdownDocumentCache = StaticMarkdownDocumentCache()
 
 /**
- * 缓存权重使用 UTF-16 源码字符数，并为短文档计入最低权重来限制条目数。
- * 这不是精确堆字节预算：语法树和富文本对象的放大率随内容结构变化。
+ * Cache weight uses UTF-16 source character count, and counts a minimum weight for short documents to bound the entry count.
+ * This is not an exact heap-byte budget: the amplification of the syntax tree and rich-text objects varies with content structure.
  */
 internal class StaticMarkdownDocumentCache(
     sourceCharBudget: Int = 512 * 1024,
@@ -36,7 +36,7 @@ internal class StaticMarkdownDocumentCache(
             .also { admit(content, it) }
 
     private fun admit(content: String, document: MarkdownDocument) {
-        // 巨型回复仍完整显示，但不挤出整批小文档；流式交接和静态解析共用准入边界。
+        // Huge replies still display in full but don't evict the whole batch of small documents; streaming handoff and static parsing share the same admission boundary.
         if (content.length > maxDocumentSourceChars) return
         cache.put(content to document.inlineStyle, document)
     }

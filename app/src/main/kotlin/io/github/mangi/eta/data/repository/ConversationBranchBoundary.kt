@@ -13,7 +13,7 @@ internal object ConversationBranchBoundary {
         for (message in messages) {
             when (message.type) {
                 "user" -> {
-                    // 运行中的补充输入仍属于原轮次，不能将补充前的过渡正文当成最终结果。
+                    // In-flight supplementary input still belongs to the original turn; the transitional body before the supplement must not be treated as the final result.
                     if (!message.id.contains("-supplement-")) candidate?.let(::add)
                     candidate = null
                 }

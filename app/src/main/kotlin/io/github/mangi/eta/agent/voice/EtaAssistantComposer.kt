@@ -104,7 +104,7 @@ internal fun AssistantComposer(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 按住说话期间保持输入栏：切换布局会移除正被按住的按钮，松手事件随之丢失。
+    // Keep the input bar during hold-to-talk: switching layouts would remove the currently-pressed button and the release event would be lost.
     val voiceMode = recognitionEnabled && speech.active && !speech.holdToTalk && state.messages.isEmpty()
 
     Column(modifier = modifier) {
@@ -190,7 +190,7 @@ private fun AssistantInputBar(
     val inputEnabled = state.phase != EtaVoicePhase.PROCESSING && !speech.active
     LaunchedEffect(inputFocusRequestKey, inputEnabled) {
         if (inputFocusRequestKey < 0 || !inputEnabled) return@LaunchedEffect
-        // 输入栏挂载且浮窗取得焦点后再连接 IME，避免动画切换时请求落在尚不存在的输入框上。
+        // Connect the IME only after the input bar is mounted and the overlay has focus, so requests don't land on a not-yet-existing input field during an animated switch.
         withFrameNanos { }
         snapshotFlow { windowInfo.isWindowFocused }.first { it }
         focusRequester.requestFocus()
@@ -332,8 +332,8 @@ private fun AssistantInputBar(
 }
 
 /**
- * 输入栏尾部按钮。空闲时长按进入按住说话：松手发送，手指移出按钮取消；
- * 长按触发后不再派发点击，避免松手时又按旧状态开始一次新的录音。
+ * The tail button of the input bar. Long-press while idle enters hold-to-talk: release to send, and moving the finger off the button cancels;
+ * once a long-press triggers, no click is dispatched, so releasing doesn't start a new recording based on the stale state.
  */
 @Composable
 private fun AssistantTrailingButton(
@@ -378,7 +378,7 @@ private fun AssistantTrailingButton(
             }
             .clip(CircleShape)
             .background(containerColor, CircleShape)
-            // 手势检测不产生无障碍动作；读屏用户只需要点击语义，按住说话依赖触摸时长不适合读屏。
+            // Gesture detection produces no accessibility action; screen-reader users only need click semantics, and hold-to-talk relies on touch duration, which is unsuitable for screen readers.
             .semantics(mergeDescendants = true) {
                 this.contentDescription = contentDescription
                 role = Role.Button
@@ -436,8 +436,8 @@ private fun AssistantTrailingButton(
 }
 
 /**
- * 语音聆听态采用“左侧自适应紧凑状态胶囊 + 右侧双独立圆形悬浮按钮”布局：
- * 空闲聆听时留出中部视野供底部多彩声波舒展，识别出实时文字时胶囊随内容自然向右生长。
+ * The voice listening state uses a "left adaptive compact status pill + right two independent circular floating buttons" layout:
+ * while idle-listening, the middle view is left open for the colorful waveform to stretch, and when live text is recognized the pill grows naturally to the right with the content.
  */
 @Composable
 private fun AssistantVoiceEntry(

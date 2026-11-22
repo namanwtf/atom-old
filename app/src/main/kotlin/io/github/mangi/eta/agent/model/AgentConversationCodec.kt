@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
 
-/** Provider JSON 与 Eta 稳定会话 DTO 之间的转换；脱敏不改变普通文本与工具批次。 */
+/** Conversion between Provider JSON and Eta's stable session DTO; redaction does not alter ordinary text or tool batches. */
 internal object AgentConversationCodec {
 
     private const val IMAGE_OMITTED_TEXT = "[Image observation already used in the current turn; not written to the persistent session]"
@@ -262,7 +262,7 @@ internal object AgentConversationCodec {
             toolCallsJson = sanitizeToolCallsJson(message.toolCallsJson),
         )
 
-    /** 防止生图工具调用误传内联 data URL 或原始本地文件路径落入持久 transcript。 */
+    /** Prevents image-generation tool calls from accidentally leaking inline data URLs or raw local file paths into the persistent transcript. */
     private fun sanitizeToolCallsJson(raw: String): String {
         if (raw.isBlank() || !raw.contains("generate_image")) return raw
         val array = runCatching { JSONArray(raw) }.getOrNull() ?: return raw

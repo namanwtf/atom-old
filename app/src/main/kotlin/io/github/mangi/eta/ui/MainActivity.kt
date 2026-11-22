@@ -150,7 +150,7 @@ class MainActivity : ComponentActivity() {
         val mode = when (themeMode) {
             AppearanceThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
             AppearanceThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
-            // 应用级 AUTO 清除夜间模式覆盖，恢复跟随系统。
+            // App-level AUTO clears the night-mode override, restoring follow-system.
             AppearanceThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
         }
         getSystemService(UiModeManager::class.java).setApplicationNightMode(mode)
@@ -193,10 +193,10 @@ class MainActivity : ComponentActivity() {
             private set
 
         const val ACTION_OPEN_TERMINAL = "io.github.mangi.eta.action.OPEN_TERMINAL"
-        /** 运行浮层的结果卡片回到本体：App 发起的 run 带会话 ID，直接打开该会话。 */
+        /** The running overlay's result card returns to the app body: App-initiated runs carry a conversation ID and open that conversation directly. */
         const val ACTION_OPEN_CONVERSATION_ID = "io.github.mangi.eta.action.OPEN_CONVERSATION_ID"
         const val EXTRA_CONVERSATION_ID = "io.github.mangi.eta.extra.CONVERSATION_ID"
-        /** 系统助手等外部入口发起的 run 按来源与会话键归档，回到本体时打开对应的归档会话。 */
+        /** Runs from external entries like the system assistant are archived by source and conversation key; returning to the body opens the corresponding archived conversation. */
         const val ACTION_OPEN_ARCHIVED_CONVERSATION = "io.github.mangi.eta.action.OPEN_ARCHIVED_CONVERSATION"
         const val EXTRA_HANDOFF_SOURCE = "io.github.mangi.eta.extra.HANDOFF_SOURCE"
         const val EXTRA_CONVERSATION_KEY = "io.github.mangi.eta.extra.CONVERSATION_KEY"

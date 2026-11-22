@@ -28,7 +28,7 @@ internal data class WebPageContentPage(
 
 internal class WebPageContentException(val code: String, message: String) : IllegalArgumentException(message)
 
-/** 只处理调用方已经取得的文本；HTML 解析不发起请求或执行脚本。 */
+/** Processes only text the caller has already obtained; HTML parsing makes no requests and executes no scripts. */
 internal object WebPageContent {
     const val MAX_INPUT_CHARS = 512_000
     const val MAX_CONTENT_CHARS = 200_000

@@ -34,7 +34,7 @@ internal object CharacterRepository {
     private const val KEY_DEFAULT_CHARACTER_SEEDED = "default_character_seeded"
     @Volatile private var context: Context? = null
 
-    /** 仅绑定上下文；普通工作台启动不读取角色库。 */
+    /** Only binds context; a normal workspace launch does not read the character library. */
     fun initialize(context: Context) { this.context = context.applicationContext }
 
     private fun appContext() = checkNotNull(context) { "CharacterRepository is not initialized" }
@@ -97,7 +97,7 @@ internal object CharacterRepository {
         createStored(validated(profile.card.withEdits(name = copyName)), avatarBytes(profile.avatarPath))
     }
 
-    /** 删除角色及其图片、剧情记忆目录；已有对话保留当时的角色快照，不受影响。 */
+    /** Deletes a character together with its images and story memory directory; existing conversations keep their snapshot of the character at the time and are unaffected. */
     suspend fun delete(id: String) = withContext(Dispatchers.IO) {
         get(id) ?: throw IllegalArgumentException(
             AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
@@ -106,7 +106,7 @@ internal object CharacterRepository {
         CharacterMemoryRepository.discard(appContext(), id)
     }
 
-    /** 新角色库播种一次默认角色；已有角色的库和删除过默认角色都不再播种。 */
+    /** A new character library seeds a default character once; a library that already has characters, or one where the default was deleted, is not seeded again. */
     suspend fun ensureDefaultCharacter() = withContext(Dispatchers.IO) {
         val prefs = appContext().getSharedPreferences(SEED_PREFS, Context.MODE_PRIVATE)
         if (prefs.getBoolean(KEY_DEFAULT_CHARACTER_SEEDED, false)) return@withContext
@@ -116,7 +116,7 @@ internal object CharacterRepository {
         prefs.edit().putBoolean(KEY_DEFAULT_CHARACTER_SEEDED, true).apply()
     }
 
-    /** 用户主动恢复内置默认角色；与一次性播种互不影响。 */
+    /** The user proactively restores the built-in default character; independent of the one-time seeding. */
     suspend fun createDefaultCharacter(): CharacterProfile = withContext(Dispatchers.IO) {
         createDefaultCharacterStored()
     }
@@ -130,7 +130,7 @@ internal object CharacterRepository {
         try {
             if (png) {
                 val card = CharacterCardPng.read(bytes)
-                // 保留原始 PNG 的非角色数据块，后续导出只替换角色定义块。
+                // Preserve the original PNG's non-character data chunks; later exports only replace the character definition chunk.
                 createStored(validated(card), bytes)
             } else {
                 create(CharacterCardCodec.decodeBytes(bytes))

@@ -6,9 +6,10 @@ import org.json.JSONObject
 import org.json.JSONTokener
 
 /**
- * Skill 安装工具产生的、可供精确重放的冲突能力。
+ * A conflict capability produced by the Skill install tool and available for exact replay.
  *
- * 这里保留提交 SHA 和唯一候选路径，避免重试时扩展到仓库的其他版本或 Skill。
+ * The commit SHA and the single candidate path are kept here so that retries never expand to other
+ * versions of the repository or other Skills.
  */
 internal data class PendingSkillConflictCapability(
     val repository: String,
@@ -23,7 +24,8 @@ internal object PendingSkillConflictCapabilityParser {
     private val commitShaPattern = Regex("^[0-9a-fA-F]{40,64}$")
 
     /**
-     * 只信任最近一个历史用户消息之后，且能回溯到对应 assistant tool call 的工具结果。
+     * Only trust tool results that come after the most recent historical user message and trace
+     * back to the corresponding assistant tool call.
      */
     fun parse(
         history: List<AgentModelClient.ConversationMessage>,
@@ -40,7 +42,7 @@ internal object PendingSkillConflictCapabilityParser {
             when (message.role) {
                 "assistant" -> parseToolCalls(message.toolCallsJson).forEach { call ->
                     if (call.name == INSTALL_TOOL_NAME) {
-                        // 新调用尚无结果时也不能复活更早的冲突。
+                        // A new call with no result yet must not revive an earlier conflict either.
                         latestInstallCallId = call.id
                         latestInstallResult = null
                     }

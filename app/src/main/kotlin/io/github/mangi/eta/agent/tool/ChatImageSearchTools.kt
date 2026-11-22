@@ -7,7 +7,7 @@ import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 读取聊天应用的图片缓存；系统个人数据由原生 Provider 通道负责。 */
+/** Reads the chat apps' image caches; system personal data is handled by the native Provider channel. */
 internal class ChatImageSearchTools(private val root: BoundedRootCommandExecutor) {
     fun execute(name: String, args: JSONObject): AgentModelClient.ToolResult? =
         when (name) {

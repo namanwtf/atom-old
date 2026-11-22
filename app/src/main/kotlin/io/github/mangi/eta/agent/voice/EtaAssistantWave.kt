@@ -106,7 +106,7 @@ internal fun EtaAssistantWave(
             .graphicsLayer { alpha = waveAlpha },
     ) {
         if (!entranceReachedBottom || !waveVisible || waveAlpha <= 0.005f) return@Canvas
-        // 部分 ROM 在窗口切换时使用软件画布，RuntimeShader 只能提交到硬件画布。
+        // Some ROMs use a software canvas during window transitions; RuntimeShader can only be submitted to a hardware canvas.
         if (!unavailable && drawContext.canvas.nativeCanvas.isHardwareAccelerated) {
             effect?.let {
                 try {
@@ -121,7 +121,7 @@ internal fun EtaAssistantWave(
     }
 }
 
-/** 只播放打包资源中的数值轨道，不执行资源里的脚本。 */
+/** Only plays the numeric tracks from the bundled resource; it does not execute any scripts in the resource. */
 internal class EtaWaveEffect(context: Context) {
     private val data = context.assets.open("assistant/wave.json").bufferedReader().use { JSONObject(it.readText()) }
     private val shader = RuntimeShader(context.assets.open("assistant/wave.agsl").bufferedReader().use { it.readText() })

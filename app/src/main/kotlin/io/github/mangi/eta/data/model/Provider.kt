@@ -225,7 +225,7 @@ internal fun ProviderSetting.withApiKey(apiKey: String): ProviderSetting =
 
 internal data class ProviderModel(val provider: ProviderSetting, val model: Model)
 
-/** 服务商与模型都启用时才视为可用；会话绑定、选择器与发送共用这一判定。 */
+/** Considered available only when both the provider and model are enabled; conversation binding, the selector, and sending all share this determination. */
 internal fun List<ProviderSetting>.enabledModel(modelId: String?): ProviderModel? {
     modelId ?: return null
     for (provider in this) {

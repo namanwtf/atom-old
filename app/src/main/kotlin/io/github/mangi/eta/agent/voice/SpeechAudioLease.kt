@@ -14,10 +14,10 @@ import io.github.mangi.eta.core.AppStrings
 import java.io.Closeable
 import kotlinx.coroutines.CancellationException
 
-/** 只协调本进程的录音和播放；所有入口共用一个租约，资源仍由入口生命周期持有。 */
+/** Only coordinates recording and playback within this process; all entry points share one lease, while resources remain owned by the entry point's lifecycle. */
 /**
- * [interruptOnScreenOff] 为 false 时锁屏不打断：聊天朗读需要在锁屏和后台继续，
- * 录音与助手浮窗仍随熄屏结束。
+ * When [interruptOnScreenOff] is false, screen-off does not interrupt: chat read-aloud must continue on the lock screen and in the background,
+ * while recording and the assistant overlay still end when the screen turns off.
  */
 internal class SpeechAudioLease(
     private val context: Context,

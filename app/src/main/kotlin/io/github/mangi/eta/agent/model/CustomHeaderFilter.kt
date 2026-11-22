@@ -3,14 +3,14 @@ package io.github.mangi.eta.agent.model
 import io.github.mangi.eta.data.model.CustomHeader
 
 /**
- * 自定义 HTTP Header 安全管理。
+ * Security management for custom HTTP headers.
  *
- * 过滤掉会破坏 HTTP 协议或被框架自动管理的 header，并对敏感 header 做日志脱敏。
+ * Filters out headers that would break the HTTP protocol or are managed by the framework automatically, and redacts sensitive headers in logs.
  */
 internal object CustomHeaderFilter {
 
     /**
-     * 禁止用户手动设置的 header 名称（大小写不敏感）。
+     * Header names that users are forbidden to set manually (case-insensitive).
      */
     private val FORBIDDEN_NAMES = setOf(
         "host",
@@ -30,7 +30,7 @@ internal object CustomHeaderFilter {
     )
 
     /**
-     * 日志中需要脱敏的 header 名称（大小写不敏感）。
+     * Header names that need redaction in logs (case-insensitive).
      */
     private val SENSITIVE_NAMES = setOf(
         "authorization",
@@ -40,13 +40,13 @@ internal object CustomHeaderFilter {
     )
 
     /**
-     * 是否是被禁止的 header 名称。
+     * Whether this is a forbidden header name.
      */
     fun isForbidden(name: String): Boolean =
         name.trim().isBlank() || name.trim().lowercase() in FORBIDDEN_NAMES
 
     /**
-     * 过滤列表中的非法 header。
+     * Filters illegal headers out of the list.
      */
     fun sanitize(headers: List<CustomHeader>): List<CustomHeader> =
         headers.filterNot { isForbidden(it.name) }
@@ -69,7 +69,7 @@ internal object CustomHeaderFilter {
     }
 
     /**
-     * 将自定义 header 合并到 OkHttp Headers Builder，后添加的覆盖先添加的同名 header。
+     * Merges custom headers into the OkHttp Headers Builder; later-added headers override earlier ones with the same name.
      */
     fun mergeInto(
         builder: okhttp3.Headers.Builder,
@@ -81,7 +81,7 @@ internal object CustomHeaderFilter {
     }
 
     /**
-     * 为日志输出脱敏敏感 header。
+     * Redacts sensitive headers for log output.
      */
     fun redactForLog(headers: List<CustomHeader>): List<Pair<String, String>> =
         sanitize(headers).map { header ->

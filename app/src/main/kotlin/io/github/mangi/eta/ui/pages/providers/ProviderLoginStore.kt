@@ -40,7 +40,7 @@ internal data class ProviderLoginState(
     val isBusy: Boolean get() = phase != ProviderLoginPhase.Idle
 }
 
-/** 登录会话归属当前配置页；浏览器切换不取消，离开页面则关闭轮询或回调监听。 */
+/** The login session belongs to the current config page; browser switches don't cancel it, while leaving the page closes polling or callback listeners. */
 internal class ProviderLoginStore(
     private val providerId: String,
     parentScope: CoroutineScope,
@@ -143,7 +143,7 @@ internal class ProviderLoginStore(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: AgentRunCancelledException) {
-                // 取消是用户结束当前授权，不显示失败提示。
+                // Cancel means the user ended the current authorization; don't show a failure hint.
             } catch (error: Exception) {
                 if (generation == attempt && !activeController.isCancelled) {
                     mutableState.value = mutableState.value.copy(

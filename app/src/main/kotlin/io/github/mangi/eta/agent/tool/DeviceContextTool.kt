@@ -12,7 +12,7 @@ import kotlin.math.round
 import kotlin.math.roundToInt
 import org.json.JSONObject
 
-/** 按需提供手机当前采用的时间环境与最近系统位置。 */
+/** Provides, on demand, the phone's current time environment and the most recent system location. */
 internal object DeviceContextTool {
     fun current(
         context: Context,

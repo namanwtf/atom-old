@@ -36,7 +36,7 @@ internal class CharacterLibraryViewModel(application: Application) : AndroidView
     val store = CharacterLibraryStore(application, viewModelScope)
 }
 
-/** 角色页面才加载资料；配置变更保留编辑草稿，文件操作均在后台完成。 */
+/** Character data loads only on the character page; config changes keep the edit draft, and file operations run in the background. */
 internal class CharacterLibraryStore(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -72,7 +72,7 @@ internal class CharacterLibraryStore(
     private var memoryCharacterId: String? = null
     private var memorySnapshot: AgentMemorySnapshot? = null
 
-    /** 收藏置顶，其余按最近更新排列；搜索同时匹配名称与标签。 */
+    /** Favorites are pinned first, the rest ordered by most recent update; search matches both name and tags. */
     val filteredCharacters: List<CharacterProfile>
         get() {
             val term = query.trim()
@@ -204,7 +204,7 @@ internal class CharacterLibraryStore(
         characters = io { CharacterRepository.list() }
     }
 
-    /** 更换头像：图片统一转为 PNG 存入角色目录，导出 PNG 角色卡时即使用新头像。 */
+    /** Change avatar: the image is uniformly converted to PNG and stored in the character directory; the new avatar is used when exporting a PNG character card. */
     fun changeAvatar(id: String, uri: Uri) = runOperation(
         R.string.character_error_change_avatar,
         "Failed to change the avatar, please try another image",

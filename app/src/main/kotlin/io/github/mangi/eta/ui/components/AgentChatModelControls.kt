@@ -31,7 +31,7 @@ internal fun AgentContextUsageButton(
     val progress = usage.progress
     val isDark = MiuixTheme.colorScheme.surface.luminance() < 0.5f
     val ink = MiuixTheme.colorScheme.onSurface.copy(alpha = 1f)
-    // 常态低占用采用中性细环，避免小比例蓝色缺口在输入栏里看起来像卡住的加载圈；高水位再亮起预警色。
+    // Normal low usage uses a neutral thin ring, so a small blue gap doesn't look like a stuck loading spinner in the input bar; warning colors light up only at high usage.
     val progressColor = when {
         progress == null -> ink.copy(alpha = if (isDark) 0.36f else 0.32f)
         progress >= 0.92f -> StatusError

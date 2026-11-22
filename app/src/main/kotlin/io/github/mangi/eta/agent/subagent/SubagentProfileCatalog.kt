@@ -6,17 +6,17 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * 管理内置与自定义 Subagent Profile。
+ * Manages built-in and custom Subagent profiles.
  *
- * 自定义 Subagent 存放在默认工作区的 `agents/<name>.md`，采用 YAML frontmatter + Markdown 正文格式：
+ * Custom Subagents live in the default workspace as `agents/<name>.md`, using YAML frontmatter + Markdown body format:
  * ```markdown
  * ---
  * name: bill-analyzer
- * description: 专门检索与汇总个人账单与订单
- * whenToUse: 当需要统计账单、核对订单或分析消费时使用
+ * description: Dedicated to searching and summarizing personal bills and orders
+ * whenToUse: Use when you need to tally bills, verify orders, or analyze spending
  * tools: summarize_bills, search_bills, search_personal_orders, read_personal_item
  * ---
- * 你是专门负责账单与消费分析的 Subagent...
+ * You are a Subagent dedicated to bill and spending analysis...
  * ```
  */
 internal object SubagentProfileCatalog {
@@ -249,7 +249,7 @@ internal object SubagentProfileCatalog {
         }
     }
 
-    /** 与 [quoteYamlIfNeeded] 对称反转义，避免引号与反斜杠在编辑保存后逐次翻倍。 */
+    /** Symmetric unescaping counterpart to [quoteYamlIfNeeded]; prevents quotes and backslashes from doubling on each edit-save cycle. */
     private fun unescapeYamlDoubleQuoted(value: String): String {
         if ('\\' !in value) return value
         return buildString(value.length) {

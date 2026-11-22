@@ -66,8 +66,8 @@ private val HeroAvatarWidth = 132.dp
 private val HeroAvatarHeight = HeroAvatarWidth / CharacterPortraitAspect
 
 /**
- * 角色详情主视觉：头像本身放大模糊作为氛围底色并渐隐到页面背景，前景是竖版头像与名字。
- * 模糊只作用在一张已降采样的图上，绘制成本固定，不随页面内容变化。
+ * Character detail hero: the avatar itself is enlarged and blurred as the ambient backdrop, fading into the page background, with the portrait avatar and name in the foreground.
+ * The blur applies to a single downsampled image, so draw cost is fixed regardless of page content.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -102,7 +102,7 @@ internal fun CharacterHero(
             modifier = Modifier
                 .matchParentSize()
                 .background(
-                    // 上下两端都融回页面底色：顶部不在顶栏下切出硬边，底部自然接到下方分组。
+                    // Both ends blend back into the page background: the top doesn't cut a hard edge under the top bar, and the bottom flows into the section below.
                     Brush.verticalGradient(
                         0f to colors.background,
                         0.18f to colors.background.copy(alpha = 0f),
@@ -246,8 +246,8 @@ internal fun CharacterHero(
 }
 
 /**
- * 开场白横向翻页：每张卡完整预览一段开场，当前页即选中的开场白，免去单选列表的二次确认。
- * 卡片定高并截断，全文通过“阅读全文”弹窗查看，翻页时高度不跳动。
+ * Opening-line horizontal paging: each card previews one opening in full, the current page is the selected opening, avoiding a radio-list's second confirmation.
+ * Cards are fixed-height and truncated; full text is viewed via a "read full text" dialog, so height doesn't jump while paging.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

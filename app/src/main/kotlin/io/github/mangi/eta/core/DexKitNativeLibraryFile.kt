@@ -6,7 +6,7 @@ import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.zip.ZipFile
 
-/** 仅从已安装的模块 APK 提取固定库名，缓存内容必须与 APK 中的字节一致。 */
+/** Extracts only the fixed library name from the installed module APK; cached content must match the bytes in the APK. */
 internal object DexKitNativeLibraryFile {
     fun extract(moduleApkPath: String, cacheDirectory: File, supportedAbis: List<String>): File {
         val (abi, bytes) = ZipFile(moduleApkPath).use { zip ->

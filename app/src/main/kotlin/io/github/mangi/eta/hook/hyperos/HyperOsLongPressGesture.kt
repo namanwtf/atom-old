@@ -6,7 +6,7 @@ import android.view.ViewConfiguration
 import java.lang.ref.WeakReference
 import kotlin.math.abs
 
-/** 每个导航视图独占一次手势；延迟任务不持有 Hook Chain，也不延长视图生命周期。 */
+/** Each navigation view owns one gesture exclusively; the delayed task holds no Hook Chain and does not extend the view's lifecycle. */
 internal class HyperOsLongPressGesture(
     view: View,
     private val enabled: () -> Boolean,
@@ -34,7 +34,7 @@ internal class HyperOsLongPressGesture(
         view.addOnAttachStateChangeListener(this)
     }
 
-    /** 返回 true 时将本次原始事件改为 CANCEL，结束桌面的原生手势流。 */
+    /** When returning true, this turns the current raw event into CANCEL, ending the launcher's native gesture flow. */
     fun onTouch(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             cancel()

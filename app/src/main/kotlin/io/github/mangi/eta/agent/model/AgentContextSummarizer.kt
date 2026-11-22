@@ -7,7 +7,7 @@ import io.github.mangi.eta.core.AppStrings
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 摘要只有完整成功后才能替换历史；失败时保留原文，不细分重放请求。 */
+/** The summary may replace history only after complete success; on failure keep the original text and do not subdivide replay requests. */
 internal class AgentContextSummarizer(
     private val config: AgentModelClient.ModelConfig,
     private val provider: AgentProviderClient,
@@ -69,7 +69,7 @@ internal class AgentContextSummarizer(
         } catch (failure: AgentModelFailure) {
             controller.throwIfCancelled()
             if (!shouldFallbackToIsolated(failure)) throw failure
-            // 个别端点可能拒绝 tool_choice=none 或在保持 tool_choice=auto 时仍尝试调用工具；此时退回一次无工具隔离摘要。
+            // Some endpoints may reject tool_choice=none or still attempt tool calls while keeping tool_choice=auto; in that case fall back to a single isolated tool-free summary.
             try {
                 runSummaryRequest(
                     messages = buildIsolatedMessages(history, instructions),

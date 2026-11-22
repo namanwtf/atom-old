@@ -5,7 +5,7 @@ import io.github.mangi.eta.core.AppStrings
 import java.util.Locale
 import org.json.JSONObject
 
-/** 文件轨迹只保留操作结果与规模，不把路径、正文或搜索条件带入持久摘要。 */
+/** File traces retain only the operation result and scale, never carrying paths, content, or search terms into the persistent summary. */
 internal object AgentFileResultFormatter {
     fun summarize(toolName: String, json: JSONObject): String? = when (toolName) {
         "write_file" -> summarizeWrite(json)

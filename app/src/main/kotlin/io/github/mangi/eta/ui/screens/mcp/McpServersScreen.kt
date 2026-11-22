@@ -945,9 +945,9 @@ internal fun McpServerDetailScreen(
 }
 
 /**
- * MCP 单个工具行：
- * - 顶行左侧展示工具名称，右侧固定放置开关（展开长说明时开关仍保持在顶行右侧，绝不被长文挤到底部）；
- * - 说明默认折叠为 1～2 行紧凑摘要，长说明提供「展开 / 收起」并按 Markdown 排版展示全文。
+ * A single MCP tool row:
+ * - the top row shows the tool name on the left with the toggle fixed on the right (when expanding a long description the toggle stays at the top-right, never pushed down by long text);
+ * - the description collapses to a 1-2 line compact summary by default; long descriptions offer "expand / collapse" and render the full text as Markdown.
  */
 @Composable
 private fun McpToolSwitchRow(
@@ -1229,7 +1229,7 @@ private fun McpToolSwitchRow(
 }
 
 /**
- * 将可能带大量换行、标题井号与列表前缀的 MCP 工具原始说明收敛为紧凑的折叠态预览文本。
+ * Collapses an MCP tool's raw description—possibly full of newlines, heading hashes, and list prefixes—into a compact collapsed-state preview text.
  */
 internal fun collapseDescriptionPreview(raw: String): String =
     raw.lineSequence()

@@ -74,8 +74,8 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 单轮回答底部的轻量性能统计胶囊：
- * 平时仅展示最关键的速度/首字读数，点击弹出锚定统计卡片（模型用时、工具用时、TTFT、TPS）。
+ * Lightweight performance-stats capsule under a single answer turn:
+ * normally shows only the key speed/first-token reading; tapping pops an anchored stats card (model time, tool time, TTFT, TPS).
  */
 @Composable
 internal fun TurnStatsPill(
@@ -198,8 +198,8 @@ internal fun TurnStatsPill(
 }
 
 /**
- * 输入框右下角上下文圆环弹出的统计卡片：
- * 整合当前上下文窗口占用、会话累计 Token 明细（含缓存命中率）以及整场会话性能统计。
+ * Stats card popped from the context ring at the bottom-right of the input box:
+ * combines current context-window usage, cumulative session token details (including cache hit rate), and whole-session performance stats.
  */
 @Composable
 internal fun ContextUsageStatsPopoverPopup(

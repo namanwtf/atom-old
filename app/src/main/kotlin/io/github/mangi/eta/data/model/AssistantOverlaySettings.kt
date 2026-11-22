@@ -3,10 +3,10 @@ package io.github.mangi.eta.data.model
 import kotlinx.serialization.Serializable
 
 /**
- * 全局对话浮窗助手（电源键 / 系统助手唤起）的模型与思考等级配置。
+ * Model and reasoning-level configuration for the global conversation overlay assistant (invoked via power key / system assistant).
  *
- * [modelId] 为空表示跟随当前主模型；指定具体 [Model.id] 且对应服务商与模型仍启用时，
- * 浮窗助手优先使用该模型运行。[reasoningEffort] 为空表示跟随默认思考配置。
+ * An empty [modelId] means follow the current main model; when a specific [Model.id] is set and the corresponding provider and model are still enabled,
+ * the overlay assistant preferentially runs with that model. An empty [reasoningEffort] means follow the default reasoning configuration.
  */
 @Serializable
 internal data class AssistantOverlaySettings(

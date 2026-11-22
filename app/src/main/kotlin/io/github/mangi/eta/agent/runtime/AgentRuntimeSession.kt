@@ -7,10 +7,10 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * 一次 Runtime run 的控制权和唯一终态。
+ * Control and sole terminal state of a single Runtime run.
  *
- * Service 替换、用户取消和正常完成都必须经过此对象，避免旧 run 向新 reply channel 发消息，
- * 也避免同一 run 发送两个最终结果。
+ * Service replacement, user cancellation, and normal completion must all go through this object, so an old run does not send messages to the new reply channel,
+ * and the same run does not send two final results.
  */
 internal class AgentRuntimeSession(
     val runId: String,
@@ -78,8 +78,8 @@ internal class AgentRuntimeSession(
         }
 
     /**
-     * Activity 被移出任务栈后 Runtime 仍可能继续执行。安全历史回放、完成确认和实时订阅
-     * 共用同一把锁，保证客户端收到确认前的事件都是历史，新增事件与终态不会越过边界。
+     * Runtime may keep executing after the Activity is removed from the task stack. Safe history replay, completion confirmation, and live subscription
+     * share the same lock, ensuring events before the client's confirmation are all historical and that new events and terminal state do not cross the boundary.
      */
     fun attach(
         eventSink: (AgentEvent) -> Unit,
@@ -147,9 +147,9 @@ internal class AgentRuntimeSession(
     }
 
     /**
-     * 先原子竞争 COMMITTING，再完成提交前副作用和结果发布。取消与替换不能越过提交胜者，
-     * 因而不会出现“客户端收到取消、outbox 却留下成功结果”的分裂状态；耗时 I/O 也不持有锁。
-     * [beforePublish] 必须自行吸收非致命持久化异常。
+     * First atomically contend for COMMITTING, then perform pre-commit side effects and result publication. Cancellation and replacement cannot overtake the commit winner,
+     * so there is no split state where "the client receives a cancellation while the outbox keeps a success result"; time-consuming I/O does not hold the lock.
+     * [beforePublish] must absorb non-fatal persistence exceptions on its own.
      */
     fun complete(
         result: AgentRuntimeWire.RunResult,
@@ -164,7 +164,7 @@ internal class AgentRuntimeSession(
         lock.withLock {
             state = State.TERMINAL
         }
-        // 客户端收到结果即可续发；释放会话占用不能晚于结果，也不能持锁回调宿主。
+        // The client can continue sending once it receives the result; release of the session slot must not be later than the result, and the host must not be called back while holding the lock.
         beforeTerminalPublish(result)
         lock.withLock {
             subscribers.forEach { it.resultSink(result) }

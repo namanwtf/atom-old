@@ -22,8 +22,8 @@ internal class AgentRunMessageProjector(
     private val thinkingStartedAt = mutableMapOf<String, Long>()
 
     /**
-     * App 与系统助手浮层共用的事件到消息投影。无可见变化的事件原样返回同一列表，
-     * 调用方据此跳过保存与时间戳更新；补充输入的插入位置与持久化由调用方决定，这里不处理。
+     * Shared event-to-message projection for the App and the system-assistant overlay. Events with no visible change return the same list unchanged,
+     * letting callers skip saving and timestamp updates; the insertion position and persistence of supplemental input are the caller's concern, not handled here.
      */
     fun applyEvent(
         runId: String,
@@ -115,8 +115,8 @@ internal class AgentRunMessageProjector(
     }
 
     /**
-     * 只补充 token 用量，不触碰 isStreaming：用量事件紧跟文本块结束，
-     * 改回流式会让渲染在流式/静态视图间反复切换并整段重渲染。
+     * Only fills in token usage, not touching isStreaming: usage events follow text-block completion,
+     * and switching back to streaming would make rendering flip between streaming/static views and re-render the whole block.
      */
     private fun attachUsage(
         runId: String,
@@ -145,7 +145,7 @@ internal class AgentRunMessageProjector(
         }
     }
 
-    /** 回放从该 run 的空轨迹重建；仅重排有回放事件的补充输入，旧 handoff 独有的输入必须保留。 */
+    /** Replay rebuilds from the run's empty trail; only supplemental inputs with replay events are reordered, and inputs unique to old handoffs must be preserved. */
     fun resetForReplay(
         runId: String,
         messages: List<AgentChatMessageUi>,
@@ -341,7 +341,7 @@ internal class AgentRunMessageProjector(
         }
     }
 
-    /** 终态不依赖各块结束事件全部到齐；缺少工具结果时只能标为未知，不能推断执行成功。 */
+    /** The terminal state doesn't require all block-end events to have arrived; when a tool result is missing it's marked unknown, never inferred as success. */
     fun finalizeRun(runId: String, messages: List<AgentChatMessageUi>): List<AgentChatMessageUi> =
         finalizeText(runId, finalizeThinking(runId, messages)).map { message ->
             if (
@@ -428,8 +428,8 @@ internal class AgentRunMessageProjector(
         round: Int,
         messages: List<AgentChatMessageUi>,
     ): List<AgentChatMessageUi> {
-        // 定稿时裁掉尾部空白：模型输出常以换行收尾，Markdown 渲染会把每个尾部
-        // 换行节点变成一段固定间距，在正文与后续工具卡片之间形成莫名的空行。
+        // Trim trailing whitespace on finalization: model output often ends with newlines, and Markdown rendering turns each trailing
+        // newline node into a fixed spacing, creating an odd blank line between the body and the following tool card.
         return messages.map { message ->
             if (message is AgentMessageUi && isAssistantMessageForRound(message.id, runId, round)) {
                 message.copy(
@@ -469,8 +469,8 @@ internal class AgentRunMessageProjector(
         event: AgentEvent.ToolStarted,
         messages: List<AgentChatMessageUi>,
     ): List<AgentChatMessageUi> {
-        // 工具执行发生在对应 assistant 工具块完整返回之后；此时直接追加即可保留
-        // 工具前说明、工具活动与下一轮结果的真实时间顺序。
+        // Tool execution happens after the corresponding assistant tool block fully returns; appending directly preserves the
+        // true time order of the pre-tool note, tool activity, and next turn's result.
         val message = ToolActivityMessageUi(
             id = toolActivityMessageId(runId, event.round, event.toolCallId),
             toolName = event.name,
@@ -488,7 +488,7 @@ internal class AgentRunMessageProjector(
         messages: List<AgentChatMessageUi>,
     ): List<AgentChatMessageUi> {
         val targetId = toolActivityMessageId(runId, event.round, event.toolCallId)
-        // success 字段优先；旧版本 Runtime/归档事件缺省时回退到摘要文本判断
+        // The success field takes priority; fall back to summary-text judgment when older Runtime/archive events omit it.
         val status = when (event.success) {
             true -> ToolActivityStatusUi.Success
             false -> ToolActivityStatusUi.Failed
@@ -534,7 +534,7 @@ internal class AgentRunMessageProjector(
         val targetIndex = messages.indexOfLast { it is ToolActivityMessageUi && it.id == targetId }
         if (targetIndex < 0) return messages
         val target = messages[targetIndex] as? ToolActivityMessageUi ?: return messages
-        // 忽略终态后迟到进度、重复进度与损坏快照，避免把正常详情覆盖回退态。
+        // Ignore late progress after the terminal state, duplicate progress, and corrupt snapshots, so normal details aren't overwritten back to a fallback state.
         if (target.status != ToolActivityStatusUi.Running) return messages
         if (target.command == event.snapshotJson) return messages
         if (SubagentActivitySnapshot.decode(event.snapshotJson) == null) return messages
@@ -733,8 +733,8 @@ internal class AgentRunMessageProjector(
 
     companion object {
         /**
-         * 手动压缩 run 的结果与压缩事件共用同一条时间线标记：事件标记已携带压缩前后的
-         * token 信息，成功时原样保留；仍在进行中、失败或事件缺失时才改写或补写。
+         * The manual compaction run's result and the compaction event share one timeline marker: the event marker already carries before/after
+         * token info, kept as-is on success; rewritten or filled in only when still in progress, failed, or the event is missing.
          */
         fun mergeCompactionResultNotice(
             runId: String,
@@ -764,7 +764,7 @@ internal class AgentRunMessageProjector(
             }
         }
 
-        /** 终态只能补全最后一次重试之后的回答，不能覆盖已标记失败的半截输出。 */
+        /** The terminal state can only complete the answer after the last retry; it can't overwrite a half output already marked failed. */
         fun resultTargetIndex(
             runId: String,
             messages: List<AgentChatMessageUi>,
@@ -787,8 +787,8 @@ internal class AgentRunMessageProjector(
         }
 
         /**
-         * 用终态补全最后一条回答：notice 为 null 时写入正文，否则替换为系统提示。
-         * 同一轮已有多个文本块时，流式内容已完整，终态正文只在当前块为空时补写。
+         * Complete the last answer with the terminal state: write the body when notice is null, otherwise replace with a system notice.
+         * When a turn already has multiple text blocks, the streaming content is complete, and the terminal body is written only when the current block is empty.
          */
         fun applyResult(
             runId: String,

@@ -20,9 +20,9 @@ internal fun supportsSpeechSession(provider: TtsProvider): Boolean = when (provi
 }
 
 /**
- * 整篇朗读在一个流式合成会话里完成：文本按句送入同一会话，服务端连续生成音频。
- * 与逐段独立请求相比，语调、音量和语速前后连贯，也没有段与段之间的接缝与停顿抖动。
- * 音频按到达顺序经 [onAudio] 交出；任一阶段失败都以 [SpeechFailure] 结束。
+ * The whole passage is read aloud in a single streaming synthesis session: text is fed into the same session sentence by sentence, and the server produces audio continuously.
+ * Compared to per-segment independent requests, pitch, volume, and rate stay consistent throughout, with no seams or pause jitter between segments.
+ * Audio is handed off via [onAudio] in arrival order; any stage failure ends with [SpeechFailure].
  */
 internal suspend fun streamSpeech(
     settings: SpeechSettings,
@@ -58,7 +58,7 @@ private suspend fun streamQwen(
     SpeechSocket(request).use { socket ->
         socket.awaitReady()
         fun event(type: String) = JSONObject().put("type", type).put("event_id", UUID.randomUUID().toString())
-        // server_commit 由服务端按语义切句，客户端只管追加文本。
+        // server_commit is sentence-split semantically by the server; the client just appends text.
         socket.text(event("session.update").put("session", JSONObject()
             .put("mode", "server_commit").put("voice", settings.qwenVoice).put("language_type", "Auto")
             .put("response_format", "pcm").put("sample_rate", SAMPLE_RATE)).toString())
@@ -118,7 +118,7 @@ private suspend fun streamDoubao(
         fun payload(event: Int, text: String? = null) = JSONObject().put("user", user).put("event", event)
             .put("namespace", "BidirectionalTTS").put("req_params", params(text)).toString()
         val sessionStarted = CompletableDeferred<Unit>()
-        // 读取必须与发送并行：音频到达很快，消息通道写满会被当作背压失败断开。
+        // Reading must run in parallel with sending: audio arrives quickly, and a full message channel is treated as a backpressure failure and disconnected.
         val sender = launch {
             sessionStarted.await()
             chunks.forEach { socket.binary(DoubaoTtsCodec.encode(DoubaoTtsCodec.TASK_REQUEST, sessionId, payload(DoubaoTtsCodec.TASK_REQUEST, it))) }
@@ -187,6 +187,6 @@ private fun checkedAudio(total: Long, added: Int): Long {
 }
 
 private const val SAMPLE_RATE = 24_000
-/** 与单段请求相同按 24 kHz/16 位估算上限；整篇只建一次连接，时长按正文上限放宽。 */
+/** The upper bound is estimated the same as per-segment requests at 24 kHz/16-bit; only one connection is opened for the whole passage, and duration is relaxed by the body limit. */
 private const val MAX_AUDIO_BYTES = SAMPLE_RATE * 2L * 60 * 20
 private const val STREAM_TIMEOUT_MS = 20 * 60_000L

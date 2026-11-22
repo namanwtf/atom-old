@@ -11,10 +11,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 在新对话首轮完成后基于用户首条消息与助手回复自动提炼简短标题。
+ * After the first turn of a new conversation completes, automatically distill a short title from the user's first message and the assistant reply.
  *
- * 标题生成属于可选后台增强：未启用、超时、协议异常或用户已手动改名时均静默保留既有标题，
- * 不阻断或污染正常对话流。
+ * Title generation is an optional background enhancement: when disabled, timed out, on protocol errors, or when the user has manually renamed, the existing title is silently kept,
+ * never blocking or polluting the normal conversation flow.
  */
 internal class ConversationTitleGenerator(
     private val loadConfig: suspend (String?) -> AgentModelClient.ModelConfig? =
@@ -42,7 +42,7 @@ internal class ConversationTitleGenerator(
         val messages = JSONArray()
             .put(JSONObject().put("role", "system").put("content", SYSTEM_PROMPT))
             .put(AgentConversationCodec.userTextMessage(snippet))
-        // Provider 请求阻塞在 HTTP 流读取上，超时或上层取消时通过 controller 中止底层连接。
+        // The Provider request blocks on HTTP stream reads; on timeout or upstream cancellation, abort the underlying connection via the controller.
         val work = async(Dispatchers.IO) {
             val response = providerFor(config).complete(
                 ProviderRequest(

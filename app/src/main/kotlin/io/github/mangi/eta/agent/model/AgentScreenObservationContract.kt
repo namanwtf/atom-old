@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.model
 
 import org.json.JSONObject
 
-/** 屏幕观察工具在模型 schema、执行器与运行轨迹之间共享的默认合同。 */
+/** The default contract shared by the screen-observation tool across the model schema, executors, and run traces. */
 internal object AgentScreenObservationContract {
     const val DEFAULT_INCLUDE_SCREENSHOT = false
     const val DEFAULT_INCLUDE_UI_TREE = true

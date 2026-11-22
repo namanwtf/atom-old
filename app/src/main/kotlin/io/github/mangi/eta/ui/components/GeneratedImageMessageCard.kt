@@ -88,11 +88,11 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 聊天流中的原生 AI 生图卡片（脱离工作过程折叠条，直接展示在对话正文）。
+ * Native AI image-generation card in the chat stream (outside the work-process collapse bar, shown directly in the conversation body).
  *
- * - Running: 按比例自适应的呼吸加载占位卡片 + 实时计时与提示词预览；
- * - Success: 单图自适应比例 / 多图 2 列紧凑画廊 + 点击 120Hz 原位全屏预览 + 保存/分享/继续编辑；
- * - Failed: 清晰可读的错误卡片。
+ * - Running: aspect-adaptive breathing loading placeholder card + real-time timer and prompt preview;
+ * - Success: single image with adaptive aspect ratio / multi-image 2-column compact gallery + 120Hz in-place full-screen preview on tap + save/share/continue editing;
+ * - Failed: a clearly readable error card.
  */
 @Composable
 internal fun GeneratedImageMessageCard(
@@ -392,7 +392,7 @@ private fun GeneratedImagesGalleryCard(
             }
         }
 
-        // 图片下方轻巧操作栏（单图或多图首图快捷保存/分享/继续编辑 + 提示词折叠）
+        // Lightweight action bar under the image (quick save/share/continue editing for the single image or first image + prompt collapse)
         if (!assistantOverlay) {
             val firstPath = payload.images.first().filePath
             Row(

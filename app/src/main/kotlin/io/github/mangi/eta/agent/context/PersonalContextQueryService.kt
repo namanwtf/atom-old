@@ -35,7 +35,7 @@ internal class PersonalContextQueryService(
                 return if (result.toString().length <= MAX_RESULT_CHARACTERS) result
                 else failure("PERSONAL_CONTEXT_OUTPUT_LIMIT").put("source", source.id)
             } catch (failure: QueryFailure) {
-                // 系统组件更新后，同一个 run 内的字段缓存也可能失效；只重探一次，不静默切换数据源。
+                // After a system component update, the field cache within the same run may also go stale; re-probe only once and do not silently switch data sources.
                 if (attempt > 0 || failure.code != "DMP_COLUMN_MISSING") {
                     return failure(failure.code).put("source", source.id)
                 }

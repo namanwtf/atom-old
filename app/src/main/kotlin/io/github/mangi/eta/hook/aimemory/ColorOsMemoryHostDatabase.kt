@@ -11,7 +11,7 @@ import java.io.File
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
-/** 只借用宿主已初始化的连接；不读取密钥、不初始化 Room，也不关闭宿主持有的数据库。 */
+/** Only borrow the host's already-initialized connection; do not read keys, do not initialize Room, and do not close the database held by the host. */
 internal class ColorOsMemoryHostDatabase private constructor(
     private val instanceField: Field,
     private val connectionField: Field,
@@ -38,7 +38,7 @@ internal class ColorOsMemoryHostDatabase private constructor(
             targets: DexKitTargets,
             logger: ModuleLogger,
         ): ColorOsMemoryHostDatabase? {
-            // 已验证的 Room 类型保留了类名，结构满足时不必依赖原生 DEX 解析。
+            // The verified Room type keeps its class name; when the structure matches we don't need native DEX resolution.
             HookSupport.findClassOrNull(classLoader, "com.oplus.aimemory.db.MemoryDatabase")
                 ?.let { resolveClass(it, logger) }
                 ?.let { return it }
@@ -73,7 +73,7 @@ internal class ColorOsMemoryHostDatabase private constructor(
                         it.returnType.name == "androidx.sqlite.db.SupportSQLiteOpenHelper"
                 } ?: return null
                 val readableDatabase = openHelper.returnType.getMethod("getReadableDatabase")
-                // getReadableDatabase 可能触发建库或迁移；这里只用返回类型定位现有连接。
+                // getReadableDatabase may trigger database creation or migration; here we only use the return type to locate the existing connection.
                 val connectionField = generateSequence(databaseClass) { it.superclass }
                     .flatMap { it.declaredFields.asSequence() }
                     .filter {

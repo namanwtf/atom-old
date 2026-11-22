@@ -143,7 +143,7 @@ internal fun ImageGenSettingsScreen(
 
     val onSelectLink: (Int) -> Unit = { idx ->
         val id = linkChoiceIds.getOrElse(idx) { ImageGenSettings.STANDALONE_LINK_ID }
-        // 切换回关联服务商时清掉独立 Key 避免覆盖关联状态；切到独立模式保留已填 Key。
+        // When switching back to the linked provider, clear the standalone key so it doesn't override the linked state; switching to standalone keeps the already-entered key.
         if (id != ImageGenSettings.STANDALONE_LINK_ID) {
             val c = store.credentials
             store.editCredentials(
@@ -403,7 +403,7 @@ internal fun ImageGenSettingsScreen(
                                 singleLine = true,
                             )
 
-                            // 仅独立配置模式展示独立地址与平台参数，避免将关联服务商的 Key 发往不同主机。
+                            // Show the standalone address and platform params only in standalone mode, so a linked provider's key isn't sent to a different host.
                             if (!usingLinkedProvider) {
                                 when (backend) {
                                     ImageGenBackend.GEMINI -> {

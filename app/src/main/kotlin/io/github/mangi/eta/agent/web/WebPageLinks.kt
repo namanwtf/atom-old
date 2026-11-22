@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.web
 import java.net.URI
 import java.net.URISyntaxException
 
-/** 链接只作为来源数据返回，不访问链接目标。 */
+/** Links are returned only as source data; link targets are not visited. */
 internal class WebPageLinks {
     private val byUrl = linkedMapOf<String, WebPageLink>()
     private var retainedChars = 0

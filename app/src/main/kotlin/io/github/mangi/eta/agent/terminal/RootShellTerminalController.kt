@@ -318,7 +318,7 @@ internal class RootShellTerminalController(
         closeAll()
     }
 
-    /** 取消热路径只封闭新进程接纳；进程树终止和 reader/waiter 回收在后台完成。 */
+    /** The cancellation hot path only blocks new process admission; process-tree termination and reader/waiter reclamation finish in the background. */
     fun interruptAll() {
         beginClosing()
         if (cleanupStarted.compareAndSet(false, true)) {
@@ -696,7 +696,7 @@ internal class RootShellTerminalController(
             raw.startsWith("/") -> raw
             else -> "${TerminalRuntime.ROOT_WORKSPACE_PATH}/$raw"
         }
-        // Root 可见的链接未必对 App UID 可见，交给目标 Shell 按真实命名空间解析。
+        // Links visible to Root may not be visible to the app UID; let the target shell resolve them against the real namespace.
         return effective
     }
 
@@ -714,7 +714,7 @@ internal class RootShellTerminalController(
             linuxSharedMounts = sharedMountsFor(environment),
         )
 
-    /** 共享挂载只在 Linux 会话建立时解析；Android 环境不涉及。 */
+    /** Shared mounts are resolved only when a Linux session is set up; the Android environment is not involved. */
     private fun sharedMountsFor(environment: TerminalEnvironment): List<SharedFolderMount> =
         if (environment.isLinux) linuxSharedMountsProvider() else emptyList()
 

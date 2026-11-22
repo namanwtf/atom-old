@@ -6,7 +6,7 @@ import java.time.OffsetDateTime
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 原始个人数据使用固定字段与绑定参数；调用方不能提供 URI 或 SQL。 */
+/** Raw personal data uses fixed fields and bound parameters; callers cannot provide a URI or SQL. */
 internal class NativePersonalQueries(
     private val resolver: PhoneProviderAccess,
     private val userId: Int,

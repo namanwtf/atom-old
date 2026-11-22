@@ -23,9 +23,9 @@ internal object AgentRuntimeRequestConfigResolver {
         request.handoff?.source == AgentRuntimeWire.ETA_VOICE_HANDOFF_SOURCE
 
     /**
-     * 只用 Runtime 侧的模型与凭据替换入口配置；工具开关保留入口请求的值，
-     * 随后仍由 AgentRuntimePolicy 与本地权限取交集。模型配置本身不携带工具开关，
-     * 直接整体替换会让默认关闭的终端、敏感读取与敏感操作工具在语音入口始终不可用。
+     * Replace only the model and credentials in the entry config with the Runtime side's; tool switches keep the entry request's values,
+     * and are then still intersected with AgentRuntimePolicy and local permissions. The model config itself does not carry tool switches;
+     * replacing it wholesale would leave the default-off terminal, sensitive-read, and sensitive-action tools permanently unavailable from the voice entry.
      */
     fun applyRuntimeConfig(
         request: AgentRuntimeWire.RunRequest,

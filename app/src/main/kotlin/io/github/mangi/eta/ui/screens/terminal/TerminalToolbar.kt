@@ -43,12 +43,12 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 终端两种视图互相切换的目标；工具栏只显示目标模式的图标，避免文字按钮挤占空间。 */
+/** The target for switching between the terminal's two views; the toolbar shows only the target mode's icon, avoiding text buttons crowding the space. */
 internal enum class TerminalModeTarget { CONSOLE, BLOCKS }
 
 /**
- * 块式终端与控制台共用的工具栏：左侧环境分段切换，右侧会话、守护任务与视图切换图标。
- * 页面标题与返回由应用壳层持有，这里不重复标题。
+ * Toolbar shared by the block terminal and the console: environment segmented switcher on the left; session, daemon-task, and view-switch icons on the right.
+ * The page title and back are held by the app shell; the title isn't repeated here.
  */
 @Composable
 internal fun TerminalToolbar(
@@ -194,7 +194,7 @@ private fun ToolbarIcon(
     }
 }
 
-/** 行内状态圆点：运行中为成功色，空闲为次要色，已退出为错误色。 */
+/** Inline status dot: success color while running, secondary color when idle, error color after exit. */
 @Composable
 internal fun StatusDot(color: Color, modifier: Modifier = Modifier) {
     Box(
@@ -204,7 +204,7 @@ internal fun StatusDot(color: Color, modifier: Modifier = Modifier) {
     )
 }
 
-/** 列表行尾的紧凑图标操作。 */
+/** Compact icon actions at the end of a list row. */
 @Composable
 internal fun RowIconAction(
     icon: ImageVector,

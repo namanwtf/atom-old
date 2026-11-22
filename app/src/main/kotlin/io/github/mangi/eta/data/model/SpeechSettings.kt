@@ -106,7 +106,7 @@ data class SpeechSettings(
     val asr: AsrProvider = AsrProvider.QWEN_REALTIME,
     val tts: TtsProvider = TtsProvider.NONE,
     val autoSpeak: Boolean = false,
-    /** 聊天页回答完成后自动朗读最终回答；与助手浮窗的自动播报分开保存。 */
+    /** After a chat page answer completes, automatically read the final answer aloud; stored separately from the assistant overlay's auto-playback. */
     val chatAutoSpeak: Boolean = false,
     val language: String = "",
     val qwenAsr: QwenSpeechConfig = QwenSpeechConfig(),
@@ -118,11 +118,11 @@ data class SpeechSettings(
     val geminiTts: GeminiTtsConfig = GeminiTtsConfig(),
     val minimaxTts: MiniMaxTtsConfig = MiniMaxTtsConfig(),
     val oss: SpeechOssConfig = SpeechOssConfig(),
-    /** 助手浮窗停顿多久后自动发送；0 表示只在用户点击完成或松手时发送。 */
+    /** How long the assistant overlay pauses before auto-sending; 0 means send only when the user taps done or releases. */
     val autoSendSilenceMs: Int = DEFAULT_AUTO_SEND_SILENCE_MS,
-    /** 识别结果交付前使用当前对话模型保守纠错。 */
+    /** Conservatively correct the recognition result with the current conversation model before delivering it. */
     val refineTranscript: Boolean = false,
-    /** 只控制 Eta 自身的语音输入，关闭时保留服务配置以便再次开启。 */
+    /** Only controls Eta's own voice input; when disabled, the service configuration is retained so it can be re-enabled. */
     val recognitionEnabled: Boolean = true,
     val mimoAsr: MimoAsrConfig = MimoAsrConfig(),
     val mimoTts: MimoTtsConfig = MimoTtsConfig(),
@@ -140,7 +140,7 @@ internal enum class SpeechCredentialField {
     MIMO_ASR, MIMO_TTS, DEEPSEEK_ASR, DEEPSEEK_TTS,
 }
 
-/** 凭据不属于 Settings，避免被普通配置导出或调试输出带出。 */
+/** Credentials are not part of Settings, so they are not leaked by normal config export or debug output. */
 @Serializable
 class SpeechCredentials(
     val qwenAsr: String = "",

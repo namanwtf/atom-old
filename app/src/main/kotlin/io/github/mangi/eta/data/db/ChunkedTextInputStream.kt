@@ -3,7 +3,7 @@ package io.github.mangi.eta.data.db
 import android.database.Cursor
 import java.io.InputStream
 
-/** JSON 解码器逐块消费正文，避免先拼接整份字符串再创建第二份对象图。 */
+/** The JSON decoder consumes the body chunk by chunk, avoiding concatenating the whole string first and then building a second object graph. */
 internal fun ChunkedTextDao.openTextStream(table: String, owner: String, field: String, stored: String): InputStream {
     if (!stored.startsWith(ChunkedTextDao.REFERENCE_PREFIX)) return stored.byteInputStream(Charsets.UTF_8)
     val sizes = stored.removePrefix(ChunkedTextDao.REFERENCE_PREFIX).split(':')

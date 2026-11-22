@@ -66,12 +66,12 @@ internal data class InlineMathBoxMetrics(
 )
 
 /**
- * 计算行内公式在宿主文本行中的精确占位框与绘制偏移。
+ * Computes the precise placeholder box and draw offset of inline formulas within the host text line.
  *
- * `PlaceholderVerticalAlign.TextCenter` 将占位框中心固定在宿主字体的 `(ascent + descent) / 2`，
- * 并在超出原有字高时上下等量扩展行度量。通过令占位框围绕该文本中线对称包裹公式的基线上高度
- * 与基线下深度，再反推 `topFromBaseline` 计算 `drawTopPx`，可使公式数学基线与正文基线严丝合缝对齐，
- * 同时普通上下标不撑乱中文段落行距，高分式与根式也不会与上下行碰撞或被裁切。
+ * `PlaceholderVerticalAlign.TextCenter` fixes the placeholder box center at the host font's `(ascent + descent) / 2`,
+ * and extends the line metrics equally above and below when exceeding the original glyph height. By wrapping the formula's height-above-baseline
+ * and depth-below-baseline symmetrically around that text midline, then deriving `topFromBaseline` to compute `drawTopPx`, the formula's math baseline aligns seamlessly with the body baseline,
+ * while ordinary super/subscripts don't stretch CJK paragraph line spacing, and tall fractions and radicals don't collide with or get clipped by adjacent lines.
  */
 internal fun computeInlineMathBoxMetrics(
     displayListWidthEm: Double,
@@ -116,7 +116,7 @@ internal fun computeInlineMathBoxMetrics(
             contentWidthPx = ceil(scaledTotalPx).toInt().coerceIn(1, safeMaxWidthPx)
             boxWidthPx = contentWidthPx
         } else {
-            // 超长行内公式在窄屏下限制占位宽度避免 StaticLayout 强制断行截断，并在框内允许横向滚动。
+            // On narrow screens, cap the placeholder width of very long inline formulas to avoid StaticLayout forced line-break truncation, and allow horizontal scrolling inside the box.
             mathFontSizePx = baseMathFontSizePx * OVERFLOW_INLINE_FONT_SCALE
             scrollable = true
             val fullTotalPx = (displayListWidthEm * mathFontSizePx).toFloat() + horizontalPadPx
@@ -283,7 +283,7 @@ internal fun MarkdownDisplayMathBlock(
 ) {
     val displayList = block.displayList
     if (displayList == null) {
-        // 解析失败保留完整 LaTeX 原文，不丢字符，支持横向滚动与划词复制。
+        // On parse failure keep the full LaTeX source, drop no characters, and support horizontal scrolling and select-to-copy.
         val fallbackParagraph = remember(block.offset, block.rawSource) {
             MarkdownParagraph(offset = block.offset, text = AnnotatedString(block.rawSource))
         }
@@ -418,8 +418,8 @@ private fun MarkdownMathFallbackText(
 }
 
 /**
- * 仅在公式实际超出视口可横向滚动时启用离屏图层与边缘渐隐提示，常态短公式保持零离屏开销。
- * 滚动偏移只在绘制期读取，拖动中不触发组合重组。
+ * Enable the offscreen layer and edge-fade hint only when the formula actually overflows the viewport and can scroll horizontally; ordinary short formulas keep zero offscreen cost.
+ * Scroll offset is read only in the draw phase; dragging does not trigger recomposition.
  */
 internal fun Modifier.mathHorizontalOverflowFade(scrollState: ScrollState): Modifier = this
     .graphicsLayer {

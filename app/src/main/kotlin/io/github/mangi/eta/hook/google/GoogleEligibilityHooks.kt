@@ -23,8 +23,8 @@ internal object GoogleEligibilityHooks {
     ): HookInstallation {
         val hooks = HookRegistrar(module, rootLogger, "GoogleEligibility")
         return hooks.install {
-            // 资格补齐与机型伪装同属"让 Google App 认为设备具备资格"的一件事，
-            // 作为一圈即搜的底层依赖始终执行。
+            // Eligibility backfill and device spoofing are both part of one goal: "make the Google App believe the device is eligible",
+            // and are always applied as a low-level dependency of Circle to Search.
             hookSystemProperties(hooks)
             hookPackageManagerFeatures(hooks, classLoader)
         }

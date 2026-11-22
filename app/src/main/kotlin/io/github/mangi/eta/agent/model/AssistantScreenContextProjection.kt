@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.model
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 原始应用内容只保留在本次 run 的消息元数据中，稳定会话 codec 不序列化该字段。 */
+/** Raw app content is kept only in this run's message metadata; the stable session codec does not serialize this field. */
 internal object AssistantScreenContextProjection {
     const val MAX_CHARS = 24_000
     private const val KEY = "_eta_assistant_screen_context"
@@ -16,7 +16,7 @@ internal object AssistantScreenContextProjection {
         if (context.isNotBlank()) message.put(KEY, bound(context))
     }
 
-    /** 仅投影到 Provider 请求，不把自动采集内容拼进用户原话或持久上下文。 */
+    /** Projected only into Provider requests, never splicing auto-captured content into the user's words or persistent context. */
     fun project(messages: JSONArray): JSONArray {
         if ((0 until messages.length()).none { messages.optJSONObject(it)?.has(KEY) == true }) return messages
         return JSONArray().also { projected ->

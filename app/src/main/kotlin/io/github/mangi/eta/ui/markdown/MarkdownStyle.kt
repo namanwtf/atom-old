@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.sp
 import io.github.mangi.eta.ui.components.EtaMonospace
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-/** 正文与思考共用同一套渲染器，只在字号、墨色浓度与留白节奏上区分层级。 */
+/** Body and thinking share the same renderer, differing only in font size, ink density, and spacing rhythm. */
 internal enum class MarkdownTone { Answer, Thinking }
 
 internal val EditorialLineHeightStyle = LineHeightStyle(
@@ -22,8 +22,8 @@ internal val EditorialLineHeightStyle = LineHeightStyle(
 )
 
 /**
- * 一次渲染所需的全部样式。按主题与语气整体记忆，块级组件只读取不再推导，
- * 避免每个段落各自拼一遍 TextStyle。
+ * All styles needed for one render. Memoized as a whole by theme and tone; block components only read, never re-derive,
+ * avoiding rebuilding a TextStyle for every paragraph.
  */
 @Immutable
 internal class MarkdownStyle(
@@ -49,7 +49,7 @@ internal class MarkdownStyle(
 ) {
     fun heading(level: Int): TextStyle = headings[(level - 1).coerceIn(0, headings.lastIndex)]
 
-    /** 引用块内的排版样式：保持清晰可读的次主墨色，而不是退化成发虚的说明灰。 */
+    /** Typography style inside blockquotes: a clearly readable secondary ink color, not a washed-out caption gray. */
     fun quoted(): MarkdownStyle = MarkdownStyle(
         tone = tone,
         isDark = isDark,
@@ -80,8 +80,8 @@ internal fun rememberMarkdownStyle(tone: MarkdownTone): MarkdownStyle {
     return remember(tone, colors, textStyles) {
         val answer = tone == MarkdownTone.Answer
         val isDark = colors.surface.luminance() < 0.5f
-        // COUI 与 Miuix 的 onSurface 自带不同基础 alpha；统一归一为纯墨色基色后再按层级分配浓度，
-        // 避免两套主题下细线、引用与正文的视觉重量发生漂移。
+        // COUI and Miuix onSurface carry different base alphas; normalize to a pure ink base first, then assign density by level,
+        // so hairline, quote, and body visual weight don't drift between the two themes.
         val ink = colors.onSurface.copy(alpha = 1f)
         val strongColor = if (answer) {
             ink.copy(alpha = if (isDark) 0.96f else 0.95f)
@@ -115,7 +115,7 @@ internal fun rememberMarkdownStyle(tone: MarkdownTone): MarkdownStyle {
             color = textColor,
             lineHeightStyle = EditorialLineHeightStyle,
         )
-        // 中文无衬线体下 SemiBold 与常规字重接近；标题与重点统一使用 Bold + 实墨色拉开层级。
+        // In CJK sans-serif, SemiBold is close to regular weight; headings and emphasis uniformly use Bold + solid ink to widen the hierarchy.
         val headings = if (answer) {
             listOf(
                 body.copy(
@@ -204,8 +204,8 @@ internal fun rememberMarkdownStyle(tone: MarkdownTone): MarkdownStyle {
 }
 
 /**
- * 相邻块之间的留白。源码中的空行只用于切分块，不直接占据高度；可见间距按语义分配：
- * 标题前更宽以开启新章节，标题与引导段后收紧使其贴近所属内容，分割线上下保持均等呼吸感。
+ * Spacing between adjacent blocks. Blank lines in source only separate blocks and don't occupy height directly; visible spacing is assigned semantically:
+ * wider before headings to open a new section, tighter after headings and lead-in paragraphs to hug their content, and equal breathing room around dividers.
  */
 internal fun markdownBlockGap(previous: MarkdownBlock?, current: MarkdownBlock, tone: MarkdownTone): TextUnit {
     if (previous == null) return 0.sp
@@ -229,7 +229,7 @@ internal fun markdownBlockGap(previous: MarkdownBlock?, current: MarkdownBlock, 
     return (gap * scale).sp
 }
 
-/** 紧凑列表项内部：纯文本与子列表保持紧凑，嵌套引用、代码或表格时留出结构间距。 */
+/** Inside a compact list item: plain text and sub-lists stay compact; nested quotes, code, or tables get structural spacing. */
 internal fun markdownCompactGap(
     previous: MarkdownBlock?,
     current: MarkdownBlock,

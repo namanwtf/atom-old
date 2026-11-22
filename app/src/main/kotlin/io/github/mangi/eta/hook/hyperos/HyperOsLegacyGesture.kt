@@ -22,7 +22,7 @@ internal object HyperOsLegacyGesture {
             hooks.skipped("hyperos.legacy-touch", "NavStubView.onTouchEvent", "HyperOS: launcher already has long-press detection but the callback is unknown, keeping native gesture")
             return
         }
-        // View 回调在所属 UI 线程串行执行；弱键和值中的弱引用共同避免已销毁视图泄漏。
+        // View callbacks run serially on their owning UI thread; the weak keys and the weak references in the values together prevent leaks of destroyed views.
         val gestures = WeakHashMap<View, HyperOsLongPressGesture>()
         hooks.intercept("hyperos.legacy-touch", touch, "NavStubView.onTouchEvent") { chain ->
             val view = chain.getThisObject() as View

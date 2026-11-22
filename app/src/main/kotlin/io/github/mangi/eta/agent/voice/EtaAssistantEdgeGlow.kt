@@ -102,8 +102,8 @@ private fun rememberBottomCornerRadiiPx(): Pair<Float, Float> {
 }
 
 /**
- * 初次唤醒从右侧电源键激发极光光晕，沿真实屏幕圆角连续包覆滑入底部声场；
- * 聆听期间底部流光与两侧圆角余晖随语音音量柔和呼吸，手动切回语音时直接恢复底部光场。
+ * On first wake, an aurora glow emanates from the power button on the right and slides along the real screen corners into the bottom sound field;
+ * while listening, the bottom flowing light and the corner afterglow on both sides breathe softly with the voice volume, and manually switching back to voice restores the bottom light field directly.
  */
 @Composable
 internal fun EtaAssistantEdgeGlow(
@@ -182,7 +182,7 @@ internal fun EtaAssistantEdgeGlow(
         val cornerR = (bottomRightRadiusPx - inset).coerceIn(12f * density, minOf(width, height) * 0.22f)
         val cornerL = (bottomLeftRadiusPx - inset).coerceIn(12f * density, minOf(width, height) * 0.22f)
 
-        // 1. 电源键极光呼吸点亮。
+        // 1. Power-button aurora breathing light-up.
         if (wakeEntry && seconds < POWER_HALO_END_SECONDS) {
             val early = (seconds / POWER_HALO_HOLD_SECONDS).coerceIn(0f, 1f)
             val late = haloEasing.transform(
@@ -213,7 +213,7 @@ internal fun EtaAssistantEdgeGlow(
             )
         }
 
-        // 2. 沿右侧边框经右下真实圆角包覆滑入底边的流光拖尾。
+        // 2. Flowing-light trail that wraps along the right edge, around the real bottom-right corner, and into the bottom edge.
         if (wakeEntry && seconds >= STREAMER_START_SECONDS && seconds < STREAMER_SETTLE_SECONDS) {
             val rawProgress = ((seconds - STREAMER_START_SECONDS) /
                 (bottomRevealEndSeconds - STREAMER_START_SECONDS)).coerceIn(0f, 1f)
@@ -304,7 +304,7 @@ internal fun EtaAssistantEdgeGlow(
             }
         }
 
-        // 3. 底部流光温床与双侧圆角柔光托底。
+        // 3. Bottom flowing-light bed and soft light backing on both corner sides.
         val bottomEntry = if (wakeEntry) {
             bottomRevealEasing.transform(
                 ((seconds - edgeArrivalSeconds * 0.78f) / (BOTTOM_REVEAL_SECONDS * 1.15f)).coerceIn(0f, 1f),
@@ -345,7 +345,7 @@ internal fun EtaAssistantEdgeGlow(
             }
         }
 
-        // 贴合底部与左右圆角的细腻呼吸边光。
+        // Fine breathing edge light hugging the bottom and the left/right corners.
         val rimClimb = (22f + 26f * voiceEnvelope) * density * bottomEntry
         cradleRimPath.reset()
         cradleRimPath.moveTo(inset, height - inset - cornerL - rimClimb)

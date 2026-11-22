@@ -12,17 +12,17 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * 统一的模型生图能力规格：两套 UI、试画测试和工具执行共用同一事实源，
- * 避免 UI 允许选择某档位而实际 API 报 400 或静默降级。
+ * Unified capability spec for model image generation: both UIs, trial-draw tests, and tool execution share the same source of truth,
+ * avoiding a tier the UI lets the user select while the actual API returns 400 or silently downgrades.
  */
 internal data class ImageGenModelCapability(
     val supportedResolutions: List<ImageGenResolution>,
-    /** 是否向服务端显式发送 image_size / imageSize / resolution 参数。 */
+    /** Whether to explicitly send the image_size / imageSize / resolution parameter to the server. */
     val sendsResolutionParam: Boolean = true,
     val maxReferenceImages: Int = 8,
     val supportsEdit: Boolean = true,
     val deprecationNotice: String? = null,
-    /** OpenAI GPT-Image 系列中，该档位语义为画质（标准 / 高清）而非像素倍率。 */
+    /** In the OpenAI GPT-Image series, this tier means quality (standard / HD) rather than a pixel multiplier. */
     val resolutionIsQualityTier: Boolean = false,
 ) {
     fun clampResolution(requested: ImageGenResolution): ImageGenResolution =
@@ -135,7 +135,7 @@ internal data class ImageGenModelCapability(
                     val isKolors = lower.contains("kolors")
                     val supportsEdit = lower.contains("edit") || lower.contains("kontext") || lower.contains("img2img")
                     ImageGenModelCapability(
-                        // FLUX.1-schnell 与 Kolors 仅支持官方 1K 档位枚举尺寸；Qwen-Image 支持 1K 与推荐高分辨率档。
+                        // FLUX.1-schnell and Kolors only support the official 1K-tier enumerated sizes; Qwen-Image supports 1K and the recommended high-resolution tier.
                         supportedResolutions = if (isSchnell || isKolors) {
                             listOf(ImageGenResolution.R_1K)
                         } else {
@@ -152,9 +152,9 @@ internal data class ImageGenModelCapability(
 }
 
 /**
- * 解析并合并凭据后的只读生图运行时配置。
+ * Read-only image-generation runtime config after resolving and merging credentials.
  *
- * 所有 Provider 协议差异收敛在 agent/imagegen/ 层，UI 与工具层不自行拼装认证或端点。
+ * All provider protocol differences converge in the agent/imagegen/ layer; the UI and tool layers do not assemble authentication or endpoints themselves.
  */
 internal data class ImageGenRuntimeConfig(
     val enabled: Boolean,
@@ -186,7 +186,7 @@ internal data class ImageGenRuntimeConfig(
 }
 
 /**
- * 各生图渠道的尺寸与比例映射规则（依据 2026 官方接口规范）。
+ * Size and aspect-ratio mapping rules for each image-generation channel (per the 2026 official interface specs).
  */
 internal object ImageGenSizeMapper {
     fun openAiSize(aspectRatio: ImageGenAspectRatio, model: String): String {
@@ -235,10 +235,10 @@ internal object ImageGenSizeMapper {
         if (resolution == ImageGenResolution.R_1K) "1k" else "2k"
 
     /**
-     * 硅基流动按模型官方枚举尺寸映射：
-     * - FLUX.1-schnell 严格枚举：1024x1024, 960x1280, 768x1024, 720x1440, 720x1280, 1024x576 等；
-     * - Kolors 严格枚举：1024x1024, 960x1280, 768x1024, 720x1440, 720x1280；
-     * - Qwen/Qwen-Image 系列：1328x1328, 1664x928, 928x1664, 1472x1140, 1140x1472, 1584x1056, 1056x1584。
+     * SiliconFlow maps by the model's official enumerated sizes:
+     * - FLUX.1-schnell strict enumeration: 1024x1024, 960x1280, 768x1024, 720x1440, 720x1280, 1024x576, etc.;
+     * - Kolors strict enumeration: 1024x1024, 960x1280, 768x1024, 720x1440, 720x1280;
+     * - Qwen/Qwen-Image series: 1328x1328, 1664x928, 928x1664, 1472x1140, 1140x1472, 1584x1056, 1056x1584.
      */
     fun siliconFlowImageSize(
         model: String,
@@ -336,10 +336,10 @@ internal object ImageGenSizeMapper {
     }
 
     /**
-     * 阿里云百炼 Qwen-Image 2.0：总像素范围 512*512 至 2048*2048，宽高对齐 16 的倍数。
-     * 编辑模式在 AUTO 比例下：
-     * - 1K 省略 size 由服务端按参考图比例输出；
-     * - 2K 按最后一张参考图真实宽高比计算总像素贴近 2048*2048 的宽高（避免把纵图压成方图）。
+     * Alibaba Cloud Bailian Qwen-Image 2.0: total pixels range from 512*512 to 2048*2048, width/height aligned to multiples of 16.
+     * Edit mode under AUTO aspect ratio:
+     * - 1K omits size, letting the server output at the reference image's aspect ratio;
+     * - 2K computes width/height whose total pixels approach 2048*2048 using the last reference image's true aspect ratio (avoiding squashing a portrait image into a square).
      */
     fun qwenSize(
         aspectRatio: ImageGenAspectRatio,
@@ -353,7 +353,7 @@ internal object ImageGenSizeMapper {
                 val refRatio = referenceAspectRatio?.takeIf { it.isFinite() && it > 0.1f }
                     ?: return null
                 val clampedRatio = refRatio.coerceIn(0.35f, 2.85f)
-                // 目标总像素约 2048*2048，稍留余量确保四舍五入到 16 的倍数后不超上限。
+                // Target total pixels about 2048*2048; leave a little margin so rounding to a multiple of 16 does not exceed the limit.
                 val targetPixels = 2000.0 * 2000.0
                 val rawH = sqrt(targetPixels / clampedRatio.toDouble())
                 val rawW = rawH * clampedRatio.toDouble()

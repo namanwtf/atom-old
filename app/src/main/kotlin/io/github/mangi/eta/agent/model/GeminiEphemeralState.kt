@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.model
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 签名与搜索步骤只属于当前 run；稳定会话 codec 不读取这些字段。 */
+/** Signatures and search steps belong only to the current run; the stable session codec does not read these fields. */
 internal object GeminiEphemeralState {
     private const val STEPS = "_eta_gemini_steps"
     private const val VERTEX_PARTS = "_eta_vertex_parts"

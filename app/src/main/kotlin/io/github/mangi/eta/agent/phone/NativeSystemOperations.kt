@@ -30,8 +30,8 @@ internal class NativeSystemOperations(
             else -> PhoneOperation.failure("UNKNOWN_TOOL", "unknown system operation")
         }
 
-    // 移动数据只经 PhoneCommandMain 在 uid 0 的 system Context 中执行，App 进程不直接调用；
-    // 权限被拒时由 PhoneOperations 统一映射为 PHONE_ACCESS_DENIED。
+    // Mobile data is only executed via PhoneCommandMain in the uid 0 system Context; the App process does not call it directly;
+    // permission denials are mapped uniformly to PHONE_ACCESS_DENIED by PhoneOperations.
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
     private fun mobileData(tool: String, args: JSONObject): JSONObject {

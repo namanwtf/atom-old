@@ -13,7 +13,7 @@ internal sealed interface DmpSourceResolution {
     data class Unavailable(val code: String) : DmpSourceResolution
 }
 
-/** 缓存只属于当前工具执行器；字段探测不读取个人记录，也不移除缺失的保护条件。 */
+/** The cache belongs only to the current tool executor; field probing does not read personal records or drop missing protection conditions. */
 internal class DmpSourceResolver(private val transport: DmpQueryTransport) {
     private val resolved = ConcurrentHashMap<String, ResolvedPersonalContextSource>()
 

@@ -5,15 +5,15 @@ import java.nio.CharBuffer
 import java.nio.charset.CodingErrorAction
 
 /**
- * 控制台屏幕缓冲区：把 PTY 字节流解析成行列网格 + 滚动历史。
+ * Console screen buffer: parses the PTY byte stream into a row/column grid plus scrollback history.
  *
- * 只实现 TUI 实际使用的 VT 子集：SGR、光标移动、行/屏擦除、滚动区、插入/删除行与字符、
- * REP、备用屏幕、DEC 线框字符集，以及光标键、自动换行、括号粘贴与同步输出模式。
- * 参数按 ECMA-48 分为参数字节、中间字节与结束字节，未实现的序列整体丢弃，不会把残余参数当正文显示。
+ * Implements only the VT subset TUI apps actually use: SGR, cursor movement, line/screen erase, scroll regions, insert/delete lines and characters,
+ * REP, the alternate screen, the DEC line-drawing character set, plus cursor keys, autowrap, bracketed paste, and synchronized output mode.
+ * Parameters follow ECMA-48's parameter/intermediate/final byte split; unimplemented sequences are discarded whole, so leftover parameters are never shown as text.
  *
- * PTY 输出可能在任意字节处分块：未完结的 UTF-8 字节、转义序列与 OSC/DCS 字符串跨块续接。
- * 终端查询（DSR/CPR、DA、DECRQM、窗口尺寸、OSC 10/11 默认颜色）的应答由 [drainResponses] 取出，调用方回写 stdin；
- * 不应答的程序会在启动时等待超时，部分 CLI 直接因读不到光标位置而退出。
+ * PTY output may be chunked at any byte: incomplete UTF-8 bytes, escape sequences, and OSC/DCS strings continue across chunks.
+ * Replies to terminal queries (DSR/CPR, DA, DECRQM, window size, OSC 10/11 default colors) are retrieved via [drainResponses] and written back to stdin by the caller;
+ * programs that get no reply will hang on a timeout at startup, and some CLIs exit directly because they can't read the cursor position.
  */
 internal class TerminalScreenBuffer(
     cols: Int,
@@ -32,14 +32,14 @@ internal class TerminalScreenBuffer(
     data class Cell(
         val text: String = " ",
         val style: SgrStyle = SgrStyle.PLAIN,
-        /** 宽字符的第二个占位格。 */
+        /** The second placeholder cell of a wide character. */
         val continuation: Boolean = false,
     )
 
     /**
-     * 渲染用的整行快照：创建后不再变化，相等性只比较 id 与 version。
-     * 界面不能直接持有 [Line]：原地改写的行对象身份不变，组合层会把它当作未变化而跳过重绘，
-     * 程序整屏重画后旧内容仍留在屏幕上；绘制线程读取可变单元格也会与 PTY 线程的写入交错。
+     * An immutable whole-line snapshot for rendering: it never changes after creation, and equality compares only id and version.
+     * The UI must not hold [Line] directly: an in-place-mutated line keeps its identity, so Compose would treat it as unchanged and skip redrawing;
+     * after a full-screen redraw the old content stays on screen, and the draw thread reading mutable cells would also interleave with PTY-thread writes.
      */
     class RenderLine internal constructor(val id: Long, val version: Long, val cells: List<Cell>) {
         override fun equals(other: Any?): Boolean =
@@ -48,7 +48,7 @@ internal class TerminalScreenBuffer(
         override fun hashCode(): Int = 31 * id.hashCode() + version.hashCode()
     }
 
-    /** 一行网格；对象身份稳定，向界面发布时转换为 [RenderLine]。 */
+    /** A grid row; object identity is stable and it converts to [RenderLine] when published to the UI. */
     class Line internal constructor(val id: Long, width: Int) {
         internal var cells = Array(width) { Cell() }
         var version = 0L
@@ -68,7 +68,7 @@ internal class TerminalScreenBuffer(
             if (width == cells.size) return
             val previous = cells
             cells = Array(width) { index -> previous.getOrNull(index) ?: Cell() }
-            // 截断点落在宽字符中间时，首格失去占位格，只能清成空白。
+            // When the cut point falls inside a wide character, the first cell loses its placeholder and can only be cleared to blank.
             if (width < previous.size && previous[width].continuation) cells[width - 1] = Cell()
             version++
         }
@@ -79,7 +79,7 @@ internal class TerminalScreenBuffer(
 
         private var rendered: RenderLine? = null
 
-        /** 版本未变时复用上一次的快照，每帧只为真正改动过的行复制单元格。 */
+        /** Reuses the previous snapshot when the version is unchanged, copying cells each frame only for rows that actually changed. */
         internal fun render(): RenderLine =
             rendered?.takeIf { it.version == version } ?: RenderLine(id, version, cells.toList()).also { rendered = it }
     }
@@ -88,7 +88,7 @@ internal class TerminalScreenBuffer(
     private var screen = Array(rows) { Line(nextLineId++, cols) }
     private val scrollback = ArrayDeque<Line>()
 
-    /** 每次 process 产生变化时递增；渲染层据此拉取新快照。 */
+    /** Incremented each time process produces a change; the render layer pulls a new snapshot accordingly. */
     var version = 0L
         private set
 
@@ -99,15 +99,15 @@ internal class TerminalScreenBuffer(
     var cursorVisible = true
         private set
 
-    /** DECCKM：开启后方向键发送 SS3（ESC O A）而不是 CSI（ESC [ A）。 */
+    /** DECCKM: when on, arrow keys send SS3 (ESC O A) instead of CSI (ESC [ A). */
     var applicationCursorKeys = false
         private set
 
-    /** 开启后粘贴内容需包裹在 ESC [200~ / ESC [201~ 之间，程序据此区分粘贴与逐键输入。 */
+    /** When on, pasted content must be wrapped between ESC [200~ / ESC [201~ so programs can tell paste from per-key input. */
     var bracketedPaste = false
         private set
 
-    /** ?2026：程序声明一帧尚未画完，渲染层应暂缓发布，避免看到半帧画面。 */
+    /** ?2026: the program declares a frame is not finished, so the render layer should hold publication to avoid showing a half-drawn frame. */
     var synchronizedOutput = false
         private set
 
@@ -132,17 +132,17 @@ internal class TerminalScreenBuffer(
         .onUnmappableCharacter(CodingErrorAction.REPLACE)
     private var undecoded = EMPTY_BYTES
 
-    /** 未完结的转义序列或被拆开的代理对，等待下一块输出补齐。 */
+    /** An unfinished escape sequence or split surrogate pair, waiting to be completed by the next output chunk. */
     private var pendingInput = ""
 
-    /** 位于 OSC/DCS/APC/PM/SOS 字符串内，直到 BEL 或 ST 结束；内容不渲染。 */
+    /** Inside an OSC/DCS/APC/PM/SOS string until BEL or ST ends it; the content is not rendered. */
     private var inControlString = false
     private var controlStringKind = ' '
     private val controlString = StringBuilder()
 
     /**
-     * 界面的默认前景/背景色（0xAARRGGBB）。TUI 经 OSC 10/11 查询它判断深浅主题；
-     * 不应答时多数程序假定深色背景，浅色主题下会用浅灰、浅黄等难以辨认的配色。
+     * The UI's default foreground/background colors (0xAARRGGBB). TUIs query them via OSC 10/11 to decide between light and dark themes;
+     * without a reply most programs assume a dark background, and under a light theme they pick illegible light-gray/light-yellow colors.
      */
     var defaultForeground: Long = 0xFF000000
     var defaultBackground: Long = 0xFFFFFFFF
@@ -157,10 +157,10 @@ internal class TerminalScreenBuffer(
         val shiftOut: Boolean = false,
     )
 
-    /** 滚动历史 + 当前屏幕；Line 身份跨快照稳定。 */
+    /** Scrollback history + current screen; Line identity is stable across snapshots. */
     fun lines(): List<Line> = scrollback.toList() + screen.toList()
 
-    /** 发布给界面的不可变画面；调用方需与 [process]/[resize] 持同一把锁。 */
+    /** Immutable frame published to the UI; callers must hold the same lock as [process]/[resize]. */
     fun renderLines(): List<RenderLine> {
         val out = ArrayList<RenderLine>(scrollback.size + screen.size)
         scrollback.forEach { out += it.render() }
@@ -168,21 +168,21 @@ internal class TerminalScreenBuffer(
         return out
     }
 
-    /** 测试与诊断用：当前屏幕的纯文本行（尾随空格裁剪）。 */
+    /** For testing and diagnostics: the current screen's plain-text rows (trailing spaces trimmed). */
     fun dump(): List<String> = screen.map { line ->
         line.cells.joinToString("") { it.text }.trimEnd()
     }
 
-    /** 当前屏幕第 [row] 行（不含滚动历史）。 */
+    /** Row [row] of the current screen (excluding scrollback). */
     fun screenLine(row: Int): Line = screen[row]
 
-    /** 取出待回写给程序的查询应答；没有时返回 null。 */
+    /** Retrieves the query reply to write back to the program; returns null when there is none. */
     fun drainResponses(): String? {
         if (responses.isEmpty()) return null
         return responses.toString().also { responses.setLength(0) }
     }
 
-    /** 喂入原始 PTY 字节；被分块截断的 UTF-8 多字节序列保留到下一次续接。 */
+    /** Feeds raw PTY bytes; a UTF-8 multibyte sequence truncated by chunking is kept for the next continuation. */
     fun feed(bytes: ByteArray, length: Int = bytes.size) {
         val source = if (undecoded.isEmpty()) bytes else undecoded + bytes.copyOfRange(0, length)
         val size = if (undecoded.isEmpty()) length else source.size
@@ -208,7 +208,7 @@ internal class TerminalScreenBuffer(
                 c.code == 0x1B -> {
                     val next = consumeEscape(text, i)
                     if (next == INCOMPLETE) {
-                        // 超长仍未结束的序列视为损坏，丢弃而不是无限缓存。
+                        // A sequence that runs too long without ending is treated as corrupt and dropped rather than buffered forever.
                         pendingInput = text.substring(i).takeIf { it.length <= MAX_PENDING_INPUT }.orEmpty()
                         break
                     }
@@ -261,8 +261,8 @@ internal class TerminalScreenBuffer(
     }
 
     /**
-     * 调整网格尺寸。缩小时优先丢弃光标下方的空行，不够再把顶部行推入滚动历史；
-     * 放大时从滚动历史取回，使软键盘弹出与收起来回切换时画面保持贴底且可逆。
+     * Resizes the grid. When shrinking, drop empty rows below the cursor first, and only if that's not enough push top rows into scrollback;
+     * when growing, pull rows back from scrollback so the view stays bottom-anchored and reversible across soft-keyboard show/hide.
      */
     fun resize(newCols: Int, newRows: Int) {
         require(newCols > 0 && newRows > 0) { "cols/rows must be positive" }
@@ -339,7 +339,7 @@ internal class TerminalScreenBuffer(
         lastPrintedWidth = width
     }
 
-    /** 组合附加符与零宽连接符并入前一个字形所在的单元格。 */
+    /** Combining marks and zero-width joiners merge into the previous glyph's cell. */
     private fun appendToPreviousCell(value: String) {
         var col = if (wrapPending) cursorCol else cursorCol - 1
         if (col < 0) return
@@ -357,7 +357,7 @@ internal class TerminalScreenBuffer(
         }
         wrapPending = false
         if (width == 2 && cursorCol == cols - 1) {
-            // 宽字符不压右边界：自动换行时换到下一行书写，否则退一格写在行尾。
+            // Wide characters don't squeeze the right edge: wrap to the next line when autowrap is on, otherwise back up one cell and write at the line end.
             if (autoWrap) {
                 cursorCol = 0
                 linefeed()
@@ -380,7 +380,7 @@ internal class TerminalScreenBuffer(
         }
     }
 
-    /** 覆盖宽字符的任意一半时清掉另一半，避免残留半个字形。 */
+    /** When overwriting either half of a wide character, clear the other half to avoid a stray half-glyph. */
     private fun clearWideCharAt(line: Line, col: Int) {
         val cell = line.cells[col]
         if (cell.continuation && col > 0) {
@@ -448,11 +448,11 @@ internal class TerminalScreenBuffer(
         }
     }
 
-    /** 擦除按背景色继承（bce）：擦出的空白保留当前 SGR 背景。 */
+    /** Erase inherits the background color (bce): erased blanks keep the current SGR background. */
     private fun eraseCell(): Cell =
         if (style.bg != null) Cell(" ", SgrStyle(bg = style.bg)) else Cell()
 
-    /** 返回序列之后的下标；序列在本块内没有结束时返回 [INCOMPLETE]。 */
+    /** Returns the index after the sequence; returns [INCOMPLETE] when the sequence doesn't finish within this chunk. */
     private fun consumeEscape(text: String, start: Int): Int {
         if (start + 1 >= text.length) return INCOMPLETE
         return when (val kind = text[start + 1]) {
@@ -499,12 +499,12 @@ internal class TerminalScreenBuffer(
                 reset()
                 start + 2
             }
-            // ESC \ 是字符串终止符 ST，单独出现时无动作；ESC = / ESC > 等键盘模式不影响网格。
+            // ESC \ is the string terminator ST and is a no-op on its own; keyboard modes like ESC = / ESC > don't affect the grid.
             else -> start + 2
         }
     }
 
-    /** 跳过字符串内容：BEL 结束；ESC 交还主循环，ESC \ 作为 ST 吞掉，其它 ESC 视为被新序列中断。 */
+    /** Skips string content: BEL ends it; ESC returns to the main loop, ESC \ is consumed as ST, and any other ESC is treated as a new sequence interrupting it. */
     private fun skipControlString(text: String, from: Int): Int {
         var j = from
         while (j < text.length) {
@@ -518,7 +518,7 @@ internal class TerminalScreenBuffer(
                     return j + 1
                 }
                 0x1B -> {
-                    // ESC 位于块尾时无法判断是否为 ST，留到下一块续接。
+                    // When ESC sits at the end of the chunk we can't tell if it's ST; defer it to the next chunk.
                     if (j + 1 >= text.length) {
                         pendingInput = "\u001B"
                         return text.length
@@ -545,7 +545,7 @@ internal class TerminalScreenBuffer(
         responses.append("\u001B]${color.first};${xtermColor(color.second)}$terminator")
     }
 
-    /** xterm 的 rgb:rrrr/gggg/bbbb 写法，8 位分量复制成 16 位。 */
+    /** xterm's rgb:rrrr/gggg/bbbb form; each 8-bit component is replicated to 16 bits. */
     private fun xtermColor(argb: Long): String {
         fun channel(shift: Int): String = "%02x".format((argb shr shift) and 0xFF).repeat(2)
         return "rgb:${channel(16)}/${channel(8)}/${channel(0)}"
@@ -560,7 +560,7 @@ internal class TerminalScreenBuffer(
         while (i < text.length && text[i] in ' '..'/') i++
         if (i >= text.length) return INCOMPLETE
         val final = text[i]
-        // 序列中途出现非法字节：放弃该序列，让这个字节按普通输入重新处理。
+        // An illegal byte appears mid-sequence: abandon the sequence and reprocess this byte as ordinary input.
         if (final !in '@'..'~') return i
         dispatchCsi(params, text.substring(intermediatesStart, i), final)
         return i + 1
@@ -650,7 +650,7 @@ internal class TerminalScreenBuffer(
         }
     }
 
-    /** 相对移动受滚动区约束，但光标已在滚动区外时只受屏幕边界约束。 */
+    /** Relative movement is constrained by the scroll region, but once the cursor is already outside it only the screen bounds apply. */
     private fun moveCursorRow(delta: Int) {
         val top = if (cursorRow >= scrollTop) scrollTop else 0
         val bottom = if (cursorRow <= scrollBottom) scrollBottom else rows - 1
@@ -693,7 +693,7 @@ internal class TerminalScreenBuffer(
         }
     }
 
-    /** DECRQM 应答值：1 已设置，2 已重置，0 不识别。 */
+    /** DECRQM reply values: 1 set, 2 reset, 0 unknown. */
     private fun privateModeState(mode: Int): Int {
         val enabled = when (mode) {
             1 -> applicationCursorKeys
@@ -823,7 +823,7 @@ internal class TerminalScreenBuffer(
         for (col in cursorCol until end) line.set(col, blank)
     }
 
-    /** DECSTR：恢复模式与样式，不清屏也不清滚动历史。 */
+    /** DECSTR: restores modes and styles without clearing the screen or scrollback. */
     private fun softReset() {
         cursorVisible = true
         style = SgrStyle.PLAIN
@@ -857,7 +857,7 @@ internal class TerminalScreenBuffer(
         const val MAX_CONTROL_STRING = 64
         val EMPTY_BYTES = ByteArray(0)
 
-        /** VT220 + ANSI 颜色；不声明 sixel 等未实现能力。 */
+        /** VT220 + ANSI colors; doesn't declare unimplemented capabilities like sixel. */
         const val PRIMARY_DEVICE_ATTRIBUTES = "\u001B[?62;22c"
         const val SECONDARY_DEVICE_ATTRIBUTES = "\u001B[>1;10;0c"
     }

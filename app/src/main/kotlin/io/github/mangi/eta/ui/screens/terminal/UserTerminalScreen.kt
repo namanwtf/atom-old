@@ -96,8 +96,8 @@ import top.yukonga.miuix.kmp.squircle.squircleBackground
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 用户手动终端：块式输出（命令、输出、退出码），给人用；与 AI 工具调用的任务模型分开。
- * 会话由 [UserTerminalStore] 持有，离开页面后正在运行的命令仍在常驻会话里继续。
+ * User manual terminal: block-based output (command, output, exit code) for humans; separate from the task model used by AI tool calls.
+ * Sessions are held by [UserTerminalStore]; after leaving the page, running commands keep going in the resident session.
  */
 @Composable
 internal fun UserTerminalScreen(
@@ -111,7 +111,7 @@ internal fun UserTerminalScreen(
     var showSessions by remember { mutableStateOf(false) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // 从安装页返回后刷新 Linux 就绪态，引导页才会自动让位给终端；守护任务状态一并刷新。
+    // Refresh the Linux ready state after returning from the install page so the guide page yields to the terminal; refresh daemon task state too.
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -128,7 +128,7 @@ internal fun UserTerminalScreen(
     fun submit() {
         val command = input.text.toString().trim()
         if (command.isEmpty()) return
-        // 运行中输入发给前台进程 stdin，否则作为新命令执行。
+        // While running, input goes to the foreground process stdin; otherwise it runs as a new command.
         if (state.running) {
             store.sendInput(command)
         } else {
@@ -224,7 +224,7 @@ private fun BlockList(
             lastVisible >= layoutInfo.totalItemsCount - 1
         }
     }
-    // 输出增长只在用户本来就停留在底部时跟随，向上翻历史不被打断。
+    // Output growth only follows when the user is already at the bottom; scrolling up through history is not interrupted.
     LaunchedEffect(blocks.size, blocks.lastOrNull()?.output?.length) {
         if (atBottom && blocks.isNotEmpty()) {
             listState.scrollToItem(blocks.lastIndex)
@@ -442,8 +442,8 @@ private fun SystemBlock(block: TerminalBlockUi) {
 }
 
 /**
- * 底部输入区：当前目录在上、命令输入在下。回车直接执行；
- * 运行中输入框为空时尾部按钮变为停止，有内容时发送到前台进程的 stdin。
+ * Bottom input area: current directory on top, command input below. Enter executes directly;
+ * while running, an empty input box turns the trailing button into stop; with content it sends to the foreground process stdin.
  */
 @Composable
 private fun InputPanel(
@@ -535,7 +535,7 @@ private fun EmptyHint(message: String? = null) {
     )
 }
 
-/** 终端区域的居中占位：空态、环境未就绪与会话断开共用同一种层级与留白。 */
+/** Centered placeholder for the terminal area: empty state, environment-not-ready, and disconnected sessions share the same layering and spacing. */
 @Composable
 internal fun TerminalPlaceholder(
     icon: ImageVector,

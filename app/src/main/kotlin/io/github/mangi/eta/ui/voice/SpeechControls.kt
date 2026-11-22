@@ -129,7 +129,7 @@ internal fun openSpeechSettings(context: Context) {
     )
 }
 
-/** 页面不可见或销毁时终止音频任务。 */
+/** Terminates the audio task when the page becomes invisible or is destroyed. */
 @Composable
 internal fun SpeechLifecycle(onStop: () -> Unit) {
     val owner = LocalLifecycleOwner.current
@@ -208,7 +208,7 @@ internal fun isInHoldCancelZone(
         position.x < -cancelMarginPx ||
         position.x > width + cancelMarginPx
 
-/** 输入栏语音入口：轻点进入两步听写（点开始、点完成），按住说话并在安全区松手直接自动发送，移出取消。 */
+/** Voice entry on the input bar: tap to enter two-step dictation (tap start, tap finish), hold to speak and release in the safe zone to auto-send, move away to cancel. */
 @Composable
 internal fun SpeechDictationButton(
     controller: SpeechInputController,
@@ -363,7 +363,7 @@ internal fun SpeechDictationButton(
                     if (!currentEnabled || initialSnapshot.phase == EtaSpeechPhase.RECOGNIZING) {
                         return@awaitEachGesture
                     }
-                    // 轻点听写进行中：按下微缩反馈，抬起仍在控件周边即完成识别。
+                    // Tap-to-dictate in progress: press shows subtle feedback, release while still near the control finishes recognition.
                     if (initialSnapshot.active && !initialSnapshot.holdToTalk) {
                         animScope.launch { pressScale.animateTo(0.88f, PressDownSpring) }
                         var finishedByTap = false
@@ -521,7 +521,7 @@ internal fun SpeechDictationButton(
     }
 }
 
-/** 输入栏上方的听写状态条：录音中显示电平与完成/取消，按住说话实时反馈送出/取消态，错误给出设置或关闭出口。 */
+/** Dictation status bar above the input bar: shows the level and finish/cancel while recording, real-time send/cancel feedback while holding to speak, and a settings or close exit on error. */
 @Composable
 internal fun SpeechInputFeedback(
     controller: SpeechInputController,
@@ -688,8 +688,8 @@ internal fun SpeechInputFeedback(
 }
 
 /**
- * 录音电平波形。录音端约 5 次/秒上报 RMS，这里逐帧做包络插值：上升快、回落慢，
- * 说话时跳动跟手，停顿时平滑收回。电平与包络只在绘制阶段读取，帧循环不触发重组。
+ * Recording level waveform. The recording side reports RMS about 5 times/second; here we do per-frame envelope interpolation: fast attack, slow release,
+ * responsive jumps while speaking, smooth fall-off during pauses. Level and envelope are read only in the draw phase; the frame loop does not trigger recomposition.
  */
 @Composable
 private fun SpeechLevelBars(
@@ -703,7 +703,7 @@ private fun SpeechLevelBars(
     }
     Canvas(modifier = Modifier.size(width = 22.dp, height = 16.dp)) {
         frame
-        // RMS 与听感近似对数关系，开方后小声说话也能看到明显起伏。
+        // RMS has an approximately logarithmic relationship to perceived loudness; after taking the square root even quiet speech shows visible movement.
         val input = sqrt(level().coerceIn(0f, 1f))
         val barWidth = 2.5.dp.toPx()
         val gap = (size.width - barWidth * envelope.size) / (envelope.size - 1)
@@ -760,8 +760,8 @@ internal val LocalSpeechPlayback = staticCompositionLocalOf<SpeechPlaybackContro
 internal val LocalSpeechPlaybackEnabled = compositionLocalOf { false }
 
 /**
- * 聊天页自动朗读：一轮回答在本页流式生成并正常结束后，朗读这一轮的最终回答。
- * 只认在本页看到过流式生成的回答，切换会话、打开历史或停止、失败的回合都不会补读。
+ * Auto read-aloud on the chat page: after a turn's answer finishes streaming normally on this page, read that turn's final answer aloud.
+ * Only answers whose streaming generation was observed on this page qualify; switching conversations, opening history, or stopped/failed turns are never read.
  */
 @Composable
 internal fun SpeechAutoReadAloud(messages: List<AgentChatMessageUi>, isStreaming: Boolean) {
@@ -772,7 +772,7 @@ internal fun SpeechAutoReadAloud(messages: List<AgentChatMessageUi>, isStreaming
     val currentMessages by rememberUpdatedState(messages)
     LaunchedEffect(messages) {
         messages.lastOrNull { it is AgentMessageUi && it.isStreaming }?.let { watchedId = it.id }
-        // 被观察的回答不在当前列表里，说明已经切到别的会话。
+        // The observed answer is no longer in the current list, meaning we've switched to another conversation.
         if (watchedId != null && messages.none { it.id == watchedId }) watchedId = null
     }
     LaunchedEffect(isStreaming) {
@@ -789,7 +789,7 @@ internal fun SpeechAutoReadAloud(messages: List<AgentChatMessageUi>, isStreaming
         }
         if (!interrupted && answer.content.isNotBlank()) controller.speak(answer.id, answer.content)
     }
-    // 关闭自动朗读视同“别再读了”，正在进行的朗读一并停止。
+    // Turning off auto read-aloud is treated as "stop reading"; any in-progress reading stops too.
     var wasEnabled by remember { mutableStateOf(enabled) }
     LaunchedEffect(enabled) {
         if (wasEnabled && !enabled) controller.stop()
@@ -798,8 +798,8 @@ internal fun SpeechAutoReadAloud(messages: List<AgentChatMessageUi>, isStreaming
 }
 
 /**
- * 朗读控制器随聊天页存在；未配置播报服务时朗读入口整体隐藏。
- * 退到后台或锁屏时继续朗读（出声期间由前台播放服务保活），离开聊天页才停止。
+ * The read-aloud controller lives with the chat page; the read-aloud entry is hidden entirely when no speech service is configured.
+ * Reading continues when backgrounded or the screen locks (kept alive by the foreground playback service while speaking), and stops only when leaving the chat page.
  */
 @Composable
 internal fun SpeechPlaybackHost(content: @Composable () -> Unit) {
@@ -836,7 +836,7 @@ internal fun SpeechPlaybackErrors(controller: SpeechPlaybackController) {
     }
 }
 
-/** 朗读入口与相邻的消息操作共享同一套尺寸与线性图标风格，播放中转为停止。 */
+/** The read-aloud entry shares the same sizing and linear icon style as adjacent message actions, turning into stop while playing. */
 @Composable
 internal fun SpeechReadAloudButton(messageId: String, text: String) {
     val controller = LocalSpeechPlayback.current ?: return

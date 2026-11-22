@@ -22,7 +22,7 @@ import io.github.mangi.eta.agent.tool.AgentToolCapabilities
 
 internal data class DeviceCapabilitiesUi(
     val root: RootAccessState,
-    // 服务回调只反映 Binder 连接，不能用于判断管理器中的模块开关或 Hook 生效状态。
+    // Service callbacks only reflect the Binder connection; they can't judge module toggles or Hook activation state in the manager.
     val xposedConnected: Boolean,
     val tools: AgentToolCapabilities,
 ) {

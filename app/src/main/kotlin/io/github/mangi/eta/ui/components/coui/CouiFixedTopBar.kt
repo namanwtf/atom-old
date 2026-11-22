@@ -36,7 +36,7 @@ internal fun CouiFixedTopBar(
 
 @Composable
 internal fun BoxScope.CouiFixedTopBarGlow(backdrop: LayerBackdrop, backgroundColor: Color) {
-    // 库通过滚动阈值表示凝光已完全显现，固定顶栏直接使用该状态。
+    // The library signals via a scroll threshold that the glow is fully visible; the fixed top bar uses that state directly.
     val fullyVisibleOffset = with(LocalDensity.current) { TopAppBarGlowDefaults.AlphaScrollThreshold.toPx() }
     TopAppBarGlow(
         backdrop = backdrop,

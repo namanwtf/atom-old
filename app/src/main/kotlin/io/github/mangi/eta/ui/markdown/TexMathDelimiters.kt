@@ -1,12 +1,12 @@
 package io.github.mangi.eta.ui.markdown
 
 /**
- * 模型常用 LaTeX 的 `\(...\)` 与 `\[...\]` 写公式，GFM 不认识它们，反斜杠会被当作转义吃掉，
- * 公式里的 `_`、`\{` 也会被改写。解析前把成对的定界符等长替换为 GFM 已支持的 `$$`：
- * 源码偏移不变，块缓存、reveal key 和流式快照都不受影响。
+ * Models commonly write formulas using LaTeX's `\(...\)` and `\[...\]`; GFM doesn't recognize them, the backslash gets consumed as an escape,
+ * and `_`, `\{` inside formulas would also be rewritten. Before parsing, replace paired delimiters with the GFM-supported `$$` at equal length:
+ * source offsets stay unchanged, so block cache, reveal key, and streaming snapshots are all unaffected.
  *
- * 只替换能确认的公式：跳过代码块与行内代码，不跨空行；`\[...\]` 必须独占一行，
- * 以免把 Markdown 转义的方括号（如 `arr\[0\]`）误判为公式。未闭合的定界符保持原文。
+ * Only replace formulas that can be confirmed: skip code blocks and inline code, don't span blank lines; `\[...\]` must occupy a line by itself,
+ * so as not to mistake Markdown-escaped brackets (like `arr\[0\]`) for a formula. Unclosed delimiters are kept as-is.
  */
 internal object TexMathDelimiters {
     fun normalize(source: String): String {
@@ -17,7 +17,7 @@ internal object TexMathDelimiters {
         var index = 0
         while (index < source.length) {
             val char = source[index]
-            // 先消费换行，保证围栏分支跳到行尾时游标一定前进。
+            // Consume the newline first so the cursor always advances when the fence branch jumps to line end.
             if (char == '\n') {
                 index += 1
                 lineStart = index
@@ -65,7 +65,7 @@ internal object TexMathDelimiters {
                         index = close + 2
                     }
                 }
-                // 其余反斜杠转义（包括 `\\`）整体跳过，避免 `\\(` 被当成定界符。
+                // Other backslash escapes (including `\\`) are skipped wholesale, so `\\(` is not mistaken for a delimiter.
                 char == '\\' -> index += 2
                 else -> index += 1
             }
@@ -73,7 +73,7 @@ internal object TexMathDelimiters {
         return output.toString()
     }
 
-    /** 寻找未转义的 `\` + [closer]；行内公式不跨空行，块级公式不跨入代码围栏，内容不能为空白。 */
+    /** Finds an unescaped `\` + [closer]; inline formulas don't span blank lines, block formulas don't cross into code fences, and content must not be blank. */
     private fun findClose(source: String, from: Int, closer: Char, allowBlankLines: Boolean): Int? {
         var index = from
         while (index < source.length - 1) {
@@ -94,7 +94,7 @@ internal object TexMathDelimiters {
         return null
     }
 
-    /** 行内代码以等长反引号串闭合；找不到时开头的反引号只是普通字符。 */
+    /** Inline code closes with an equal-length run of backticks; if none is found the opening backtick is just an ordinary character. */
     private fun codeSpanEnd(source: String, from: Int, run: Int): Int? {
         var index = from
         while (index < source.length) {

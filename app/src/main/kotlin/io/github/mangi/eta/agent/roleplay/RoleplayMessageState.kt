@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.roleplay
 
 import kotlinx.serialization.Serializable
 
-/** 正文修订独立于原始执行历史；关联使用运行产生的消息标识，不依赖正文相等。 */
+/** Body revisions are independent of the original execution history; association uses the message IDs produced by the run, not body equality. */
 @Serializable
 internal data class RoleplayMessageState(
     val links: Map<String, RoleplayMessageLink> = emptyMap(),

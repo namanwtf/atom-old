@@ -9,16 +9,16 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * 侧边栏专用等线宽（24x24 视口、1.75px 圆角描边）图标集。
+ * Sidebar-specific stroke-width-uniform icon set (24x24 viewport, 1.75px rounded stroke).
  *
- * 保持功能入口、底栏操作与历史标识之间的视觉粗细一致，避免混用实心与粗细不一的系统图标。
+ * Keeps visual weight consistent among feature entries, bottom-bar actions, and history markers, avoiding mixing solid and uneven-weight system icons.
  */
 internal object ConversationPaneIcons {
     private const val STROKE = 1.75f
 
     /**
-     * Eta（η）专属品牌几何标识：左上起笔带轻盈弧挑，拱肩顺滑延展为修长右笔。
-     * 配合实色圆形印章作为反白核心图形，避免与通用星芒图标撞脸。
+     * Eta (η) exclusive brand geometric mark: a light upward flick starts at the upper left, the shoulder extends smoothly into a slender right stroke.
+     * Pairs with a solid circular seal as the knockout core, avoiding resemblance to generic starburst icons.
      */
     val BrandEta: ImageVector by lazy {
         vector24("PaneBrandEta") {
@@ -57,7 +57,7 @@ internal object ConversationPaneIcons {
                 verticalLineTo(8.2f)
                 quadTo(5.4f, 5.4f, 8.2f, 5.4f)
                 close()
-                // 四周对称引脚
+                // Symmetric pins on all four sides
                 moveTo(9.6f, 2.8f)
                 verticalLineTo(5.4f)
                 moveTo(14.4f, 2.8f)
@@ -117,13 +117,13 @@ internal object ConversationPaneIcons {
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             ) {
-                // 左上
+                // Upper-left
                 roundedSquare(4.2f, 4.2f, 6.2f, 1.8f)
-                // 左下
+                // Lower-left
                 roundedSquare(4.2f, 13.6f, 6.2f, 1.8f)
-                // 右下
+                // Lower-right
                 roundedSquare(13.6f, 13.6f, 6.2f, 1.8f)
-                // 右上旋转微菱格
+                // Upper-right rotated micro-diamond lattice
                 moveTo(16.7f, 3.7f)
                 lineTo(20.3f, 7.3f)
                 lineTo(16.7f, 10.9f)
@@ -187,12 +187,12 @@ internal object ConversationPaneIcons {
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             ) {
-                // 中心圆环
+                // Center ring
                 moveTo(14.9f, 12.0f)
                 arcTo(2.9f, 2.9f, 0f, isMoreThanHalf = true, isPositiveArc = true, 9.1f, 12.0f)
                 arcTo(2.9f, 2.9f, 0f, isMoreThanHalf = true, isPositiveArc = true, 14.9f, 12.0f)
                 close()
-                // 对称柔弧 6 瓣齿轮外轮廓
+                // Symmetric soft-arc 6-lobe gear outline
                 moveTo(12.00f, 3.00f)
                 curveTo(13.65f, 3.00f, 13.97f, 5.29f, 15.40f, 6.11f)
                 curveTo(16.83f, 6.94f, 18.97f, 6.07f, 19.79f, 7.50f)
@@ -219,12 +219,12 @@ internal object ConversationPaneIcons {
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             ) {
-                // 精致圆形表盘
+                // Refined circular dial
                 moveTo(20.2f, 12.0f)
                 arcTo(8.2f, 8.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 3.8f, 12.0f)
                 arcTo(8.2f, 8.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 20.2f, 12.0f)
                 close()
-                // 指针（12点到表心再到约4点）
+                // Hand (12 o'clock to the dial center, then to about 4 o'clock)
                 moveTo(12.0f, 7.6f)
                 verticalLineTo(12.0f)
                 lineTo(15.2f, 13.9f)

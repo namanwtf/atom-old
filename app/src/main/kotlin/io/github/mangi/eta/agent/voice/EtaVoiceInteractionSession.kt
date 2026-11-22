@@ -11,10 +11,10 @@ import android.service.voice.VoiceInteractionSession
 import android.view.View
 
 /**
- * 系统数字助理的入口桥接。
+ * Entry bridge for the system digital assistant.
  *
- * 系统会为本类创建 TYPE_VOICE_INTERACTION 窗口，但 Eta 的实际界面由自己的
- * TYPE_APPLICATION_OVERLAY 窗口承载，避免把厂商助手动画和输入层级绑定到系统会话窗口。
+ * The system creates a TYPE_VOICE_INTERACTION window for this class, but Eta's actual UI is hosted in its own
+ * TYPE_APPLICATION_OVERLAY window, so the vendor assistant animation and input layering are not bound to the system session window.
  */
 internal class EtaVoiceInteractionSession(context: Context) : VoiceInteractionSession(context) {
     private var screenContext: EtaAssistantScreenContext? = null
@@ -42,7 +42,7 @@ internal class EtaVoiceInteractionSession(context: Context) : VoiceInteractionSe
 
     override fun onPrepareShow(args: Bundle?, showFlags: Int) {
         super.onPrepareShow(args, showFlags)
-        // 浮窗仍处于刚唤起的初始空闲态时合并重复唤醒，保留初次截取的底层界面上下文与截图。
+        // When the overlay is still in the freshly-awakened initial idle state, merge duplicate wakes and keep the initially captured underlying-screen context and screenshot.
         if (EtaAssistantOverlayService.hasFreshVisibleEntry()) {
             coalescedShow = true
             return
@@ -96,7 +96,7 @@ internal class EtaVoiceInteractionSession(context: Context) : VoiceInteractionSe
 
     override fun onDestroy() {
         coalescedShow = false
-        // 浮窗拥有独立生命周期；系统会话重建不代表用户关闭了助理。
+        // The overlay has its own lifecycle; the system session being rebuilt does not mean the user closed the assistant.
         if (!shown) EtaAssistantScreenContexts.release(screenContext?.id)
         screenContext = null
         context.unregisterReceiver(controlReceiver)

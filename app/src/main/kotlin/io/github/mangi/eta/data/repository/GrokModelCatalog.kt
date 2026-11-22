@@ -14,7 +14,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
 
-/** Grok 目录中的展示标识、推理标识和协议声明独立于通用 OpenAI 模型目录。 */
+/** Display labels, reasoning labels, and protocol declarations in the Grok catalog are independent of the generic OpenAI model catalog. */
 internal object GrokModelCatalog {
     fun parse(
         entries: JsonArray,

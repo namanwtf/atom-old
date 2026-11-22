@@ -21,10 +21,10 @@ import io.github.mangi.eta.core.safeLogType
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 在 system_server 存活期间按用户选择保持 Eta 无障碍服务可用。
+ * Keep Eta's accessibility service available per the user's selection while system_server is alive.
  *
- * 保护默认关闭；开启后只维护 owner 用户中的 Eta 组件与总开关，始终保留其他服务。
- * 所有工作复用 Android 的 BackgroundThread，不创建额外线程，也不做周期轮询。
+ * Protection is off by default; when enabled it only maintains the Eta component and master switch for the owner user, always preserving other services.
+ * All work reuses Android's BackgroundThread, creating no extra threads and performing no periodic polling.
  */
 internal class AccessibilityServiceEnforcer(
     private val handler: Handler,
@@ -232,7 +232,7 @@ internal class AccessibilityServiceEnforcer(
                         addAction(Intent.ACTION_LOCKED_BOOT_COMPLETED)
                         addAction(Intent.ACTION_BOOT_COMPLETED)
                         addAction(Intent.ACTION_USER_UNLOCKED)
-                        // 回到解锁态时确认一次真实连接，稳定期间不轮询。
+                        // Confirm the real connection once when returning to the unlocked state; do not poll during the stable period.
                         addAction(Intent.ACTION_USER_PRESENT)
                     },
                     null,
@@ -275,7 +275,7 @@ internal class AccessibilityServiceEnforcer(
 
     private fun createControlReceiver(): BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(receiverContext: Context, intent: Intent) {
-            // 保护控制只信任系统附带的发送者 UID。
+            // Protection control only trusts the sender UID provided by the system.
             val senderUid = sentFromUid
             val ordered = isOrderedBroadcast
             val action = intent.action
@@ -464,8 +464,8 @@ internal class AccessibilityServiceEnforcer(
         )
         if (!containsAccessibilityService(currentServices, SERVICE_COMPONENT.flattenToString())) {
             if (restoreMissingImmediately) {
-                // GUI 工具已经在等待本次恢复，不能被此前排队的 30 秒设置退避拖到超时。
-                // 这里只响应经过协议版本与 UID 校验的显式请求；常规设置争抢仍遵守退避。
+                // The GUI tool is already waiting for this recovery, and must not be dragged into a timeout by a previously queued 30-second settings backoff.
+                // Here we only respond to explicit requests that passed protocol-version and UID validation; ordinary settings contention still honors backoff.
                 enforce(context, "runtime_recovery_missing_service")
                 if (isExpectedServiceConfigured(context)) {
                     scheduleHealthCheck(
@@ -684,7 +684,7 @@ internal class AccessibilityServiceEnforcer(
     }
 
     /**
-     * Settings 没有公开 CAS；缺失时再读一次最新快照，尽量不覆盖同时启用的其他服务。
+     * Settings has no public CAS; when missing, read the latest snapshot once more, trying not to overwrite other services enabled at the same time.
      */
     private fun mergeLatestAccessibilitySetting(resolver: ContentResolver): String? {
         val initialValue = Settings.Secure.getString(
@@ -868,7 +868,7 @@ internal data class AccessibilityRepairAttempt(
 )
 
 /**
- * 连续失败时最多尝试三轮，再冷却一分钟，避免服务持续崩溃时形成无限拉起循环。
+ * On consecutive failures, try up to three rounds, then cool down for a minute, to avoid an infinite restart loop when the service keeps crashing.
  */
 internal class AccessibilityRepairLimiter(
     disabledDurationsMs: LongArray = longArrayOf(500L, 1_000L, 2_000L),
@@ -912,7 +912,7 @@ internal class AccessibilityRepairLimiter(
 }
 
 /**
- * OEM 持续反删设置时逐步退避到 30 秒；稳定一分钟后恢复快速响应。
+ * When the OEM keeps deleting the setting, back off gradually up to 30 seconds; after one stable minute, resume fast responses.
  */
 internal class AccessibilityRestoreBackoff(
     delaysMs: LongArray = longArrayOf(300L, 1_000L, 5_000L, 30_000L),

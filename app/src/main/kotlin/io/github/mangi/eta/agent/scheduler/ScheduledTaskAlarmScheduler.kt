@@ -9,16 +9,16 @@ import io.github.mangi.eta.core.safeLogType
 import io.github.mangi.eta.data.repository.ScheduledTaskRepository
 
 /**
- * 单一主闹钟调度器。
+ * Single primary alarm scheduler.
  *
- * 始终只向系统 [AlarmManager] 注册最近一个即将到期的任务时间点，避免多任务抢占
- * Doze 配额（实测 Android 17 `allow_while_idle_quota=72/h`）。进程被杀或重启后，
- * 由闹钟冷启动或系统广播重新同步。
+ * Always registers only the nearest upcoming due task time with the system [AlarmManager], avoiding multi-task contention over
+ * the Doze quota (measured Android 17 `allow_while_idle_quota=72/h`). After the process is killed or restarted,
+ * it is re-synced by an alarm cold start or a system broadcast.
  */
 internal object ScheduledTaskAlarmScheduler {
     const val ACTION_ALARM_FIRE = "io.github.mangi.eta.action.SCHEDULED_TASK_ALARM"
     private const val REQUEST_CODE = 20401
-    /** 系统 AlarmManager 的最小提前量，确保刚过期的待执行点也能立即触发。 */
+    /** Minimum lead time for the system AlarmManager, ensuring a just-expired pending point can still trigger immediately. */
     private const val MIN_FUTURITY_MS = 5_000L
 
     suspend fun syncNextAlarm(context: Context, nowMs: Long = System.currentTimeMillis()) {
@@ -44,7 +44,7 @@ internal object ScheduledTaskAlarmScheduler {
                 "Scheduled task alarm synced: exact=$canExact delta_ms=${triggerAt - nowMs}"
             }
         } catch (security: SecurityException) {
-            // 精确闹钟权限可能在并发瞬间被撤销，降级为非精确唤醒并记录日志。
+            // The exact alarm permission may be revoked at a concurrent instant; degrade to an inexact wake-up and log it.
             AndroidAgentLogger.warn("Exact alarm denied, falling back to inexact: type=${security.safeLogType()}")
             runCatching {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)

@@ -5,7 +5,7 @@ import android.os.Bundle
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 时钟业务接口保留调度副作用，不能用直接改库代替。 */
+/** The clock business interface preserves scheduling side effects; it can't be replaced by directly modifying the database. */
 internal class ClockOperations(
     private val resolver: PhoneProviderAccess,
     userId: Int,
@@ -130,7 +130,7 @@ internal class ClockOperations(
                 bundle.putInt("alarm_hour", hour)
                 bundle.putInt("alarm_minute", minute)
                 call("update_alarm", bundle)
-                // 原生改时接口会启用闹钟；恢复原启用状态后再核对，避免意外启用旧闹钟。
+                // The native set-time API enables alarms; restore the original enabled state and then verify, to avoid accidentally enabling old alarms.
                 if (!before.getBoolean("enabled"))
                     call(
                         "close_alarm",

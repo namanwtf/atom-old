@@ -2,7 +2,7 @@ package io.github.mangi.eta.agent.runtime
 
 import java.security.MessageDigest
 
-/** 入口、归档与浏览器共同使用的会话身份；外部归档标识保持已发布算法不变。 */
+/** Session identity shared by entries, archive, and browser; the external archive identifier keeps its published algorithm unchanged. */
 internal object AgentConversationIdentity {
     const val EXTERNAL_ARCHIVE_PREFIX = "archive-"
 

@@ -46,7 +46,7 @@ internal class MiniMaxSpeechDecoder(onAudio: (ByteArray) -> Unit) {
                 val encoded = data.optString("audio")
                 if (encoded.isNotEmpty()) audio.write(decodeHexAudio(encoded))
             }
-            // 末包的 audio 是整段聚合音频；即使网关忽略 exclude_aggregated_audio，也不能重复播放。
+            // The last packet's audio is the whole aggregated audio; even if the gateway ignores exclude_aggregated_audio, it must not be played twice.
             2 -> completed = true
             else -> throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,

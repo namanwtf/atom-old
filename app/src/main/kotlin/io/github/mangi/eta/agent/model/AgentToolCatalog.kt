@@ -4,7 +4,7 @@ import io.github.mangi.eta.agent.tool.AgentToolCapabilities
 import io.github.mangi.eta.config.Prefs
 import org.json.JSONArray
 
-/** 声明模型可见的工具及其 JSON Schema；不包含任何执行逻辑。 */
+/** Declares the tools visible to the model and their JSON Schema; contains no execution logic. */
 internal object AgentToolCatalog {
     fun build(
         terminalTools: Boolean,

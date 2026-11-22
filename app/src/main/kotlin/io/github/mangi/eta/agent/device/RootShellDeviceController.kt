@@ -129,7 +129,7 @@ internal class RootShellDeviceController(
             displayId = displayId,
             includeNodes = includeUiTree,
         )
-        // 系统 uiautomator 会暂时抑制其他无障碍服务，不能因活跃服务返回空树而反复启动它。
+        // The system's uiautomator temporarily suppresses other accessibility services; do not repeatedly launch it just because an active service returned an empty tree.
         val mayUseUiAutomator = ScreenObservationMetadata.mayUseUiAutomator(
             requested = includeUiTree,
             accessibilityConnected = accessibility != null,
@@ -550,7 +550,7 @@ internal class RootShellDeviceController(
         AgentAccessibilityService.current()?.let { service ->
             when (normalized) {
                 "BACK", "HOME", "RECENTS", "NOTIFICATIONS", "QUICK_SETTINGS" -> {
-                    // 虚拟屏上若存在 Root，优先通过 input -d 定向发送按键，避免 GLOBAL_ACTION 误作用于物理主屏。
+                    // On a virtual display, if Root is available, prefer sending the key via input -d so a GLOBAL_ACTION is not mistakenly applied to the physical main screen.
                     if (!isVirtual || !rootAvailable()) {
                         val actionResult = service.globalActionResult(normalized)
                         if (actionResult.ok) {
@@ -575,7 +575,7 @@ internal class RootShellDeviceController(
                             JSONObject(it).put("button", normalized).toString()
                         }
                     }
-                    // 虚拟屏隐藏了软键盘（DISPLAY_IME_POLICY_HIDE），若节点不响应 ACTION_IME_ENTER，有 Root 时继续回退发送 KEYCODE_ENTER。
+                    // The virtual display hides the soft keyboard (DISPLAY_IME_POLICY_HIDE); if the node does not respond to ACTION_IME_ENTER, continue falling back to sending KEYCODE_ENTER when Root is available.
                     if (!rootAvailable()) {
                         return nodeActionJson("press_key", result).let {
                             JSONObject(it).put("button", normalized).toString()
@@ -870,7 +870,7 @@ internal class RootShellDeviceController(
             return ScreenCapture.failed(source = "virtual_display", code = "SCREENSHOT_UNAVAILABLE")
         }
         val excludedPackages = screenshotExcludedPackages()
-        // 优先逐窗口截图以排除 Eta 浮层。
+        // Prefer per-window capture to exclude Eta overlays.
         val service = AgentAccessibilityService.current()
         if (service != null) {
             val captureStartedAt = SystemClock.elapsedRealtime()
@@ -951,7 +951,7 @@ internal class RootShellDeviceController(
         logger.debug {
             "Agent device action=capture_screenshot outcome=fallback source=root"
         }
-        // 无需排除入口窗口时才回退 root screencap；否则宁可返回无图，也不把错误浮窗交给模型。
+        // Fall back to root screencap only when no entry window needs to be excluded; otherwise return no image rather than hand the wrong overlay window to the model.
         val result = runSuBytes("screencap -p", timeoutSeconds = 8)
         if (result.exitCode != 0 || result.output.isEmpty()) {
             logger.warn(
@@ -993,7 +993,7 @@ internal class RootShellDeviceController(
     private fun dumpUiNodes(maxNodes: Int): List<UiNode> = readUiNodeDump(maxNodes).nodes
 
     private fun readUiNodeDump(maxNodes: Int): UiNodeDump {
-        // 旧 uiautomator 观察的节点验证也会到达这里，服务重连后必须停止该通道。
+        // Node verification from the old uiautomator observation also reaches here; this channel must be stopped once the service reconnects.
         if (AgentAccessibilityService.current() != null) {
             logger.debug { "Agent device action=dump_ui outcome=skipped code=ACCESSIBILITY_CONNECTED" }
             return UiNodeDump(emptyList(), ShellActionOutcomePolicy.Outcome.FAILED)
@@ -1222,8 +1222,10 @@ internal class RootShellDeviceController(
     }
 
     /**
-     * Root 滚动只能用滚动前后都唯一存在的稳定节点证明方向；任意树变化不足以证明滚动。
-     * 屏幕内容向上移动代表滚动位置向下，因此最后要反转节点位移符号。
+     * Root scrolling can only prove direction using stable nodes that exist uniquely both before
+     * and after the scroll; any arbitrary tree change is not enough to prove a scroll. Content
+     * moving up on screen means the scroll position moved down, so the node displacement sign must
+     * be inverted at the end.
      */
     private fun inferRootScrollDelta(
         beforeNodes: List<UiNode>,
@@ -1416,7 +1418,7 @@ internal class RootShellDeviceController(
     }
 
     private fun finishProcess(process: Process) {
-        // 取消线程与执行线程可能同时回收；清理期间暂存中断，避免特权终止命令立即中断。
+        // The canceling thread and the executing thread may both reclaim at the same time; stash the interrupt during cleanup so that privileged termination commands are not immediately interrupted.
         val interrupted = Thread.interrupted()
         try {
             synchronized(process) {

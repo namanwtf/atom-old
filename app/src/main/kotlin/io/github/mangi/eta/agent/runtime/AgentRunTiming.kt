@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.runtime
 import android.os.SystemClock
 import io.github.mangi.eta.core.AgentLogger
 
-/** 记录首请求关键边界，区分本地准备、网络握手和模型首 Token 延迟。 */
+/** Record the key boundaries of the first request, distinguishing local preparation, network handshake, and model first-token latency. */
 internal class AgentRunTiming(
     private val logger: AgentLogger,
 ) {

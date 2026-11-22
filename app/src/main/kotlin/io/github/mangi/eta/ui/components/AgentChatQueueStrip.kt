@@ -58,10 +58,10 @@ private val QueueExpandedMaxHeight = 148.dp
 private val WHITESPACE_REGEX = Regex("\\s+")
 
 /**
- * 悬浮在输入栏正上方的排队消息胶囊。
+ * Queue message capsule floating just above the input bar.
  *
- * - 单条时保持单行极简形态；多条时默认展示队首预览与计数，点击计数可展开管理全部条目。
- * - 点击任意排队消息正文即可将其撤回输入框继续修改，无需内嵌二次输入框。
+ * - Single item keeps a minimal one-line form; with multiple items it shows the queue-head preview and a count by default, and tapping the count expands to manage all entries.
+ * - Tapping any queued message body recalls it to the input box for editing, without a nested second input box.
  */
 @Composable
 internal fun AgentChatQueueStrip(

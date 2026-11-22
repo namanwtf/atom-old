@@ -30,7 +30,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.decodeToSequence
 import kotlinx.serialization.json.encodeToStream
 
-/** 沿用 JSON 备份合同，用磁盘暂存大数组，校验与恢复均逐条解码。 */
+/** Keeps the JSON backup contract, staging large arrays on disk; both validation and restore decode one item at a time. */
 @OptIn(ExperimentalSerializationApi::class)
 internal object EtaBackupJsonStreams {
     const val MAX_BACKUP_BYTES = 512L * 1024L * 1024L
@@ -225,7 +225,7 @@ internal object EtaBackupJsonStreams {
             checkCancelled()
             return `in`.read(buffer, offset, length).also { if (it > 0) count(it) }
         }
-        // 输入流由调用方持有，暂存读取结束不提前关闭调用方资源。
+        // The input stream is owned by the caller; the staging read ends without closing the caller's resource early.
         override fun close() = Unit
         private fun count(bytes: Int) {
             total += bytes

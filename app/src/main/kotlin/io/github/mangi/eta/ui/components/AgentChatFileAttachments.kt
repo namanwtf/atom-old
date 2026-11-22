@@ -110,11 +110,11 @@ internal data class InputBarPopupLayout(
 )
 
 /**
- * 底部输入区弹窗需悬浮在整块输入容器上方，避免回退向上展开时压住按钮与输入栏本身。
+ * The bottom-input popup must float above the whole input container, so expanding upward (the fallback) doesn't cover the buttons or the input bar itself.
  *
- * `GlassTransformPopup` 内部按无 `ime` 的窗口底边判断是否向下展开；当软键盘抬高输入栏时，
- * 下方看似空余极大而触发向下对齐，导致菜单压回输入框并被键盘裁切。这里按相同的窗口底边
- * 提前判定实际对齐方向，并在向下对齐分支反推 `gap`，让菜单底边始终停在输入栏上方 [ChatInputPopupMargin]。
+ * `GlassTransformPopup` internally decides downward expansion by the window bottom edge without `ime`; when the soft keyboard raises the input bar,
+ * the space below looks huge and triggers downward alignment, making the menu press back onto the input box and get clipped by the keyboard. Here we use the same window bottom edge
+ * to decide the actual alignment direction ahead of time and back-derive `gap` in the downward branch, keeping the menu's bottom edge above the input bar [ChatInputPopupMargin].
  */
 internal fun calculateInputBarPopupLayout(
     inputContainerTopPx: Float,
@@ -486,7 +486,7 @@ internal fun PendingFileReferenceStrip(
 }
 
 /**
- * 附件胶囊与缩略图的入场动效：在 graphicsLayer 阶段驱动缩放、纵向微移与透明度，避免引发组合期重组。
+ * Entry animation for attachment capsules and thumbnails: driven at the graphicsLayer stage (scale, vertical micro-shift, alpha) to avoid composition-phase recomposition.
  */
 internal fun Modifier.attachmentItemEntrance(): Modifier = composed {
     val progress = remember { Animatable(0f) }

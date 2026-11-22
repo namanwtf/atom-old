@@ -16,7 +16,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 执行单次 `subagent` 工具调用：管理独立子上下文、过滤工具目录、实时镜像内部步骤，并向父 Agent 返回结构化摘要。
+ * Executes a single `subagent` tool call: manages an isolated sub-context, filters the tool catalog, mirrors internal steps in real time, and returns a structured summary to the parent Agent.
  */
 internal class SubagentExecutor(
     private val conversationKey: String,

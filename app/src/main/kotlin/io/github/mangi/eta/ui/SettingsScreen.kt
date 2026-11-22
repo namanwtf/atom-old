@@ -173,10 +173,10 @@ private data class SettingsSystemStatus(
 private var cachedSettingsSystemStatus: SettingsSystemStatus? = null
 
 /**
- * 模块配置界面。
+ * Module configuration screen.
  *
- * 开关默认值由 [Prefs.Keys.BOOLEAN_DEFAULTS] 统一定义。Eta Runtime 自己消费的开关写入
- * App 本地配置；仅 Hook 消费的开关通过 RemotePreferences 提交到 LSPosed。
+ * Toggle defaults are defined uniformly by [Prefs.Keys.BOOLEAN_DEFAULTS]. Toggles consumed by the Eta Runtime itself are written to
+ * app-local config; only Hook-consumed toggles are submitted to LSPosed via RemotePreferences.
  */
 @Composable
 internal fun SettingsScreen(
@@ -197,7 +197,7 @@ private fun SettingsPageContent(
     val enhancementHistory = remember(context.applicationContext) { EnhancementSettingsHistory(context) }
     var hasConnectedFramework by remember { mutableStateOf(enhancementHistory.hasConnected) }
 
-    // 悬浮窗与无障碍状态走异步查询，避免首帧进入设置页时在主线程触发同步 Binder IPC。
+    // Overlay and accessibility states use async queries, avoiding a synchronous Binder IPC on the main thread when first entering settings.
     var systemStatus by remember {
         mutableStateOf(cachedSettingsSystemStatus ?: SettingsSystemStatus())
     }
@@ -207,7 +207,7 @@ private fun SettingsPageContent(
     val assistantRoleStatus = systemStatus.assistantRoleStatus
     var accessibilityProtectionPending by remember { mutableStateOf(false) }
 
-    // 关于组：版本信息与更新检查。结果对话框在列表外渲染，状态需要页面级 owner。
+    // About group: version info and update check. The result dialog renders outside the list, so its state needs a page-level owner.
     val appVersionName = BuildConfig.VERSION_NAME
     val appVersionSummary = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
     val openUrl: (String) -> Unit = { url ->
@@ -242,7 +242,7 @@ private fun SettingsPageContent(
         }
     }
 
-    // Provider / Model 选中状态展示
+    // Provider / Model selected-state display
     val initialProviders = remember { ProviderRepository.cachedProviders() }
     val initialProviderId = remember { RuntimeConfigRepository.cachedSelectedProviderId() }
     val initialModelId = remember { RuntimeConfigRepository.cachedSelectedModelId() }
@@ -262,8 +262,8 @@ private fun SettingsPageContent(
         "$providerDisplayName / ${selectedModel?.displayName ?: stringResource(R.string.settings_model_not_selected)}"
     } ?: stringResource(R.string.settings_not_configured)
 
-    // prefs 绑定到 XposedService：service 到达时切换到 RemotePreferences（跨进程提交到
-    // LSPosed 数据库）；未就绪时保持 null，UI 禁止修改。
+    // prefs bind to XposedService: when the service arrives, switch to RemotePreferences (cross-process commit into
+    // the LSPosed database); keep null until ready, and the UI forbids edits.
     var prefs by remember {
         mutableStateOf(Prefs.cachedRemotePreferencesForUi(EtaApp.serviceInstance))
     }

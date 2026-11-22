@@ -5,9 +5,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * AI 生图与图像编辑统一工具 Schema。
+ * Unified tool schema for AI image generation and image editing.
  *
- * 仅在用户在「设置 → AI 生图」启用后注入模型工具列表，避免未配置时占用上下文 Token。
+ * The model tool list is injected only after the user enables "Settings → AI Image Generation", to avoid consuming context tokens when unconfigured.
  */
 internal object ImageGenToolCatalog {
     const val TOOL_NAME = "generate_image"

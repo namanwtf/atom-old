@@ -4,11 +4,11 @@ import io.github.mangi.eta.core.AgentLogger
 import kotlin.concurrent.thread
 
 /**
- * 控制台会话控制器：PTY 字节流原样透传，无状态行协议、无输出截断。
+ * Console session controller: passes the PTY byte stream through as-is, with no status-line protocol and no output truncation.
  *
- * 与 [UserTerminalController] 的差别在于交互模型：控制台面向全屏 TUI 与交互式 CLI，
- * 输入直接写 stdin（含方向键、Ctrl 组合键的转义字节），输出由调用方喂给
- * [TerminalScreenBuffer] 维护屏幕网格。多个控制台会话并存，按 sessionId 路由。
+ * The difference from [UserTerminalController] is the interaction model: the console targets full-screen TUIs and interactive CLIs;
+ * input is written straight to stdin (including escape bytes for arrow keys and Ctrl combos), and output is fed by the caller into
+ * [TerminalScreenBuffer], which maintains the screen grid. Multiple console sessions coexist and are routed by sessionId.
  */
 internal class ConsoleSessionController(
     private val logger: AgentLogger,
@@ -105,7 +105,7 @@ internal class ConsoleSessionController(
                         onOutput(sessionId, buffer.copyOf(read))
                     }
                 } catch (_: Exception) {
-                    // 进程死亡或关闭时读端断开，交给 waiter 统一上报退出。
+                    // The read end closes on process death or shutdown; hand it to the waiter to report exit uniformly.
                 }
             }
             newSession.waiterThread = thread(name = "console-pty-waiter", isDaemon = true) {
@@ -114,8 +114,8 @@ internal class ConsoleSessionController(
                 processSupervisor.retireExitedProcess(process)
                 onExit(sessionId)
             }
-            // 落到环境默认工作目录；clear 清掉这条引导命令本身的回显。
-            // 用户工具的安装器常把 PATH 写进 profile；控制台 shell 不是 login shell，这里显式补齐。
+            // Fall back to the environment's default working directory; clear removes this bootstrap command's own echo.
+            // User tool installers often write PATH into profile; the console shell isn't a login shell, so complete it explicitly here.
             val defaultCwd = if (environment.isLinux) "/workspace" else TerminalRuntime.workspace(identity)
             val bootstrap = "mkdir -p ${shellQuote(defaultCwd)}; " +
                 "[ -f /etc/profile ] && . /etc/profile; " +
@@ -130,14 +130,14 @@ internal class ConsoleSessionController(
         }
     }
 
-    /** 向指定控制台会话写入输入字节（键盘文本、方向键/功能键转义序列）。会话不可用时静默丢弃。 */
+    /** Writes input bytes (keyboard text, arrow/function-key escape sequences) to the given console session. Silently dropped when the session is unavailable. */
     fun write(sessionId: String, bytes: ByteArray) {
         if (bytes.isNotEmpty()) sendFrames(sessionId, PtyInputFrames.data(bytes))
     }
 
     fun write(sessionId: String, text: String) = write(sessionId, text.toByteArray(Charsets.UTF_8))
 
-    /** 同步窗口尺寸；内核随后向前台进程组发送 SIGWINCH，TUI 据此重绘。 */
+    /** Syncs the window size; the kernel then sends SIGWINCH to the foreground process group and the TUI redraws accordingly. */
     fun resize(sessionId: String, cols: Int, rows: Int) {
         sendFrames(sessionId, PtyInputFrames.resize(rows = rows, cols = cols))
     }
@@ -150,7 +150,7 @@ internal class ConsoleSessionController(
             return
         }
         runCatching {
-            // 帧必须整体写入，并发写者交错会破坏原生侧的帧边界。
+            // A frame must be written whole; interleaving concurrent writers would corrupt the native side's frame boundary.
             synchronized(current.stdinLock) {
                 current.process.outputStream.write(frames)
                 current.process.outputStream.flush()
@@ -158,7 +158,7 @@ internal class ConsoleSessionController(
         }
     }
 
-    /** 关闭单个会话；只回收该进程树，不影响其它会话，也不触发 supervisor 全局关闭。 */
+    /** Closes a single session; reclaims only that process tree, without affecting other sessions or triggering a global supervisor shutdown. */
     fun closeSession(sessionId: String) {
         synchronized(sessionLock) {
             closeSessionLocked(sessionId)
@@ -182,7 +182,7 @@ internal class ConsoleSessionController(
         processSupervisor.unregisterProcess(current.process)
     }
 
-    /** 回收已退出的会话槽位，避免死会话占用并发上限。 */
+    /** Reclaims slots of exited sessions so dead sessions don't consume the concurrency limit. */
     private fun pruneDeadSessionsLocked() {
         val deadIds = sessions.filterValues { it.closed || !it.process.isAlive }.keys.toList()
         deadIds.forEach { closeSessionLocked(it) }

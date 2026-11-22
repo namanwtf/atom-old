@@ -16,10 +16,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * 入口进程侧的 Runtime 客户端。
+ * Runtime client on the entry-process side.
  *
- * 它只负责把一次 Agent 请求交给模块进程，并把事件/结果带回入口适配层；
- * 不执行模型、不执行工具、不渲染 UI。
+ * It only hands one Agent request to the module process and brings events/results back to the entry adapter layer;
+ * it runs no model, runs no tools, and renders no UI.
  */
 internal class AgentRuntimeClient(
     private val context: Context,
@@ -107,7 +107,7 @@ internal class AgentRuntimeClient(
             preparedImagesRef.set(preparedImages)
             msg.data = AgentRuntimeWire.toBundle(request, preparedImages.images, context.cacheDir)
             AgentWireText.send(serviceMessenger, msg)
-            // 最终结果或 Binder 断连负责唤醒；正常长任务不因客户端等待时长被取消。
+            // The final result or Binder disconnect is responsible for waking it; a normal long task is not cancelled by the client's wait duration.
             resultLatch.await()
             return resultRef.get()?.let(AgentRuntimeWire::runResultFromBundle)
                 ?: AgentRuntimeWire.RunResult(
@@ -322,7 +322,7 @@ internal class AgentRuntimeClient(
         }
     }
 
-    /** 历史一次性交给 onReplay；未指定时沿用 onEvent。后续新增事件始终交给 onEvent。 */
+    /** History is handed to onReplay once; when not specified, onEvent is used. Subsequent new events always go to onEvent. */
     fun attachRun(
         runId: String,
         onReplay: ((List<AgentEvent>) -> Unit)? = null,

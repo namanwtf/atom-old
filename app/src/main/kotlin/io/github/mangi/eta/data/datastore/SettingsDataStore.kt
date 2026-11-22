@@ -190,7 +190,7 @@ internal object SettingsDataStore {
 
         override suspend fun migrate(currentData: Preferences): Preferences =
             currentData.toMutablePreferences().apply {
-                // 只在切换默认样式时清除旧选择，后续启动尊重用户重新选择的样式。
+                // Clear the old selection only when switching the default style; later launches respect the user's re-selected style.
                 remove(APPEARANCE_UI_STYLE)
                 this[revision] = AppearanceUiStyle.DEFAULT_REVISION
             }

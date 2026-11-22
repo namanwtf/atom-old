@@ -5,7 +5,7 @@ import android.content.SharedPreferences
 import io.github.mangi.eta.config.PowerAssistantTarget
 import io.github.mangi.eta.config.Prefs
 
-/** 只用于断连后的界面展示；从不作为 Hook 配置来源，也不接收离线配置修改。 */
+/** Used only for UI display after disconnection; never a source of Hook config, nor does it accept offline config edits. */
 internal class EnhancementSettingsHistory(context: Context) {
     private val snapshot = context.applicationContext.getSharedPreferences("eta_enhancement_ui_history", Context.MODE_PRIVATE)
 

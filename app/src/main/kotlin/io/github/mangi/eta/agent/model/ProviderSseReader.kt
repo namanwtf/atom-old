@@ -5,7 +5,7 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 
-/** 只处理 SSE 分帧；各协议自行解释事件并在终态返回 false，不等待服务端关闭连接。 */
+/** Handles only SSE framing; each protocol interprets events itself and returns false at the terminal state without waiting for the server to close the connection. */
 internal fun readProviderSse(
     stream: InputStream,
     runController: AgentRunController,

@@ -98,7 +98,7 @@ internal fun CouiButton(
 private val FieldFocusEasing = CubicBezierEasing(0f, 0f, 0.1f, 1f)
 
 /**
- * 保留调用端的编辑状态，密文通过安全输入框切换显隐。
+ * Keeps the caller's editing state; the secret text toggles visibility through a secure input field.
  */
 @Composable
 internal fun CouiTextField(
@@ -186,8 +186,8 @@ internal fun CouiTextField(
             )
             return@Column
         }
-        // 密文输入框沿用 BasicSecureTextField 保留密码无障碍语义与禁复制保护，
-        // 同时外框对齐 COUI TextFieldMode.Rectangle，避免同表单中普通与密钥输入框割裂。
+        // The secret input reuses BasicSecureTextField to keep password accessibility semantics and copy protection,
+        // while aligning the outline to COUI TextFieldMode.Rectangle, so ordinary and secret inputs in the same form don't look disjoint.
         val borderColor = if (!enabled) {
             scheme.disabledTextFieldBorder
         } else {

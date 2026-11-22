@@ -33,7 +33,7 @@ internal object SpeechSettingsRepository {
     suspend fun deepSeekProviderCredentials(): Pair<String, String>? =
         WebToolsSettingsRepository.deepSeekProviderCredentials()
 
-    /** 若 DeepSeek 语音未单独填写凭据，自动复用模型提供商中已配置的 DeepSeek Key 与地址。 */
+    /** If DeepSeek voice credentials are not filled in separately, automatically reuse the DeepSeek Key and address configured among model providers. */
     suspend fun resolveDeepSeekFallback(
         settings: SpeechSettings,
         credentials: SpeechCredentials,

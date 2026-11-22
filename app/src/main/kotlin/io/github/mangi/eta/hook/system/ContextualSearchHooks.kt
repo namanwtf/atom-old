@@ -21,7 +21,7 @@ internal object ContextualSearchHooks {
     ): HookInstallation {
         val hooks = HookRegistrar(module, rootLogger, "ContextualSearch")
         return hooks.install {
-            // 服务可能被 ROM 的资源配置禁用；先尝试原生启动，再保留启动尾段补齐。
+            // The service may be disabled by the ROM's resource configuration; try the native launch first, then keep the startup tail bootstrap to complete it.
             hookContextualSearchConfig(hooks, classLoader)
             hookContextualSearchBootstrap(module, hooks, classLoader)
             hookContextualSearchPackage(hooks, classLoader)
@@ -53,8 +53,8 @@ internal object ContextualSearchHooks {
         classLoader: ClassLoader
     ) {
         val logger = hooks.logger
-        // 当前设备 2026-03-26 的重启日志已经证明，真正稳定生效的是 startOtherServices 末尾的补启动兜底。
-        // 这里直接守住系统服务启动尾段，不再把 deviceHasConfigString 当成唯一生效点。
+        // Reboot logs on this device from 2026-03-26 prove that what actually stays stable is the tail bootstrap at the end of startOtherServices.
+        // So we hold the system-service startup tail directly here, no longer treating deviceHasConfigString as the only effective point.
         val systemServerClass = HookSupport.findClassOrNull(classLoader, ModuleConfig.SYSTEM_SERVER_CLASS)
         val timingsClass = HookSupport.findClassOrNull(classLoader, ModuleConfig.TIMINGS_TRACE_AND_SLOG_CLASS)
         val startOtherServicesMethod = if (systemServerClass != null && timingsClass != null) {
@@ -143,8 +143,8 @@ internal object ContextualSearchHooks {
         val context = HookSupport.invokeNoArgs(serviceInstance, "getContext") as? Context
             ?: HookSupport.getFieldValue(serviceInstance, "mContext") as? Context
             ?: return false
-        // IContextualSearchManager 是 oneway AIDL，调用 PID 固定不可用；Android 权限主体本身也是 UID。
-        // 因此这里只能按 UID 鉴权，getPackagesForUid 的结果代表整个 shared UID 安全边界。
+        // IContextualSearchManager is a oneway AIDL, so the caller PID is fixed and unusable; the Android permission subject itself is the UID.
+        // So here we can only authorize by UID, and the result of getPackagesForUid represents the whole shared-UID security boundary.
         val callingUid = Binder.getCallingUid()
         val packages = try {
             context.packageManager.getPackagesForUid(callingUid)
@@ -202,7 +202,7 @@ internal object ContextualSearchHooks {
                 logger.warn("$source: startService(Class) invoked but contextual_search still unavailable")
             }
         } catch (exception: Exception) {
-            // XposedFrameworkError 属于 Error，必须继续交给框架处理。
+            // XposedFrameworkError is an Error and must be rethrown for the framework to handle.
             logger.error("$source: failed to bootstrap ContextualSearchManagerService", exception)
         }
     }

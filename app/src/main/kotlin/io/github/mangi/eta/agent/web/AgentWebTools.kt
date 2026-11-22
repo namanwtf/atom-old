@@ -9,7 +9,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/** 快照只属于当前运行，分页不再次访问网站，也不占用共享浏览器的页面和 Cookie。 */
+/** Snapshots belong only to the current run; pagination does not visit the site again and does not use the shared browser's pages or cookies. */
 internal class AgentWebTools(
     private val transport: WebHttpTransport,
     private val localNetworkAccess: () -> String = { "unknown" },
@@ -177,7 +177,7 @@ internal class AgentWebTools(
                 documents.remove(documents.keys.first())
             }
         }
-        // 引用或 URL 可以跨页，链接归属按完整正文中的位置与当前页相交判断。
+        // A reference or URL can span pages; link ownership is judged by whether its position in the full body intersects the current page.
         val linkIds = if (document.format == "html") LINK_ID.findAll(document.content)
             .filter { it.range.first < page.nextOffsetChars && it.range.last >= page.offsetChars }
             .mapNotNull { it.groupValues[1].toIntOrNull() }.toSet() else emptySet()

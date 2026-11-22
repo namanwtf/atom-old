@@ -54,7 +54,7 @@ internal class GeminiSpeechDecoder(onAudio: (ByteArray) -> Unit) {
 
     fun event(name: String, data: String): Boolean {
         if (completed) return false
-        // [DONE] 只代表传输结束，不能代替 interaction 的成功状态。
+        // [DONE] only means the transport ended; it can't substitute for the interaction's success state.
         if (data == "[DONE]") return false
         val message = JSONObject(data)
         if (message.has("error")) throw geminiFailure(message.optJSONObject("error"))

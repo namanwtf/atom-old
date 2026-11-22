@@ -113,12 +113,12 @@ import top.yukonga.miuix.kmp.icon.glass.VolumeUp
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * Agent App 统一壳层。
+ * Unified Agent App shell.
  *
- * - 负责全局 Scaffold、状态栏/横向安全边距、顶层工具栏。
- * - 首页工具栏只保留历史入口与溢出菜单，保持聊天舞台干净。
- * - 非首页子路由统一提供返回按钮与标题，避免每个页面各自像独立设置页。
- * - Settings 由标准二级页骨架自己提供 TopAppBar，壳层在此路由不重复绘制。
+ * - Owns the global Scaffold, status-bar/horizontal safe insets, and top-level toolbar.
+ * - The home toolbar keeps only the history entry and overflow menu, keeping the chat stage clean.
+ * - Non-home sub-routes uniformly provide a back button and title, so each page doesn't look like its own separate settings page.
+ * - Settings provides its own TopAppBar via the standard secondary-page skeleton; the shell doesn't draw it again on this route.
  */
 @Composable
 internal fun AgentAppShell(
@@ -229,7 +229,7 @@ internal fun AgentAppShell(
                 }
             }
             AppearanceUiStyle.MIUIX -> {
-                // 首页顶栏高度固定，不参与折叠；未绑定顶栏的滚动行为会吞掉聊天列表的单向滑动。
+                // The home top-bar height is fixed and doesn't collapse; scroll behavior not bound to a top bar would swallow the chat list's one-way scrolling.
                 val scrollBehavior = if (currentRoute is AppRoute.Home) null else MiuixScrollBehavior()
                 val pageBackdrop = rememberGlassBackdrop()
                 Scaffold(

@@ -11,7 +11,7 @@ import org.jsoup.Jsoup
 
 internal data class DecodedWebResponse(val text: String, val contentType: String, val charset: String, val lossy: Boolean)
 
-/** 响应头、BOM 与 HTML 编码声明决定解码；下载截断处不把半个字符当正文返回。 */
+/** Response headers, BOM, and HTML encoding declarations decide decoding; at a download truncation point, half a character is not returned as body text. */
 internal object WebResponseDecoder {
     fun decode(response: WebHttpResponse): DecodedWebResponse {
         val bytes = response.bytes
@@ -23,7 +23,7 @@ internal object WebResponseDecoder {
             else -> null
         }
         val offset = bom?.second ?: 0
-        // 未声明 MIME 时也先去除 BOM；UTF-16 的标签不能按单字节前缀识别。
+        // Strip the BOM even when MIME is not declared; UTF-16 tags cannot be recognized by a single-byte prefix.
         val prefixBytes = bytes.copyOfRange(offset, minOf(bytes.size, offset + 8192))
         val prefixCharset = bom?.first?.let(Charset::forName) ?: Charsets.ISO_8859_1
         val prefix = decodeBytes(prefixBytes, 0, prefixCharset, CodingErrorAction.REPLACE, endOfInput = false)

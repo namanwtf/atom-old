@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 
-/** 日志先于上传落盘；进程被杀或上传结果不明时仍能找回待删除对象。 */
+/** The log is persisted before upload; the objects pending deletion can still be recovered if the process is killed or the upload result is unknown. */
 internal class SpeechOssUpload(
     context: Context,
     private val send: suspend (okhttp3.Request) -> Unit = { request -> SpeechHttp.read(request) { Unit } },

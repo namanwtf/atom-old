@@ -26,11 +26,11 @@ internal fun interface MathLayoutEngine {
 }
 
 /**
- * RaTeX 原生排版桥接。
+ * Bridge to RaTeX native typesetting.
  *
- * 传入全透明色作为默认颜色哨兵（`a == 0f`），使解析产出的 [DisplayList] 只与公式文本和
- * `displayMode` 相关，可跨深浅色主题、正文/标题/引用/思考语气直接缓存复用；绘制前再将
- * 哨兵颜色绑定为当前上下文墨色，同时保留公式内显式 `\color` 指定的颜色。
+ * Pass a fully transparent color as the default color sentinel (`a == 0f`), so the parsed [DisplayList] depends only on the formula text and
+ * `displayMode`, cacheable across light/dark themes and body/heading/quote/thinking tones; before drawing, bind the
+ * sentinel color to the current context ink color, while preserving colors explicitly set via `\color` inside the formula.
  */
 internal object RaTeXMathLayoutEngine : MathLayoutEngine {
     private const val SENTINEL_TRANSPARENT_ARGB = 0
@@ -63,10 +63,10 @@ internal object RaTeXMathLayoutEngine : MathLayoutEngine {
 internal val markdownMathLayoutCache = MarkdownMathLayoutCache()
 
 /**
- * 进程内有界公式布局缓存。
+ * Bounded in-process formula layout cache.
  *
- * 流式输出同一长段落时，前半句已闭合的行内公式会随尾部文字追加反复经过行内构建；
- * 同时缓存成功与失败结果，使同一公式只调用一次原生解析，并返回同一 [DisplayList] 实例供组合期跳过。
+ * When streaming a long paragraph, inline formulas already closed in the first half repeatedly pass through inline construction as trailing text appends;
+ * caching both success and failure so the same formula invokes native parsing only once and returns the same [DisplayList] instance for composition to skip.
  */
 internal class MarkdownMathLayoutCache(
     private val engine: MathLayoutEngine = RaTeXMathLayoutEngine,

@@ -3,7 +3,7 @@ package io.github.mangi.eta.agent.model
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** 订阅接口独立编译根联合的对象分支；仅展开依赖外层字段的 required 分支。 */
+/** The subscription interface compiles object branches of the root union independently; only the required branches that depend on outer fields are expanded. */
 internal object GrokToolSchema {
     fun project(parameters: JSONObject): JSONObject {
         val result = JSONObject(parameters.toString())
@@ -32,7 +32,7 @@ internal object GrokToolSchema {
         return result
     }
 
-    // 引用或锚点的复制可能改变解析作用域，保留原样交给服务端解释。
+    // Copying references or anchors may change the resolution scope; keep them as-is for the server to interpret.
     private fun hasReferences(value: Any?): Boolean = when (value) {
         is JSONObject -> value.keys().asSequence().any { key ->
             key.startsWith("$") || key == "id" || hasReferences(value.opt(key))

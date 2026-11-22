@@ -10,9 +10,11 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 只执行 Eta 内部构造的固定 Root 命令。调用方不得把模型参数直接拼成脚本。
+ * Executes only the fixed Root commands constructed inside Eta. Callers must not splice model
+ * arguments directly into a script.
  *
- * 输出在读取时即截断，但仍持续排空管道，避免子进程因缓冲区写满而挂起。
+ * Output is truncated as it is read, but the pipe is still drained continuously so the child
+ * process does not hang when its buffer fills.
  */
 internal class BoundedRootCommandExecutor(
     private val logger: AgentLogger,
@@ -53,7 +55,7 @@ internal class BoundedRootCommandExecutor(
                     it.readBounded(maxOutputBytes.coerceIn(1, MAX_MAX_OUTPUT_BYTES) + envelope.markerBytes)
                 }
             }
-            // 正文从 stdin 传递，避免进入 su/app_process 的进程参数。
+            // The body is passed via stdin to avoid entering the process arguments of su/app_process.
             val inputFuture = if (input == null) {
                 process.outputStream.close()
                 null

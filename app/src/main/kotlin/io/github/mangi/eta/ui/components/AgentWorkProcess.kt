@@ -81,8 +81,8 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 把连续的思考与工具调用收束为一条可展开的工作过程：折叠时只是一行摘要，展开后是
- * 左侧带连线的时间线。工作过程与正文同样不加卡片外壳，让最终回答保持视觉主角。
+ * Collapses consecutive thinking and tool calls into one expandable work process: a single summary line when collapsed,
+ * and a timeline with connecting lines on the left when expanded. Like the body, the work process has no card shell, keeping the final answer the visual lead.
  */
 @Composable
 internal fun AgentWorkProcess(
@@ -100,13 +100,13 @@ internal fun AgentWorkProcess(
             (message is ToolActivityMessageUi && message.status == ToolActivityStatusUi.Running)
     }
     val steps = remember(messages) { messages.toWorkSteps() }
-    // null 表示自动模式；用户点过之后只认手动选择。
+    // null means auto mode; after the user taps, only the manual choice is honored.
     var manualExpanded by rememberSaveable(id) { mutableStateOf<Boolean?>(null) }
     val onExpandItem = LocalOnChatItemExpand.current
 
-    // 以“是否仍是本轮末尾的工作过程”判定收起，而不是 running：思考结束到工具开始之间
-    // running 会短暂为 false，按它收起会造成反复开合。展开态在组合期同步推导，与正文
-    // 条目插入落在同一帧，不经 LaunchedEffect 晚一帧收起。语音浮层空间有限，自动模式不展开。
+    // Decide collapse by "is this still the turn's trailing work process" rather than running: between thinking ending and a tool starting,
+    // running is briefly false, so collapsing on it would flap repeatedly. The expanded state is derived synchronously in composition, landing on the same frame
+    // as the body entry insert, without collapsing one frame late via LaunchedEffect. The voice overlay has limited space, so auto mode doesn't expand.
     val bodyVisible = manualExpanded ?: (active && !assistantOverlay)
 
     Column(
@@ -299,8 +299,8 @@ internal fun ToolActivityStatusUi.nodeTone(): WorkNodeTone = when (this) {
 }
 
 /**
- * 时间线节点：左侧固定宽度的槽位放轻量状态图标，细导引线在绘制阶段画出，不参与测量。
- * 已完成节点去掉灰底圆球外壳以降低视觉噪音；仅运行或失败态保留柔和光晕。
+ * Timeline node: a fixed-width slot on the left holds a lightweight status icon, and the thin guide line is drawn in the draw phase, not participating in measurement.
+ * Completed nodes drop the gray circular shell to reduce visual noise; only running or failed states keep a soft glow.
  */
 @Composable
 internal fun WorkTimelineNode(
@@ -402,7 +402,7 @@ private fun WorkNodeBadge(icon: ImageVector, tone: WorkNodeTone, isDark: Boolean
     }
 }
 
-/** 呼吸动画只返回 State，由调用方在 graphicsLayer 中读取，帧间不触发重组。 */
+/** The breathing animation returns only State, read by the caller in a graphicsLayer, without triggering recomposition between frames. */
 @Composable
 internal fun rememberDrawPhasePulse(active: Boolean): State<Float>? {
     if (!active) return null
@@ -419,8 +419,8 @@ internal fun rememberDrawPhasePulse(active: Boolean): State<Float>? {
 }
 
 /**
- * 进行中的标题用一道扫过的高光提示“正在发生”。高光在绘制阶段以 SrcAtop 叠在字形上，
- * 动画只使绘制失效；离屏层限定在这一行文字范围内。
+ * An in-progress title gets a sweeping highlight to signal "happening now". The highlight is composited over the glyphs with SrcAtop in the draw phase,
+ * the animation only invalidates drawing, and the offscreen layer is confined to this one text line.
  */
 @Composable
 internal fun ShimmerText(
@@ -490,7 +490,7 @@ internal fun ExpandChevron(
     )
 }
 
-/** 时间线标题行与节点槽位共用的几何尺寸，保证图标中心与首行文字中线对齐。 */
+/** Geometry shared by the timeline title row and node slot, keeping the icon center aligned to the first line's text midline. */
 internal val WorkRowHeight: Dp = 30.dp
 internal val WorkGutterWidth: Dp = 18.dp
 internal val WorkGutterGap: Dp = 8.dp
@@ -498,8 +498,8 @@ private val WorkNodeHaloSize: Dp = 18.dp
 private val WorkDoneIconSize: Dp = 13.5.dp
 
 /**
- * 用户点击展开列表中的折叠项（工作过程、思考或工具详情）时触发，
- * 让聊天列表立即释放底部自动跟底，避免展开块被拉到底部而向上顶飞。
+ * Triggered when the user taps to expand a collapsed item (work process, thinking, or tool detail) in the list,
+ * immediately releasing the chat list's bottom auto-follow so the expanding block isn't pulled to the bottom and pushed upward.
  */
 internal val LocalOnChatItemExpand = staticCompositionLocalOf<() -> Unit> { {} }
 

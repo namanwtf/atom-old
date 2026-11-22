@@ -14,10 +14,10 @@ import io.github.mangi.eta.core.ModuleLogger
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 在 system_server 为 Eta 自身的后台虚拟屏授予 SYSTEM_UID 所有权、受信任显示标志、
- * 隐藏软键盘策略（DISPLAY_IME_POLICY_HIDE）与跨应用 Activity 启动放行。
+ * In system_server, grant Eta's own background virtual display SYSTEM_UID ownership, the trusted display flags,
+ * the hidden soft-keyboard policy (DISPLAY_IME_POLICY_HIDE), and cross-app Activity launch allowance.
  *
- * 严格限制调用方包名与虚拟屏名称（EtaAgentVirtualDisplay），不对其他应用开放权限。
+ * Strictly restrict the caller package name and virtual display name (EtaAgentVirtualDisplay) without opening permissions to other apps.
  */
 internal object VirtualDisplaySystemHooks {
 
@@ -147,7 +147,7 @@ internal object VirtualDisplaySystemHooks {
     }
 
     /**
-     * 放行虚拟屏内部的跨应用 Activity 启动（App A -> App B），避免 ActivityTaskSupervisor 因跨 UID 拦截导致崩溃。
+     * Allow cross-app Activity launches inside the virtual display (App A -> App B), avoiding crashes from ActivityTaskSupervisor blocking across UIDs.
      */
     private fun installCrossAppLaunchHooks(hooks: HookRegistrar, classLoader: ClassLoader) {
         val atsClass = HookSupport.findClassOrNull(classLoader, ATS_CLASS) ?: return

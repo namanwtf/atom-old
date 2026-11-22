@@ -9,7 +9,7 @@ import okhttp3.Headers
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 internal object ProviderRequestHeaders {
-    // 订阅代理以此校验协议兼容版本，不能使用 Eta 的应用版本；客户端身份仍由 User-Agent 表达。
+    // The subscription proxy uses this to validate the protocol compatibility version; Eta's app version must not be used here. Client identity is still conveyed via User-Agent.
     private const val GROK_PROTOCOL_VERSION = "1.0.77"
 
     fun mergeInto(
@@ -39,7 +39,7 @@ internal object ProviderRequestHeaders {
             builder.set("session-id", sessionId)
         }
         if (baseUrl.toHttpUrlOrNull()?.host == "opencode.ai") {
-            // 会话头由 Runtime 持有，避免固定自定义值把所有对话合并到同一路由。
+            // The session header is held by the Runtime, preventing a fixed custom value from merging all conversations into one route.
             builder.set(
                 "x-opencode-session",
                 UUID.nameUUIDFromBytes(sessionId.toByteArray(Charsets.UTF_8)).toString(),

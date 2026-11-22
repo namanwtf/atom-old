@@ -23,7 +23,7 @@ internal object ColorDirectTargets {
             }
         }
 
-    // Activity 类名属于 Manifest 合同；处理方法会混淆，使用空输入分支的语义定位。
+    // Activity class names belong to the Manifest contract; handler methods are obfuscated, so we locate them via the empty-input branch semantics.
     fun collectIntentMatcher(): MethodMatcher = MethodMatcher.create()
         .declaredClass(ModuleConfig.COLOR_DIRECT_COLLECT_ACTIVITY_CLASS)
         .paramTypes("android.content.Intent")

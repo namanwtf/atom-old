@@ -9,15 +9,15 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * 聊天消息底部操作栏与统计卡片使用的统一等线宽（16x16 视口、1.35px 描边）线性图标集，
- * 避免实心图标与细线图标混排造成视觉重心失衡。
+ * Uniform stroke-weight linear icon set (16x16 viewport, 1.35px stroke) used by the chat message action bar and stats cards,
+ * avoiding visual weight imbalance from mixing solid and thin-line icons.
  */
 internal object ChatActionIcons {
     private const val STROKE = 1.35f
 
     val Copy: ImageVector by lazy {
         icon("ChatCopy") {
-            // 前景圆角方框
+            // Foreground rounded square
             path(
                 stroke = SolidColor(Color.Black),
                 strokeLineWidth = STROKE,
@@ -35,7 +35,7 @@ internal object ChatActionIcons {
                 quadTo(1.8f, 4.4f, 3.6f, 4.4f)
                 close()
             }
-            // 后景折角边线
+            // Background folded-corner outline
             path(
                 stroke = SolidColor(Color.Black),
                 strokeLineWidth = STROKE,
@@ -240,7 +240,7 @@ internal object ChatActionIcons {
 
     val Gauge: ImageVector by lazy {
         icon("ChatGauge") {
-            // 仪表盘外弧（从左下 135° 顺时针到右下 45°）
+            // Gauge outer arc (clockwise from lower-left 135° to lower-right 45°)
             path(
                 stroke = SolidColor(Color.Black),
                 strokeLineWidth = STROKE,
@@ -258,7 +258,7 @@ internal object ChatActionIcons {
                     y1 = 13.1f,
                 )
             }
-            // 指针
+            // Needle
             path(
                 stroke = SolidColor(Color.Black),
                 strokeLineWidth = STROKE,
@@ -267,7 +267,7 @@ internal object ChatActionIcons {
                 moveTo(8.0f, 8.5f)
                 lineTo(11.5f, 5.0f)
             }
-            // 中心轴承圆点
+            // Center bearing dot
             path(fill = SolidColor(Color.Black)) {
                 moveTo(9.2f, 8.5f)
                 arcTo(1.2f, 1.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 6.8f, 8.5f)
@@ -285,11 +285,11 @@ internal object ChatActionIcons {
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             ) {
-                // 顶部椭圆
+                // Top ellipse
                 moveTo(13.8f, 3.8f)
                 arcTo(5.8f, 2.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 2.2f, 3.8f)
                 arcTo(5.8f, 2.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 13.8f, 3.8f)
-                // 两侧竖线与中底弧线
+                // Side vertical lines and bottom-center arc
                 moveTo(2.2f, 3.8f)
                 verticalLineTo(11.8f)
                 arcTo(5.8f, 2.2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 13.8f, 11.8f)

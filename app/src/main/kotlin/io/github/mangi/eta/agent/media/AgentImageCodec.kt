@@ -18,7 +18,7 @@ internal object AgentImageCodec {
     ): AgentModelClient.ModelImage {
         require(bytes.isNotEmpty()) { "image content is empty" }
         require(bytes.size <= MAX_AGENT_IMAGE_BYTES) { "image data too large：${bytes.size}" }
-        // 已编码图片只读取尺寸和格式，正文保留原始字节。
+        // For already-encoded images only size and format are read; the body keeps the original bytes.
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
         val recognizedImage = bytes.hasSupportedImageMagic()
@@ -35,7 +35,7 @@ internal object AgentImageCodec {
         )
     }
 
-    /** 用户附件统一编码为模型兼容的 JPEG，并保持原始像素尺寸。 */
+    /** User attachments are uniformly encoded as model-compatible JPEG while keeping the original pixel dimensions. */
     fun fromAttachmentBytes(
         bytes: ByteArray,
         source: String,
@@ -44,7 +44,7 @@ internal object AgentImageCodec {
         AgentModelImageEncoder.attachment(bytes, source, mimeHint)
             ?: error("cannot decode image")
 
-    /** 已有截图编码直接透传，不解码像素、缩放或转换格式。 */
+    /** Existing screenshot encodings are passed through directly, without decoding pixels, scaling, or format conversion. */
     fun fromScreenBytes(
         bytes: ByteArray,
         source: String,
@@ -57,21 +57,21 @@ internal object AgentImageCodec {
         source: String,
     ): AgentModelClient.ModelImage = AgentModelImageEncoder.screen(bitmap, source)
 
-    /** 助理与 GUI 截图共用原始像素合同。 */
+    /** The assistant and GUI screenshots share the same raw-pixel contract. */
     fun fromScreenContextBitmap(
         bitmap: Bitmap,
         source: String,
     ): AgentModelClient.ModelImage = fromScreenBitmap(bitmap, source)
 
     /**
-     * 为聊天列表生成独立的小预览。模型仍从 [image.reference] 读取原图，预览不会参与模型输入。
+     * Generates a separate small preview for the chat list. The model still reads the original from [image.reference], so the preview never takes part in model input.
      */
     fun previewFromReference(
         context: Context,
         image: AgentModelClient.ModelImage,
     ): AgentModelClient.ModelImage? = AgentModelImageEncoder.preview(context, image)
 
-    /** 文件工具图片会在发送模型前压缩，避免多张原图撑大 OpenAI 兼容请求体。 */
+    /** File-tool images are compressed before being sent to the model to avoid several originals bloating the OpenAI-compatible request body. */
     fun fromToolFile(file: File, source: String): AgentModelClient.ModelImage? = runCatching {
         AgentModelImageEncoder.toolVision(file.readBytesLimited(), source)
     }.getOrNull()
@@ -138,8 +138,8 @@ internal object AgentImageCodec {
     }
 
     /**
-     * 部分 ROM 的 Photo Picker 只实现 typed asset 或文件描述符读取。
-     * 依次尝试标准流、typed asset 和文件描述符，避免选图成功后附件被静默丢弃。
+     * Some ROMs' Photo Picker only implements typed-asset or file-descriptor reads.
+     * Try the standard stream, typed asset, and file descriptor in order to avoid the attachment being silently dropped after a successful pick.
      */
     private fun readContentUri(
         context: Context,
@@ -168,8 +168,8 @@ internal object AgentImageCodec {
     }
 
     /**
-     * 为跨进程请求解析图片。远程 URL 与已有 data URL 直接保留；本地 URI/路径只读取元数据，
-     * 正文稍后由 [io.github.mangi.eta.agent.runtime.AgentRuntimeImageTransfer] 通过文件描述符传输。
+     * Resolves images for cross-process requests. Remote URLs and existing data URLs are kept as-is; for local URIs/paths only metadata is read,
+     * and the body is transferred later by [io.github.mangi.eta.agent.runtime.AgentRuntimeImageTransfer] via a file descriptor.
      */
     fun fromTransferReference(
         context: Context?,

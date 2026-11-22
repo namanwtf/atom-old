@@ -48,8 +48,8 @@ internal fun Modifier.captureGlassBackdrop(backdrop: LayerBackdrop?): Modifier =
     if (backdrop == null) this else layerBackdrop(backdrop)
 
 /**
- * 按需录制根场景的 Backdrop 代理：仅当弹窗、底部抽屉或气泡菜单实际采样时才将根容器
- * 挂载到 `layerBackdrop`，避免常态列表滚动与页面转场每帧额外重绘整屏离屏纹理。
+ * On-demand root-scene Backdrop proxy: only when a popup, bottom drawer, or bubble menu actually samples does it mount the root container
+ * onto `layerBackdrop`, avoiding an extra full-screen offscreen redraw every frame during ordinary list scrolling and page transitions.
  */
 @Stable
 internal class DemandSceneBackdrop(
@@ -119,7 +119,7 @@ internal fun currentGlassOverlayBackdrop(): Backdrop? =
     LocalGlassSceneBackdrop.current ?: LocalGlassPageBackdrop.current
 
 /**
- * 玻璃顶栏内的动作按钮：统一 28.dp Glass 图标尺寸，并在禁用态阻断点击与补齐无障碍语义。
+ * Action buttons in the glass top bar: uniform 28.dp Glass icon size, blocking clicks and supplying accessibility semantics in the disabled state.
  */
 @Composable
 internal fun MiuixTopBarActionButton(
@@ -147,8 +147,8 @@ internal fun MiuixTopBarActionButton(
 }
 
 /**
- * 玻璃弹窗 / 底部抽屉内输入框与嵌套容器的通透底色：与 `GlassTextFieldDefaults`
- * 共用 `onBackground` 半透明体系，兼顾浅/深色与动态取色下的层次与对比度。
+ * Translucent fill for inputs and nested containers inside glass popups / bottom drawers: shares the
+ * `onBackground` translucent system with `GlassTextFieldDefaults`, balancing layering and contrast across light/dark and dynamic colors.
  */
 @Composable
 internal fun glassOverlayFieldBackgroundColor(): Color {

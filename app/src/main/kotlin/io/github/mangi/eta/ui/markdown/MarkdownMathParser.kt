@@ -37,13 +37,13 @@ import org.intellij.markdown.parser.sequentialparsers.impl.LinkParserUtil
 import org.intellij.markdown.parser.sequentialparsers.impl.ReferenceLinkParser
 
 /**
- * 面向聊天排版的 GFM 扩展：
+ * GFM extensions for chat typography:
  *
- * 1. 块级 `$$...$$`（及归一化后的 `\[...\]`）仅在闭合定界符已到达时立为独立 `BLOCK_MATH`，
- *    既能打断未留空行的前导段落，也能保护多行公式内的 `-`、`=`、空行不被误拆为列表或标题；
- *    未闭合时保持普通文本，确保公式闭合后再排版。
- * 2. 行内 `$...$` 与 `$$...$$` 兼容紧贴中文字符与括号，同时排除货币（`$4 和 $20`、`$4-$20`）
- *    并避免未闭合货币跨过后续 `$` 吞并真正的公式。
+ * 1. Block-level `$$...$$` (and the normalized `\[...\]`) become a standalone `BLOCK_MATH` only once the closing delimiter has arrived,
+ *    so they can break a leading paragraph without a blank line and protect `-`, `=`, and blank lines inside multi-line formulas from being mis-split into lists or headings;
+ *    while unclosed, they stay ordinary text so the formula is laid out only after it closes.
+ * 2. Inline `$...$` and `$$...$$` tolerate adjacent CJK characters and brackets, while excluding currency (`$4 and $20`, `$4-$20`)
+ *    and avoid unclosed currency swallowing a real formula across a later `$`.
  */
 internal class ChatGfmFlavourDescriptor(
     private val originalSource: String,
@@ -197,7 +197,7 @@ private class DisplayMathBlockProvider(
         if (!line.startsWithDoubleDollarAt(leadSpaces)) return null
 
         val openGlobalOffset = pos.offset + leadSpaces
-        // 行首的 `\(...\)` 虽在归一化后变成 `$$...$$`，语义仍是行内公式，不提升为独立居中块。
+        // A line-leading `\(...\)` becomes `$$...$$` after normalization but remains semantically an inline formula; it is not promoted to a standalone centered block.
         if (openGlobalOffset + 2 <= originalSource.length &&
             originalSource.startsWith("\\(", openGlobalOffset)
         ) {
@@ -441,8 +441,8 @@ private class ChatMathSequentialParser : SequentialParser {
         val nextPos = openerPos + 1
         if (nextPos >= dollarTokens.size) return -1
         val candidate = dollarTokens[nextPos]
-        // TeX 行内 `$...$` 内部不允许未转义裸 `$`；若下一个 `$` 不能合法闭合（如 `$4 和 $x$`），
-        // 则前一个 `$` 只是孤立货币符号，直接放弃并把下一个 `$` 留作后续真正的公式起点。
+        // TeX inline `$...$` does not allow an unescaped bare `$` inside; if the next `$` cannot legally close it (e.g. `$4 and $x$`),
+        // then the previous `$` is just an isolated currency symbol; abandon it and leave the next `$` as the start of a later real formula.
         if (candidate.length != 1 || !canCloseSingleDollar(tokens, candidate)) return -1
         val inner = tokens.originalText.subSequence(opener.end, candidate.start)
         return if (inner.isNotBlank()) nextPos else -1

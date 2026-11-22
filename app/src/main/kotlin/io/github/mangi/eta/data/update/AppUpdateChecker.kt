@@ -9,18 +9,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
-/** GitHub 最新 Release 信息，[version] 已去掉 tag 的 v 前缀。 */
+/** Latest GitHub Release info; [version] has the `v` prefix removed from the tag. */
 internal data class AppLatestRelease(
     val version: String,
     val url: String,
 )
 
 /**
- * 应用更新检查：读取 GitHub 最新 Release 并与当前版本比较。
+ * App update check: reads the latest GitHub Release and compares it with the current version.
  *
- * 版本号遵循发版流程的 v 前缀 + 点分数字约定（v3.0.6），比较按段进行：两段都是数字时
- * 按数值比较，否则按字符串比较。当前版本的构建类型后缀（-debug）与 CI 构建元数据（+提交号）不参与比较。
- * 所有网络与响应错误统一抛 [IOException]，由调用方提示。
+ * Version numbers follow the release process convention of a `v` prefix plus dot-separated digits (v3.0.6); comparison is done per segment: when both segments are numeric
+ * compare numerically, otherwise compare as strings. The current version's build-type suffix (-debug) and CI build metadata (+commit hash) do not participate in the comparison.
+ * All network and response errors are thrown uniformly as [IOException] and surfaced by the caller.
  */
 internal object AppUpdateChecker {
 

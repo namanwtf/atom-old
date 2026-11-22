@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.accessibility
 
-/** 窗口 ID 跨显示屏唯一；单调序列确保移除或容量淘汰后的同 ID 不会复用旧快照代次。 */
+/** Window IDs are unique across displays; the monotonic sequence ensures that an ID reused after removal or capacity eviction never reuses an old snapshot generation. */
 internal class WindowContentGenerations(private val capacity: Int = 256) {
     private val generations = linkedMapOf<Int, Long>()
     private var sequence = 0L

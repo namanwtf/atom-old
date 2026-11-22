@@ -12,7 +12,7 @@ import io.github.mangi.eta.ui.model.SystemNoticeCode
 import io.github.mangi.eta.ui.model.SystemNoticeMessageUi
 import io.github.mangi.eta.ui.model.UserMessageUi
 
-/** 将 Runtime outbox 的结果幂等折叠回 App 会话。 */
+/** Idempotently folds the Runtime outbox's results back into the App conversation. */
 internal object AgentPendingResultRecovery {
     data class Outcome(
         val state: AgentChatHomeUiState,

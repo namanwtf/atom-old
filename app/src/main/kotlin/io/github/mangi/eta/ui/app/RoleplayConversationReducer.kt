@@ -34,7 +34,7 @@ internal object RoleplayConversationReducer {
                 state.messages.filterIsInstance<AgentMessageUi>()
                     .filter { it.id == entry.messageId || it.id.startsWith("${entry.messageId}-") }
                     .forEachIndexed { index, message ->
-                        // 展示窗口可能从同批正文中间开始，既有块序号不能按窗口下标重新编号。
+                        // The display window may start mid-way through the same batch of body; existing block ordinals can't be renumbered by window index.
                         links.putIfAbsent(message.id, RoleplayMessageLink(entry.messageId, index))
                     }
             }
@@ -85,7 +85,7 @@ internal object RoleplayConversationReducer {
             },
             roleplayMessages = state.roleplayMessages.copy(revisions = state.roleplayMessages.revisions + (id to revision)),
         )
-        // 编辑旧正文后从完整历史重建模型投影，原 journal 和真实工具批次保持不变。
+        // After editing old body, rebuild the model projection from full history; the original journal and real tool batches stay unchanged.
         val history = projectJournal(updated) ?: return null
         return decorate(updated.copy(history = history))
     }

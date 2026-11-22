@@ -327,7 +327,7 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
         val assignedIds = existingIds.toMutableSet()
         val prefix = "call_eta_${UUID.randomUUID().toString().replace("-", "")}_"
         var nextId = 0
-        // 先保留所有服务端 ID，再统一补齐；结束事件和历史必须使用同一个已定稿 ID。
+        // Keep all server IDs first, then backfill uniformly; the end event and history must use the same finalized ID.
         calls.sortedBy { it.index }.forEach { call ->
             if (call.id?.let(assignedIds::add) != true) {
                 var generated: String
@@ -369,7 +369,7 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
     )
 
     private fun visibleReasoningDelta(delta: JSONObject): String {
-        // 同一分片的纯文本与结构化字段可重复携带相同思考，只消费一种表示。
+        // The plain-text and structured fields of the same chunk may carry the same thinking; consume only one representation.
         for (key in listOf("reasoning_content", "reasoning")) {
             (delta.opt(key) as? String)?.takeIf { it.isNotEmpty() }?.let { return it }
         }
@@ -441,8 +441,8 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
                 "output_tokens_details",
                 childKey = "reasoning_tokens"
             ),
-            // 兼容端点各用各的字段：OpenAI 嵌套在 prompt_tokens_details，DeepSeek 为 prompt_cache_hit_tokens / prompt_cache_miss_tokens，
-            // 部分端点直接放在顶层 cached_tokens。
+            // Compatible endpoints each use their own fields: OpenAI nests them in prompt_tokens_details, DeepSeek uses prompt_cache_hit_tokens / prompt_cache_miss_tokens,
+            // and some endpoints put them directly at the top level as cached_tokens.
             cachedTokens = resolvedCached,
             cacheWriteTokens = cacheWrite,
         ).takeUnless { it.isEmpty }

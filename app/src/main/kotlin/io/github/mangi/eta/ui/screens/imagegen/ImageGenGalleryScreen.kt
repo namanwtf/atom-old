@@ -195,7 +195,7 @@ internal fun ImageGenGalleryScreen(
     when (LocalUiStyle.current) {
         AppearanceUiStyle.COUI -> {
             val colors = CouiPageDefaults.themeColors()
-            // 使用 CouiLazyScaffoldPage 惰性回收离屏行，避免大量缩略图同时驻留内存。
+            // Use CouiLazyScaffoldPage to lazily recycle offscreen rows, so many thumbnails don't all stay resident in memory.
             CouiLazyScaffoldPage(
                 title = stringResource(R.string.image_gen_gallery_title),
                 onBack = onBack,

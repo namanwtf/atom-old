@@ -4,10 +4,11 @@ import android.net.Uri
 import android.os.Bundle
 
 /**
- * Eta App 与 system_server 无障碍保护后端之间的最小协议。
+ * The minimal protocol between the Eta App and the system_server accessibility protection backend.
  *
- * 控制广播由 signature 权限、协议版本和发送者 UID 共同校验；健康检查 Provider
- * 只接受 system UID。协议不授予 App 写 Secure Settings 的能力。
+ * Control broadcasts are verified together by the signature permission, the protocol version, and
+ * the sender UID; the health-check Provider only accepts the system UID. The protocol grants the
+ * App no ability to write Secure Settings.
  */
 internal object AccessibilityProtectionProtocol {
     const val VERSION = 1

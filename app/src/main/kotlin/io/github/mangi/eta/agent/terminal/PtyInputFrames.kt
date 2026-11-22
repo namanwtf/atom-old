@@ -1,9 +1,9 @@
 package io.github.mangi.eta.agent.terminal
 
 /**
- * 原生 PTY 组件的 stdin 帧格式：1 字节类型 + 2 字节大端长度 + 载荷。
- * stdin 是唯一能同时送达 Root 与普通身份进程的通道，终端字节与窗口尺寸因此共用它，
- * 由帧类型区分，避免在终端字节流里夹带可被用户输入伪造的控制序列。
+ * stdin frame format of the native PTY component: 1-byte type + 2-byte big-endian length + payload.
+ * stdin is the only channel that reaches both Root and normal-identity processes, so terminal bytes and window size share it,
+ * distinguished by frame type, to avoid smuggling control sequences into the terminal byte stream that user input could forge.
  */
 internal object PtyInputFrames {
     private const val TYPE_DATA = 0
@@ -11,7 +11,7 @@ internal object PtyInputFrames {
     private const val HEADER_SIZE = 3
     const val MAX_PAYLOAD = 4096
 
-    /** 终端输入字节；超出单帧上限时拆成连续数据帧。 */
+    /** Terminal input bytes; split into consecutive data frames when exceeding the single-frame limit. */
     fun data(bytes: ByteArray): ByteArray {
         if (bytes.isEmpty()) return bytes
         val frameCount = (bytes.size + MAX_PAYLOAD - 1) / MAX_PAYLOAD
@@ -28,7 +28,7 @@ internal object PtyInputFrames {
         return out
     }
 
-    /** 窗口尺寸；原生侧拒绝超出 1..1000 的值。 */
+    /** Window size; the native side rejects values outside 1..1000. */
     fun resize(rows: Int, cols: Int): ByteArray {
         require(rows in 1..1000 && cols in 1..1000) { "Terminal size is out of range" }
         val out = ByteArray(HEADER_SIZE + 4)

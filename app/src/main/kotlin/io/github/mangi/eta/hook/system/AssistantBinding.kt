@@ -46,8 +46,8 @@ internal fun extractPackageFromComponent(component: String?): String? =
     normalizeComponentName(component)?.substringBefore('/')
 
 /**
- * 启用自动接管默认助理且目标为非系统默认时，拦截 HyperOS/超级小爱把
- * `assistant` / `voice_interaction_service` 改回小爱的写入，直接改写为当前托管目标组件。
+ * When auto-takeover of the default assistant is enabled and the target is not the system default, intercept
+ * HyperOS / Super Xiaoai's writes that flip `assistant` / `voice_interaction_service` back to Xiaoai, rewriting them to the current managed target component.
  */
 internal fun rewriteManagedAssistantSettingIfOverwritten(
     autoConfigEnabled: Boolean,
@@ -112,8 +112,8 @@ internal fun isAssistantConfigurationCurrent(
     expectedTarget == currentTarget
 
 /**
- * 按用户串行化默认助理切换任务，并在并发触发时合并为最新一次待追平请求（latest-wins），
- * 避免快速连切 Eta / Gemini / 系统默认时丢失最后一次变更。
+ * Serialize default-assistant switch tasks per user, and merge concurrent triggers into the latest pending resync request (latest-wins),
+ * so that rapid successive switches between Eta / Gemini / system default do not lose the last change.
  */
 internal class AssistantConfigurationCoordinator {
     private val lock = Any()

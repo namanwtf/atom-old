@@ -20,7 +20,7 @@ import kotlin.math.sqrt
 internal const val MAX_AGENT_IMAGE_BYTES = 12 * 1024 * 1024
 internal const val CHAT_PREVIEW_MAX_LONG_EDGE = 1_920
 
-/** 仅负责为工具截图和聊天预览生成独立的图片副本。 */
+/** Only responsible for producing independent image copies for tool screenshots and chat previews. */
 internal object AgentModelImageEncoder {
     private const val MODEL_JPEG_QUALITY = 95
     private const val PREVIEW_JPEG_QUALITY = 88
@@ -51,7 +51,7 @@ internal object AgentModelImageEncoder {
         mimeType = "image/jpeg",
         quality = MODEL_JPEG_QUALITY,
     )
-    // 聊天图片支持点击全屏缩放查看文字细节（如聊天记录与终端长截图），保留高清边长上限。
+    // Chat images support tap-to-fullscreen zooming to inspect text details (such as chat logs and long terminal screenshots), so the high-resolution side-length limit is preserved.
     private val previewProfile = EncodingProfile(
         maxLongEdge = CHAT_PREVIEW_MAX_LONG_EDGE,
         maxPixels = 1_800_000L,
@@ -78,7 +78,7 @@ internal object AgentModelImageEncoder {
             bounds = bounds,
             profile = attachmentProfile,
         )
-        // 普通附件保持 JPEG 兼容路径；截图不经过这里的解码与重编码。
+        // Regular attachments keep the JPEG-compatible path; screenshots bypass the decode and re-encode here.
         return encoded
     }
 
@@ -86,10 +86,10 @@ internal object AgentModelImageEncoder {
         bitmap: Bitmap,
         source: String,
     ): AgentModelClient.ModelImage =
-        // Bitmap 尚无文件编码，仅序列化一次 PNG；不缩放、不铺底、不转换像素。
+        // The Bitmap has no file encoding yet, so it is serialized once as PNG; no scaling, no background fill, no pixel conversion.
         encodeBitmap(bitmap, source, screenProfile, flattenAlpha = false).copy(preserveOriginal = true)
 
-    /** 文件工具图片在发送模型前统一编码为 JPEG。 */
+    /** File-tool images are uniformly encoded as JPEG before being sent to the model. */
     fun toolVision(
         bytes: ByteArray,
         source: String,

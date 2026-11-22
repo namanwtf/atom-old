@@ -228,7 +228,7 @@ internal class ImageGenSettingsStore(
                         request = ImageGenRequest(
                             prompt = "A cute minimal flat illustration of a happy orange cat wearing a blue scarf, clean white background",
                             aspectRatio = ImageGenAspectRatio.RATIO_1_1,
-                            // 使用与聊天一致的有效默认分辨率，避免试画掩盖高分辨率配置不兼容问题。
+                            // Use a valid default resolution consistent with chat, so a trial render doesn't mask high-resolution config incompatibilities.
                             resolution = resolved.effectiveDefaultResolution,
                             count = 1,
                         ),
@@ -249,7 +249,7 @@ internal class ImageGenSettingsStore(
                 statusMessage = context.getString(R.string.imagegen_status_test_success, record.width, record.height)
                 refreshGalleryStats()
             } catch (_: AgentRunCancelledException) {
-                // 页面离开或主动取消时不报错。
+                // Don't report an error on page leave or explicit cancel.
             } catch (_: CancellationException) {
                 controller.cancel()
             } catch (e: ImageGenException) {

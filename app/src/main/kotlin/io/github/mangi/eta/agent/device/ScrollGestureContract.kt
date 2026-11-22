@@ -9,8 +9,9 @@ internal enum class ScrollAxis {
 }
 
 /**
- * 滚动幅度。系统滚动动作固定翻约一屏，不接受距离参数；SMALL 因此只走手势，
- * 用目标区域约四分之一的位移露出少量内容，适合微调到某一项。
+ * Scroll amount. System scroll actions always page by roughly one screen and accept no distance
+ * parameter; SMALL therefore goes through gestures only, using about a quarter of the target
+ * region's span to reveal a little content, which is suitable for fine-tuning to a specific item.
  */
 internal enum class ScrollAmount(val nearFraction: Float, val farFraction: Float) {
     SMALL(0.38f, 0.62f),
@@ -24,7 +25,8 @@ internal enum class ScrollAmount(val nearFraction: Float, val farFraction: Float
 }
 
 /**
- * 滚动方向表示希望显示的新内容所在方向，而不是手指移动方向。
+ * The scroll direction indicates where the new content to be shown lies, not the direction the
+ * finger moves.
  */
 internal enum class ScrollDirection(
     val axis: ScrollAxis,

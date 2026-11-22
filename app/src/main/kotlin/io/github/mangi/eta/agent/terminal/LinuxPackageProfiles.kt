@@ -24,7 +24,7 @@ internal sealed interface PackageProfileInstallResult {
     data object AlreadyReady : PackageProfileInstallResult
     data object EnvironmentNotReady : PackageProfileInstallResult
 
-    /** 依赖的 profile 尚未安装，按依赖链先装它。 */
+    /** A required profile isn't installed yet; install it first along the dependency chain. */
     data class DependencyMissing(val profileId: String) : PackageProfileInstallResult
     data object Installed : PackageProfileInstallResult
     data class Failed(val stage: PackageProfileInstallStage) : PackageProfileInstallResult
@@ -41,7 +41,7 @@ internal data class LinuxPackageProfile(
     val markerName: String,
     val revision: Int,
     val specs: Map<LinuxDistribution, LinuxPackageSpec>,
-    /** 安装前必须就绪的前置 profile。 */
+    /** Prerequisite profiles that must be ready before installation. */
     val dependsOn: LinuxPackageProfile? = null,
 ) {
     fun spec(distribution: LinuxDistribution): LinuxPackageSpec = requireNotNull(specs[distribution])
@@ -76,7 +76,7 @@ internal object LinuxPackageProfiles {
                 packages = listOf("nodejs-current", "npm"),
             ),
             LinuxDistribution.DEBIAN to LinuxPackageSpec(
-                // Node 官方 arm64 二进制链接 libatomic.so.1，归档安装不含系统依赖，需补装。
+                // Node's official arm64 binaries link libatomic.so.1; the archive install has no system dependencies, so it must be installed separately.
                 packages = listOf("libatomic1"),
                 managedTool = ManagedLinuxTool.NODE,
             ),
@@ -108,7 +108,7 @@ internal fun linuxPackageProfileReady(rootfs: File, profile: LinuxPackageProfile
     }
 }
 
-/** 为当前选中的发行版按需安装单个工具 profile；成功后只写对应完成标记。 */
+/** Installs a single tool profile on demand for the currently selected distro; on success writes only the corresponding completion marker. */
 internal class LinuxPackageProfileInstaller(
     private val context: Context,
     private val distribution: LinuxDistribution,

@@ -30,11 +30,11 @@ internal object HookSupport {
             try {
                 return current.getDeclaredMethod(name, *parameterTypes).apply { isAccessible = true }
             } catch (_: NoSuchMethodException) {
-                // 继续检查父类。
+                // Keep checking the parent class.
             } catch (_: SecurityException) {
-                // 当前类受限时，父类仍可能公开兼容入口。
+                // When the current class is restricted, the parent may still expose a compatible entry point.
             } catch (_: LinkageError) {
-                // ROM 类签名引用缺失类型时按目标不存在处理，不能击穿 system_server。
+                // When a ROM class signature references a missing type, treat the target as absent rather than crashing system_server.
             }
             current = current.superclass
         }
@@ -42,7 +42,7 @@ internal object HookSupport {
     }
 
     /**
-     * 安装期按结构筛选公开方法。ROM 签名引用缺失类型时按目标不存在处理。
+     * Filter public methods by structure at install time. When a ROM signature references a missing type, treat the target as absent.
      */
     fun findPublicMethod(
         clazz: Class<*>,
@@ -56,7 +56,7 @@ internal object HookSupport {
     }
 
     /**
-     * 安装期按结构筛选声明方法。单个方法不可访问时跳过，不影响其他候选项。
+     * Filter declared methods by structure at install time. Skip a single inaccessible method without affecting other candidates.
      */
     fun findDeclaredMethods(
         clazz: Class<*>,
@@ -87,11 +87,11 @@ internal object HookSupport {
             try {
                 return current.getDeclaredField(name).apply { isAccessible = true }
             } catch (_: NoSuchFieldException) {
-                // 继续检查父类。
+                // Keep checking the parent class.
             } catch (_: SecurityException) {
-                // 当前类受限时，父类仍可能公开兼容字段。
+                // When the current class is restricted, the parent may still expose a compatible field.
             } catch (_: LinkageError) {
-                // ROM 类签名引用缺失类型时按目标不存在处理，不能击穿 system_server。
+                // When a ROM class signature references a missing type, treat the target as absent rather than crashing system_server.
             }
             current = current.superclass
         }

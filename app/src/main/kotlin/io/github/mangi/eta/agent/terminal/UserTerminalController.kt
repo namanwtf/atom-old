@@ -4,15 +4,15 @@ import io.github.mangi.eta.core.AgentLogger
 import kotlin.concurrent.thread
 
 /**
- * 用户手动终端的会话控制器：多个常驻 shell 会话并存，每个会话的 cwd 与环境变量跨命令保持。
+ * Session controller for the user's manual terminal: multiple long-lived shell sessions coexist, each keeping its cwd and environment variables across commands.
  *
- * 与面向模型的 [RootShellTerminalController] 分层独立：
- * - 无执行超时——命令何时结束由用户决定（“停止”终止对应会话）；
- * - 输出经 onDelta 流式回调，不走模型工具的 JSON 合同与截断策略；
- * - 生命周期归属 App 级 UI 状态，不随单次 run 回收。
+ * Layered independently from the model-facing [RootShellTerminalController]:
+ * - No execution timeout - the user decides when a command ends ("Stop" terminates the session);
+ * - Output streams through onDelta callbacks, bypassing the model tool's JSON contract and truncation policy;
+ * - Lifetime belongs to app-level UI state and is not reclaimed with a single run.
  *
- * 进程启动、所有权识别与进程树终止复用 [ShellProcessSupervisor]；会话内启动的后台子进程
- * 随会话存活，会话退出时由 launcher 清场，与 AI 终端语义一致。
+ * Process launching, ownership identification, and process-tree termination reuse [ShellProcessSupervisor]; background children started within a session
+ * live as long as the session, and the launcher cleans them up when the session exits, matching AI terminal semantics.
  */
 internal class UserTerminalController(
     private val logger: AgentLogger,
@@ -43,7 +43,7 @@ internal class UserTerminalController(
         data class Failed(val code: String, val message: String) : OpenResult
     }
 
-    /** exitCode 为 null 表示会话中断（停止或进程死亡），命令没有正常返回退出码。 */
+    /** A null exitCode means the session was interrupted (stopped or the process died) and the command did not return a normal exit code. */
     data class ExecResult(
         val exitCode: Int?,
         val cwd: String,
@@ -77,7 +77,7 @@ internal class UserTerminalController(
         sessions[sessionId]?.let { !it.closed && it.process.isAlive } == true
     }
 
-    /** 新建会话；已有会话保持存活。identity 预留给无 root 环境的降级与测试。 */
+    /** Creates a new session; existing sessions stay alive. identity is reserved for non-root fallback and testing. */
     fun openSession(
         environment: TerminalEnvironment,
         cwd: String? = null,
@@ -147,7 +147,7 @@ internal class UserTerminalController(
                 if (environment == TerminalEnvironment.ANDROID && safeCwd == TerminalRuntime.workspace(selectedIdentity)) {
                     append("mkdir -p ${shellQuote(safeCwd)} && ")
                 }
-                // 用户工具的安装器常把 PATH 写进 profile；常驻会话不是 login shell，这里显式补齐。
+                // User tool installers often write PATH into profile; a long-lived session is not a login shell, so complete it explicitly here.
                 append("[ -f /etc/profile ] && . /etc/profile; ")
                 append("[ -f \"${'$'}HOME/.profile\" ] && . \"${'$'}HOME/.profile\"; ")
                 append("cd ${shellQuote(safeCwd)} && export TERM=dumb NO_COLOR=1")
@@ -167,8 +167,8 @@ internal class UserTerminalController(
     }
 
     /**
-     * 在指定常驻会话中执行命令并流式回调输出。阻塞当前线程，调用方需在 IO 线程使用。
-     * 无超时；用户停止或 shell 死亡（如执行 exit）时返回 sessionClosed=true。
+     * Runs a command in the given long-lived session and streams output via callbacks. Blocks the current thread; callers must use an IO thread.
+     * No timeout; returns sessionClosed=true when the user stops or the shell dies (e.g. running exit).
      */
     fun exec(sessionId: String, command: String, onDelta: (text: String, isStderr: Boolean) -> Unit): ExecResult {
         val trimmed = command.trim()
@@ -214,7 +214,7 @@ internal class UserTerminalController(
         )
     }
 
-    /** 终止指定会话及其进程组；该会话的后续 exec 前由调用方重新 openSession。 */
+    /** Terminates the session and its process group; the caller must re-open the session before any further exec. */
     fun stopSession(sessionId: String) {
         synchronized(sessionLock) {
             sessions[sessionId]?.stopRequested = true
@@ -223,8 +223,8 @@ internal class UserTerminalController(
     }
 
     /**
-     * 会话运行期间向 stdin 追加输入（模拟真实终端的键入），前台进程与后续 shell 命令都能读到。
-     * 返回 false 表示会话已不可用。
+     * Appends input to stdin while the session is running (simulating typing in a real terminal); both the foreground process and subsequent shell commands can read it.
+     * Returns false when the session is no longer usable.
      */
     fun writeInput(sessionId: String, text: String): Boolean {
         val current = synchronized(sessionLock) { sessions[sessionId] } ?: return false
@@ -256,7 +256,7 @@ internal class UserTerminalController(
         processSupervisor.unregisterProcess(current.process)
     }
 
-    /** 回收已退出的会话槽位，避免死会话占用并发上限。 */
+    /** Reclaims slots of exited sessions so dead sessions don't consume the concurrency limit. */
     private fun pruneDeadSessionsLocked() {
         val deadIds = sessions.filterValues { it.closed || !it.process.isAlive }.keys.toList()
         deadIds.forEach { closeSessionLocked(it) }
@@ -291,7 +291,7 @@ internal class UserTerminalController(
                 )
             }
             val marker = SessionStatusProtocol.newMarker()
-            // 单逻辑行协议：状态 printf 不进 stdin，交互式命令读 stdin 不会吃掉标记。
+            // Single-logical-line protocol: the status printf never enters stdin, so interactive commands reading stdin won't consume the marker.
             val commandBlock = SessionStatusProtocol.commandLine(marker, command) + "\n"
             runCatching {
                 synchronized(session.stdinLock) {
@@ -309,9 +309,9 @@ internal class UserTerminalController(
             while (true) {
                 val stdoutNow = session.stdout.text()
                 val stderrNow = session.stderr.text()
-                // 先判状态行再发增量：状态行完整到达后（含结尾换行）不再是"尾部未完成行"，
-                // 若先发出增量会把 marker 整行推给 UI。同时要求状态行以换行结束，
-                // 避免按半行解析出截断的 cwd。
+                // Check the status line before emitting the delta: once the full status line (including trailing newline) arrives, it's no longer a "trailing incomplete line";
+                // emitting the delta first would push the whole marker line to the UI. Also require the status line to end with a newline
+                // to avoid parsing a truncated cwd from a partial line.
                 val markerStart = stdoutNow.indexOf("\n$marker:")
                 val markerLineEnd = if (markerStart >= 0) stdoutNow.indexOf('\n', markerStart + 1) else -1
                 val status = if (markerLineEnd >= 0) {
@@ -336,7 +336,7 @@ internal class UserTerminalController(
                     return InternalResult(status.exitCode, newCwd, timedOut = false, sessionClosed = false)
                 }
                 if (session.closed || !session.process.isAlive) {
-                    // 会话已结束：残余输出原样冲出，不做状态行过滤。
+                    // Session already ended: flush remaining output as-is without status-line filtering.
                     if (onDelta != null) {
                         if (stdoutNow.length > stdoutOffset) onDelta(stdoutNow.substring(stdoutOffset), false)
                         if (stderrNow.length > stderrOffset) onDelta(stderrNow.substring(stderrOffset), true)
@@ -359,8 +359,8 @@ internal class UserTerminalController(
     }
 
     /**
-     * 尾部未完成行可能是状态行残片（marker 按 50ms 轮询随机截断到达），
-     * 先扣住等完整，避免把 marker 闪现给用户。
+     * The trailing incomplete line may be a status-line fragment (the marker arrives truncated at a random 50ms polling boundary);
+     * hold it back until complete to avoid flashing the marker to the user.
      */
     private fun emitStdoutDelta(
         text: String,
@@ -384,7 +384,7 @@ internal class UserTerminalController(
         return offset
     }
 
-    /** 状态行已到达：只冲出 marker 行之前的正文，末尾空白裁掉。 */
+    /** Status line has arrived: flush only the text before the marker line, trimming trailing whitespace. */
     private fun flushFinalStdout(
         text: String,
         offset: Int,
@@ -409,7 +409,7 @@ internal class UserTerminalController(
     ) {
         val execLock = Any()
 
-        /** exec 的命令行写入与运行期的用户输入写入共用同一把锁，避免字节交错。 */
+        /** exec's command-line writes and runtime user-input writes share one lock to avoid interleaving bytes. */
         val stdinLock = Any()
 
         @Volatile

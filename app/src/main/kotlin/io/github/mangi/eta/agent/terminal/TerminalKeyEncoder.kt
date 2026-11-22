@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.terminal
 
-/** 控制台可发送的非文本按键；文本输入走 [TerminalKeyEncoder.text]。 */
+/** Non-text keys the console can send; text input goes through [TerminalKeyEncoder.text]. */
 internal enum class TerminalKey {
     ENTER, TAB, BACKSPACE, ESCAPE,
     UP, DOWN, LEFT, RIGHT,
@@ -15,7 +15,7 @@ internal data class TerminalModifiers(
 ) {
     val isEmpty: Boolean get() = !ctrl && !alt && !shift
 
-    /** xterm 修饰参数：1 + Shift + 2·Alt + 4·Ctrl，出现在 `ESC [ 1 ; m A` 一类序列里。 */
+    /** xterm modifier parameter: 1 + Shift + 2·Alt + 4·Ctrl, appearing in sequences like `ESC [ 1 ; m A`. */
     val xtermParameter: Int
         get() = 1 + (if (shift) 1 else 0) + (if (alt) 2 else 0) + (if (ctrl) 4 else 0)
 
@@ -25,8 +25,8 @@ internal data class TerminalModifiers(
 }
 
 /**
- * 按键到终端字节的 xterm 编码。光标键是否使用 SS3 取决于程序是否开启 DECCKM，
- * 由调用方从当前会话的屏幕缓冲区读取；编码本身不持有会话状态。
+ * xterm encoding from key presses to terminal bytes. Whether cursor keys use SS3 depends on whether the program enabled DECCKM,
+ * which the caller reads from the current session's screen buffer; the encoder itself holds no session state.
  */
 internal object TerminalKeyEncoder {
     private const val ESC = "\u001B"
@@ -80,8 +80,8 @@ internal object TerminalKeyEncoder {
     }
 
     /**
-     * 输入法提交的文本。换行统一为回车，与真实键盘的 Enter 一致；
-     * 一次性修饰键只作用于第一个字符，后续字符原样发送。
+     * Text committed by the input method. Newlines are normalized to carriage return, matching a real keyboard's Enter;
+     * a one-shot modifier applies only to the first character; subsequent characters are sent as-is.
      */
     fun text(text: String, modifiers: TerminalModifiers = TerminalModifiers.NONE): String {
         val normalized = normalizeNewlines(text)
@@ -94,8 +94,8 @@ internal object TerminalKeyEncoder {
     }
 
     /**
-     * 粘贴内容。程序开启括号粘贴时包裹起止标记，并剔除内容里伪造的结束标记，
-     * 防止粘贴文本提前结束粘贴态、把后续内容当作按键执行。
+     * Pasted content. When the program enables bracketed paste, wrap it in the start/end markers and strip forged end markers from the content,
+     * preventing pasted text from ending paste mode early and having subsequent content executed as keys.
      */
     fun paste(text: String, bracketed: Boolean): String {
         val normalized = normalizeNewlines(text)
@@ -103,7 +103,7 @@ internal object TerminalKeyEncoder {
         return "$ESC[200~" + normalized.replace("$ESC[201~", "") + "$ESC[201~"
     }
 
-    /** Ctrl 组合的 C0 控制字符；与 xterm 一致，数字 2~8 映射到不可直接键入的控制字符。 */
+    /** C0 control characters for Ctrl combinations; like xterm, digits 2~8 map to control characters that can't be typed directly. */
     fun controlCode(char: Char): Char? = when (char) {
         in 'a'..'z' -> (char - 'a' + 1).toChar()
         in 'A'..'Z' -> (char - 'A' + 1).toChar()

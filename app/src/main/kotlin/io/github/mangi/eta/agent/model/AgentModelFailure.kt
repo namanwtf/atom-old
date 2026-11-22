@@ -8,7 +8,7 @@ import java.io.InterruptedIOException
 import java.net.ProtocolException
 import javax.net.ssl.SSLException
 
-/** Provider 边界只分类失败；重试预算与上下文由 Loop 持有。 */
+/** The Provider boundary only classifies failures; retry budget and context are held by the Loop. */
 internal class AgentModelFailure(
     val code: String,
     val retryable: Boolean,

@@ -156,8 +156,8 @@ private val editableReasoningEfforts = listOf(
 )
 
 /**
- * 常见上下文窗口档位。取十进制整数：标称 262,144、1,048,576 的模型按 256K、1M 填写只会略早压缩，
- * 不会越过真实上限。
+ * Common context-window tiers. Use decimal integers: models nominally 262,144 / 1,048,576 filled as 256K / 1M only compress slightly earlier,
+ * never exceeding the real limit.
  */
 internal val contextWindowPresets = listOf(128_000, 200_000, 256_000, 512_000, 1_000_000)
 
@@ -165,7 +165,7 @@ private val modelDialogBodyMaxHeight = 520.dp
 private val modelDialogChromeHeight = 112.dp
 
 private fun Modifier.modelDialogScrollableBody(): Modifier = layout { measurable, constraints ->
-    // 从弹窗实际约束中为标题、间距和操作栏让出空间，避免横屏时底部按钮被内容挤出边界。
+    // Reserve space for title, spacing, and the action bar from the popup's actual constraints, so bottom buttons aren't pushed off-screen in landscape.
     val fallbackMaxHeight = modelDialogBodyMaxHeight.roundToPx()
     val reservedHeight = modelDialogChromeHeight.roundToPx()
     val maxHeight = if (constraints.hasBoundedHeight) {
@@ -230,8 +230,8 @@ internal fun ProviderModelsTab(
     var retainedModelPendingDelete by remember { mutableStateOf<Model?>(null) }
     if (modelPendingDelete != null) retainedModelPendingDelete = modelPendingDelete
     var selectionMode by remember(provider.id) { mutableStateOf(false) }
-    // 退出多选时不清空已选集合：编辑栏和删除按钮还在退场动画里，清空会让数量闪成 0。
-    // 下次进入多选会整体替换为当次长按的模型，旧集合不会带进新一轮选择。
+    // Don't clear the selection set on exiting multi-select: the edit bar and delete button are still in the exit animation, and clearing would flash the count to 0.
+    // Next multi-select entry replaces the whole set with the long-pressed model; the old set never carries into a new round.
     var selectedModelIds by remember(provider.id) { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
     var modelSearchQuery by remember(provider.id) { mutableStateOf("") }
@@ -572,7 +572,7 @@ internal fun ProviderModelsTab(
             }
 
             item(key = "bottom_spacer", contentType = "spacer") {
-                // 多选操作栏悬浮在底部时，预留高度避免遮挡最后一个列表项；其余情况与大圆角屏幕下沿保持间距
+                // When the multi-select action bar floats at the bottom, reserve height so it doesn't cover the last list item; otherwise keep spacing from the large-corner screen's bottom edge
                 Spacer(
                     modifier = Modifier
                         .height(if (selectionMode) 88.dp else 24.dp)
@@ -799,7 +799,7 @@ internal fun ProviderModelsTab(
     )
 }
 
-/** 进出多选的统一节奏：强调型减速曲线，起步干脆、收尾柔和，几处动画共用同一时长。 */
+/** Unified rhythm for entering/exiting multi-select: an emphasized deceleration curve—crisp start, soft end—with several animations sharing one duration. */
 private const val SelectionMotionMillis = 360
 private val SelectionEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
@@ -827,7 +827,7 @@ private fun SelectionHeaderAction(
     )
 }
 
-/** 多选模式底部操作栏：MIUIX 使用 OS4 GlassFloatingToolbar，COUI 保留原样式，避开屏幕底部圆角裁切区。 */
+/** Bottom action bar in multi-select mode: MIUIX uses the OS4 GlassFloatingToolbar, COUI keeps its original style, both avoiding the screen's bottom-corner clip area. */
 @Composable
 private fun ModelDeleteBar(
     selectedCount: Int,
@@ -1013,7 +1013,7 @@ private fun ModelEditDialog(
         else -> editableReasoningEfforts
     }
     val contextWindowOverrideTextState = remember(model.id, isNew) {
-        // 早先拉取、未写入窗口的模型也带着远端标注，打开编辑时直接预填。
+        // Models fetched earlier but not yet written into the window also carry remote annotations, pre-filling directly when editing opens.
         TextFieldState((model.contextWindowOverride ?: model.contextWindow)?.toString().orEmpty())
     }
     var reasoningOverrideActive by remember(model.id, isNew) {

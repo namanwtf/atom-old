@@ -142,11 +142,11 @@ internal object ConversationPanelMetrics {
 }
 
 /**
- * 侧栏与外层推移容器共用的背景色。
+ * Background color shared by the sidebar and the outer push container.
  *
- * 浅色下保持与各自系统设置页一致的温和浅底（COUI backgroundWithCard / Miuix surface），使卡片层次分明；
- * 深色下使用抬升表面色（COUI backgroundElevatedWithCard / Miuix surface-surfaceContainer 插值），
- * 确保侧栏与右侧聊天黑底之间边界清晰。
+ * In light mode keep a gentle light background matching each system settings page (COUI backgroundWithCard / Miuix surface) so cards read as distinct layers;
+ * in dark mode use an elevated surface color (COUI backgroundElevatedWithCard / Miuix surface-surfaceContainer interpolation),
+ * ensuring a clear boundary between the sidebar and the black chat background on the right.
  */
 @Composable
 internal fun conversationPaneContainerColor(): Color {
@@ -348,7 +348,7 @@ internal fun ConversationPaneBottomDock(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 仅在侧边栏实际展开且当前窗口持有焦点时避让 IME，防止弹窗或主聊天页键盘触发侧栏重排。
+    // Only avoid the IME when the sidebar is actually expanded and the current window holds focus, so a popup or main-chat keyboard doesn't trigger sidebar reflow.
     val applyIme = isRevealed && LocalWindowInfo.current.isWindowFocused
     val safeDockInsets = rememberFloatingBottomBarInsets(
         baseInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
@@ -408,7 +408,7 @@ internal fun ConversationPaneBottomDock(
             }
         }
     }
-    // 侧栏收起时同步退出搜索态，确保不会在后台残留焦点或抢占返回键。
+    // Exit the search state in sync when the sidebar collapses, so no stale focus lingers or grabs the back key.
     LaunchedEffect(isRevealed) {
         if (!isRevealed && searchExpanded) {
             searchExpanded = false
@@ -624,9 +624,9 @@ internal fun ConversationPaneBottomDock(
 }
 
 /**
- * 协调原生 SearchBar 与右侧权限/设置双按钮的同步过渡：
- * 展开时双按钮立即禁用点击、焦点和语义，并随弹簧同步缩放滑出，搜索栏平滑扩展至全宽；
- * 收起时按反向弹簧回归，避免与取消按钮争抢位置或点击范围。
+ * Coordinates the synchronized transition between the native SearchBar and the right permission/settings button pair:
+ * on expand, the pair immediately disables click, focus, and semantics, scales out in sync with the spring, while the search bar smoothly extends to full width;
+ * on collapse it returns via the reverse spring, avoiding a fight with the cancel button over position or hit area.
  */
 @Composable
 private fun CoordinatedDockSearchLayout(

@@ -38,7 +38,7 @@ internal object SpeechHttp {
         JSONObject(source.readUtf8())
     }
 
-    /** 消费响应的整个周期都在取消回调保护内，避免只取消建连却遗留阻塞读。 */
+    /** The entire response-consumption lifecycle stays within the cancellation-callback guard, so cancelling only the connection setup doesn't leave a blocked read behind. */
     suspend fun <T> read(request: Request, consume: (Response) -> T): T = suspendCancellableCoroutine { continuation ->
         val call = client.newCall(request)
         continuation.invokeOnCancellation { call.cancel() }

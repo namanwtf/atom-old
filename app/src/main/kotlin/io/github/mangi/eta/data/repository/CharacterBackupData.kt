@@ -32,7 +32,7 @@ internal data class CharacterBackupAsset(
     val memoryMd: String = "",
 )
 
-/** 备份内只传文件内容，恢复时重新生成当前设备的私有路径。 */
+/** The backup carries only file contents; the private path for the current device is regenerated on restore. */
 internal object CharacterBackupTransfer {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 

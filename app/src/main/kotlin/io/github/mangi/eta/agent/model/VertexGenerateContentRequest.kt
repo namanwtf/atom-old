@@ -81,7 +81,7 @@ internal object VertexGenerateContentRequest {
         val generation = body.optJSONObject("generationConfig")
             ?: body.optJSONObject("generation_config")?.also { body.remove("generation_config") }
             ?: JSONObject()
-        // 思考配置由运行参数统一控制，避免自定义 JSON 绕过模型能力与档位约束。
+        // Thinking configuration is controlled uniformly by run parameters, preventing custom JSON from bypassing model capability and tier constraints.
         generation.remove("thinkingConfig")
         generation.remove("thinking_config")
         val effort = config.effectiveReasoningEffort
@@ -101,7 +101,7 @@ internal object VertexGenerateContentRequest {
     }
 }
 
-/** 缺少 thoughtSignature 的持久历史只作为明确标注的文本记录，不伪造原生工具调用链。 */
+/** Persistent history without a thoughtSignature is kept only as an explicitly annotated text record, never faking a native tool-call chain. */
 internal object VertexContentHistory {
     private data class LiveCall(
         val name: String,

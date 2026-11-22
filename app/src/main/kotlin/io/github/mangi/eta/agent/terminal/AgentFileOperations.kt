@@ -90,7 +90,7 @@ internal class AgentFileOperations(
         val result = base("list_directory").put("path", resolved).put("revision", page.revision)
             .put("entries", entries).put("offset", offset).put("next_offset", page.nextOffset)
             .put("truncated", false).put("has_more", false).put("stop_reason", "output_limit")
-        // 先保留最长状态字段的空间，分页必须停在尚未发布的条目前，不能截断完整 JSON。
+        // Reserve space for the longest status field first; paging must stop before an unpublished entry so a full JSON object is never truncated.
         var outputChars = result.toString().length
         if (outputChars > MAX_DIRECTORY_JSON_CHARS) throw FileToolException("FILE_OUTPUT_LIMIT", "Directory path and metadata exceed the output budget")
         var consumed = 0

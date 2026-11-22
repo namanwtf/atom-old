@@ -11,7 +11,7 @@ internal data class RemoteModelReconciliation(
     val result: RemoteModelSyncResult,
 )
 
-/** 同一模型保留本地身份与用户覆盖；账号目录可删除旧自动目录，手工配置始终保留。 */
+/** The same model keeps its local identity and user overrides; account catalogs can remove old auto catalogs, while manual configuration is always preserved. */
 internal fun reconcileRemoteModels(
     existing: List<Model>,
     fetched: List<Model>,
@@ -35,7 +35,7 @@ internal fun reconcileRemoteModels(
             when {
                 remote != null -> {
                     consumed += key
-                    // Codex 账号目录可以声明不同于公共 API 预设的窗口；预填值不能覆盖它。
+                    // A Codex account catalog may declare a window different from the public API preset; the pre-filled value cannot override it.
                     val configuredWindow = stored.contextWindowOverride.takeUnless {
                         authMode == ProviderAuthModes.OPENAI_CHATGPT && stored.source == ModelSource.CATALOG &&
                             it == stored.contextWindow
@@ -48,7 +48,7 @@ internal fun reconcileRemoteModels(
                         isBuiltIn = stored.isBuiltIn || remote.isBuiltIn,
                         customHeaders = stored.customHeaders,
                         customBody = stored.customBody,
-                        // 运行窗口只读覆盖值；用户未填写时才采用远端明确给出的窗口。
+                        // The run window is a read-only override value; the remote-provided window is only used when the user has not filled one in.
                         contextWindowOverride = configuredWindow ?: remote.contextWindow,
                         reasoningOverride = stored.reasoningOverride,
                         reasoningCapabilitiesOverride = stored.reasoningCapabilitiesOverride,

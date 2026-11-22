@@ -12,7 +12,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** MCP 凭据只以 Android Keystore 密文保存在 App 私有偏好中。 */
+/** MCP credentials are stored only as Android Keystore ciphertext in the app's private preferences. */
 internal class McpSecretStore(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(
         PREFERENCES_NAME,

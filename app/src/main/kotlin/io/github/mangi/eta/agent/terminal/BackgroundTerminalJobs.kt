@@ -9,7 +9,7 @@ import kotlin.concurrent.withLock
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** App 持有后台命令；Agent run 只提交和查询，结束回复不会释放任务。 */
+/** The app holds background commands; an Agent run only submits and queries them, and finishing the reply doesn't release the tasks. */
 internal class BackgroundTerminalJobs(
     private val supervisor: DetachedTaskSupervisor,
     private val logger: AgentLogger,
@@ -92,7 +92,7 @@ internal class BackgroundTerminalJobs(
         return taskJson(task).put("action", "wait").put("wait_timed_out", task.completedAt == null).toString()
     }
 
-    /** 重新打开 App 后从同一份任务记录恢复观察，不重新执行命令。 */
+    /** After reopening the app, resumes observation from the same task record without re-running the command. */
     @Synchronized
     fun resume() {
         if (closed) return

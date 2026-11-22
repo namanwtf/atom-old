@@ -15,8 +15,8 @@ import io.github.mangi.eta.core.safeLogType
 import io.github.mangi.eta.ui.MainActivity
 
 /**
- * 聊天朗读的前台播放服务：只在实际出声期间存在，让 App 退到后台或锁屏后朗读不被系统冻结。
- * 播放本身仍由聊天页的控制器持有；通知上的“停止”经 [onStopRequested] 交回控制器。
+ * Foreground playback service for chat read-aloud: it exists only while audio is actually playing, so read-aloud isn't frozen by the system when the app goes to the background or the screen locks.
+ * Playback itself is still owned by the chat page's controller; the "Stop" action on the notification is handed back to the controller via [onStopRequested].
  */
 internal class ReadAloudPlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
@@ -30,7 +30,7 @@ internal class ReadAloudPlaybackService : Service() {
         try {
             startForeground(NOTIFICATION_ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } catch (failure: RuntimeException) {
-            // 前台资格被拒时朗读仍在前台继续，只是退到后台可能被系统暂停。
+            // When foreground eligibility is denied, read-aloud still continues in the foreground, only it may be paused by the system when moving to the background.
             AndroidAgentLogger.warn("Read-aloud foreground failed: type=${failure.safeLogType()}")
             stopSelf()
         }
@@ -68,10 +68,10 @@ internal class ReadAloudPlaybackService : Service() {
         private const val CHANNEL = "eta_read_aloud"
         private const val NOTIFICATION_ID = 4204
 
-        /** 当前朗读的停止入口；同一时间只有一个朗读，后开始的会替换前一个。 */
+        /** Stop entry for the current read-aloud; only one read-aloud exists at a time, and a later one replaces the previous. */
         @Volatile private var onStopRequested: (() -> Unit)? = null
 
-        /** 在用户点击朗读后的出声时刻调用，此时 App 仍在前台，可以启动前台服务。 */
+        /** Called at the moment audio starts after the user taps read-aloud; the app is still in the foreground then, so the foreground service can be started. */
         fun start(context: Context, onStop: () -> Unit) {
             onStopRequested = onStop
             try {

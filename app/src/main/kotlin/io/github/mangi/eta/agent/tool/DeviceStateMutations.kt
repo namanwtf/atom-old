@@ -11,7 +11,7 @@ import io.github.mangi.eta.core.AgentLogger
 import java.util.Locale
 import org.json.JSONObject
 
-/** 系统写操作与读回验证共用同一用户和同一状态口径。 */
+/** System write operations and read-back verification share the same user and the same state semantics. */
 internal class DeviceStateMutations(
     private val context: Context,
     private val logger: AgentLogger? = null,
@@ -122,7 +122,7 @@ internal class DeviceStateMutations(
     private fun readSetting(command: String): String? {
         val result = executeRoot(command)
         if (!result.ok || result.truncated) return null
-        // settings CLI 用额外换行结束输出；只移除该换行，保留设置值自身的空格和换行。
+        // The settings CLI terminates its output with an extra newline; remove only that newline and preserve the spaces and newlines within the setting value itself.
         return result.stdout.removeSuffix("\n").takeUnless { it == "null" }
     }
 

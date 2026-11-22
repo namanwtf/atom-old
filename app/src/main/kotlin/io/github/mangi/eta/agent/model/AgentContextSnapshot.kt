@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-/** 上下文替换与 transcript 增量独立交付，摘要正文不进入事件流。 */
+/** Context replacement and transcript increments are delivered independently; summary text does not enter the event stream. */
 @Serializable
 internal data class AgentContextSnapshot(
     val version: Int = 1,

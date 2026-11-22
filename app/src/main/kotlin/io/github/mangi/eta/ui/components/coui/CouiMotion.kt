@@ -35,8 +35,8 @@ internal fun Modifier.couiButtonFeedback(
     if (!enabled) return this
     val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
     val ink = if (dark) Color.White else Color.Black
-    // 语音面板在 MIUIX 样式下也复用此按压反馈，此时未挂载 COUITheme，需按当前深浅色回退，
-    // 避免读到 COUITheme 的浅色默认静态值。
+    // The voice panel also reuses this press feedback under the MIUIX style, where COUITheme isn't mounted, so fall back to the current light/dark mode,
+    // avoiding the light-mode default static value of COUITheme.
     val press: Color
     val hover: Color
     val focus: Color
@@ -56,7 +56,7 @@ internal fun Modifier.couiButtonFeedback(
     return couiTouchFeedback(interactionSource).indication(interactionSource, indication)
 }
 
-/** 为需要与录音或进入动画叠加的悬浮控件提供独立的按压进度。 */
+/** Provides an independent press progress for floating controls that must compose over recording or entry animations. */
 internal class CouiPressMotion(private val scope: CoroutineScope, private val density: Float) {
     private val animation = Animatable(1f)
     private var motion: Job? = null

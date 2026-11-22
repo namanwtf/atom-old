@@ -23,7 +23,7 @@ import io.github.mangi.eta.agent.terminal.SgrStyle
 import io.github.mangi.eta.agent.terminal.TerminalScreenBuffer
 import io.github.mangi.eta.agent.terminal.terminalCharWidth
 
-/** 网格渲染所需的主题色；反显、光标与组字预览需要显式的默认前景和背景。 */
+/** Theme colors for grid rendering; reverse video, cursor, and composition preview need explicit default foreground and background. */
 @Immutable
 internal data class ConsolePalette(
     val foreground: Color,
@@ -31,7 +31,7 @@ internal data class ConsolePalette(
     val composing: Color,
 )
 
-/** 单元格尺寸与基线，全部以像素计；行高与列宽由同一份度量决定，保证网格与 PTY 尺寸一致。 */
+/** Cell size and baseline, all in pixels; row height and column width come from one metric, keeping grid and PTY sizes consistent. */
 @Immutable
 internal data class ConsoleCellMetrics(
     val width: Float,
@@ -40,8 +40,8 @@ internal data class ConsoleCellMetrics(
 )
 
 /**
- * 字形排版缓存：同一字符与字重/字形组合只测量一次，颜色在绘制时覆盖。
- * 行内容每帧都可能变化，但出现的字符集合很小，缓存命中后绘制只剩矩形与位图合成。
+ * Glyph layout cache: the same character and weight/style combination is measured only once; color is overridden at draw time.
+ * Row content may change every frame, but the set of appearing characters is small; after a cache hit, drawing is just rectangle and bitmap compositing.
  */
 internal class ConsoleGlyphCache(
     private val measurer: TextMeasurer,
@@ -52,8 +52,8 @@ internal class ConsoleGlyphCache(
     private val layouts = HashMap<Key, TextLayoutResult>()
 
     /**
-     * 列宽取数字 0 的宽度：真等宽字体下所有字形相同；部分系统把等宽字体替换为比例字体时，
-     * 数字仍为等宽字形，宽于它的字母在绘制时横向压缩进单元格，不会挤乱网格。
+     * Column width takes the width of digit 0: under a true monospace font all glyphs are equal; when some systems replace monospace with proportional,
+     * digits stay monospaced, and letters wider than them are horizontally squashed into the cell at draw time, never disrupting the grid.
      */
     fun metrics(): ConsoleCellMetrics {
         val layout = measurer.measure("0", baseStyle, softWrap = false, maxLines = 1)
@@ -81,8 +81,8 @@ internal class ConsoleGlyphCache(
 }
 
 /**
- * 按单元格绘制一行：每个字形固定落在 `列号 × 列宽` 处，不依赖字体本身的字宽，
- * 因此 CJK 回退字体与非等宽系统字体都不会让 TUI 的边框、对齐和光标错位。
+ * Draw a row cell by cell: each glyph lands at `column × column width`, independent of the font's own advance,
+ * so CJK fallback fonts and non-monospace system fonts never misalign a TUI's borders, alignment, or cursor.
  */
 @Composable
 internal fun ConsoleGridLine(
@@ -168,7 +168,7 @@ private fun DrawScope.drawGlyph(
     }
 }
 
-/** 组字预览覆盖在光标处，宽度按字符占格计算，未上屏前不进入网格。 */
+/** Composition preview overlays the cursor, its width computed by character cell count, and doesn't enter the grid before commit. */
 private fun DrawScope.drawComposing(
     composing: String,
     col: Int,
@@ -190,7 +190,7 @@ private fun DrawScope.drawComposing(
     }
 }
 
-/** 显式颜色优先，未指定时落到主题默认色；反显互换前景与背景，dim 以透明度衰减。 */
+/** Explicit colors take priority, falling back to theme defaults when unspecified; reverse swaps foreground and background, dim attenuates via alpha. */
 private fun resolveColors(style: SgrStyle, palette: ConsolePalette): Pair<Color, Color> {
     val foreground = style.fg?.let { Color(it) } ?: palette.foreground
     val background = style.bg?.let { Color(it) }
@@ -202,7 +202,7 @@ private fun resolveColors(style: SgrStyle, palette: ConsolePalette): Pair<Color,
     return (if (style.dim) text.copy(alpha = text.alpha * DIM_ALPHA) else text) to fill
 }
 
-/** 比例字体的字形略宽于列宽时保持原样，明显超出才压缩，避免常规字母被无谓变形。 */
+/** Proportional glyphs slightly wider than the column stay as-is; only clearly overflowing ones are compressed, so ordinary letters aren't needlessly distorted. */
 private const val GLYPH_OVERFLOW_TOLERANCE = 1.08f
 private const val DIM_ALPHA = 0.6f
 private val COMPOSING_STYLE = SgrStyle(underline = true)

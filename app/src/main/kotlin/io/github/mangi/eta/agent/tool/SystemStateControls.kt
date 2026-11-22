@@ -10,7 +10,7 @@ import io.github.mangi.eta.agent.device.DeviceToolContract
 import io.github.mangi.eta.core.AgentLogger
 import org.json.JSONObject
 
-/** 有明确系统语义的开关；不把模型提供的设置键或命令作为执行入口。 */
+/** Toggles with explicit system semantics; never use model-provided setting keys or commands as an execution entry point. */
 internal class SystemStateControls(
     private val context: Context,
     private val logger: AgentLogger? = null,

@@ -85,9 +85,9 @@ import kotlinx.coroutines.runBlocking
 import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 
 /**
- * 模块进程内的通用 Agent Runtime。
+ * General-purpose Agent Runtime inside the module process.
  *
- * Hook 入口只发送请求和接收结果；模型调用、工具执行、运行状态浮窗都在本服务中完成。
+ * Hook entries only send requests and receive results; model calls, tool execution, and the run-status overlay all happen in this service.
  */
 internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
@@ -123,12 +123,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private var resultCardParams: WindowManager.LayoutParams? = null
     private var resultCardBack: Pair<OnBackInvokedDispatcher, OnBackInvokedCallback>? = null
 
-    /** 窗口只投影当前手机控制者；各运行的状态保留在自己的记录中。 */
+    /** The window only projects the current phone controller; each run's state is kept in its own record. */
     private val state = mutableStateOf(AgentOverlayState.Initial)
     private val virtualDisplayState = mutableStateOf(VirtualDisplaySnapshot.Inactive)
     private val capsuleExpanded = mutableStateOf(false)
     private val capsuleSupplementFocusable = mutableStateOf(false)
-    /** Agent 手势穿过胶囊时为 true：窗口不可触摸，胶囊淡出让路。 */
+    /** True when the Agent gesture passes through the capsule: the window is not touchable and the capsule fades out to make way. */
     private val capsuleYielded = mutableStateOf(false)
     private val restoreCapsule = Runnable { setCapsuleYielded(false) }
     private val clearanceHost = object : AgentOverlayClearance.Host {
@@ -515,8 +515,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 return null
             }
         }
-        // Root 入口保留原有绑定服务生命周期；新增 FGS 不能成为厂商后台入口的新前置权限。
-        // 定时任务显式关闭运行进度通知且设备具备后台豁免时，同样跳过 FGS，做到运行时 0 通知。
+        // The Root entry keeps the original bound-service lifecycle; the added FGS must not become a new prerequisite permission for vendor background entries.
+        // Scheduled tasks likewise skip FGS when they explicitly disable run-progress notifications and the device has background exemption, achieving zero notifications at runtime.
         val silentScheduledRun = isSilentScheduledRun(request)
         val skipForegroundLease = silentScheduledRun &&
             ScheduledTaskRunner.canRunSilentlyWithoutForegroundService(this)
@@ -615,7 +615,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             if (destroyed) return@post
             val guiState = guiControl.state.value
             val ownsGui = guiState.ownerRunId == run.runId
-            // StateFlow 可以合并短暂的获得与释放；终态归属仍以顺序事件记录的最后所有者为准。
+            // StateFlow can coalesce a brief acquire and release; terminal ownership still follows the last owner recorded by the ordered events.
             if (event is AgentEvent.GuiControlChanged && event.status == GuiControlStatus.Acquired &&
                 !guiState.userPaused && lastGuiOwnerRunId == run.runId && (ownsGui || guiState.ownerRunId == null)) {
                 bindDisplayedRun(run)
@@ -643,7 +643,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         result: AgentRuntimeWire.RunResult,
         events: List<AgentEvent>,
     ) {
-        // outbox 是终态与在途 checkpoint 之间的提交点；失败时保留 checkpoint 供下次恢复。
+        // The outbox is the commit point between terminal state and the in-flight checkpoint; on failure the checkpoint is kept for the next recovery.
         persistCompletedRun(request, result)
         runCatching { persistArchivedRun(request, result, events) }
             .onFailure { throwable ->
@@ -746,7 +746,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             AndroidAgentLogger.warnThrottled("runtime_result_delivery_failed") {
                 "Agent runtime result delivery failed: type=${throwable.safeLogType()}"
             }
-            // 不把传输失败伪装成已交付终态；引用使新客户端保留 outbox，等待完整恢复。
+            // Do not disguise a transfer failure as a delivered terminal state; the reference lets the new client keep the outbox and await full recovery.
             val fallback = AgentRuntimeWire.RunResult(
                 result.runId,
                 false,
@@ -1201,12 +1201,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
 
     private fun showOverlay() {
         if (capsuleView != null) return
-        // TYPE_ACCESSIBILITY_OVERLAY 免 SYSTEM_ALERT_WINDOW 权限；仅回退态（无障碍未启用）才需检查
+        // TYPE_ACCESSIBILITY_OVERLAY avoids the SYSTEM_ALERT_WINDOW permission; only the fallback state (accessibility not enabled) needs the check
         if (AgentAccessibilityService.current() == null && !Settings.canDrawOverlays(this)) return
         val wm = overlayContext().getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return
         windowManager = wm
 
-        // ── 氛围光窗口：全屏触摸穿透，彩虹光圈（后台虚拟屏运行时隐藏流光，仅承载全屏破壁动画） ─
+        // ── Ambience-light window: full-screen touch passthrough, rainbow ring (hides the flowing light while the background virtual screen runs; only carries the full-screen wall-break animation) ─
         val glow = createOverlayComposeView {
             AgentOverlayGlow(
                 state = state.value,
@@ -1223,7 +1223,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         glowView = glow
         glowParams = glowLp
 
-        // ── 状态胶囊窗口：状态栏下方居中，收起时一句状态（含微缩镜），点击展开控制与画廊视窗 ─
+        // ── Status capsule window: centered below the status bar, one-line status when collapsed (with minimap), tap to expand controls and the gallery view ─
         val capsule = createOverlayComposeView {
             val controlRunId = displayedRun?.runId
             AgentOverlayCapsule(
@@ -1276,8 +1276,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     }
 
     /**
-     * 让路时同步切换触摸穿透：标志位立刻生效保证手势不被截走，视觉过渡交给胶囊内的动画。
-     * 恢复时先淡入再收回触摸，两者顺序无关紧要，因为恢复发生在手势结束之后。
+     * On yielding, switch touch passthrough synchronously: the flag takes effect immediately so the gesture is not intercepted, while the visual transition is left to the capsule's animation.
+     * On recovery, fade in first and then reclaim touch; the order is irrelevant because recovery happens after the gesture ends.
      */
     private fun setCapsuleYielded(yielded: Boolean) {
         if (!yielded) mainHandler.removeCallbacks(restoreCapsule)
@@ -1302,7 +1302,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private fun toggleCapsule() {
         val expand = !capsuleExpanded.value
         VirtualDisplayController.setStageExpanded(expand && virtualDisplayState.value.active)
-        // 先把窗口扩到展开档再开始动画；收起由胶囊在动画结束后回调 onCollapsedSettled 缩窗。
+        // First expand the window to the expanded tier before starting the animation; collapse shrinks the window via the capsule's onCollapsedSettled callback after the animation.
         if (expand) updateCapsuleWindowBounds(expanding = true)
         capsuleExpanded.value = expand
     }
@@ -1317,7 +1317,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private fun updateCapsuleWindowBounds(expanding: Boolean = capsuleExpanded.value) {
         val vdActive = virtualDisplayState.value.active
         val focusable = capsuleSupplementFocusable.value
-        // 虚拟屏激活时窗口宽度固定为展开档，避免展开/收起修改 WindowManager 宽度引发居中水平跳帧。
+        // When the virtual screen is active, fix the window width to the expanded tier, avoiding horizontal centering jitter from expand/collapse WindowManager width changes.
         val widthDp = if (vdActive) {
             CAPSULE_STAGE_WINDOW_WIDTH_DP
         } else {
@@ -1388,12 +1388,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     }
 
     /**
-     * 结果卡片是任务结束后的停留界面，系统返回应先关闭它，而不是退回底下的应用。
-     * 窗口需可获焦才能收到返回；卡片外仍是 FLAG_NOT_TOUCH_MODAL，触摸照常穿透到下层。
+     * The result card is the lingering screen after a task ends; the system back button should close it first rather than returning to the app underneath.
+     * The window must be focusable to receive the back press; outside the card it remains FLAG_NOT_TOUCH_MODAL, so touches pass through to the layer below as usual.
      */
     /**
-     * 回到 Eta 本体并定位到本次任务的会话。卡片窗口可见时属于前台可见的用户操作，
-     * 允许从服务启动 Activity；启动失败时保留卡片，不让用户丢失结果。
+     * Return to Eta itself and navigate to this task's session. When the card window is visible it counts as a foreground-visible user action,
+     * so starting an Activity from the service is allowed; on launch failure the card is kept so the user does not lose the result.
      */
     private fun openEtaFromResult(run: RuntimeRunRegistry.Run?) {
         val handoff = run?.request?.handoff
@@ -1559,8 +1559,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     appearance = appearance,
                     systemOverlay = true,
                 ) {
-                    // 部分 ROM 会给 TYPE_ACCESSIBILITY_OVERLAY 分配软件 Canvas；Miuix 与 COUI 的
-                    // RuntimeShader 只检查系统版本，因此系统浮层统一使用无 RuntimeShader 的圆角回退。
+                    // Some ROMs assign a software Canvas to TYPE_ACCESSIBILITY_OVERLAY; Miuix and COUI's
+                    // RuntimeShader only checks the system version, so system overlays uniformly use the rounded-corner fallback without RuntimeShader.
                     CompositionLocalProvider(
                         LocalSquircleEnabled provides false,
                     ) {
@@ -1571,10 +1571,10 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         }
 
     /**
-     * 胶囊窗口使用固定宽度与分档高度，动画只在窗口内进行。
-     * WRAP_CONTENT 会让每一帧的尺寸变化都触发 WindowManager 重新布局整个窗口，这是卡顿的来源；
-     * 但窗口内透明区域同样会吞掉触摸（包括 Agent 自己注入的点击），所以高度只在需要时扩大：
-     * 展开前先扩到目标档，收起动画结束后再缩回，见 [setCapsuleWindowHeight]。
+     * The capsule window uses a fixed width and tiered heights, with animation only inside the window.
+     * WRAP_CONTENT makes every frame's size change trigger a full-window relayout by WindowManager, which is the source of jank;
+     * but transparent regions inside the window would also swallow touches (including clicks the Agent itself injects), so the height only grows when needed:
+     * expand to the target tier before expanding, and shrink back after the collapse animation ends; see [setCapsuleWindowHeight].
      */
     private fun capsuleLayoutParams(): WindowManager.LayoutParams =
         WindowManager.LayoutParams(
@@ -1587,7 +1587,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            // 贴在状态栏下方居中：远离多数应用的主要点击区，也和系统胶囊、流体云的位置习惯一致。
+            // Positioned centered right below the status bar: away from most apps' main click areas, and consistent with the system capsule and fluid-cloud placement conventions.
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             y = statusBarHeightPx()
             windowAnimations = 0
@@ -1613,7 +1613,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            // 半屏底部居中，窗口外触摸穿透
+            // Half-screen, bottom-centered, touches pass through outside the window
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             x = 0
             y = 0
@@ -1621,8 +1621,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         }
 
     private fun overlayType(): Int =
-        // 无障碍服务可用时用 TYPE_ACCESSIBILITY_OVERLAY（免 SYSTEM_ALERT_WINDOW 权限，且截图
-        // filterValidWindows 可过滤）；需用无障碍服务 context 创建，否则 BadTokenException
+        // Use TYPE_ACCESSIBILITY_OVERLAY when the accessibility service is available (avoids the SYSTEM_ALERT_WINDOW permission, and screenshots
+        // can be filtered by filterValidWindows); must be created with the accessibility-service context, otherwise BadTokenException
         if (AgentAccessibilityService.current() != null)
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
         else
@@ -1633,7 +1633,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
 
     @Suppress("DEPRECATION")
     private fun glowLayoutParams(): WindowManager.LayoutParams {
-        // 真实屏幕高度（含状态栏 + 导航栏），MATCH_PARENT 在部分设备不含系统栏
+        // Real screen height (including status bar + navigation bar); MATCH_PARENT excludes system bars on some devices
         val realHeight = runCatching {
             val point = android.graphics.Point()
             @Suppress("DEPRECATION")
@@ -1651,21 +1651,21 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            // 全屏覆盖（含状态栏/导航栏），触摸穿透不拦截页面操作；
-            // TYPE_ACCESSIBILITY_OVERLAY 让 takeScreenshotOfWindow 过滤掉，对 Agent 透明
+            // Full-screen coverage (including status/navigation bars), touch passthrough does not intercept page operations;
+            // TYPE_ACCESSIBILITY_OVERLAY makes takeScreenshotOfWindow filter it out, transparent to the Agent
             gravity = Gravity.TOP or Gravity.START
             x = 0
             y = 0
-            // 非应用窗口默认按系统栏与挖孔收缩窗口框，光带画出的圆角就会整体下移，和物理屏幕角错位。
-            // 显式不避让任何 inset，窗口原点才与屏幕原点重合，Display 上报的圆角半径才对得上。
+            // Non-app windows shrink the window frame by system bars and the cutout by default, so the rounded corners the light band draws shift down and misalign with the physical screen corners.
+            // Explicitly avoid no inset so the window origin coincides with the screen origin, making the Display-reported corner radius match.
             setFitInsetsTypes(0)
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
         }
     }
 
     /**
-     * 屏幕四角的物理圆角半径。光效窗口覆盖整屏，直接取 Display 上报的值；
-     * 部分 ROM 不上报时用 0，兜底按常见大圆角机型估一个保守值，宁可略小也不让光带越出屏幕。
+     * Physical corner radius of the screen's four corners. The light-effect window covers the whole screen and directly uses the Display-reported value;
+     * when some ROMs do not report it, use 0 and fall back to a conservative estimate based on common large-corner models — better slightly smaller than letting the light band exceed the screen.
      */
     private fun screenCornerRadii(): ScreenCornerRadii {
         val display = (overlayContext().getSystemService(Context.DISPLAY_SERVICE) as? android.hardware.display.DisplayManager)
@@ -1717,7 +1717,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 etaUiInForeground = MainActivity.isInForeground,
             )
         ) {
-            // 撤掉胶囊和边缘光，改显半屏结果卡片；无交互时由卡片自身延时退场并回调关闭
+            // Remove the capsule and edge light and show the half-screen result card instead; without interaction, the card itself delays its exit and calls back to close
             capsuleExpanded.value = false
             removeAmbientWindows()
             publishExecutionState()
@@ -1744,7 +1744,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     }
 
     private fun dismissAndStop() {
-        // stopSelf 不会销毁仍被客户端绑定的服务；窗口关闭后不再保留完整请求与结果历史。
+        // stopSelf does not destroy a service still bound by clients; after the window closes, no full request or result history is retained.
         displayedRun?.completedContext = null
         displayedRun = null
         removeOverlayWindows()
@@ -1800,7 +1800,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         @Volatile
         private var activeInstance: AgentRuntimeService? = null
 
-        // 有活跃任务且开启常亮开关时为 true；同步投影到 App 前台窗口、悬浮窗并持有屏幕唤醒锁。
+        // True when there is an active task and the keep-awake switch is on; projects synchronously to the App foreground window and overlay and holds the screen wake lock.
         private val keepScreenOnState = MutableStateFlow(false)
         val keepScreenOn = keepScreenOnState.asStateFlow()
 
@@ -1823,7 +1823,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         private const val CAPSULE_CONTROLS_HEIGHT_DP = 124
         private const val CAPSULE_STAGE_HEIGHT_DP = 524
         private const val CAPSULE_SUPPLEMENT_HEIGHT_DP = 260
-        /** 注入点击只是一个点，目标控件常贴着胶囊边缘，判定范围向外多留一点。 */
+        /** An injected click is only a point; the target control often sits right at the capsule edge, so the hit region is expanded slightly outward. */
         private const val CAPSULE_CLEARANCE_SLOP_DP = 8
         private const val FALLBACK_SCREEN_CORNER_DP = 28
         private const val MAX_ARCHIVED_USER_IMAGE_PREVIEWS = 4

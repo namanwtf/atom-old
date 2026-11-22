@@ -57,7 +57,7 @@ internal suspend fun synthesizeSpeech(settings: SpeechSettings, credentials: Spe
     }
 }
 
-/** SSE 事件边界与 HTTP chunk 边界无关；豆包则每行一个 JSON 对象。 */
+/** SSE event boundaries are independent of HTTP chunk boundaries; Doubao, by contrast, uses one JSON object per line. */
 internal class SpeechAudioStreamDecoder(private val qwen: Boolean, onAudio: (ByteArray) -> Unit) {
     private val sse = SpeechSseDecoder { _, value -> payload(value) }
     private val audio = SpeechSegmentAudio(onAudio)

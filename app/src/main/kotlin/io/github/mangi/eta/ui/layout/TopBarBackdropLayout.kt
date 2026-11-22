@@ -29,7 +29,7 @@ internal fun TopBarBackdropLayout(
         val width = constraints.constrainWidth(foreground.width)
         val height = constraints.constrainHeight(foreground.height)
         val backdrop = backgroundMeasurable.measure(Constraints.fixed(width, backgroundHeight(height)))
-        // 向下延伸的背景只占绘制空间，列表避让量由顶栏内容决定。
+        // The downward-extending background occupies draw space only; the list's avoidance offset is determined by the top-bar content.
         layout(width, height) {
             backdrop.placeRelative(0, 0)
             foreground.placeRelative(0, 0)

@@ -9,8 +9,8 @@ import java.nio.ByteOrder
 import java.util.zip.GZIPInputStream
 
 /**
- * 豆包双向流式合成的二进制帧。头部 4 字节：版本/头长、消息类型/标志、序列化/压缩、保留；
- * 带事件标志时依次是事件号、会话 ID（连接级事件改为连接 ID）、负载长度与负载，全部大端。
+ * Doubao bidirectional streaming-synthesis binary frames. The header is 4 bytes: version/header length, message type/flags, serialization/compression, reserved;
+ * when the event flag is set they are followed by event number, session ID (connection ID for connection-level events), payload length, and payload, all big-endian.
  */
 internal object DoubaoTtsCodec {
     const val START_CONNECTION = 1
@@ -81,7 +81,7 @@ internal object DoubaoTtsCodec {
         var event = 0
         if (flags and FLAG_WITH_EVENT != 0) {
             event = int()
-            // 连接级事件携带连接 ID，会话级事件携带会话 ID；两者长度前缀相同，都只需跳过。
+            // Connection-level events carry a connection ID and session-level events carry a session ID; both have the same length prefix and just need to be skipped.
             if (event != START_CONNECTION && event != FINISH_CONNECTION) sized()
         }
         var payload = sized()

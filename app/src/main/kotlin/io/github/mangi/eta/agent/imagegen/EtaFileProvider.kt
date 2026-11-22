@@ -2,5 +2,5 @@ package io.github.mangi.eta.agent.imagegen
 
 import androidx.core.content.FileProvider
 
-/** 专用 FileProvider 子类，避免直接注册 AndroidX 基类在部分设备或库冲突时触发崩溃。 */
+/** Dedicated FileProvider subclass, to avoid crashes on some devices or on library conflicts from registering the AndroidX base class directly. */
 internal class EtaFileProvider : FileProvider()
