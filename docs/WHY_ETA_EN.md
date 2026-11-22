@@ -1,6 +1,6 @@
 # Why I Built Eta
 
-[← Back to README](../README_EN.md) · [简体中文](WHY_ETA.md)
+[← Back to README](../README_EN.md) · [Simplified Chinese](WHY_ETA.md)
 
 ## Starting with assistants I did not enjoy using
 

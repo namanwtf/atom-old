@@ -1,6 +1,6 @@
 # Eta
 
-[简体中文](README.md) | **English**
+[Simplified Chinese](README.md) | **English**
 
 [![GitHub Stars](https://img.shields.io/github/stars/Mangi-11/Eta?logo=github&label=Stars&color=1677FF)](https://github.com/Mangi-11/Eta/stargazers)
 [![Total GitHub Releases downloads](https://img.shields.io/github/downloads/Mangi-11/Eta/total?logo=github&label=Downloads&color=1677FF)](https://github.com/Mangi-11/Eta/releases)
@@ -142,7 +142,7 @@ For feature requests, bug reports, or contributions, feel free to share your ide
 
 ## License
 
-Copyright © 2026 [蛮吉 (Mangi-11)](https://github.com/Mangi-11)
+Copyright © 2026 [Manji (Mangi-11)](https://github.com/Mangi-11)
 
 This project is open source under GPL-3.0; see [LICENSE](LICENSE) for details.
 
