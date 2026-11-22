@@ -20,30 +20,35 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-# libxposed 通过 META-INF/xposed/java_init.list 中的类名字符串加载模块入口；
-# 允许入口类混淆时，需要同步改写 java_init.list，避免 release 裁剪后模块失效。
+# libxposed loads the module entry point via the class name string in
+# META-INF/xposed/java_init.list; if the entry class is allowed to be obfuscated,
+# java_init.list must be rewritten accordingly to avoid the module breaking after
+# release shrinking.
 -dontwarn io.github.libxposed.annotation.**
 -adaptresourcefilecontents META-INF/xposed/java_init.list
 -keep,allowoptimization,allowobfuscation class io.github.mangi.eta.ModuleMain {
     public <init>();
 }
 
-# R8 默认规则已覆盖 Compose 运行时；Miuix 图标是普通 Kotlin 代码，允许 R8 裁掉未使用图标。
-# -dontwarn 仅抑制 KMP 依赖在 Android 侧可能出现的可选平台 warning，不阻止裁剪。
+# R8's default rules already cover the Compose runtime; Miuix icons are ordinary
+# Kotlin code, so R8 is allowed to strip unused icons.
+# -dontwarn only suppresses optional platform warnings that KMP dependencies may
+# emit on the Android side; it does not prevent shrinking.
 -dontwarn top.yukonga.miuix.**
 
-# libxposed service 通过静态调用和 manifest provider 接入，交给 R8/Android 默认规则保留可达代码。
+# libxposed service is wired in via static calls and a manifest provider; rely on R8/Android default rules to keep reachable code.
 -dontwarn io.github.libxposed.service.**
 
-# 配置 key 是字符串常量并通过静态调用访问，不需要保留类名或成员名。
+# Config keys are string constants accessed via static calls, so class and member names do not need to be kept.
 
-# ── Release 日志策略 ────────────────────────────────────────────────────────
-# 仅删除 Eta 自有代码中的 Android VERBOSE/DEBUG 调用；INFO/WARN/ERROR 必须保留，
-# 第三方依赖的日志策略由依赖自身决定。
+# ── Release logging policy ────────────────────────────────────────────────────────
+# Remove only Android VERBOSE/DEBUG calls in Eta's own code; INFO/WARN/ERROR must
+# be kept. Third-party dependencies decide their own logging policy.
 -maximumremovedandroidloglevel 3 class io.github.mangi.eta.** { *; }
 
-# XposedModule.log 不是 android.util.Log，R8 无法通过上面的规则识别。
-# debug supplier 是纯观察 API；禁止在 supplier 内执行任何业务副作用。
+# XposedModule.log is not android.util.Log, so R8 cannot recognize it via the rule above.
+# The debug supplier is a pure observation API; do not perform any business side
+# effects inside the supplier.
 -assumenosideeffects interface io.github.mangi.eta.core.AgentLogger {
     public abstract void debug(kotlin.jvm.functions.Function0);
 }
@@ -54,16 +59,18 @@
     public void debug(kotlin.jvm.functions.Function0);
 }
 
-# ── 序列化与网络依赖 ─────────────────────────────────────────────────────────
-# DataStore、kotlinx.serialization、OkHttp 与 Okio 均自带精确的 consumer rules；
-# 不在 App 层重复保留整个类或包，避免阻断裁剪、内联和混淆。
-# Nimbus 内嵌 Gson 携带此 CLASS 级静态检查注解，运行时不依赖它。
+# ── Serialization and network dependencies ─────────────────────────────────────────────────────────
+# DataStore, kotlinx.serialization, OkHttp, and Okio all ship precise consumer rules;
+# do not keep entire classes or packages again at the app layer, to avoid blocking
+# shrinking, inlining, and obfuscation.
+# Nimbus's embedded Gson carries this CLASS-level static check annotation; it is not
+# needed at runtime.
 -dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
 
-# 保留源码与行号属性，便于使用 release mapping 还原线上堆栈。
+# Keep source and line-number attributes so release mappings can restore online stack traces.
 -keepattributes SourceFile,LineNumberTable
 
-# app_process 通过固定类名启动受控的一方应用与虚拟屏操作入口。
+# app_process launches the controlled first-party app and virtual-display operation entry points via fixed class names.
 -keep class io.github.mangi.eta.agent.phone.PhoneCommandMain {
     public static void main(java.lang.String[]);
 }

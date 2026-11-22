@@ -47,10 +47,12 @@ static int dimension(const char *value) {
 }
 
 /*
- * 标准输入是调用方唯一的写入通道，按帧区分终端字节与控制消息：
- * 帧头为 1 字节类型 + 2 字节大端长度。数据帧原样写入 master；
- * 尺寸帧载荷为大端 rows、cols 各 2 字节，由内核向前台进程组发送 SIGWINCH。
- * 未知类型按长度跳过，保持协议可扩展。
+ * Standard input is the caller's only write channel, framing terminal bytes
+ * apart from control messages: a 1-byte type + 2-byte big-endian length header.
+ * Data frames are written verbatim to the master; resize frame payloads are
+ * big-endian rows and cols (2 bytes each), and the kernel sends SIGWINCH to
+ * the foreground process group. Unknown types are skipped by length, keeping
+ * the protocol extensible.
  */
 enum { FRAME_DATA = 0, FRAME_RESIZE = 1, FRAME_HEADER_SIZE = 3, RESIZE_PAYLOAD_SIZE = 4 };
 
@@ -105,7 +107,7 @@ static int consume_input(struct frame_reader *reader, int master, const unsigned
 }
 
 static void terminate_group(pid_t child) {
-    /* 会话首进程退出后仍清理组内后台作业，避免关闭终端留下执行中的子进程。 */
+    /* Clean up background jobs in the group even after the session leader exits, so closing the terminal does not leave child processes running. */
     kill(-child, SIGTERM);
     kill(child, SIGTERM);
     usleep(100000);
@@ -133,7 +135,7 @@ int main(int argc, char **argv) {
     sigaction(SIGCHLD, &action, NULL);
     signal(SIGPIPE, SIG_IGN);
 
-    /* 父进程可能在注册死亡信号前退出，注册后再核对一次以封闭竞态。 */
+    /* The parent may exit before the death signal is registered, so re-check after registering to close the race. */
     pid_t parent = getppid();
     if (prctl(PR_SET_PDEATHSIG, SIGTERM) < 0 || parent == 1 || getppid() != parent) return 71;
     int master = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
@@ -184,7 +186,7 @@ int main(int argc, char **argv) {
     struct frame_reader reader = {0};
     unsigned char buffer[8192];
     while (!stop_signal) {
-        /* 先观察退出、最后再回收，清理进程组期间不会复用会话首进程的 PID。 */
+        /* Observe exit first and reap last, so the session leader's PID is not reused while the process group is being cleaned up. */
         siginfo_t child_info = {0};
         if (!child_exited && !waitid(P_PID, child, &child_info, WEXITED | WNOHANG | WNOWAIT)
             && child_info.si_pid == child) child_exited = 1;
@@ -207,7 +209,7 @@ int main(int argc, char **argv) {
             ssize_t read_size = read(STDIN_FILENO, buffer, sizeof(buffer));
             if (read_size < 0 && errno == EINTR) continue;
             if (read_size <= 0) {
-                /* 输入管道关闭按终端 EOF 处理，仍读取最后一批输出。 */
+                /* Treat a closed input pipe as terminal EOF, still reading the final batch of output. */
                 const unsigned char eof = 4;
                 write_all(master, &eof, 1);
                 input_open = 0;
