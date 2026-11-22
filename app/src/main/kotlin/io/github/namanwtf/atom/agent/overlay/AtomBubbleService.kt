@@ -13,7 +13,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -36,6 +40,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import io.github.namanwtf.atom.R
+import io.github.namanwtf.atom.agent.accessibility.AgentAccessibilityService
 import io.github.namanwtf.atom.agent.model.AgentConversationCodec
 import io.github.namanwtf.atom.agent.model.AssistantBlockKind
 import io.github.namanwtf.atom.agent.model.ProviderClientFactory
@@ -85,9 +90,23 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var dismissParams: WindowManager.LayoutParams? = null
 
     private val prefs by lazy { getSharedPreferences("atom_overlay", MODE_PRIVATE) }
+    private val modelLabel = mutableStateOf("")
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
     private val bubbleReset = mutableStateOf(0)
+
+    /** Measured size of the bubble itself (the status pill may sit beside it). */
+    private var bubbleWidthPx = 0
+    private var bubbleHeightPx = 0
+
+    /** Where the user parked the bubble; the keyboard lift never overwrites it. */
+    private var restingY = 0
+
+    /** Top of the keyboard in screen pixels, 0 when it is hidden. */
+    private var keyboardTopPx = 0
+
+    /** The one-time "hold the bubble" hint goes away once the menu was opened. */
+    private val menuHintPending = mutableStateOf(true)
 
     override fun onCreate() {
         super.onCreate()
@@ -95,6 +114,15 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        menuHintPending.value = !prefs.getBoolean(KEY_MENU_HINT_SEEN, false)
+        lifecycleScope.launch {
+            AgentAccessibilityService.keyboardTop.collect { top ->
+                if (top == keyboardTopPx) return@collect
+                keyboardTopPx = top
+                applyBubbleClearance()
+                refitPanelForKeyboard()
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -136,21 +164,39 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     .collectAsState(initial = AppearanceSettings())
                 AgentAppTheme(appearance = appearance, systemOverlay = true) {
                     var expanded by remember(bubbleReset.value) { mutableStateOf(false) }
-                    AgentOverlayBubble(
-                        // Idle: the persistent bubble is not attached to a run, so it
-                        // must not draw the working ring.
-                        state = AgentOverlayState(phase = AgentOverlayPhase.FINISHED),
-                        expanded = expanded,
-                        labels = labels,
-                        onToggleExpanded = { toggleMenu() },
-                        onAction = { action ->
-                            expanded = false
-                            handleAction(action)
-                        },
-                        onDrag = { dx, dy -> moveBubble(dx, dy) },
-                        onDragEnd = { endBubbleDrag() },
-                        dragging = dragging.value,
-                    )
+                    val status by AtomBubbleStatusFeed.status.collectAsState()
+                    // Buddy puts its status beside the face, so a glance at the
+                    // bubble says what the agent is doing without opening the chat.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AtomBubbleStatusPill(
+                            status = pillStatusWithHint(status),
+                            onClick = { handleAction(AgentOrbAction.OPEN_CHAT) },
+                        )
+                        if (status.visible) Spacer(Modifier.width(6.dp))
+                        AgentOverlayBubble(
+                            // The persistent bubble is the only orb, so it follows
+                            // the real run: the ring and the face are the state
+                            // indicator, as on Buddy's bubble.
+                            state = AgentOverlayState(phase = status.phase),
+                            expanded = expanded,
+                            labels = labels,
+                            onToggleExpanded = { toggleMenu() },
+                            onAction = { action ->
+                                expanded = false
+                                handleAction(action)
+                            },
+                            onDrag = { dx, dy -> moveBubble(dx, dy) },
+                            onDragEnd = { endBubbleDrag() },
+                            dragging = dragging.value,
+                            modifier = Modifier.onGloballyPositioned { coordinates ->
+                                // The menu, the drag clamp and the snap all need the
+                                // bubble's own box, not the window that also holds
+                                // the status pill.
+                                bubbleWidthPx = coordinates.size.width
+                                bubbleHeightPx = coordinates.size.height
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -170,14 +216,18 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             gravity = Gravity.TOP or Gravity.END
             // Come back where the user left it, not where we first put it.
             x = prefs.getInt(KEY_BUBBLE_X, -1).takeIf { it >= 0 } ?: dpToPx(6)
-            y = prefs.getInt(KEY_BUBBLE_Y, -1).takeIf { it >= 0 }
+            restingY = prefs.getInt(KEY_BUBBLE_Y, -1).takeIf { it >= 0 }
                 ?: (metrics.bounds.height() * 0.78f).toInt()
+            y = restingY
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
         windowManager = wm
         bubbleView = view
         bubbleParams = lp
+        // The bubble can be switched on while a keyboard is already up, and the
+        // bubble's own box is only known after the first layout.
+        view.post { applyBubbleClearance() }
     }
 
     private fun moveBubble(dx: Float, dy: Float) {
@@ -190,24 +240,65 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
         val metrics = wm.currentWindowMetrics
-        val density = resources.displayMetrics.density
-        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
-        val height = view.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val width = bubbleWidth()
+        val height = bubbleHeight()
 
         // x counts from the right edge because the window is END-anchored.
         lp.x -= dx.toInt()
         lp.y += dy.toInt()
 
         val margin = dpToPx(6)
-        val bottomInset = navBarInset(wm)
         lp.x = lp.x.coerceIn(margin, maxOf(margin, metrics.bounds.width() - width - margin))
-        lp.y = lp.y.coerceIn(margin, maxOf(margin, metrics.bounds.height() - bottomInset - height - margin))
+        // The finger cannot park the bubble over the keys either: it stops at the
+        // keyboard's top edge while one is up.
+        lp.y = lp.y.coerceIn(margin, bubbleBottomLimit(wm, height))
+        restingY = lp.y
         runCatching { wm.updateViewLayout(view, lp) }
         bubbleCenterOnScreen()?.let { center ->
             dragBubbleCenter.value = center
             val target = dismissTargetCenter(metrics)
-            dragFused.value = kotlin.math.hypot(center.x - target.x, center.y - target.y) <= 96 * density
+            dragFused.value = kotlin.math.hypot(center.x - target.x, center.y - target.y) <= 96 * resources.displayMetrics.density
         }
+    }
+
+    /** The bubble's own width: the window also holds the status pill. */
+    private fun bubbleWidth(): Int =
+        bubbleWidthPx.takeIf { it > 0 } ?: dpToPx(82)
+
+    private fun bubbleHeight(): Int =
+        bubbleHeightPx.takeIf { it > 0 } ?: dpToPx(82)
+
+    /**
+     * The lowest y the bubble's top may take: above the navigation bar, and above
+     * the keyboard when it is up.
+     */
+    private fun bubbleBottomLimit(wm: WindowManager, height: Int): Int {
+        val metrics = wm.currentWindowMetrics
+        val margin = dpToPx(6)
+        val aboveNav = metrics.bounds.height() - navBarInset(wm) - height - margin
+        val aboveKeyboard = if (keyboardTopPx > 0) keyboardTopPx - height - margin else aboveNav
+        return minOf(aboveNav, aboveKeyboard).coerceAtLeast(margin)
+    }
+
+    /**
+     * Keeps the bubble out of the keyboard's way.
+     *
+     * The place the user chose lives in [restingY] and in SharedPreferences; the
+     * lift is only visual, so the bubble drops back to its spot as soon as the
+     * keyboard closes instead of creeping upwards every time one opens.
+     */
+    private fun applyBubbleClearance() {
+        if (dragging.value) return
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val margin = dpToPx(6)
+        val target = restingY.coerceIn(margin, bubbleBottomLimit(wm, bubbleHeight()))
+        if (lp.y == target) return
+        lp.y = target
+        runCatching { wm.updateViewLayout(view, lp) }
+        // The menu is anchored to where the bubble was when it opened.
+        hideMenu()
     }
 
     // ── Radial hold menu (Buddy's RadialMenu) ──────────────────────────────
@@ -216,13 +307,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     private fun showMenu() {
-        val bubble = bubbleView ?: return
         val bubbleLp = bubbleParams ?: return
         val wm = windowManager ?: return
         val metrics = wm.currentWindowMetrics
         val density = resources.displayMetrics.density
-        val bubbleWidth = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
-        val bubbleHeight = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val bubbleWidth = bubbleWidth()
+        val bubbleHeight = bubbleHeight()
         // x counts from the right edge because the bubble window is END-anchored.
         val left = metrics.bounds.width() - bubbleLp.x - bubbleWidth
         val centerX = left + bubbleWidth / 2
@@ -289,6 +379,17 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         menuView = view
         menuParams = lp
         // The bubble stays visible: it is the pivot the arc radiates from.
+        // Seeing the menu is what the one-time pill hint was asking for.
+        if (menuHintPending.value) {
+            menuHintPending.value = false
+            prefs.edit().putBoolean(KEY_MENU_HINT_SEEN, true).apply()
+        }
+    }
+
+    /** The pill copy, carrying the one-time "hold the bubble" hint while it applies. */
+    private fun pillStatusWithHint(status: AtomBubbleStatus): AtomBubbleStatus {
+        if (!status.visible || !menuHintPending.value) return status
+        return status.copy(text = getString(R.string.bubble_pill_status_hold_hint, status.text))
     }
 
     private fun hideMenu() {
@@ -359,11 +460,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private fun bubbleCenterOnScreen(): androidx.compose.ui.geometry.Offset? {
         val wm = windowManager ?: return null
         val lp = bubbleParams ?: return null
-        val bubble = bubbleView ?: return null
         val metrics = wm.currentWindowMetrics
-        val density = resources.displayMetrics.density
-        val width = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
-        val height = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val width = bubbleWidth()
+        val height = bubbleHeight()
         val left = metrics.bounds.width() - lp.x - width
         return androidx.compose.ui.geometry.Offset(
             left + width / 2f,
@@ -389,11 +488,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private fun isOverDismissTarget(): Boolean {
         val wm = windowManager ?: return false
         val lp = bubbleParams ?: return false
-        val bubble = bubbleView ?: return false
         val metrics = wm.currentWindowMetrics
         val density = resources.displayMetrics.density
-        val bubbleWidth = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
-        val bubbleHeight = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val bubbleWidth = bubbleWidth()
+        val bubbleHeight = bubbleHeight()
         val centerX = metrics.bounds.width() - lp.x - bubbleWidth + bubbleWidth / 2f
         val centerY = lp.y + bubbleHeight / 2f
         val targetX = metrics.bounds.width() / 2f
@@ -412,11 +510,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
         val metrics = wm.currentWindowMetrics
-        val density = resources.displayMetrics.density
-        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val width = bubbleWidth()
         val margin = dpToPx(6)
         val leftmost = metrics.bounds.width() - width - margin
         lp.x = if (lp.x > leftmost / 2) leftmost else margin
+        lp.y = lp.y.coerceIn(margin, bubbleBottomLimit(wm, bubbleHeight()))
+        restingY = lp.y
         saveBubblePosition(lp)
         runCatching { wm.updateViewLayout(view, lp) }
     }
@@ -475,6 +574,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                             streaming.value = ""
                         },
                         onMic = { handleAction(AgentOrbAction.TALK) },
+                        modelLabel = modelLabel.value,
+                        onPickModel = { openModelPicker() },
                         onOpenInApp = {
                             val intent = Intent(this@AtomBubbleService, MainActivity::class.java)
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -529,6 +630,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         panelBaseY = lp.y
         panelLifted = false
         panelFullHeight = chatHeight
+        refreshModelLabel()
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
@@ -539,22 +641,49 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
      * Lifts the panel while the composer has focus.
      *
      * An application overlay window never receives IME insets on this ROM (the
-     * listeners were installed and never fired), so the keyboard cannot tell us
-     * its height. Reserving the keyboard's share of the screen when the field
-     * takes focus is deterministic and keeps the composer visible either way.
+     * listeners were installed and never fired), so the keyboard's geometry comes
+     * from the accessibility service's window list instead. When that is
+     * unavailable (accessibility off) the old share-of-the-screen reserve stays as
+     * the fallback, so the composer is never left under the keys.
      */
     private fun liftPanelForKeyboard(focused: Boolean) {
         if (focused == panelLifted) return
+        panelLifted = focused
+        refitPanelForKeyboard()
+    }
+
+    /** Fits the panel between its top edge and the keyboard's top edge. */
+    private fun refitPanelForKeyboard() {
         val view = chatView ?: return
         val lp = chatParams ?: return
         val wm = windowManager ?: return
-        panelLifted = focused
-        val keyboardShare = (resources.displayMetrics.heightPixels * 0.40f).toInt()
-        // A full-height sheet cannot move up, so it gets shorter instead: the
-        // composer then sits above the keyboard.
-        lp.height = (panelFullHeight - if (focused) keyboardShare else 0)
-            .coerceAtLeast(dpToPx(280))
+        val gap = dpToPx(6)
+        val target = when {
+            !panelLifted -> panelFullHeight
+            // A full-height sheet cannot move up, so it gets shorter instead: the
+            // composer then sits just above the keyboard.
+            keyboardTopPx > 0 ->
+                (keyboardTopPx - gap - lp.y).coerceIn(dpToPx(280), panelFullHeight)
+            else -> (panelFullHeight - (resources.displayMetrics.heightPixels * 0.40f).toInt())
+                .coerceAtLeast(dpToPx(280))
+        }
+        if (lp.height == target) return
+        lp.height = target
         runCatching { wm.updateViewLayout(view, lp) }
+    }
+
+    /** Reads the configured model so the panel can name it. */
+    private fun refreshModelLabel() {
+        lifecycleScope.launch {
+            val config = runCatching { RuntimeConfigRepository.currentRuntimeConfig() }.getOrNull()
+            modelLabel.value = config?.let { runCatching { it.modelDisplayName.ifBlank { it.model } }.getOrNull() }.orEmpty()
+        }
+    }
+
+    private fun openModelPicker() {
+        hideChat()
+        val intent = Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { startActivity(intent) }
     }
 
     private fun hideChat() {
@@ -574,15 +703,15 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
         val metrics = wm.currentWindowMetrics
-        val density = resources.displayMetrics.density
-        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
-        val height = view.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val width = bubbleWidth()
+        val height = bubbleHeight()
         val margin = dpToPx(6)
         val leftmost = metrics.bounds.width() - width - margin
         lp.x = if (lp.x > leftmost / 2) leftmost else margin
         lp.y = (metrics.bounds.height() - navBarInset(wm) - height - dpToPx(24))
-            .coerceAtLeast(margin)
+            .coerceIn(margin, bubbleBottomLimit(wm, height))
         view.visibility = View.VISIBLE
+        restingY = lp.y
         saveBubblePosition(lp)
         runCatching { wm.updateViewLayout(view, lp) }
     }
@@ -659,6 +788,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private companion object {
         const val KEY_BUBBLE_X = "bubble_x"
         const val KEY_BUBBLE_Y = "bubble_y"
+        const val KEY_MENU_HINT_SEEN = "menu_hint_seen"
     }
 
     private fun dpToPx(dp: Int): Int =

@@ -1552,6 +1552,8 @@
   <string name="bubble_hide">Hide</string>
   <string name="bubble_open_chat">Open chat</string>
   <string name="bubble_talk">Talk</string>
+  <string name="bubble_pill_hold_hint">hold the bubble for actions</string>
+  <string name="bubble_pill_status_hold_hint">%1$s · hold the bubble for actions</string>
   <string name="appearance_floating_bubble">Floating bubble</string>
   <string name="appearance_floating_bubble_summary">Show the always-on atom bubble; tap it for quick chat access</string>
 </resources>

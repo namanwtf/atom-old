@@ -65,6 +65,8 @@ internal fun AtomBubbleChat(
     onNewChat: () -> Unit = {},
     onOpenInApp: () -> Unit = {},
     onMic: () -> Unit = {},
+    modelLabel: String = "",
+    onPickModel: () -> Unit = {},
 ) {
     var input by remember { mutableStateOf(TextFieldValue()) }
     val scroll = rememberScrollState()
@@ -87,9 +89,9 @@ internal fun AtomBubbleChat(
                     fontWeight = FontWeight.Bold,
                 ),
             )
-            Spacer(Modifier.width(6.dp))
-            Canvas(Modifier.size(10.dp)) {
-                val stroke = 1.8.dp.toPx()
+            Spacer(Modifier.width(5.dp))
+            Canvas(Modifier.size(7.dp)) {
+                val stroke = 1.5.dp.toPx()
                 drawLine(
                     AtomOverlayColors.Muted,
                     Offset(0f, 0f),
@@ -115,16 +117,41 @@ internal fun AtomBubbleChat(
 
         Spacer(Modifier.height(8.dp))
 
-        // Model / status chip, like Buddy's "Claude Code · Sonnet 5.5".
-        Box(
+        // Model chip, like Buddy's "Claude Code · Sonnet 5.5": the model name at
+        // the same weight as the title, tappable to change it.
+        Row(
             modifier = Modifier
                 .background(AtomOverlayColors.Card2, RoundedCornerShape(12.dp))
+                .clickable { onPickModel() }
                 .padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             BasicText(
-                if (replying) "$title · replying…" else "$title · ready",
-                style = TextStyle(color = AtomOverlayColors.Muted, fontSize = 12.sp),
+                modelLabel.ifBlank { "No model" },
+                style = TextStyle(
+                    color = AtomOverlayColors.Text,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
             )
+            Spacer(Modifier.width(4.dp))
+            Canvas(Modifier.size(7.dp)) {
+                val stroke = 1.6.dp.toPx()
+                drawLine(
+                    AtomOverlayColors.Muted,
+                    Offset(0f, 0f),
+                    Offset(size.width / 2f, size.height),
+                    stroke,
+                    StrokeCap.Round,
+                )
+                drawLine(
+                    AtomOverlayColors.Muted,
+                    Offset(size.width / 2f, size.height),
+                    Offset(size.width, 0f),
+                    stroke,
+                    StrokeCap.Round,
+                )
+            }
         }
 
         Spacer(Modifier.height(8.dp))

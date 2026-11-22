@@ -36,6 +36,9 @@ import io.github.namanwtf.atom.agent.device.ScrollEvidenceContract
 import io.github.namanwtf.atom.agent.device.ScrollMovementSource
 import io.github.namanwtf.atom.agent.device.RootScrollMotionContract
 import io.github.namanwtf.atom.core.AndroidAgentLogger
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.ArrayDeque
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -99,6 +102,7 @@ class AgentAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         serviceToken = SERVICE_TOKENS.incrementAndGet()
         instance = this
+        publishKeyboardTop()
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -118,6 +122,8 @@ class AgentAccessibilityService : AccessibilityService() {
         serviceToken = SERVICE_TOKENS.incrementAndGet()
         scrollEventObservationGate.clear()
         windowContentGenerations.clear()
+        // The keyboard state belongs to the connection that observed it.
+        if (keyboardTopState.value != 0) keyboardTopState.value = 0
         signalWindowChanged()
     }
 
@@ -134,6 +140,7 @@ class AgentAccessibilityService : AccessibilityService() {
                     bumpWindowContentGeneration(event.windowId)
                 }
                 signalWindowChanged()
+                publishKeyboardTop()
             }
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 bumpWindowContentGeneration(event.windowId)
@@ -382,6 +389,29 @@ class AgentAccessibilityService : AccessibilityService() {
         } finally {
             windowChangeLock.unlock()
         }
+    }
+
+    /**
+     * Tracks the keyboard's top edge for the floating bubble.
+     *
+     * A `TYPE_APPLICATION_OVERLAY` window is never handed IME insets on this ROM
+     * (the bubble service installed the listeners and they never fired), so the
+     * only reliable source is the accessibility window list: the IME window's own
+     * bounds. 0 means no keyboard is up.
+     */
+    private fun publishKeyboardTop() {
+        // getWindows() can be briefly null or empty right after a reconnect or in
+        // the middle of a window transition; keep the last value then, rather than
+        // flapping the bubble back down under the keys.
+        val imeWindows = runCatching { this.windows }.getOrNull() ?: return
+        var top = 0
+        val bounds = Rect()
+        for (window in imeWindows) {
+            if (window.type != AccessibilityWindowInfo.TYPE_INPUT_METHOD) continue
+            window.getBoundsInScreen(bounds)
+            if (!bounds.isEmpty) top = bounds.top
+        }
+        if (keyboardTopState.value != top) keyboardTopState.value = top
     }
 
     private fun awaitWindowChanged(timeoutMillis: Long) {
@@ -2698,6 +2728,15 @@ class AgentAccessibilityService : AccessibilityService() {
 
         @Volatile
         private var instance: AgentAccessibilityService? = null
+
+        /**
+         * Top of the on-screen keyboard in screen pixels, `0` when no keyboard is
+         * shown. Exposed so the floating bubble can stay clear of the keys; only
+         * an accessibility service can read the IME window's geometry.
+         */
+        private val keyboardTopState = MutableStateFlow(0)
+
+        val keyboardTop: StateFlow<Int> = keyboardTopState.asStateFlow()
 
         fun current(): AgentAccessibilityService? = instance
 

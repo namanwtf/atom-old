@@ -61,6 +61,8 @@ import io.github.namanwtf.atom.agent.overlay.AgentOverlayPhase
 import io.github.namanwtf.atom.agent.overlay.AgentOverlayState
 import io.github.namanwtf.atom.agent.overlay.AgentOverlayStatus
 import io.github.namanwtf.atom.agent.overlay.AgentOverlayVisibilityPolicy
+import io.github.namanwtf.atom.agent.overlay.AtomBubbleStatus
+import io.github.namanwtf.atom.agent.overlay.AtomBubbleStatusFeed
 import io.github.namanwtf.atom.agent.overlay.applyEvent
 import io.github.namanwtf.atom.agent.scheduler.ScheduledTaskRunContext
 import io.github.namanwtf.atom.agent.scheduler.ScheduledTaskRunner
@@ -212,6 +214,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     override fun onDestroy() {
         destroyed = true
         if (activeInstance === this) activeInstance = null
+        AtomBubbleStatusFeed.clear()
         localPrefsListener?.let { listener ->
             Prefs.localAgentPreferences()?.unregisterOnSharedPreferenceChangeListener(listener)
         }
@@ -627,7 +630,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             runCatching {
                 run.overlayState = run.overlayState.applyEvent(event)
                 if (displayedRun === run && ownsGui && !run.session.isTerminal) {
-                    state.value = run.overlayState
+                    publishOverlayState(run.overlayState)
                     syncActiveRunOverlayVisibility(run)
                 }
                 publishExecutionState()
@@ -937,7 +940,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         if (!session.isTerminal) {
             session.controller.cancel()
             run.overlayState = run.overlayState.copy(status = AgentOverlayStatus.Stopping)
-            if (displayedRun === run && !guiControl.state.value.userPaused) state.value = run.overlayState
+            if (displayedRun === run && !guiControl.state.value.userPaused) publishOverlayState(run.overlayState)
             updateKeepScreenOn()
             publishExecutionState()
         }
@@ -971,7 +974,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         )
         run.overlayState = run.overlayState.applyEvent(event)
         if (displayedRun === run && guiControl.state.value.ownerRunId == run.runId && !guiControl.state.value.userPaused) {
-            state.value = run.overlayState
+            publishOverlayState(run.overlayState)
         }
         sendSteerResponse(runId, replyTo, accepted = true, supplementIndex = event.index)
     }
@@ -1011,8 +1014,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             val event = active.supplement(supplementText)
             if (event == null) {
                 if (!active.session.isTerminal) {
-                    state.value = state.value.copy(
-                        status = AgentOverlayStatus.Finishing,
+                    publishOverlayState(
+                        state.value.copy(status = AgentOverlayStatus.Finishing),
                     )
                     return
                 }
@@ -1021,7 +1024,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     "Agent runtime supplement received: index=${event.index}, chars=${event.text.length}"
                 )
                 active.overlayState = active.overlayState.applyEvent(event)
-                state.value = active.overlayState
+                publishOverlayState(active.overlayState)
                 return
             }
         }
@@ -1029,7 +1032,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         val completed = run.completedContext ?: return
         if (completed.request.operation != AgentRuntimeWire.OP_CHAT ||
             completed.request.handoff?.source != AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE) {
-            state.value = state.value.copy(status = AgentOverlayStatus.ContinuationUnavailable)
+            publishOverlayState(state.value.copy(status = AgentOverlayStatus.ContinuationUnavailable))
             return
         }
         val continuationRequest = AgentContinuationBuilder.build(
@@ -1076,7 +1079,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         if (suppress) {
             removeAmbientWindows()
         } else {
-            state.value = run.overlayState
+            publishOverlayState(run.overlayState)
             ensureOverlayVisible()
         }
         publishExecutionState()
@@ -1102,10 +1105,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         }
         when {
             guiState.userPaused -> {
-                state.value = (owner?.overlayState ?: AgentOverlayState.Initial).copy(
-                    phase = AgentOverlayPhase.PAUSED,
-                    status = AgentOverlayStatus.Paused,
-                    detailText = AppStrings.get(R.string.runtime_detail_gui_paused, "Phone control is paused"),
+                publishOverlayState(
+                    (owner?.overlayState ?: AgentOverlayState.Initial).copy(
+                        phase = AgentOverlayPhase.PAUSED,
+                        status = AgentOverlayStatus.Paused,
+                        detailText = AppStrings.get(R.string.runtime_detail_gui_paused, "Phone control is paused"),
+                    ),
                 )
                 owner?.overlayState = state.value
                 syncActiveRunOverlayVisibility(owner ?: displayedRun)
@@ -1118,7 +1123,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                         detailText = "",
                     )
                 }
-                state.value = owner.overlayState
+                publishOverlayState(owner.overlayState)
                 syncActiveRunOverlayVisibility(owner)
             }
             else -> removeAmbientWindows()
@@ -1133,6 +1138,18 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         displayedRun?.completedContext = null
         displayedRun = run
         capsuleExpanded.value = false
+    }
+
+    /**
+     * The single path by which the overlay state reaches the screen.
+     *
+     * The floating bubble lives in another service of the same process, so its
+     * status pill is fed from here: one writer, and the pill can never claim a
+     * state the capsule does not show.
+     */
+    private fun publishOverlayState(next: AgentOverlayState) {
+        state.value = next
+        AtomBubbleStatusFeed.update(AtomBubbleStatus.from(next, resources))
     }
 
     private fun publishExecutionState() {
@@ -1741,7 +1758,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         (dp * resources.displayMetrics.density).toInt()
 
     private fun enterFinalState(finalState: AgentOverlayState) {
-        state.value = finalState
+        publishOverlayState(finalState)
 
         val run = displayedRun
         if (AgentOverlayVisibilityPolicy.shouldShowResultCard(
@@ -1774,6 +1791,9 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         glowView = null
         capsuleParams = null
         glowParams = null
+        // Nothing is on screen any more, so the bubble's pill must not keep
+        // advertising a run that the capsule already dropped.
+        AtomBubbleStatusFeed.clear()
     }
 
     private fun dismissAndStop() {
