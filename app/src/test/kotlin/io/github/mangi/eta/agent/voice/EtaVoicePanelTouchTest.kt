@@ -61,7 +61,7 @@ class EtaVoicePanelTouchTest {
         panel.dragBy(200f)
         val after = panel.handleBounds()
         assertTrue(
-            "收到回复后把手应能向下拖动：before=$before after=$after",
+            "after a reply arrives the handle should drag downward: before=$before after=$after",
             after.top > before.top + panel.dp(30f),
         )
         assertEquals(0, panel.opened)
@@ -93,7 +93,7 @@ class EtaVoicePanelTouchTest {
                 messages = listOf(
                     AgentMessageUi(
                         id = "reply",
-                        content = (1..lineCount).joinToString("\n") { "Eta 流式回复第 $it 行" },
+                        content = (1..lineCount).joinToString("\n") { "Eta streaming reply line $it line" },
                         renderMarkdown = false,
                         isStreaming = true,
                     ),
@@ -108,7 +108,7 @@ class EtaVoicePanelTouchTest {
             messages = listOf(
                 AgentMessageUi(
                     id = "reply",
-                    content = (1..18).joinToString("\n") { "Eta 流式回复第 $it 行" },
+                    content = (1..18).joinToString("\n") { "Eta streaming reply line $it line" },
                     renderMarkdown = false,
                     isStreaming = false,
                 ),
@@ -124,7 +124,7 @@ class EtaVoicePanelTouchTest {
             maxTopAfterComplete = maxOf(maxTopAfterComplete, top)
         }
         assertTrue(
-            "流式结束后不应再大幅向上弹起或向下回落：before=$topBeforeComplete min=$minTopAfterComplete max=$maxTopAfterComplete",
+            "After streaming ends there must be no large bounce up or fall down: before=$topBeforeComplete min=$minTopAfterComplete max=$maxTopAfterComplete",
             maxTopAfterComplete <= topBeforeComplete + 1f,
         )
     }
@@ -142,14 +142,14 @@ class EtaVoicePanelTouchTest {
             panel.advance(1)
             assertEquals(1, panel.entrances)
             assertTrue(panel.hasTextInput())
-            assertEquals("输入栏尚在显现时不能交接焦点，实际显现耗时=${panel.revealDurationMs}", 0, panel.contentReveals)
+            assertEquals("Focus must not be handed over while the input bar is still revealing; actual reveal duration=${panel.revealDurationMs}", 0, panel.contentReveals)
             assertEquals(0, panel.keyboardShows)
             panel.advanceUntil { panel.contentReveals == 1 }
-            assertTrue("显现应形成可感知的独立阶段", panel.revealDurationMs >= 200)
+            assertTrue("The reveal must form a perceptible, distinct phase", panel.revealDurationMs >= 200)
             panel.advance(8)
             assertEquals(1, panel.contentReveals)
-            assertTrue("入场结束后输入框应取得焦点", panel.textInputFocused())
-            assertTrue("输入框取得焦点后应请求键盘", panel.keyboardShows > 0)
+            assertTrue("After the entrance ends the input box must gain focus", panel.textInputFocused())
+            assertTrue("After the input box gains focus it must request the keyboard", panel.keyboardShows > 0)
             assertFalse(panel.hasMicrophone())
             assertEquals(0, panel.microphoneStarts)
             panel.recognitionEnabled.value = true
@@ -207,7 +207,7 @@ class EtaVoicePanelTouchTest {
             for (imeBottom in listOf(120, 240, 360, 240, 0)) {
                 panel.setImeBottom(imeBottom)
                 panel.advance(2)
-                assertEquals("输入栏应与当前键盘边界保持同步", baseline - imeBottom, panel.textInputBottom(), 1f)
+                assertEquals("The input bar must stay in sync with the current keyboard bounds", baseline - imeBottom, panel.textInputBottom(), 1f)
             }
         }
 
@@ -316,19 +316,19 @@ class EtaVoicePanelTouchTest {
             topRightAfterRelease = panel.handleBounds().top
         }
 
-        assertTrue("上拉过程顶部把手应显著上移", topsDuringMove.last() < startBounds.top - panel.dp(80f))
+        assertTrue("During the pull-up the top handle must move up significantly", topsDuringMove.last() < startBounds.top - panel.dp(80f))
         for (i in 1 until topsDuringMove.size) {
             assertTrue(
-                "上拉逐帧不应反向回跳：frame=${i - 1}->${i} prev=${topsDuringMove[i - 1]} cur=${topsDuringMove[i]}",
+                "The pull-up must not jump backwards frame by frame: frame=${i - 1}->${i} prev=${topsDuringMove[i - 1]} cur=${topsDuringMove[i]}",
                 topsDuringMove[i] <= topsDuringMove[i - 1] + 0.5f,
             )
         }
         val holdBaseline = topsDuringHold.first()
         for (holdTop in topsDuringHold) {
-            assertEquals("手指停驻期间顶部把手应保持静止不振荡", holdBaseline, holdTop, 0.5f)
+            assertEquals("The top handle must stay still and not oscillate while the finger is held", holdBaseline, holdTop, 0.5f)
         }
         assertTrue(
-            "松手第一帧不应闪回拖动前高度：before=$topBeforeRelease after=$topRightAfterRelease",
+            "The first frame after release must not flash back to the pre-drag height: before=$topBeforeRelease after=$topRightAfterRelease",
             kotlin.math.abs(topRightAfterRelease - topBeforeRelease) <= panel.dp(14f),
         )
     }
@@ -363,10 +363,10 @@ class EtaVoicePanelTouchTest {
             advanceOneFrame()
         }
 
-        assertTrue("从列表区上拉应平滑展开面板", tops.last() < startBounds.top - panel.dp(60f))
+        assertTrue("Pulling up from the list area should smoothly expand the panel", tops.last() < startBounds.top - panel.dp(60f))
         for (i in 1 until tops.size) {
             assertTrue(
-                "列表区上拉过程面板顶部不应抖动回跳：prev=${tops[i - 1]} cur=${tops[i]}",
+                "While pulling up from the list area, the panel top must not jitter or jump back:prev=${tops[i - 1]} cur=${tops[i]}",
                 tops[i] <= tops[i - 1] + 0.5f,
             )
         }
@@ -487,7 +487,7 @@ class EtaVoicePanelTouchTest {
                 messages = listOf(
                     AgentMessageUi(
                         id = "reply",
-                        content = (1..70).joinToString("\n") { "Eta 测试回复 $it" },
+                        content = (1..70).joinToString("\n") { "Eta test reply $it" },
                         renderMarkdown = false,
                     ),
                 ),
@@ -497,7 +497,7 @@ class EtaVoicePanelTouchTest {
         }
 
         fun advance(frames: Int = 180) {
-            // 手动驱动重组帧和布局，使无真实显示器的触摸测试不依赖后台线程时序。
+            // Drive recomposition frames and layout manually so touch tests without a real display don't depend on background thread timing.
             repeat(frames) {
                 Snapshot.sendApplyNotifications()
                 shadowOf(android.os.Looper.getMainLooper()).idleFor(Duration.ofMillis(16))
@@ -511,7 +511,7 @@ class EtaVoicePanelTouchTest {
                 if (condition()) return
                 advance(1)
             }
-            assertTrue("动画应在有界帧数内完成", condition())
+            assertTrue("the animation must finish within a bounded number of frames", condition())
         }
 
         fun dp(value: Float): Float = value * root().density.density
@@ -550,21 +550,21 @@ class EtaVoicePanelTouchTest {
 
         fun assertHorizontalInsetsRespected(left: Int, right: Int) {
             val bounds = requireNotNull(findTextInput(root().semanticsOwner.unmergedRootSemanticsNode)).boundsInRoot
-            assertTrue("输入框必须避开左侧挖孔", bounds.left >= left)
-            assertTrue("输入框必须避开侧边导航栏", bounds.right <= root().view.width - right)
+            assertTrue("The input box must avoid the left punch hole", bounds.left >= left)
+            assertTrue("The input box must avoid the side navigation bar", bounds.right <= root().view.width - right)
         }
 
         fun assertNavigationBackgroundCovered(navigationBottom: Int) {
             val view = root().view
-            assertTrue("输入框必须避开导航区域", textInputBottom() < view.height - navigationBottom)
+            assertTrue("The input box must avoid the navigation area", textInputBottom() < view.height - navigationBottom)
             val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
             try {
                 view.draw(Canvas(bitmap))
                 val inset = dp(4f).toInt()
                 val contentColor = bitmap.getPixel(view.width / 2, view.height - navigationBottom - inset)
                 val navigationColor = bitmap.getPixel(view.width / 2, view.height - inset)
-                assertEquals("回复面板底色必须实际绘制为不透明", 255, contentColor ushr 24)
-                assertEquals("浮窗底色应连续覆盖导航区域，不能露出下层窗口", contentColor, navigationColor)
+                assertEquals("The reply panel background must actually be painted opaque", 255, contentColor ushr 24)
+                assertEquals("The floating window background must continuously cover the navigation area without exposing the window beneath", contentColor, navigationColor)
             } finally {
                 bitmap.recycle()
             }
@@ -581,17 +581,17 @@ class EtaVoicePanelTouchTest {
                     R.string.voice_i18n_suggestion_extract_key_info,
                 )) {
                     val label = activity.getString(resId)
-                    val node = requireNotNull(findByText(label)) { "未找到建议胶囊：$label" }
+                    val node = requireNotNull(findByText(label)) { "suggestion pill not found:$label" }
                     val bounds = node.boundsInRoot
                     val sampleX = bounds.center.x.toInt()
                     val topPixel = bitmap.getPixel(sampleX, (bounds.top + dp(3f)).toInt())
                     val bottomPixel = bitmap.getPixel(sampleX, (bounds.bottom - dp(3f)).toInt())
                     assertTrue(
-                        "建议胶囊顶部不应被斜向裁切：$label topAlpha=${topPixel ushr 24}",
+                        "The suggestion pill top must not be diagonally clipped: $label topAlpha=${topPixel ushr 24}",
                         (topPixel ushr 24) > 235,
                     )
                     assertTrue(
-                        "建议胶囊上下边缘亮度应连续一致：$label top=${Integer.toHexString(topPixel)} bottom=${Integer.toHexString(bottomPixel)}",
+                        "Suggestion pill top/bottom edge brightness must be consistent: $label top=${Integer.toHexString(topPixel)} bottom=${Integer.toHexString(bottomPixel)}",
                         kotlin.math.abs(((topPixel shr 16) and 0xFF) - ((bottomPixel shr 16) and 0xFF)) <= 8,
                     )
                 }
@@ -609,8 +609,8 @@ class EtaVoicePanelTouchTest {
                 val sampleY = (handle.top + dp(6f)).toInt()
                 val leftPixel = bitmap.getPixel(dp(44f).toInt(), sampleY)
                 val rightPixel = bitmap.getPixel((view.width - dp(44f)).toInt(), sampleY)
-                assertEquals("回复面板左上圆角内侧应完全覆盖底色", 255, leftPixel ushr 24)
-                assertEquals("回复面板右上圆角内侧应完全覆盖底色", 255, rightPixel ushr 24)
+                assertEquals("Inside the reply panel's top-left corner the background must be fully covered", 255, leftPixel ushr 24)
+                assertEquals("Inside the reply panel's top-right corner the background must be fully covered", 255, rightPixel ushr 24)
             } finally {
                 bitmap.recycle()
             }
@@ -631,11 +631,11 @@ class EtaVoicePanelTouchTest {
                 val rightAboveAlpha = bitmap.getPixel(rightX, yAbove) ushr 24
                 val rightBelowAlpha = bitmap.getPixel(rightX, yBelow) ushr 24
                 assertTrue(
-                    "左上圆角外侧不应出现矩形截断阴影：above=$leftAboveAlpha below=$leftBelowAlpha",
+                    "No rectangular clipped shadow should appear outside the top-left corner: above=$leftAboveAlpha below=$leftBelowAlpha",
                     kotlin.math.abs(leftAboveAlpha - leftBelowAlpha) <= 4,
                 )
                 assertTrue(
-                    "右上圆角外侧不应出现矩形截断阴影：above=$rightAboveAlpha below=$rightBelowAlpha",
+                    "No rectangular clipped shadow should appear outside the top-right corner: above=$rightAboveAlpha below=$rightBelowAlpha",
                     kotlin.math.abs(rightAboveAlpha - rightBelowAlpha) <= 4,
                 )
             } finally {
@@ -694,14 +694,14 @@ class EtaVoicePanelTouchTest {
         }
 
         fun handleBounds(): Rect = findHandle(root().semanticsOwner.unmergedRootSemanticsNode)?.boundsInRoot
-            ?: error("未找到顶部把手")
+            ?: error("top handle not found")
 
         fun dragBy(distanceDp: Float, cancel: Boolean = false) {
             val view = root().view
             val bounds = handleBounds()
             val node = findHandle(root().semanticsOwner.unmergedRootSemanticsNode)!!
             assertTrue(
-                "把手应已完成布局：bounds=$bounds size=${node.size} " +
+                "the handle should have finished layout: bounds=$bounds size=${node.size} " +
                     "position=${node.positionInRoot} view=${view.width}x${view.height}",
                 bounds.width > 0 && bounds.height > 0,
             )
@@ -742,7 +742,7 @@ class EtaVoicePanelTouchTest {
             block(::send) { advance(1) }
         }
 
-        private fun root(): ViewRootForTest = findRoot(activity.window.decorView) ?: error("未找到 Compose Root")
+        private fun root(): ViewRootForTest = findRoot(activity.window.decorView) ?: error("not found Compose Root")
 
         private fun findRoot(view: View): ViewRootForTest? {
             if (view is ViewRootForTest) return view

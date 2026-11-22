@@ -49,7 +49,7 @@ class NativeAppOperationsTest {
                 .put(event().put("reminder_minutes", org.json.JSONArray(listOf(10))))
                 .put(
                     event()
-                        .put("title", "另一会议")
+                        .put("title", "another meeting")
                         .put("reminder_minutes", org.json.JSONArray(listOf(30)))
                 )
         val result =
@@ -130,7 +130,7 @@ class NativeAppOperationsTest {
             PhoneOperations.execute(
                 context,
                 "create_note",
-                JSONObject().put("content", "新便签正文"),
+                JSONObject().put("content", "new note body"),
                 access = provider,
             )
         assertFalse(result.getBoolean("ok"))
@@ -146,7 +146,7 @@ class NativeAppOperationsTest {
             PhoneOperations.execute(
                 context,
                 "create_note",
-                JSONObject().put("content", "正文"),
+                JSONObject().put("content", "body"),
                 access = provider,
             )
         assertEquals("NOTES_NOT_READY", result.getString("code"))
@@ -225,7 +225,7 @@ class NativeAppOperationsTest {
 
     private fun event() =
         JSONObject()
-            .put("title", "会议")
+            .put("title", "meeting")
             .put("start_time", "2026-10-05T10:00:00+08:00")
             .put("end_time", "2026-10-05T11:00:00+08:00")
             .put("timezone", "Asia/Shanghai")
@@ -263,7 +263,7 @@ class NativeAppOperationsTest {
                         (1..calendarCount).map {
                             mapOf(
                                 "_id" to it,
-                                "calendar_displayName" to "日历$it",
+                                "calendar_displayName" to "calendar$it",
                                 "calendar_access_level" to 700,
                                 "visible" to 1,
                             )

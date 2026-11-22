@@ -23,10 +23,10 @@ class RuntimeConfigRepositoryTest {
     @Test
     fun emptyProviderPromptStaysEmptyAcrossRuntimeSerialization() {
         val provider = OpenAiCompatibleProviderSetting(
-            id = "prompt-provider", name = "测试", baseUrl = "https://example.invalid/v1",
+            id = "prompt-provider", name = "test", baseUrl = "https://example.invalid/v1",
         )
-        val model = Model(id = "model", modelId = "fixture", displayName = "测试")
-        for (prompt in listOf(null, "", "  ", "你是小满")) {
+        val model = Model(id = "model", modelId = "fixture", displayName = "test")
+        for (prompt in listOf(null, "", "  ", "you are Xiaoman")) {
             val config = RuntimeConfigRepository.buildRuntimeConfig(provider.copy(systemPrompt = prompt), model)
             val restored = Json.decodeFromString<AgentModelClient.ModelConfig>(
                 RuntimeConfigRepository.runtimeConfigJson(config),
@@ -39,7 +39,7 @@ class RuntimeConfigRepositoryTest {
     fun oauthConfigUsesBoundEndpointAndNeverSerializesApiKey() {
         val provider = OpenAiCompatibleProviderSetting(
             id = "oauth-provider",
-            name = "订阅",
+            name = "subscription",
             baseUrl = "https://untrusted.invalid/v1",
             apiKey = "fixture-must-not-be-projected",
             authMode = ProviderAuthModes.XAI_GROK,
@@ -47,7 +47,7 @@ class RuntimeConfigRepositoryTest {
         )
         val config = RuntimeConfigRepository.buildRuntimeConfig(
             provider,
-            Model(id = "local-model", modelId = "fixture-model", displayName = "测试"),
+            Model(id = "local-model", modelId = "fixture-model", displayName = "test"),
         )
 
         assertEquals("https://cli-chat-proxy.grok.com/v1", config.baseUrl)

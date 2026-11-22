@@ -10,7 +10,7 @@ import org.junit.Test
 
 class ConversationHistoryToolTest {
     @Test fun pagesReconstructEveryCharacterOfLargeMessage() {
-        val message = AgentModelClient.ConversationMessage("assistant", "事实😀".repeat(15_000))
+        val message = AgentModelClient.ConversationMessage("assistant", "fact😀".repeat(15_000))
         var loads = 0
         val tool = ConversationHistoryTool { loads++; listOf(message) }
         val rebuilt = StringBuilder()
@@ -30,8 +30,8 @@ class ConversationHistoryToolTest {
 
     @Test fun searchReturnsOnlyMatchingCurrentSessionMessages() {
         val tool = ConversationHistoryTool { listOf(
-            AgentModelClient.ConversationMessage("user", "旧请求"),
-            AgentModelClient.ConversationMessage("tool", "关键标识 FileABC"),
+            AgentModelClient.ConversationMessage("user", "old request"),
+            AgentModelClient.ConversationMessage("tool", "key marker FileABC"),
         ) }
         val result = JSONObject(tool.execute(AgentModelClient.ToolCall("c", "conversation_history", """{"query":"fileabc"}""")).content)
         assertEquals(1, result.getJSONArray("entries").length())
@@ -39,7 +39,7 @@ class ConversationHistoryToolTest {
     }
 
     @Test fun searchInLargeMessageReturnsFocusedSnippetAndCanBeExpandedByIndex() {
-        val largeContent = "无关日志。".repeat(3_600) + "目标标识 PACKAGE_XYZ_123 与错误码 E42" + "后续日志。".repeat(2_000)
+        val largeContent = "irrelevant log.".repeat(3_600) + "target marker PACKAGE_XYZ_123 and error code E42" + "the trailing log.".repeat(2_000)
         val message = AgentModelClient.ConversationMessage("tool", largeContent, toolCallId = "call_large")
         val tool = ConversationHistoryTool { listOf(message) }
 
@@ -75,7 +75,7 @@ class ConversationHistoryToolTest {
         val messages = (0 until 3).map { index ->
             AgentModelClient.ConversationMessage(
                 role = "tool",
-                content = "前缀数据".repeat(2_500) + "HIT_MARKER_$index" + "后缀数据".repeat(500),
+                content = "prefix data".repeat(2_500) + "HIT_MARKER_$index" + "suffix data".repeat(500),
                 toolCallId = "call_$index",
             )
         }

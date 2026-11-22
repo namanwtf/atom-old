@@ -68,7 +68,7 @@ class PersonalContextBillSummaryTest {
 
     @Test
     fun invalidAmountAnywhereRejectsTheEntireAggregation() {
-        listOf<String?>(null, "", "NaN", "1,200", "￥2", "1e-9", "1000000000000000001").forEach { invalid ->
+        listOf<String?>(null, "", "NaN", "1,200", "¥2", "1e-9", "1000000000000000001").forEach { invalid ->
             val result = aggregate(bill("25"), bill(invalid))
             assertFailureWithoutTotals("PERSONAL_CONTEXT_INVALID_AMOUNT", result)
         }

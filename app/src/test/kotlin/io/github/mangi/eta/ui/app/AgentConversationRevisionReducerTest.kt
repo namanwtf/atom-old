@@ -16,18 +16,18 @@ import org.junit.Test
 class AgentConversationRevisionReducerTest {
     @Test
     fun editingUserTurnCoveredBySummaryDropsStaleSummary() {
-        val summary = AgentModelClient.ConversationMessage("assistant", "旧操作结果", contextSummary = true,
+        val summary = AgentModelClient.ConversationMessage("assistant", "old operation result", contextSummary = true,
             compactedUserTurns = 1, summaryThroughUserTurn = 2)
         val state = AgentChatUiState(
-            messages = listOf(UserMessageUi("old", "旧请求"), UserMessageUi("latest", "最新请求")),
-            history = listOf(summary, AgentModelClient.ConversationMessage("user", "最新请求")),
+            messages = listOf(UserMessageUi("old", "old request"), UserMessageUi("latest", "latest request")),
+            history = listOf(summary, AgentModelClient.ConversationMessage("user", "latest request")),
             input = "", isStreaming = false, thinkingEnabled = false,
         )
         val boundary = AgentConversationRevisionReducer.boundary(state, "latest")!!
         assertTrue(boundary.contextWasCompacted)
         assertTrue(boundary.historyPrefix.isEmpty())
-        val next = state.copy(messages = state.messages + UserMessageUi("next", "后续请求"),
-            history = state.history + AgentModelClient.ConversationMessage("user", "后续请求"))
+        val next = state.copy(messages = state.messages + UserMessageUi("next", "follow-up request"),
+            history = state.history + AgentModelClient.ConversationMessage("user", "follow-up request"))
         assertTrue(AgentConversationRevisionReducer.boundary(next, "next")!!.historyPrefix.contains(summary))
     }
 
@@ -35,32 +35,32 @@ class AgentConversationRevisionReducerTest {
     fun editingTurnAfterCompactionKeepsActiveSummaryHistoryAndTrimsJournal() {
         val summary = AgentModelClient.ConversationMessage(
             role = "assistant",
-            content = "前两轮摘要",
+            content = "first two rounds summary",
             contextSummary = true,
             compactedUserTurns = 2,
             summaryThroughUserTurn = 2,
         )
         val state = AgentChatUiState(
             messages = listOf(
-                UserMessageUi("user-1", "第一问"),
-                AgentMessageUi("assistant-1", "第一答"),
-                UserMessageUi("user-2", "第二问"),
-                AgentMessageUi("assistant-2", "第二答"),
-                UserMessageUi("user-3", "第三问"),
-                AgentMessageUi("assistant-3", "第三答"),
+                UserMessageUi("user-1", "first question"),
+                AgentMessageUi("assistant-1", "first answer"),
+                UserMessageUi("user-2", "second question"),
+                AgentMessageUi("assistant-2", "second answer"),
+                UserMessageUi("user-3", "third question"),
+                AgentMessageUi("assistant-3", "third answer"),
             ),
             history = listOf(
                 summary,
-                AgentModelClient.ConversationMessage("user", "第三问"),
-                AgentModelClient.ConversationMessage("assistant", "第三答"),
+                AgentModelClient.ConversationMessage("user", "third question"),
+                AgentModelClient.ConversationMessage("assistant", "third answer"),
             ),
             journal = listOf(
-                AgentModelClient.ConversationMessage("user", "第一问"),
-                AgentModelClient.ConversationMessage("assistant", "第一答"),
-                AgentModelClient.ConversationMessage("user", "第二问"),
-                AgentModelClient.ConversationMessage("assistant", "第二答"),
-                AgentModelClient.ConversationMessage("user", "第三问"),
-                AgentModelClient.ConversationMessage("assistant", "第三答"),
+                AgentModelClient.ConversationMessage("user", "first question"),
+                AgentModelClient.ConversationMessage("assistant", "first answer"),
+                AgentModelClient.ConversationMessage("user", "second question"),
+                AgentModelClient.ConversationMessage("assistant", "second answer"),
+                AgentModelClient.ConversationMessage("user", "third question"),
+                AgentModelClient.ConversationMessage("assistant", "third answer"),
             ),
             input = "",
             isStreaming = false,
@@ -72,7 +72,7 @@ class AgentConversationRevisionReducerTest {
         assertFalse(boundary.contextWasCompacted)
         assertEquals(listOf(summary), boundary.historyPrefix)
         assertEquals(
-            listOf("第一问", "第一答", "第二问", "第二答"),
+            listOf("first question", "first answer", "second question", "second answer"),
             boundary.journalPrefix.map { it.content },
         )
     }
@@ -123,11 +123,11 @@ class AgentConversationRevisionReducerTest {
         val full = conversationState()
         val compacted = full.copy(
             history = listOf(
-                AgentModelClient.ConversationMessage(role = "system", content = "已压缩"),
-                AgentModelClient.ConversationMessage(role = "user", content = "第二问"),
-                AgentModelClient.ConversationMessage(role = "assistant", content = "第二答"),
-                AgentModelClient.ConversationMessage(role = "user", content = "第三问"),
-                AgentModelClient.ConversationMessage(role = "assistant", content = "第三答"),
+                AgentModelClient.ConversationMessage(role = "system", content = "compacted"),
+                AgentModelClient.ConversationMessage(role = "user", content = "second question"),
+                AgentModelClient.ConversationMessage(role = "assistant", content = "second answer"),
+                AgentModelClient.ConversationMessage(role = "user", content = "third question"),
+                AgentModelClient.ConversationMessage(role = "assistant", content = "third answer"),
             )
         )
 
@@ -164,31 +164,31 @@ class AgentConversationRevisionReducerTest {
 
     private fun conversationState(): AgentChatUiState = AgentChatUiState(
         messages = listOf(
-            UserMessageUi(id = "user-1", content = "第一问"),
-            ThinkingMessageUi(id = "thinking-1", content = "思考", isStreaming = false),
+            UserMessageUi(id = "user-1", content = "first question"),
+            ThinkingMessageUi(id = "thinking-1", content = "thinking", isStreaming = false),
             ToolActivityMessageUi(
                 id = "tool-1",
                 toolName = "test",
                 status = ToolActivityStatusUi.Success,
                 argumentsSummary = "{}",
             ),
-            AgentMessageUi(id = "assistant-1", content = "第一答"),
-            UserMessageUi(id = "user-2", content = "第二问", images = listOf("data:image/png;base64,AA==")),
-            AgentMessageUi(id = "assistant-2", content = "第二答"),
-            UserMessageUi(id = "user-3", content = "第三问"),
-            AgentMessageUi(id = "assistant-3", content = "第三答"),
+            AgentMessageUi(id = "assistant-1", content = "first answer"),
+            UserMessageUi(id = "user-2", content = "second question", images = listOf("data:image/png;base64,AA==")),
+            AgentMessageUi(id = "assistant-2", content = "second answer"),
+            UserMessageUi(id = "user-3", content = "third question"),
+            AgentMessageUi(id = "assistant-3", content = "third answer"),
         ),
         history = listOf(
-            AgentModelClient.ConversationMessage(role = "user", content = "第一问"),
+            AgentModelClient.ConversationMessage(role = "user", content = "first question"),
             AgentModelClient.ConversationMessage(role = "assistant", toolCallsJson = "[]"),
-            AgentModelClient.ConversationMessage(role = "tool", content = "结果"),
-            AgentModelClient.ConversationMessage(role = "assistant", content = "第一答"),
-            AgentModelClient.ConversationMessage(role = "user", content = "第二问"),
-            AgentModelClient.ConversationMessage(role = "assistant", content = "第二答"),
-            AgentModelClient.ConversationMessage(role = "user", content = "第三问"),
-            AgentModelClient.ConversationMessage(role = "assistant", content = "第三答"),
+            AgentModelClient.ConversationMessage(role = "tool", content = "result"),
+            AgentModelClient.ConversationMessage(role = "assistant", content = "first answer"),
+            AgentModelClient.ConversationMessage(role = "user", content = "second question"),
+            AgentModelClient.ConversationMessage(role = "assistant", content = "second answer"),
+            AgentModelClient.ConversationMessage(role = "user", content = "third question"),
+            AgentModelClient.ConversationMessage(role = "assistant", content = "third answer"),
         ),
-        input = "草稿",
+        input = "draft",
         isStreaming = false,
         thinkingEnabled = false,
     )

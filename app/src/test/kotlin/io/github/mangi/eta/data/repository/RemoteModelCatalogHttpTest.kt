@@ -32,8 +32,8 @@ class RemoteModelCatalogHttpTest {
               {"slug":"gpt-6.1-sol","display_name":"GPT-6.1 Sol","visibility":"list","context_window":260000,
                "supported_in_api":false,"input_modalities":["text","image"],
                "supported_reasoning_levels":[{"effort":"low"},{"effort":"high"}],"default_reasoning_level":"high"},
-              {"slug":"future-model","display_name":"远端新模型","visibility":"list"},
-              {"slug":"gpt-5.5","display_name":"旧模型","visibility":"hide"}
+              {"slug":"future-model","display_name":"remote new model","visibility":"list"},
+              {"slug":"gpt-5.5","display_name":"old model","visibility":"hide"}
             ]}""",
         )) { url, seen ->
             val result = RemoteModelFetcher.fetchCatalog(provider, redirectedClient(url, targets), credentials).getOrThrow()
@@ -108,12 +108,12 @@ class RemoteModelCatalogHttpTest {
     @Test
     fun apiKeyCatalogDoesNotReadOAuthAccountOrReplaceItsCredential() = runBlocking {
         val noOAuth = object : RemoteModelFetcher.Credentials {
-            override fun binding(providerId: String, authMode: String): ProviderCredentialBinding = error("不应读取 OAuth 账号")
-            override fun isCurrent(binding: ProviderCredentialBinding): Boolean = error("不应读取 OAuth 账号")
+            override fun binding(providerId: String, authMode: String): ProviderCredentialBinding = error("must not read OAuth account")
+            override fun isCurrent(binding: ProviderCredentialBinding): Boolean = error("must not read OAuth account")
             override fun accessToken(providerId: String, authMode: String, controller: AgentRunController, rejected: String?): String =
-                error("不应读取 OAuth 令牌")
+                error("must not read OAuth token")
         }
-        withServer(listOf(200 to """{"data":[{"id":"api-chat","name":"API 模型"}]}""")) { url, seen ->
+        withServer(listOf(200 to """{"data":[{"id":"api-chat","name":"API model"}]}""")) { url, seen ->
             val provider = provider(ProviderAuthModes.API_KEY).copy(baseUrl = url.removeSuffix("/models"), apiKey = "api-fixture")
             val result = RemoteModelFetcher.fetchCatalog(provider, OkHttpClient(), noOAuth).getOrThrow()
             assertEquals("api-chat", result.models.single().modelId)
@@ -176,7 +176,7 @@ class RemoteModelCatalogHttpTest {
     private fun redirectedClient(url: String, targets: MutableList<String>) = OkHttpClient.Builder()
         .addInterceptor { chain ->
             targets += chain.request().url.toString()
-            // 生产入口仍校验官方地址，测试传输只连接本地 fixture。
+            // The production entry point still validates the official address; the test transport only connects to the local fixture.
             chain.proceed(chain.request().newBuilder().url(url).build())
         }.build()
 

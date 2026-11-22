@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class, sdk = [34])
 class StartupSplashTest {
     @Test
-    fun `仅在首帧必要配置未就绪时阻止绘制`() {
+    fun `blocks drawing only when the required first-frame configuration is not ready`() {
         val controller = Robolectric.buildActivity(ComponentActivity::class.java).create()
         try {
             val activity = controller.get()
@@ -41,7 +41,7 @@ class StartupSplashTest {
     }
 
     @Test
-    fun `准备期间销毁页面会移除绘制拦截`() {
+    fun `destroying the page during preparation removes the draw interception`() {
         val controller = Robolectric.buildActivity(ComponentActivity::class.java).create()
         val activity = controller.get()
         var checks = 0

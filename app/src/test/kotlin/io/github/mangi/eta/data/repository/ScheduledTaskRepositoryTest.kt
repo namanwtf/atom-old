@@ -50,8 +50,8 @@ class ScheduledTaskRepositoryTest {
         val created = ScheduledTaskRepository.saveTask(
             task = ScheduledTask(
                 id = "task-watch",
-                name = "网页雷达",
-                prompt = "检查价格变化",
+                name = "web radar",
+                prompt = "check price changes",
                 schedule = ScheduledTaskSchedule(kind = ScheduledTaskTriggerKind.INTERVAL, intervalMinutes = 60),
                 deliveryMode = ScheduledTaskDeliveryMode.ON_CHANGE,
                 sessionMode = ScheduledTaskSessionMode.ISOLATED,
@@ -105,7 +105,7 @@ class ScheduledTaskRepositoryTest {
         assertNull(commit.task.nextRunAt)
         assertNotNull(commit.task.autoDisabledReason)
 
-        // 手动重新开启后应清零失败计数并恢复排期。
+        // After manually re-enabling, the failure count should be reset and the schedule restored.
         val reenabled = ScheduledTaskRepository.setEnabled(
             taskId = created.id,
             enabled = true,
@@ -127,8 +127,8 @@ class ScheduledTaskRepositoryTest {
         val task = ScheduledTaskRepository.saveTask(
             task = ScheduledTask(
                 id = "task-reconcile",
-                name = "测试任务",
-                prompt = "执行检查",
+                name = "test task",
+                prompt = "execute check",
                 schedule = ScheduledTaskSchedule(kind = ScheduledTaskTriggerKind.DAILY, hour = 21, minute = 0),
             ),
             nowMs = nowMs,

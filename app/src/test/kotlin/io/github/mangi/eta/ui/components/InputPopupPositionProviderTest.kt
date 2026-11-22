@@ -57,7 +57,7 @@ class InputPopupPositionProviderTest {
             density = density,
         )
 
-        // 目标底边 = 2700 - 24 = 2676；未开键盘时向下空间不足，走底部对齐：gap = 2676 - 2910 = -234px = -78dp
+        // target bottom = 2700 - 24 = 2676; without the keyboard there is not enough space downward, so it falls back to bottom alignment: gap = 2676 - 2910 = -234px = -78dp
         assertEquals((-78).dp, layout.gap)
     }
 
@@ -78,8 +78,8 @@ class InputPopupPositionProviderTest {
             density = density,
         )
 
-        // 开键盘时窗口底边仍为 3000，GlassPopupSurface 会选中向下展开（top = anchorTop + gap），
-        // gap 应自动补偿高度使底边仍落在 1500 - 24 = 1476：top = 1476 - 600 = 876 => gap = 876 - 1620 = -744px = -248dp
+        // with the keyboard open the window bottom stays at 3000, GlassPopupSurface chooses downward expansion (top = anchorTop + gap),
+        // gap should auto-compensate the height so the bottom still lands at 1500 - 24 = 1476: top = 1476 - 600 = 876 => gap = 876 - 1620 = -744px = -248dp
         assertEquals((-248).dp, layout.gap)
         val computedTop = anchorTop + layout.gap.value * density
         assertEquals(1_476f, computedTop + measuredHeight, 0.01f)

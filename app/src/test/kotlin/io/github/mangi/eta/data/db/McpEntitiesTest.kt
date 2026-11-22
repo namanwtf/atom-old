@@ -15,7 +15,7 @@ class McpEntitiesTest {
             enabled = true,
             protocolMode = McpProtocolMode.AUTO,
             authorizationType = McpAuthorizationType.NONE,
-            toolsJson = """[{"name":"create_task","inputSchemaJson":"{\"type\":\"object\",\"anyOf\":[]}","unavailableReason":"暂不支持 schema 关键字 anyOf"}]""",
+            toolsJson = """[{"name":"create_task","inputSchemaJson":"{\"type\":\"object\",\"anyOf\":[]}","unavailableReason":"schema keyword anyOf is not yet supported"}]""",
             enabledToolNamesJson = """["create_task"]""",
             createdAt = 1L,
             sortOrder = 0,

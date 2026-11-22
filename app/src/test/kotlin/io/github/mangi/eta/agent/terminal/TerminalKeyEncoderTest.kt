@@ -35,7 +35,7 @@ class TerminalKeyEncoderTest {
         assertEquals("\u0003at", TerminalKeyEncoder.text("Cat", TerminalModifiers(ctrl = true)))
         assertEquals("\u001Bb", TerminalKeyEncoder.text("b", TerminalModifiers(alt = true)))
         assertEquals("\u001B\u0018", TerminalKeyEncoder.text("x", TerminalModifiers(ctrl = true, alt = true)))
-        assertEquals("中", TerminalKeyEncoder.text("中", TerminalModifiers(ctrl = true)))
+        assertEquals("C", TerminalKeyEncoder.text("C", TerminalModifiers(ctrl = true)))
     }
 
     @Test

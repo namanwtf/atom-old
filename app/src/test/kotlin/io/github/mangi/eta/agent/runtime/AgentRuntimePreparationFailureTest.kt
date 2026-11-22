@@ -28,7 +28,7 @@ class AgentRuntimePreparationFailureTest {
             var storedBeforeDelivery = false
             val request = AgentRuntimeWire.RunRequest(
                 runId = "preparation-failed",
-                prompt = "测试请求",
+                prompt = "test request",
                 config = AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test-key", model = "test-model", systemPrompt = ""),
                 images = emptyList(),
                 handoff = AgentRuntimeWire.EntryHandoff("preparation-failed", AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE, "conversation"),
@@ -39,11 +39,11 @@ class AgentRuntimePreparationFailureTest {
             }))
             AgentRuntimeService::class.java.getDeclaredMethod("failBeforeExecution", RuntimeRunRegistry.Run::class.java, String::class.java).apply {
                 isAccessible = true
-            }.invoke(serviceController.get(), run, "无法准备请求")
+            }.invoke(serviceController.get(), run, "cannot prepare the request")
             assertTrue(delivered.await(10, TimeUnit.SECONDS))
             assertTrue(storedBeforeDelivery)
             assertTrue(AgentRunCheckpointStore.list(context).isEmpty())
-            assertEquals("无法准备请求", AgentRuntimeResultStore.list(context).single().result.error)
+            assertEquals("cannot prepare the request", AgentRuntimeResultStore.list(context).single().result.error)
             AgentRuntimeResultStore.remove(context, request.runId)
             assertTrue(AgentRuntimeResultStore.list(context).isEmpty())
         } finally {

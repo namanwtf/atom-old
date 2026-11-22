@@ -74,7 +74,7 @@ class TerminalExecutionContextTest {
         assertTrue(context.linuxReady)
         assertFalse(context.linuxCommonToolsReady)
         assertTrue(context.linuxInstalledProfiles.isEmpty())
-        assertTrue(description.contains("debian，backend=proot，identity=user，ready=true，common_tools=false，profiles=none"))
+        assertTrue(description.contains("debian,backend=proot,identity=user,ready=true,common_tools=false,profiles=none"))
         assertTrue(description.contains(JSONObject.quote(workspace)))
         assertFalse(description.contains(workspace))
         assertFalse(description.contains(rootfs.path))
@@ -86,7 +86,7 @@ class TerminalExecutionContextTest {
         assertEquals(listOf("python", "apk_analysis"), context.linuxInstalledProfiles)
         assertTrue(
             context.description(rootAvailable = false)
-                .contains("ready=true，common_tools=true，profiles=python/apk_analysis"),
+                .contains("ready=true,common_tools=true,profiles=python/apk_analysis"),
         )
     }
 
@@ -103,6 +103,6 @@ class TerminalExecutionContextTest {
         val description = context.description(rootAvailable = false)
         assertTrue(description.contains("\"/workspace/mounts/Download\" <-> \"/sdcard/Download\""))
         assertTrue(description.contains("\"/workspace/mounts/repos\" <-> \"/sdcard/Projects\""))
-        assertTrue(description.contains("同一物理文件夹"))
+        assertTrue(description.contains("the same physical folder"))
     }
 }

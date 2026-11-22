@@ -10,36 +10,36 @@ class AgentFileResultFormatterTest {
     @Test
     fun appendReportsOnlyTheWrittenAmount() {
         val summary = summarize("write_file", """{"mode":"append","bytes_written":1536,"size_bytes":8192}""")
-        assertEquals("已追加 1.5 KiB", summary)
-        assertEquals("已写入 0 字节", summarize("write_file", """{"mode":"overwrite","bytes_written":0}"""))
+        assertEquals("appended 1.5 KiB", summary)
+        assertEquals("wrote 0 bytes", summarize("write_file", """{"mode":"overwrite","bytes_written":0}"""))
     }
 
     @Test
     fun statDoesNotPresentDirectoryMetadataAsItsContentSize() {
-        assertEquals("目录", summarize("stat_file", """{"file":{"kind":"directory","size_bytes":4096}}"""))
-        assertEquals("文件 · 2 MiB", summarize("stat_file", """{"file":{"kind":"file","size_bytes":2097152}}"""))
-        assertEquals("符号链接", summarize("stat_file", """{"file":{"kind":"symlink","size_bytes":42}}"""))
+        assertEquals("directory", summarize("stat_file", """{"file":{"kind":"directory","size_bytes":4096}}"""))
+        assertEquals("file · 2 MiB", summarize("stat_file", """{"file":{"kind":"file","size_bytes":2097152}}"""))
+        assertEquals("symlink", summarize("stat_file", """{"file":{"kind":"symlink","size_bytes":42}}"""))
     }
 
     @Test
     fun readDistinguishesPaginationFromScanningBeforeTheRequestedLine() {
-        assertEquals("已读前 1 KiB · 还有更多", summarize("read_file", """{"bytes_read":1024,"truncated":true,"start_line_reached":true}"""))
-        assertEquals("尚未到达目标行 · 可继续读取", summarize("read_file", """{"bytes_read":0,"truncated":true,"start_line_reached":false,"stop_reason":"scan_limit"}"""))
-        assertEquals("未到达目标行 · 已到文件末尾", summarize("read_file", """{"bytes_read":0,"truncated":false,"start_line_reached":false,"stop_reason":"eof"}"""))
+        assertEquals("read first 1 KiB · more available", summarize("read_file", """{"bytes_read":1024,"truncated":true,"start_line_reached":true}"""))
+        assertEquals("target line not reached yet · can continue reading", summarize("read_file", """{"bytes_read":0,"truncated":true,"start_line_reached":false,"stop_reason":"scan_limit"}"""))
+        assertEquals("target line not reached · reached end of file", summarize("read_file", """{"bytes_read":0,"truncated":false,"start_line_reached":false,"stop_reason":"eof"}"""))
     }
 
     @Test
     fun listingAndSearchCountOnlyReturnedResultsAndPreservePartialCoverage() {
-        assertEquals("已列出 1 项内容 · 还有更多", summarize("list_directory", """{"entries":[{}],"has_more":true}"""))
-        assertEquals("目录为空", summarize("list_directory", """{"entries":[]}"""))
-        assertEquals("找到 2 个文件 · 还有更多 · 扫描范围有限", summarize("glob_files", """{"matches":[{},{}],"truncated":true,"partial":true}"""))
-        assertEquals("找到 1 处匹配 · 还有更多 · 扫描范围有限", summarize("grep_files", """{"matches":[{}],"truncated":true,"partial":true,"total_skipped":2,"next_cursor":"next-page"}"""))
-        assertEquals("未找到匹配内容 · 扫描范围有限", summarize("grep_files", """{"matches":[],"truncated":false,"partial":true,"total_skipped":3}"""))
+        assertEquals("listed 1 item · more available", summarize("list_directory", """{"entries":[{}],"has_more":true}"""))
+        assertEquals("directory is empty", summarize("list_directory", """{"entries":[]}"""))
+        assertEquals("found 2 file · more available · scan range limited", summarize("glob_files", """{"matches":[{},{}],"truncated":true,"partial":true}"""))
+        assertEquals("found 1 match · more available · scan range limited", summarize("grep_files", """{"matches":[{}],"truncated":true,"partial":true,"total_skipped":2,"next_cursor":"next-page"}"""))
+        assertEquals("no matching content found · scan range limited", summarize("grep_files", """{"matches":[],"truncated":false,"partial":true,"total_skipped":3}"""))
     }
 
     @Test
     fun editDoesNotPresentTheWholeRewrittenFileAsChangedBytes() {
-        assertEquals("已替换 2 处", summarize("edit_file", """{"replacements":2,"bytes_written":90000}"""))
+        assertEquals("replaced 2 occurrences", summarize("edit_file", """{"replacements":2,"bytes_written":90000}"""))
     }
 
     @Test

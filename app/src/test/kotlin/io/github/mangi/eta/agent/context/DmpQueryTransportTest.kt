@@ -11,7 +11,7 @@ import org.junit.Test
 class DmpQueryTransportTest {
     @Test
     fun decodesCommasNewlinesEmptyNullLiteralNullAndUnicodeExactly() {
-        val values = listOf("逗号, 等号=\n下一行\r\n😀", "", null, "NULL", "null")
+        val values = listOf("comma, equals sign=\nthe next line\r\n😀", "", null, "NULL", "null")
         val query = DmpQuery("com.example#records", values.indices.map { DmpProjection("field$it", "source$it") })
         val result = transport(row(0, values)).query(query) as DmpQueryResult.Success
         assertEquals(1, result.rows.size)
@@ -23,9 +23,9 @@ class DmpQueryTransportTest {
     @Test
     fun fieldTruncationUsesUnicodeCharactersAndIsReportedByLogicalName() {
         val query = DmpQuery("persona/records", listOf(DmpProjection("text", "bodyCom", 3)))
-        val output = row(0, listOf("你好😀"), setOf(0)) + "\n" + row(1, listOf(null))
+        val output = row(0, listOf("hello😀"), setOf(0)) + "\n" + row(1, listOf(null))
         val result = transport(output).query(query) as DmpQueryResult.Success
-        assertEquals("你好😀", result.rows[0]["text"])
+        assertEquals("hello😀", result.rows[0]["text"])
         assertNull(result.rows[1]["text"])
         assertEquals(setOf("text"), result.truncatedFields)
     }

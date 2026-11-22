@@ -10,78 +10,78 @@ class AgentPersonalResultFormatterTest {
     @Test
     fun memoryGetPresentsNaturalQueryOrReadStatusWithoutRawLineOrByteNumbers() {
         val querySuccess = summarize("memory_get", """{"matched_lines":3,"line_count":500,"bytes":15000}""")
-        assertEquals("找到 3 条相关记忆", querySuccess)
-        assertFalse(querySuccess!!.contains("行"))
-        assertFalse(querySuccess.contains("字节"))
+        assertEquals("found 3 matching memories", querySuccess)
+        assertFalse(querySuccess!!.contains("line"))
+        assertFalse(querySuccess.contains("bytes"))
 
         val queryEmpty = summarize("memory_get", """{"matched_lines":0,"line_count":500,"bytes":15000}""")
-        assertEquals("未找到相关记忆", queryEmpty)
+        assertEquals("no matching memories found", queryEmpty)
 
         val fullRead = summarize("memory_get", """{"line_count":200,"bytes":8000}""")
-        assertEquals("已读取记忆", fullRead)
-        assertFalse(fullRead!!.contains("行"))
-        assertFalse(fullRead.contains("字节"))
+        assertEquals("memory read", fullRead)
+        assertFalse(fullRead!!.contains("line"))
+        assertFalse(fullRead.contains("bytes"))
 
         val partialRead = summarize("memory_get", """{"has_more":true,"line_count":200,"bytes":8000}""")
-        assertEquals("已读取前段记忆", partialRead)
+        assertEquals("read the first part of memory", partialRead)
 
-        // 剧情记忆
+        // character memory
         val charQuery = summarize("character_memory_get", """{"matched_lines":2}""")
-        assertEquals("找到 2 条相关剧情", charQuery)
+        assertEquals("found 2 matching story items", charQuery)
         val charEmpty = summarize("character_memory_get", """{"matched_lines":0}""")
-        assertEquals("未找到相关剧情", charEmpty)
+        assertEquals("no matching story found", charEmpty)
         val charRead = summarize("character_memory_get", """{}""")
-        assertEquals("已读取剧情记忆", charRead)
+        assertEquals("character memory read", charRead)
     }
 
     @Test
     fun memoryWritePresentsActionConclusionWithoutByteOrLineCounts() {
-        assertEquals("已保存记忆", summarize("memory_write", """{"mode":"append","bytes":5000,"line_count":120}"""))
-        assertEquals("已更新记忆", summarize("memory_write", """{"mode":"replace_range","bytes":5000,"line_count":120}"""))
-        assertEquals("已清空记忆", summarize("memory_write", """{"mode":"clear"}"""))
+        assertEquals("memory saved", summarize("memory_write", """{"mode":"append","bytes":5000,"line_count":120}"""))
+        assertEquals("memory updated", summarize("memory_write", """{"mode":"replace_range","bytes":5000,"line_count":120}"""))
+        assertEquals("memory cleared", summarize("memory_write", """{"mode":"clear"}"""))
 
-        assertEquals("已保存剧情记忆", summarize("character_memory_write", """{"mode":"append"}"""))
-        assertEquals("已更新剧情记忆", summarize("character_memory_write", """{"mode":"replace_range"}"""))
-        assertEquals("已清空剧情记忆", summarize("character_memory_write", """{"mode":"clear"}"""))
+        assertEquals("character memory saved", summarize("character_memory_write", """{"mode":"append"}"""))
+        assertEquals("character memory updated", summarize("character_memory_write", """{"mode":"replace_range"}"""))
+        assertEquals("character memory cleared", summarize("character_memory_write", """{"mode":"clear"}"""))
     }
 
     @Test
     fun memoryArgumentsAreCleanAndConcise() {
-        assertEquals("追加记忆", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"append","content":"abc"}"""))
-        assertEquals("更新记忆", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"replace_range","content":"abc"}"""))
-        assertEquals("清空记忆", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"clear"}"""))
-        assertEquals("检索记忆", AgentPersonalResultFormatter.summarizeArguments("memory_get", """{"query":"咖啡偏好"}"""))
-        assertEquals("读取记忆", AgentPersonalResultFormatter.summarizeArguments("memory_get", """{}"""))
+        assertEquals("append memory", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"append","content":"abc"}"""))
+        assertEquals("update memory", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"replace_range","content":"abc"}"""))
+        assertEquals("clear memory", AgentPersonalResultFormatter.summarizeArguments("memory_write", """{"mode":"clear"}"""))
+        assertEquals("retrieve memory", AgentPersonalResultFormatter.summarizeArguments("memory_get", """{"query":"coffee preference"}"""))
+        assertEquals("read memory", AgentPersonalResultFormatter.summarizeArguments("memory_get", """{}"""))
 
-        assertEquals("追加剧情记忆", AgentPersonalResultFormatter.summarizeArguments("character_memory_write", """{"mode":"append"}"""))
-        assertEquals("检索剧情记忆", AgentPersonalResultFormatter.summarizeArguments("character_memory_get", """{"query":"身世"}"""))
+        assertEquals("append character memory", AgentPersonalResultFormatter.summarizeArguments("character_memory_write", """{"mode":"append"}"""))
+        assertEquals("retrieve character memory", AgentPersonalResultFormatter.summarizeArguments("character_memory_get", """{"query":"backstory"}"""))
     }
 
     @Test
     fun personalSearchesPresentHumanReadableUnitsAndEmptyStates() {
         val cases = listOf(
-            Triple("search_system_memories", "找到 3 条系统记忆", "未找到相关系统记忆"),
-            Triple("search_notes", "找到 3 条便签", "未找到相关便签"),
-            Triple("search_calendar_events", "找到 3 个日程", "未找到相关日程"),
-            Triple("search_contacts", "找到 3 位联系人", "未找到匹配联系人"),
-            Triple("search_messages", "找到 3 条短信", "未找到相关短信"),
-            Triple("search_call_history", "找到 3 条通话记录", "未找到通话记录"),
-            Triple("search_saved_places", "找到 3 个地点", "未找到相关地点"),
-            Triple("search_personal_orders", "找到 3 个订单", "未找到相关订单"),
-            Triple("search_bills", "找到 3 笔账单", "未找到账单记录"),
-            Triple("search_todos", "找到 3 条待办", "未找到待办"),
-            Triple("search_flights", "找到 3 趟航班", "未找到航班行程"),
-            Triple("search_hotels", "找到 3 个酒店预订", "未找到预订记录"),
-            Triple("search_trains", "找到 3 趟火车", "未找到火车行程"),
-            Triple("search_daily_events", "找到 3 个生活事件", "未找到生活事件"),
-            Triple("search_memory_collections", "找到 3 个记忆合集", "未找到记忆合集"),
-            Triple("search_recordings", "找到 3 条录音", "未找到录音"),
-            Triple("search_recording_summaries", "找到 3 条录音摘要", "未找到录音摘要"),
-            Triple("recent_notifications", "找到 3 条通知", "未找到通知"),
-            Triple("search_clipboard_history", "找到 3 条剪贴板记录", "未找到剪贴板记录"),
-            Triple("search_downloads", "找到 3 个下载记录", "未找到下载记录"),
-            Triple("search_media", "找到 3 个媒体文件", "未找到相关媒体文件"),
-            Triple("search_qq_chat_images", "找到 3 张聊天图片", "未找到聊天图片"),
+            Triple("search_system_memories", "found 3 system memories", "no matching system memories found"),
+            Triple("search_notes", "found 3 notes", "no matching notes found"),
+            Triple("search_calendar_events", "found 3 event", "no matching events found"),
+            Triple("search_contacts", "found 3 contacts", "no matching contacts found"),
+            Triple("search_messages", "found 3 messages", "no matching messages found"),
+            Triple("search_call_history", "found 3 call records", "no call records found"),
+            Triple("search_saved_places", "found 3 place", "no matching places found"),
+            Triple("search_personal_orders", "found 3 order", "no matching orders found"),
+            Triple("search_bills", "found 3 bill", "no bill records found"),
+            Triple("search_todos", "found 3 todos", "no todos found"),
+            Triple("search_flights", "found 3 flights", "no flight itineraries found"),
+            Triple("search_hotels", "found 3 hotel reservations", "no reservation records found"),
+            Triple("search_trains", "found 3 trains", "no train itineraries found"),
+            Triple("search_daily_events", "found 3 life events", "no life events found"),
+            Triple("search_memory_collections", "found 3 memory collections", "no memory collections found"),
+            Triple("search_recordings", "found 3 recordings", "no recordings found"),
+            Triple("search_recording_summaries", "found 3 recording summaries", "no recording summaries found"),
+            Triple("recent_notifications", "found 3 notifications", "no notifications found"),
+            Triple("search_clipboard_history", "found 3 clipboard records", "no clipboard records found"),
+            Triple("search_downloads", "found 3 download records", "no download records found"),
+            Triple("search_media", "found 3 media files", "no matching media files found"),
+            Triple("search_qq_chat_images", "found 3 chat images", "no chat images found"),
         )
 
         cases.forEach { (tool, expectedFound, expectedEmpty) ->
@@ -95,15 +95,15 @@ class AgentPersonalResultFormatterTest {
     @Test
     fun personalSearchWithPaginationAndPartialScopePreservesIndicators() {
         val result = summarize("search_messages", """{"items":[{},{}],"has_more":true,"partial":true}""")
-        assertEquals("找到 2 条短信 · 还有更多 · 采集范围有限", result)
+        assertEquals("found 2 messages · more available · collection scope limited", result)
     }
 
     @Test
     fun verificationCodeAndSpecialTools() {
-        assertEquals("已读取验证码", summarize("read_sms_code", """{"items":[{"code":"123456"}]}"""))
-        assertEquals("未收到最新验证码", summarize("read_sms_code", """{"items":[]}"""))
-        assertEquals("已读取详情", summarize("read_personal_item", """{"id":"1"}"""))
-        assertEquals("已汇总账单", summarize("summarize_bills", """{"total":100}"""))
+        assertEquals("verification code read", summarize("read_sms_code", """{"items":[{"code":"123456"}]}"""))
+        assertEquals("no latest verification code received", summarize("read_sms_code", """{"items":[]}"""))
+        assertEquals("details read", summarize("read_personal_item", """{"id":"1"}"""))
+        assertEquals("bills summarized", summarize("summarize_bills", """{"total":100}"""))
     }
 
     private fun summarize(toolName: String, json: String): String? =

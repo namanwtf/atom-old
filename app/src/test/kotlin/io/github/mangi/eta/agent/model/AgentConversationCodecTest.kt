@@ -14,7 +14,7 @@ class AgentConversationCodecTest {
         val assistant = JSONObject()
             .put("role", "assistant")
             .put("content", JSONObject.NULL)
-            .put("reasoning_content", "先分析工具参数")
+            .put("reasoning_content", "analyze the tool arguments first")
             .put(
                 "tool_calls",
                 JSONArray().put(
@@ -33,7 +33,7 @@ class AgentConversationCodecTest {
         val durable = AgentConversationCodec.durableMessage(assistant)
         val replayed = AgentConversationCodec.toJsonObject(durable)
 
-        assertEquals("先分析工具参数", replayed.getString("reasoning_content"))
+        assertEquals("analyze the tool arguments first", replayed.getString("reasoning_content"))
         assertEquals("call-1", replayed.getJSONArray("tool_calls").getJSONObject(0).getString("id"))
     }
 
@@ -41,7 +41,7 @@ class AgentConversationCodecTest {
     fun durableImageObservationNeverPersistsBase64Payload() {
         val message = AgentConversationCodec.durableMessage(
             AgentConversationCodec.userMessage(
-                text = "屏幕观察",
+                text = "screen observation",
                 images = listOf(
                     AgentModelClient.ModelImage(
                         reference = "data:image/png;base64,${"A".repeat(20_000)}",
@@ -53,7 +53,7 @@ class AgentConversationCodecTest {
         )
 
         assertFalse(message.contentJson.contains("base64"))
-        assertTrue(message.contentJson.contains("未写入持久会话"))
+        assertTrue(message.contentJson.contains("not persisted to session"))
     }
 
     @Test
@@ -63,18 +63,18 @@ class AgentConversationCodecTest {
                 add(
                     AgentModelClient.ConversationMessage(
                         role = "assistant",
-                        content = "回答-$index-${"x".repeat(20_000)}",
+                        content = "answer-$index-${"x".repeat(20_000)}",
                     )
                 )
                 add(
                     AgentModelClient.ConversationMessage(
                         role = "tool",
                         toolCallId = "call-$index",
-                        content = "结果-${"y".repeat(20_000)}",
+                        content = "result-${"y".repeat(20_000)}",
                     )
                 )
             }
-            add(AgentModelClient.ConversationMessage(role = "assistant", content = "最终答案"))
+            add(AgentModelClient.ConversationMessage(role = "assistant", content = "final answer"))
         }
 
         val encoded = AgentLegacyConversationProjection.encode(messages, AgentLegacyConversationProjection.DIRECT_CHARS)
@@ -83,8 +83,8 @@ class AgentConversationCodecTest {
         assertTrue(encoded.length <= AgentLegacyConversationProjection.DIRECT_CHARS)
         assertTrue(decoded.isNotEmpty())
         assertFalse(decoded.first().role == "tool")
-        assertTrue(decoded.first().content.contains("容量上限已压缩"))
-        assertTrue(decoded.last().content.contains("最终答案"))
+        assertTrue(decoded.first().content.contains("compressed at capacity limit"))
+        assertTrue(decoded.last().content.contains("final answer"))
     }
 
     @Test
@@ -94,11 +94,11 @@ class AgentConversationCodecTest {
                 add(
                     AgentModelClient.ConversationMessage(
                         role = "assistant",
-                        content = "回答-$index-${"x".repeat(20_000)}",
+                        content = "answer-$index-${"x".repeat(20_000)}",
                     )
                 )
             }
-            add(AgentModelClient.ConversationMessage(role = "user", content = "继续处理最新任务"))
+            add(AgentModelClient.ConversationMessage(role = "user", content = "continue with the latest task"))
         }
 
         val encoded = AgentConversationCodec.encodeConversationCheckpoint(messages)
@@ -106,12 +106,12 @@ class AgentConversationCodecTest {
 
         assertTrue(encoded.length > 96_000)
         assertEquals(messages, decoded)
-        assertEquals("继续处理最新任务", decoded.last().content)
+        assertEquals("continue with the latest task", decoded.last().content)
     }
 
     @Test
     fun responsesOutputItemsStayInMemoryAndNeverEnterStableTranscript() {
-        val source = JSONObject().put("role", "assistant").put("content", "完成")
+        val source = JSONObject().put("role", "assistant").put("content", "done")
         ResponsesEphemeralState.attachOutputItems(
             source,
             JSONArray().put(

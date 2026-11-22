@@ -14,7 +14,7 @@ import org.junit.Test
 class CloudSpeechSynthesisTest {
     @Test fun geminiKeepsStyleSeparateFromTranscriptAndDisablesStorage() {
         val request = geminiSpeechRequest(
-            GeminiTtsConfig(baseUrl = "https://example.invalid/proxy/", style = "温和自然"), "test-key", "原文",
+            GeminiTtsConfig(baseUrl = "https://example.invalid/proxy/", style = "gentle and natural"), "test-key", "original text",
         )
         assertEquals("/proxy/v1beta/interactions", request.url.encodedPath)
         assertEquals("test-key", request.header("x-goog-api-key"))
@@ -25,19 +25,19 @@ class CloudSpeechSynthesisTest {
         assertTrue(body.getBoolean("stream"))
         assertEquals("gemini-3.8-flash-tts", body.getString("model"))
         val text = body.getJSONArray("input").getJSONObject(0).getJSONArray("content").getJSONObject(0)
-        assertEquals("原文", text.getString("text"))
-        assertEquals("温和自然", text.getJSONArray("annotations").getJSONObject(0).getString("style"))
+        assertEquals("original text", text.getString("text"))
+        assertEquals("gentle and natural", text.getJSONArray("annotations").getJSONObject(0).getString("style"))
         assertEquals("audio/l16", body.getJSONObject("response_format").getString("mime_type"))
         assertEquals(24000, body.getJSONObject("response_format").getInt("sample_rate"))
         assertEquals("Kore", body.getJSONObject("generation_config").getJSONArray("speech_config")
             .getJSONObject(0).getString("voice"))
-        val plain = body(geminiSpeechRequest(GeminiTtsConfig(), "test-key", "原文"))
+        val plain = body(geminiSpeechRequest(GeminiTtsConfig(), "test-key", "original text"))
         assertFalse(plain.getJSONArray("input").getJSONObject(0).getJSONArray("content")
             .getJSONObject(0).has("annotations"))
     }
 
     @Test fun minimaxRequestsPcmWithNormalizationAndNoAggregate() {
-        val request = minimaxSpeechRequest(MiniMaxTtsConfig(speed = 1.25f), "test-key", "下午 3 点")
+        val request = minimaxSpeechRequest(MiniMaxTtsConfig(speed = 1.25f), "test-key", "3 pm")
         assertEquals("/v1/t2a_v2", request.url.encodedPath)
         assertEquals("Bearer test-key", request.header("Authorization"))
         val body = body(request)

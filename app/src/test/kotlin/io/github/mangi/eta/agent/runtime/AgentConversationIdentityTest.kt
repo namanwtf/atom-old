@@ -21,7 +21,7 @@ class AgentConversationIdentityTest {
 
     @Test
     fun externalRunsKeepThePersistedArchiveIdentity() {
-        val payload = AgentExternalArchivePayload("请求", "dialog-42", "会话").toJson()
+        val payload = AgentExternalArchivePayload("request", "dialog-42", "session").toJson()
         val handoff = AgentRuntimeWire.EntryHandoff("run-a", "entry_a", payload)
         assertEquals(
             AgentConversationIdentity.archiveConversationId("entry_a", "dialog-42"),

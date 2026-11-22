@@ -59,16 +59,16 @@ class PersonalContextQueryServiceTest {
     @Test fun captionAliasResolutionIsUsedByActualProjectionAndSearch() {
         val transport = FakeTransport(mutableSetOf("caption_content0Com"))
         transport.onData = { query ->
-            DmpQueryResult.Success(listOf(record(query, mapOf("id" to "7", "caption" to "海边照片", "origin_id" to "42"))))
+            DmpQueryResult.Success(listOf(record(query, mapOf("id" to "7", "caption" to "beach photo", "origin_id" to "42"))))
         }
-        val result = service(transport).execute(request("search", "photos").put("query", "海边"))
+        val result = service(transport).execute(request("search", "photos").put("query", "seaside"))
         assertTrue(result.toString(), result.getBoolean("ok"))
         assertEquals(2, transport.probes.size)
         val data = transport.dataCalls.single()
         assertEquals("caption_contentCom", data.projection.single { it.name == "caption" }.expression)
         assertTrue(data.selection.orEmpty().contains("caption_contentCom"))
         assertFalse(data.selection.orEmpty().contains("caption_content0Com"))
-        assertEquals("海边照片", result.getJSONArray("items").getJSONObject(0).getString("caption"))
+        assertEquals("beach photo", result.getJSONArray("items").getJSONObject(0).getString("caption"))
     }
 
     @Test fun keywordQuotesCommentsAndWildcardsStayInsideLiteralLikePatterns() {
@@ -190,7 +190,7 @@ class PersonalContextQueryServiceTest {
 
     @Test fun readUsesOriginalDocumentIdAndEmptyResultIsNotFound() {
         val transport = FakeTransport()
-        transport.onData = { query -> DmpQueryResult.Success(listOf(record(query, mapOf("id" to "12", "title" to "周期日程")))) }
+        transport.onData = { query -> DmpQueryResult.Success(listOf(record(query, mapOf("id" to "12", "title" to "recurring event")))) }
         val result = service(transport).execute(request("read", "calendar").put("id", "00012"))
         assertTrue(result.toString(), result.getBoolean("ok"))
         val query = transport.dataCalls.single()
@@ -235,7 +235,7 @@ class PersonalContextQueryServiceTest {
 
     @Test fun calendarTodoDoesNotClaimToDistinguishOccurrencesWithoutInstanceIds() {
         val transport = FakeTransport()
-        transport.onData = { query -> DmpQueryResult.Success(listOf(record(query, mapOf("id" to "12", "text" to "周期待办")))) }
+        transport.onData = { query -> DmpQueryResult.Success(listOf(record(query, mapOf("id" to "12", "text" to "recurring todo")))) }
         val service = service(transport)
         val result = service.execute(request("search", "calendar_todos").put("start_time", "2026-10-05T00:00:00Z"))
         assertEquals("indexed_record_or_occurrence", result.getJSONArray("items").getJSONObject(0).getString("record_kind"))
@@ -287,7 +287,7 @@ class PersonalContextQueryServiceTest {
         assertFailure("PERSONAL_CONTEXT_FIELD_UNAVAILABLE", service(time).execute(request("count", "notes").put("start_time", "2026-01-01T00:00:00Z")))
         assertTrue(time.dataCalls.isEmpty())
         val search = FakeTransport(mutableSetOf("titleCom", "textCom", "folder_nameCom"))
-        assertFailure("PERSONAL_CONTEXT_FIELD_UNAVAILABLE", service(search).execute(request("search", "notes").put("query", "内容")))
+        assertFailure("PERSONAL_CONTEXT_FIELD_UNAVAILABLE", service(search).execute(request("search", "notes").put("query", "content")))
         assertTrue(search.dataCalls.isEmpty())
     }
 
@@ -298,7 +298,7 @@ class PersonalContextQueryServiceTest {
             if (++dataAttempts == 1) {
                 transport.missingColumns += "caption_content0Com"
                 DmpQueryResult.Failure("DMP_COLUMN_MISSING", "caption_content0Com")
-            } else DmpQueryResult.Success(listOf(record(query, mapOf("id" to "8", "caption" to "兼容描述"))))
+            } else DmpQueryResult.Success(listOf(record(query, mapOf("id" to "8", "caption" to "compatible description"))))
         }
         val result = service(transport).execute(request("search", "photos"))
         assertTrue(result.toString(), result.getBoolean("ok"))

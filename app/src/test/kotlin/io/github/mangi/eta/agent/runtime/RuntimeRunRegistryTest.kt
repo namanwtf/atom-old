@@ -25,9 +25,9 @@ class RuntimeRunRegistryTest {
         val registry = RuntimeRunRegistry(capacity = 2)
         val a = registry.accept("a", "conversation-a")
         registry.accept("b", "conversation-b")
-        val duplicate = registry.admit(request("a", "conversation-a")) { error("不能重复创建") }
+        val duplicate = registry.admit(request("a", "conversation-a")) { error("cannot create duplicates") }
         assertSame(a, (duplicate as RuntimeRunRegistry.Admission.Duplicate).run)
-        val rejected = registry.admit(request("c", "conversation-c")) { error("不能超额创建") }
+        val rejected = registry.admit(request("c", "conversation-c")) { error("cannot over-create") }
         assertEquals("RUN_CAPACITY_REACHED", (rejected as RuntimeRunRegistry.Admission.Rejected).code)
         assertEquals(setOf("a", "b"), registry.snapshots().map { it.runId }.toSet())
         assertTrue(registry.snapshots().all { it.phase == AgentRuntimeWire.RunPhase.Preparing })
@@ -72,9 +72,9 @@ class RuntimeRunRegistryTest {
             },
         )
         registry.admit(request) { RuntimeRunRegistry.Run(request, session) }
-        session.complete(AgentRuntimeWire.RunResult("first", true, "完成")) {
+        session.complete(AgentRuntimeWire.RunResult("first", true, "done")) {
             assertEquals(AgentRuntimeWire.RunPhase.Committing, registry.snapshots().single().phase)
-            val busy = registry.admit(request("too-early", "conversation")) { error("提交期间不能创建") }
+            val busy = registry.admit(request("too-early", "conversation")) { error("cannot create during submission") }
             assertEquals("CONVERSATION_BUSY", (busy as RuntimeRunRegistry.Admission.Rejected).code)
         }
         assertTrue(followUpAccepted)
@@ -86,14 +86,14 @@ class RuntimeRunRegistryTest {
         val registry = RuntimeRunRegistry()
         val a = registry.accept("a", "conversation-a")
         val b = registry.accept("b", "conversation-b")
-        assertNotNull(a.supplement("补充 A"))
-        assertNotNull(b.supplement("补充 B"))
-        assertEquals("补充 A", AgentUiHandoffPayload.from(a.snapshotRequest().handoff!!.payload).supplements.single().text)
-        assertEquals("补充 B", AgentUiHandoffPayload.from(b.snapshotRequest().handoff!!.payload).supplements.single().text)
+        assertNotNull(a.supplement("supplement A"))
+        assertNotNull(b.supplement("supplement B"))
+        assertEquals("supplement A", AgentUiHandoffPayload.from(a.snapshotRequest().handoff!!.payload).supplements.single().text)
+        assertEquals("supplement B", AgentUiHandoffPayload.from(b.snapshotRequest().handoff!!.payload).supplements.single().text)
         a.session.controller.cancel()
         assertTrue(a.session.controller.isCancelled)
         assertFalse(b.session.controller.isCancelled)
-        assertEquals("补充 B", b.session.controller.pollSteeringMessage())
+        assertEquals("supplement B", b.session.controller.pollSteeringMessage())
     }
 
     @Test
@@ -120,7 +120,7 @@ class RuntimeRunRegistryTest {
     fun externalReplacementWaitsUntilCancelledPredecessorHasDrained() {
         val registry = RuntimeRunRegistry()
         fun external(id: String) = request(id, "unused").copy(handoff = AgentRuntimeWire.EntryHandoff(
-            id, "eta_voice", AgentExternalArchivePayload(userText = "测试", conversationKey = "voice-conversation", title = "测试会话").toJson(),
+            id, "eta_voice", AgentExternalArchivePayload(userText = "test", conversationKey = "voice-conversation", title = "test session").toJson(),
         ))
         val firstRequest = external("first")
         val first = (registry.admit(firstRequest) {
@@ -152,7 +152,7 @@ class RuntimeRunRegistryTest {
         val registry = RuntimeRunRegistry()
         fun external(id: String): RuntimeRunRegistry.Admission.Accepted {
             val request = request(id, "unused").copy(handoff = AgentRuntimeWire.EntryHandoff(
-                id, "eta_voice", AgentExternalArchivePayload("测试", "same-voice-conversation", "测试会话").toJson(),
+                id, "eta_voice", AgentExternalArchivePayload("test", "same-voice-conversation", "test session").toJson(),
             ))
             return registry.admit(request) { RuntimeRunRegistry.Run(request, AgentRuntimeSession(id)) }
                 as RuntimeRunRegistry.Admission.Accepted
@@ -197,7 +197,7 @@ class RuntimeRunRegistryTest {
 
     private fun request(runId: String, conversationId: String) = AgentRuntimeWire.RunRequest(
         runId = runId,
-        prompt = "测试请求",
+        prompt = "test request",
         config = AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test-key", model = "test-model", systemPrompt = ""),
         images = emptyList(),
         handoff = AgentRuntimeWire.EntryHandoff(runId, AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE, conversationId),

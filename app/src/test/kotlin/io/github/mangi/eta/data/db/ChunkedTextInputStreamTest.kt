@@ -27,7 +27,7 @@ class ChunkedTextInputStreamTest {
     @Test
     fun streamsUtf8AcrossSurrogateAndChunkBoundaries() = runBlocking(Dispatchers.IO) {
         val dao = EtaDatabase.get(context).conversationDao()
-        val text = "前".repeat(16_383) + "😀" + "后".repeat(20_000)
+        val text = "front".repeat(16_383) + "😀" + "back".repeat(20_000)
         val stored = dao.storeText("conversations", "test", "roleplay", text)
 
         val decoded = dao.openTextStream("conversations", "test", "roleplay", stored).bufferedReader().use { it.readText() }

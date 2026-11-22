@@ -96,7 +96,7 @@ class SpeechPcmOutputTest {
         assertThrows(CancellationException::class.java) { output.finish() }
     }
 
-    /** 默认 Shadow 无容量限制；这里模拟停止状态下写满缓冲区的短写，验证启动前不会死锁。 */
+    /** The default Shadow has no capacity limit; here we simulate a short write that fills the buffer in the stopped state, verifying no deadlock before startup. */
     @Implements(AudioTrack::class)
     class BufferedAudioTrack : ShadowAudioTrack() {
         private var started = false

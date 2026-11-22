@@ -14,12 +14,12 @@ class AgentContextCompactionTest {
     @Test
     fun automaticScreenContentIsNotCopiedIntoCompactionInput() {
         val messages = jsonHistory()
-        val user = AgentConversationCodec.userTextMessage("保留最新问题")
+        val user = AgentConversationCodec.userTextMessage("keep the latest question")
         AssistantScreenContextProjection.attach(user, "PRIVATE_AUTOMATIC_SCREEN_CONTENT")
         messages.put(user)
         val compacted = AgentContextCompactor(config, provider { request, _ ->
             assertFalse(request.messages.toString().contains("PRIVATE_AUTOMATIC_SCREEN_CONTENT"))
-            response("已完成此前的任务。")
+            response("The previous task is done.")
         }, AgentRunController()).compact(messages, 1, emptySet())
         assertFalse(AgentConversationCodec.encodeTranscriptForStorage(
             AgentConversationCodec.transcript(compacted, 1),
@@ -28,21 +28,21 @@ class AgentContextCompactionTest {
     }
 
     private val config = AgentModelClient.ModelConfig(
-        baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "固定约束",
+        baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "fixed constraint",
         contextWindow = 128_000,
     )
 
     @Test
     fun largeHistoryWithoutUsageDoesNotTriggerCompaction() {
-        val original = "历史事实".repeat(40_000)
+        val original = "historical facts".repeat(40_000)
         var requests = 0
-        val result = AgentModelClient.complete(config, "继续", AgentModelClient.ToolExecutor { error("不应执行工具") },
+        val result = AgentModelClient.complete(config, "continue", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = listOf(AgentModelClient.ConversationMessage("assistant", original)),
             provider = provider { request, _ ->
                 requests++
                 assertEquals(ProviderRequestPurpose.CHAT, request.purpose)
                 assertTrue(request.messages.toString().contains(original))
-                response("完成")
+                response("done")
             })
         assertEquals(1, requests)
         assertNull(result.contextSnapshot)
@@ -53,7 +53,7 @@ class AgentContextCompactionTest {
         val call = AgentModelClient.ConversationMessage("assistant", "", toolCallsJson = """[
             {"id":"a","type":"function","function":{"name":"fixture","arguments":"{}"}},
             {"id":"b","type":"function","function":{"name":"fixture","arguments":"{}"}}]""")
-        val completed = AgentModelClient.ConversationMessage("tool", "真实完成结果", toolCallId = "a")
+        val completed = AgentModelClient.ConversationMessage("tool", "real completed result", toolCallId = "a")
         val restored = AgentToolBatchRecovery.completeInterrupted(listOf(call, completed))
         assertEquals(completed, restored[1])
         assertEquals("b", restored.last().toolCallId)
@@ -64,8 +64,8 @@ class AgentContextCompactionTest {
     @Test
     fun automaticCompactionPreservesIncrementalTranscriptAndLatestRequest() {
         val history = (1..8).flatMap { turn -> listOf(
-            AgentModelClient.ConversationMessage("user", "第 $turn 个任务"),
-            AgentModelClient.ConversationMessage("assistant", "事实 $turn ".repeat(2200)),
+            AgentModelClient.ConversationMessage("user", "task $turn"),
+            AgentModelClient.ConversationMessage("assistant", "fact $turn ".repeat(2200)),
         ) }
         val events = mutableListOf<AgentEvent>()
         var summaries = 0
@@ -74,23 +74,23 @@ class AgentContextCompactionTest {
             if (request.purpose == ProviderRequestPurpose.COMPACTION) {
                 summaries++
                 assertTrue(request.effectiveTools.length() > 0)
-                response("已完成前面的任务，继续处理最新请求。")
+                response("Previous tasks are done; continue with the latest request.")
             } else {
-                assertTrue(request.messages.toString().contains("最新请求必须保留"))
-                assertTrue(request.messages.toString().contains("固定约束"))
+                assertTrue(request.messages.toString().contains("the latest request must be kept"))
+                assertTrue(request.messages.toString().contains("fixed constraint"))
                 emit(ProviderEvent.Usage(AgentTokenUsage(inputTokens = 45_000)))
-                response("完成最新请求")
+                response("completed the latest request")
             }
         }
         val result = AgentModelClient.complete(
-            config.copy(contextWindow = 50_000), "最新请求必须保留", AgentModelClient.ToolExecutor { error("不应执行工具") },
+            config.copy(contextWindow = 50_000), "the latest request must be kept", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history, provider = provider, onContextSnapshot = snapshots::add, onEvent = events::add,
         )
         assertTrue(summaries > 0)
-        assertEquals(listOf("完成最新请求"), result.transcript.map { it.content })
+        assertEquals(listOf("completed the latest request"), result.transcript.map { it.content })
         val snapshot = checkNotNull(result.contextSnapshot)
         assertTrue(snapshot.messages.any { it.contextSummary })
-        assertEquals("最新请求必须保留", snapshot.messages.last().content)
+        assertEquals("the latest request must be kept", snapshot.messages.last().content)
         assertEquals(9, snapshot.consumedUserTurns)
         assertTrue(events.filterIsInstance<AgentEvent.ContextCompaction>().any { it.phase == "completed" })
         assertTrue(snapshots.all { AgentContextSnapshot.decode(it.encode()) == it })
@@ -99,10 +99,10 @@ class AgentContextCompactionTest {
     @Test
     fun manualCompactionDoesNotCreateUserOrAssistantTranscript() {
         val result = AgentModelClient.complete(
-            config, "", AgentModelClient.ToolExecutor { error("不应执行工具") },
+            config, "", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history(), compactOnly = true, provider = provider { request, _ ->
                 assertEquals(ProviderRequestPurpose.COMPACTION, request.purpose)
-                response("历史工作已完成，保留后续问题。")
+                response("Previous work is done; keep the follow-up question.")
             },
         )
         assertTrue(result.transcript.isEmpty())
@@ -116,8 +116,8 @@ class AgentContextCompactionTest {
         val original = jsonHistory()
         val before = original.toString()
         val session = AgentContextSession(config, original, 1, "operation", provider { _, _ ->
-            response("半截摘要", "length")
-        }, AgentRunController(), { emptySet() }, {}, { fail("不应提交快照") })
+            response("half summary", "length")
+        }, AgentRunController(), { emptySet() }, {}, { fail("must not submit a snapshot") })
         assertThrows(AgentModelFailure::class.java) { session.compact(force = true) }
         assertEquals(before, original.toString())
         assertNull(session.snapshot())
@@ -131,7 +131,7 @@ class AgentContextCompactionTest {
             val controller = AgentRunController()
             val session = AgentContextSession(config, original, 1, "operation", provider { _, _ ->
                 if (cancel) controller.cancel()
-                response("有界摘要")
+                response("bounded summary")
             }, controller, { emptySet() }, {}, { throw IllegalStateException("fixture storage failure") })
             assertThrows(Exception::class.java) { session.compact(force = true) }
             assertEquals(before, original.toString())
@@ -141,9 +141,9 @@ class AgentContextCompactionTest {
 
     @Test
     fun summaryInputRedactsSensitiveToolsAndOpaqueReasoningAndImages() {
-        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", "规则"))
-        messages.put(AgentConversationCodec.userTextMessage("旧任务"))
-        val assistant = JSONObject().put("role", "assistant").put("content", "读取结果")
+        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", "rule"))
+        messages.put(AgentConversationCodec.userTextMessage("old task"))
+        val assistant = JSONObject().put("role", "assistant").put("content", "read result")
             .put("reasoning_content", "PRIVATE_THINKING")
             .put("tool_calls", JSONArray().put(JSONObject().put("id", "sensitive").put("type", "function")
                 .put("function", JSONObject().put("name", "read_secret").put("arguments", "SECRET_ARGUMENT"))))
@@ -151,16 +151,16 @@ class AgentContextCompactionTest {
         messages.put(assistant)
         messages.put(JSONObject().put("role", "tool").put("tool_call_id", "sensitive").put("content", "SECRET_RESULT"))
         history().forEach { messages.put(AgentConversationCodec.toJsonObject(it)) }
-        val pending = AgentConversationCodec.userMessage("瞬时观察", listOf(
+        val pending = AgentConversationCodec.userMessage("transient observation", listOf(
             AgentModelClient.ModelImage("data:image/png;base64,PRIVATE_IMAGE", "image/png", 10),
         )).put("_eta_observation", true)
         messages.put(pending)
         val compacted = AgentContextCompactor(config, provider { request, _ ->
             val text = request.messages.toString()
             listOf("SECRET_ARGUMENT", "SECRET_RESULT", "PRIVATE_THINKING", "OPAQUE_SECRET", "PRIVATE_IMAGE").forEach {
-                assertFalse("摘要包含敏感数据 $it", text.contains(it))
+                assertFalse("summary contains sensitive data $it", text.contains(it))
             }
-            response("已读取过信息，原始敏感结果未保留。")
+            response("The information has already been read; the original sensitive results were not kept.")
         }, AgentRunController()).compact(messages, 1, setOf("sensitive"))
         assertSame(pending, compacted.getJSONObject(compacted.length() - 1))
         assertFalse(compacted.toString().contains("OPAQUE_SECRET"))
@@ -175,7 +175,7 @@ class AgentContextCompactionTest {
         val messages = listOf(call,
             JSONObject().put("role", "tool").put("tool_call_id", "a"),
             JSONObject().put("role", "tool").put("tool_call_id", "b"),
-            AgentConversationCodec.userTextMessage("继续"))
+            AgentConversationCodec.userTextMessage("continue"))
         assertFalse(AgentContextCompactor.canSplit(messages, 1))
         assertFalse(AgentContextCompactor.canSplit(messages, 2))
         assertTrue(AgentContextCompactor.canSplit(messages, 3))
@@ -184,7 +184,7 @@ class AgentContextCompactionTest {
     @Test
     fun signedAnthropicToolRoundCannotCompactBeforeReturningToolResults() {
         val messages = jsonHistory()
-        messages.put(AgentConversationCodec.userTextMessage("继续查询"))
+        messages.put(AgentConversationCodec.userTextMessage("continue the query"))
         val assistant = JSONObject().put("role", "assistant").put("content", "")
             .put("tool_calls", JSONArray().put(JSONObject().put("id", "toolu_current")
                 .put("type", "function").put("function", JSONObject().put("name", "device_info")
@@ -196,12 +196,12 @@ class AgentContextCompactionTest {
                 .put("name", "device_info").put("input", JSONObject())))
         messages.put(assistant)
         messages.put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_current")
-            .put("content", "工具结果"))
+            .put("content", "tool result"))
         val original = messages.toString()
         val session = AgentContextSession(config, messages, 1, "operation", provider { _, _ ->
-            fail("签名未用前不能改写历史")
-            response("不应执行")
-        }, AgentRunController(), { emptySet() }, {}, { fail("不应提交快照") })
+            fail("history must not be rewritten before the signature is used")
+            response("must not execute")
+        }, AgentRunController(), { emptySet() }, {}, { fail("must not submit a snapshot") })
 
         val failure = assertThrows(AgentModelFailure::class.java) {
             session.compact(force = true)
@@ -214,8 +214,8 @@ class AgentContextCompactionTest {
     @Test
     fun compactionDropsCompletedAnthropicSignaturesAfterChangingPrefix() {
         val messages = jsonHistory()
-        messages.put(AgentConversationCodec.userTextMessage("已完成的工具任务"))
-        val assistant = JSONObject().put("role", "assistant").put("content", "读取中")
+        messages.put(AgentConversationCodec.userTextMessage("completed tool task"))
+        val assistant = JSONObject().put("role", "assistant").put("content", "reading")
             .put("tool_calls", JSONArray().put(JSONObject().put("id", "toolu_old")
                 .put("type", "function").put("function", JSONObject().put("name", "device_info")
                     .put("arguments", "{}"))))
@@ -226,16 +226,16 @@ class AgentContextCompactionTest {
                 .put("name", "device_info").put("input", JSONObject())))
         messages.put(assistant)
         messages.put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_old")
-            .put("content", "完成"))
-        messages.put(JSONObject().put("role", "assistant").put("content", "查询完成"))
-        messages.put(AgentConversationCodec.userTextMessage("新的问题"))
+            .put("content", "done"))
+        messages.put(JSONObject().put("role", "assistant").put("content", "query complete"))
+        messages.put(AgentConversationCodec.userTextMessage("new question"))
 
         val compacted = AgentContextCompactor(config, provider { _, _ ->
-            response("此前任务已完成。")
+            response("The previous task is done.")
         }, AgentRunController()).compact(messages, 1, emptySet())
 
         assertFalse(compacted.toString().contains("STALE_SIGNATURE"))
-        assertTrue(compacted.toString().contains("新的问题"))
+        assertTrue(compacted.toString().contains("new question"))
         assertFalse(compacted.toString().contains("toolu_old"))
     }
 
@@ -254,15 +254,15 @@ class AgentContextCompactionTest {
         var normalRequests = 0
         var summaryRequests = 0
         val failure = assertThrows(AgentModelExecutionException::class.java) {
-            AgentModelClient.complete(config, "继续", AgentModelClient.ToolExecutor { error("不应执行工具") },
+            AgentModelClient.complete(config, "continue", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history(), provider = provider { request, emit ->
                 if (request.purpose == ProviderRequestPurpose.COMPACTION) {
                     summaryRequests++
-                    response("之前的任务已完成。")
+                    response("The previous task is done.")
                 } else if (normalRequests++ == 0) {
-                    emit(ProviderEvent.BlockDelta(AssistantBlockKind.THINKING, 0, "失败思考"))
+                    emit(ProviderEvent.BlockDelta(AssistantBlockKind.THINKING, 0, "failed thinking"))
                     throw AgentModelFailure("CONTEXT_OVERFLOW", false, "fixture")
-                } else response("完成")
+                } else response("done")
             })
         }
         assertEquals("CONTEXT_OVERFLOW", (failure.cause as AgentModelFailure).code)
@@ -275,7 +275,7 @@ class AgentContextCompactionTest {
     fun hostedToolOverflowDoesNotReplayOrStartCompaction() {
         var requests = 0
         val error = assertThrows(AgentModelExecutionException::class.java) {
-            AgentModelClient.complete(config, "查询", AgentModelClient.ToolExecutor { error("不应执行工具") },
+            AgentModelClient.complete(config, "query", AgentModelClient.ToolExecutor { error("must not execute a tool") },
                 history = history(), provider = provider { _, emit ->
                     requests++
                     emit(ProviderEvent.HostedToolStarted("hosted", "web_search"))
@@ -294,20 +294,20 @@ class AgentContextCompactionTest {
             requests++
             val historyText = request.messages.getJSONObject(1).getString("content")
             seen += historyText
-            response("之前的工作已完成。")
+            response("The previous work is done.")
         }, AgentRunController()).compact(jsonHistory(), 1, emptySet())
         assertEquals(1, requests)
-        for (turn in 1..4) assertTrue(seen.any { it.contains("问题 $turn") })
-        assertTrue(result.toString().contains("问题 6"))
+        for (turn in 1..4) assertTrue(seen.any { it.contains("question $turn") })
+        assertTrue(result.toString().contains("question 6"))
     }
 
     @Test
     fun completedAnswerRemainsSuccessfulWhenFinalCompactionFails() {
         val events = mutableListOf<AgentEvent>()
-        val finalText = "完整结果".repeat(17_000)
-        val result = AgentModelClient.complete(config.copy(contextWindow = 80_000), "继续", AgentModelClient.ToolExecutor { error("不应执行工具") },
+        val finalText = "complete result".repeat(17_000)
+        val result = AgentModelClient.complete(config.copy(contextWindow = 80_000), "continue", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history(), provider = provider { request, emit ->
-                if (request.purpose == ProviderRequestPurpose.COMPACTION) response("不完整", "length")
+                if (request.purpose == ProviderRequestPurpose.COMPACTION) response("incomplete", "length")
                 else {
                     emit(ProviderEvent.Usage(AgentTokenUsage(inputTokens = 70_000)))
                     response(finalText)
@@ -324,8 +324,8 @@ class AgentContextCompactionTest {
     fun compactionReusesMainPrefixToolsAndSessionIdWithoutLeakingObservationsOrScreenContext() {
         val history = (1..4).flatMap { turn ->
             listOf(
-                AgentModelClient.ConversationMessage("user", "历史任务 $turn"),
-                AgentModelClient.ConversationMessage("assistant", "历史响应 $turn ".repeat(1500)),
+                AgentModelClient.ConversationMessage("user", "historical task $turn"),
+                AgentModelClient.ConversationMessage("assistant", "historical response $turn ".repeat(1500)),
             )
         }
         val events = mutableListOf<AgentEvent>()
@@ -351,7 +351,7 @@ class AgentContextCompactionTest {
                         ),
                     ),
                 )
-                response("已归档此前历史与工具结果。\n关键实体与线索：get_current_context")
+                response("archived previous history and tool results.\nkey entities and clues: get_current_context")
             } else if (round++ == 0) {
                 emit(ProviderEvent.Usage(AgentTokenUsage(inputTokens = 45_000, cachedTokens = 40_000)))
                 ProviderResponse(
@@ -376,12 +376,12 @@ class AgentContextCompactionTest {
                 )
             } else {
                 emit(ProviderEvent.Usage(AgentTokenUsage(inputTokens = 4_000, cachedTokens = 2_000)))
-                response("全部完成")
+                response("all complete")
             }
         }
         val result = AgentModelClient.complete(
             config = config.copy(contextWindow = 50_000),
-            prompt = "当前问题",
+            prompt = "current question",
             toolExecutor = AgentModelClient.ToolExecutor {
                 AgentModelClient.ToolResult(
                     content = """{"ok":true}""",
@@ -397,7 +397,7 @@ class AgentContextCompactionTest {
             onEvent = events::add,
         )
 
-        assertEquals("全部完成", result.content)
+        assertEquals("all complete", result.content)
         val mainRound1 = capturedRequests.first { it.purpose == ProviderRequestPurpose.CHAT }
         val compactionReq = capturedRequests.first { it.purpose == ProviderRequestPurpose.COMPACTION }
         assertEquals("stable-conv-session", compactionReq.sessionId)
@@ -405,8 +405,8 @@ class AgentContextCompactionTest {
         assertEquals(mainRound1.messages.getJSONObject(0).toString(), compactionReq.messages.getJSONObject(0).toString())
         assertFalse(compactionReq.messages.toString().contains("PRIVATE_OBS_IMAGE"))
         assertFalse(compactionReq.messages.toString().contains("PRIVATE_AUTOMATIC_SCREEN_CONTENT"))
-        assertTrue(compactionReq.messages.toString().contains("历史任务 1"))
-        assertTrue(compactionReq.messages.toString().contains("当前问题"))
+        assertTrue(compactionReq.messages.toString().contains("historical task 1"))
+        assertTrue(compactionReq.messages.toString().contains("current question"))
         assertEquals(
             true,
             compactionReq.messages.getJSONObject(compactionReq.messages.length() - 1)
@@ -431,7 +431,7 @@ class AgentContextCompactionTest {
         val firstMessages = jsonHistory()
         val firstCompacted = AgentContextCompactor(
             config = config,
-            provider = provider { _, _ -> response("第一段摘要。") },
+            provider = provider { _, _ -> response("first-stage summary.") },
             controller = AgentRunController(),
             mainTools = AgentToolCatalog.build(terminalTools = false, browserTools = false),
             mainSessionId = "s1",
@@ -440,8 +440,8 @@ class AgentContextCompactionTest {
         assertEquals("fold-1", firstCompacted.archiveId)
 
         val secondMessages = JSONArray(firstCompacted.messages.toString()).apply {
-            put(AgentConversationCodec.userTextMessage("新一轮任务"))
-            put(JSONObject().put("role", "assistant").put("content", "后续结果 ".repeat(1500)))
+            put(AgentConversationCodec.userTextMessage("a new round of tasks"))
+            put(JSONObject().put("role", "assistant").put("content", "subsequent result ".repeat(1500)))
         }
         var attempts = 0
         val secondCompacted = AgentContextCompactor(
@@ -454,7 +454,7 @@ class AgentContextCompactionTest {
                     response("")
                 } else {
                     assertEquals(0, request.tools.length())
-                    response("合并后的第二段摘要。")
+                    response("merged second-stage summary.")
                 }
             },
             controller = AgentRunController(),
@@ -490,13 +490,13 @@ class AgentContextCompactionTest {
         val capturedRequests = mutableListOf<ProviderRequest>()
         val recordingProvider = provider { request, _ ->
             capturedRequests += request
-            response("已完成。")
+            response("Done.")
         }
 
         AgentModelClient.complete(
             config = config,
-            prompt = "继续",
-            toolExecutor = AgentModelClient.ToolExecutor { error("不应执行工具") },
+            prompt = "continue",
+            toolExecutor = AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history(),
             provider = recordingProvider,
             sessionId = "manual-compact-session",
@@ -505,7 +505,7 @@ class AgentContextCompactionTest {
         AgentModelClient.complete(
             config = config,
             prompt = "",
-            toolExecutor = AgentModelClient.ToolExecutor { error("不应执行工具") },
+            toolExecutor = AgentModelClient.ToolExecutor { error("must not execute a tool") },
             history = history(),
             provider = recordingProvider,
             sessionId = "manual-compact-session",
@@ -523,11 +523,11 @@ class AgentContextCompactionTest {
     }
 
     private fun history() = (1..6).flatMap { turn -> listOf(
-        AgentModelClient.ConversationMessage("user", "问题 $turn"),
-        AgentModelClient.ConversationMessage("assistant", "事实 ".repeat(1000)),
+        AgentModelClient.ConversationMessage("user", "question $turn"),
+        AgentModelClient.ConversationMessage("assistant", "fact ".repeat(1000)),
     ) }
 
-    private fun jsonHistory() = JSONArray().put(JSONObject().put("role", "system").put("content", "固定规则")).also {
+    private fun jsonHistory() = JSONArray().put(JSONObject().put("role", "system").put("content", "fixed rule")).also {
         history().forEach { message -> it.put(AgentConversationCodec.toJsonObject(message)) }
     }
 

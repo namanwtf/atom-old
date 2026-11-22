@@ -59,7 +59,7 @@ class OpenAiChatToolCallIdsTest {
             val firstCalls = AgentConversationCodec.parseToolCalls(first)
             val history = JSONArray(request.messages.toString())
                 .put(AgentConversationCodec.assistantHistoryMessage(first, firstCalls))
-                .put(AgentConversationCodec.toolResultMessage(firstCalls.single(), AgentModelClient.ToolResult("完成")))
+                .put(AgentConversationCodec.toolResultMessage(firstCalls.single(), AgentModelClient.ToolResult("done")))
             val (second, secondEvents) = complete(request.copy(messages = history))
             val secondId = AgentConversationCodec.parseToolCalls(second).single().id
 
@@ -70,7 +70,7 @@ class OpenAiChatToolCallIdsTest {
             assertEquals(secondId, AgentConversationCodec.assistantHistoryMessage(second, secondCalls)
                 .getJSONArray("tool_calls").getJSONObject(0).getString("id"))
             assertEquals(secondId, AgentConversationCodec.toolResultMessage(secondCalls.single(),
-                AgentModelClient.ToolResult("完成")).getString("tool_call_id"))
+                AgentModelClient.ToolResult("done")).getString("tool_call_id"))
         }
     }
 
@@ -128,7 +128,7 @@ class OpenAiChatToolCallIdsTest {
         withProvider({ body }) { request ->
             appendBatch(request.messages, "call_original")
             val replacement = JSONObject().put("messages", JSONArray()
-                .put(JSONObject().put("role", "user").put("content", "替代请求")))
+                .put(JSONObject().put("role", "user").put("content", "replacement request")))
             val (message, events) = complete(request.copy(
                 config = request.config.copy(extraBodyJson = replacement.toString()),
             ))
@@ -159,7 +159,7 @@ class OpenAiChatToolCallIdsTest {
             JSONObject().put("id", id).put("type", "function")
                 .put("function", JSONObject().put("name", "fixture_tool").put("arguments", "{}")),
         )))
-        messages.put(JSONObject().put("role", "tool").put("tool_call_id", id).put("content", "完成"))
+        messages.put(JSONObject().put("role", "tool").put("tool_call_id", id).put("content", "done"))
     }
 
     private fun delta(index: Int, id: Any?, name: String? = null, arguments: String): JSONObject =
@@ -196,7 +196,7 @@ class OpenAiChatToolCallIdsTest {
                     baseUrl = "http://127.0.0.1:${server.address.port}",
                     apiKey = "", model = "fixture-model", systemPrompt = "",
                 ),
-                messages = JSONArray().put(JSONObject().put("role", "user").put("content", "测试")),
+                messages = JSONArray().put(JSONObject().put("role", "user").put("content", "test")),
                 tools = JSONArray(),
             ))
         } finally {

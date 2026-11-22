@@ -34,7 +34,7 @@ class AccessibilityPlatformCompatibilityTest {
             val root = AccessibilityNodeInfo().apply {
                 packageName = "example.app"
                 className = "android.widget.Button"
-                text = "继续"
+                text = "continue"
                 isVisibleToUser = true
                 isEnabled = true
                 isClickable = true
@@ -57,7 +57,7 @@ class AccessibilityPlatformCompatibilityTest {
             }
             val json = JSONObject(observation.content)
             assertTrue(json.getBoolean("ok"))
-            assertEquals("继续", json.getJSONArray("ui_nodes").getJSONObject(0).getString("text"))
+            assertEquals("continue", json.getJSONArray("ui_nodes").getJSONObject(0).getString("text"))
             assertNotNull(observation.elementObservation)
             assertNull(observation.image)
             assertNull(observation.coordinateSpace)

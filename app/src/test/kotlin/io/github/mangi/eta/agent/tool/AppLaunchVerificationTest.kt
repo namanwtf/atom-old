@@ -19,7 +19,7 @@ class AppLaunchVerificationTest {
             query = { observation(window = window(focused = false)) },
             checkCancellation = {},
             elapsedRealtime = { 0L },
-            sleep = { error("目标窗口已出现，不应继续等待") },
+            sleep = { error("the target window already appeared; it must not keep waiting") },
         )
 
         assertTrue(result.confirmed)
@@ -84,7 +84,7 @@ class AppLaunchVerificationTest {
                 },
                 checkCancellation = {},
                 elapsedRealtime = { 0L },
-                sleep = { error("查询通道不可用时不应反复查询") },
+                sleep = { error("when the query channel is unavailable it must not keep re-querying") },
             )
 
             assertEquals(1, queries)
@@ -106,7 +106,7 @@ class AppLaunchVerificationTest {
                 },
                 checkCancellation = { if (cancelled) throw AgentRunCancelledException() },
                 elapsedRealtime = { 0L },
-                sleep = { error("取消后不应继续等待") },
+                sleep = { error("after cancellation it must not keep waiting") },
             )
         }
     }

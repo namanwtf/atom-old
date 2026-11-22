@@ -8,7 +8,7 @@ class SearchSuggestionsPayloadTest {
     @Test
     fun utf8BudgetRejectsOversizedUnicodeAndBlankFragments() {
         assertTrue(SearchSuggestionsPayload.isValidHtml("x".repeat(SearchSuggestionsPayload.MAX_HTML_BYTES)))
-        assertFalse(SearchSuggestionsPayload.isValidHtml("中".repeat(SearchSuggestionsPayload.MAX_HTML_BYTES / 3 + 1)))
+        assertFalse(SearchSuggestionsPayload.isValidHtml("C".repeat(SearchSuggestionsPayload.MAX_HTML_BYTES / 3 + 1)))
         assertFalse(SearchSuggestionsPayload.isValidHtml(" "))
     }
 

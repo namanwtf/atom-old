@@ -18,7 +18,7 @@ import org.robolectric.annotation.Config
 @Config(application = android.app.Application::class)
 class MainActivityLaunchRequestsTest {
     @Test
-    fun `重建不重新执行已消费的启动会话`() {
+    fun `reconstruction does not re-execute an already-consumed launch session`() {
         val originalIntent = Intent(EtaAssistantOverlayService.ACTION_OPEN_CONVERSATION)
             .putExtra(EtaAssistantOverlayService.EXTRA_CONVERSATION_KEY, "old-conversation")
         val pending = MainActivityLaunchRequests.restore(null, originalIntent)
@@ -31,7 +31,7 @@ class MainActivityLaunchRequestsTest {
     }
 
     @Test
-    fun `重建保留尚未完成的跳转且不被原始 Intent 覆盖`() {
+    fun `reconstruction keeps the pending navigation and is not overridden by the original Intent`() {
         val pending = MainActivityLaunchRequests(
             assistantConversationKey = "assistant",
             conversationId = "conversation",
@@ -50,7 +50,7 @@ class MainActivityLaunchRequestsTest {
     }
 
     @Test
-    fun `桌面再次进入不产生跳转也不清除尚未完成的请求`() {
+    fun `re-entering from the launcher produces no navigation and does not clear the pending request`() {
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val pending = MainActivityLaunchRequests(conversationId = "conversation")
 
@@ -59,7 +59,7 @@ class MainActivityLaunchRequestsTest {
     }
 
     @Test
-    fun `真正的新 Intent 在恢复后仍能打开目标入口`() {
+    fun `a genuinely new Intent still opens the target entry after recovery`() {
         val restored = MainActivityLaunchRequests.restore(savedState(MainActivityLaunchRequests()), null)
 
         assertEquals(
@@ -81,7 +81,7 @@ class MainActivityLaunchRequestsTest {
     }
 
     @Test
-    fun `无效会话参数不会产生跳转`() {
+    fun `invalid session parameters produce no navigation`() {
         assertEquals(
             MainActivityLaunchRequests(),
             MainActivityLaunchRequests().accept(
@@ -99,20 +99,20 @@ class MainActivityLaunchRequestsTest {
     }
 
     @Test
-    fun `单文件与多文件分享提取去重URI与附带文本且消费后重建不重放`() {
+    fun `single-file and multi-file share extracts deduplicated URIs and attached text, and does not replay after being consumed and reconstructed`() {
         val fileUri = Uri.parse("content://provider/files/report.pdf")
         val imageUri = Uri.parse("content://provider/images/photo.png")
         val singleShare = Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
             putExtra(Intent.EXTRA_STREAM, fileUri)
-            putExtra(Intent.EXTRA_TEXT, "帮我总结这份文档")
+            putExtra(Intent.EXTRA_TEXT, "help me summarize this document")
         }
         val acceptedSingle = MainActivityLaunchRequests.restore(null, singleShare)
         assertEquals(
             IncomingShareRequest(
                 uris = listOf(fileUri.toString()),
                 mimeType = "application/pdf",
-                text = "帮我总结这份文档",
+                text = "help me summarize this document",
             ),
             acceptedSingle.sharedContent,
         )

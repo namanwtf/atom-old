@@ -29,7 +29,7 @@ class AgentWorkStepsTest {
     fun thinkingBreaksToolGroup() {
         val steps = listOf(
             tool("t1", "read_file"),
-            ThinkingMessageUi(id = "k1", content = "想", isStreaming = false),
+            ThinkingMessageUi(id = "k1", content = "think", isStreaming = false),
             tool("t2", "read_file"),
         ).toWorkSteps()
 
@@ -54,15 +54,15 @@ class AgentWorkStepsTest {
 
     @Test
     fun terminalOutcomeUsesLastOutputLine() {
-        val message = tool("t1", "run_command", resultSummary = "执行完成\nline 1\nline 2\n…")
+        val message = tool("t1", "run_command", resultSummary = "execution complete\nline 1\nline 2\n…")
 
         assertEquals("line 2", message.outcomeLine())
     }
 
     @Test
     fun trivialSuccessHasNoOutcome() {
-        assertNull(tool("t1", "observe_screen", resultSummary = "完成").outcomeLine())
-        assertEquals("2 张图片", tool("t2", "observe_screen", resultSummary = "完成 · 2 张图片").outcomeLine())
+        assertNull(tool("t1", "observe_screen", resultSummary = "done").outcomeLine())
+        assertEquals("2 images", tool("t2", "observe_screen", resultSummary = "done · 2 images").outcomeLine())
     }
 
     @Test
@@ -71,10 +71,10 @@ class AgentWorkStepsTest {
             "t1",
             "tap",
             status = ToolActivityStatusUi.Failed,
-            resultSummary = "失败 · 找不到元素 · code=E_NOT_FOUND",
+            resultSummary = "failed · element not found · code=E_NOT_FOUND",
         )
 
-        assertEquals("找不到元素", message.outcomeLine())
+        assertEquals("element not found", message.outcomeLine())
     }
 
     @Test
@@ -83,10 +83,10 @@ class AgentWorkStepsTest {
             "t1",
             "run_command",
             status = ToolActivityStatusUi.Failed,
-            resultSummary = "失败 · 退出码 1\nno such file",
+            resultSummary = "failed · exit code 1\nno such file",
         )
 
-        assertEquals("退出码 1", message.outcomeLine())
+        assertEquals("exit code 1", message.outcomeLine())
     }
 
     @Test

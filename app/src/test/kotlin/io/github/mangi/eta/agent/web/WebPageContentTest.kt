@@ -10,21 +10,21 @@ class WebPageContentTest {
 
     @Test fun htmlSelectsMainContentAndPreservesArticleHeadingAndAuthor() {
         val html = """
-            <html><head><title>报道 &amp; 分析</title><style>.x{color:red}</style></head><body>
-            <header>站点导航</header><nav>登录 注册</nav>
-            <main><article><header><h1>报道标题</h1><p>作者甲</p></header>
-            <p>第一段正文 <a href="../source">原始资料</a>。</p>
-            <aside>广告推荐</aside><p hidden>不可见内容</p><p aria-hidden="true">隐藏说明</p>
-            <script>window.secret = "不要输出";</script><p>第二段正文。</p></article></main>
-            <footer>站点版权导航</footer></body></html>
+            <html><head><title>report &amp; analyze</title><style>.x{color:red}</style></head><body>
+            <header>site navigation</header><nav>log in sign up</nav>
+            <main><article><header><h1>headline</h1><p>Author A</p></header>
+            <p>the first paragraph <a href="../source">the source material</a>.</p>
+            <aside>ad recommendations</aside><p hidden>invisible content</p><p aria-hidden="true">hidden note</p>
+            <script>window.secret = "must not output";</script><p>The second paragraph.</p></article></main>
+            <footer>site copyright navigation</footer></body></html>
         """.trimIndent()
         val document = WebPageContent.extract(html, "text/html; charset=utf-8", url)
-        assertEquals("报道 & 分析", document.title)
-        assertTrue(document.content.contains("报道标题"))
-        assertTrue(document.content.contains("作者甲"))
-        assertTrue(document.content.contains("原始资料 [1]"))
-        assertTrue(document.content.contains("第二段正文。"))
-        for (noise in listOf("站点导航", "登录", "广告推荐", "不可见内容", "隐藏说明", "不要输出", "color:red", "站点版权导航")) {
+        assertEquals("report & analyze", document.title)
+        assertTrue(document.content.contains("headline"))
+        assertTrue(document.content.contains("Author A"))
+        assertTrue(document.content.contains("the source material [1]"))
+        assertTrue(document.content.contains("The second paragraph."))
+        for (noise in listOf("site navigation", "log in", "ad recommendations", "invisible content", "hidden note", "must not output", "color:red", "site copyright navigation")) {
             assertFalse(noise, document.content.contains(noise))
         }
         assertEquals("https://example.com/source", document.links.single().url)
@@ -32,40 +32,40 @@ class WebPageContentTest {
     }
 
     @Test fun mainKeepsMultipleArticlesAndArticleIsUsedWithoutMain() {
-        val main = WebPageContent.extract("<main><article>第一篇</article><article>第二篇</article></main>", "text/html", url)
-        assertTrue(main.content.contains("第一篇"))
-        assertTrue(main.content.contains("第二篇"))
-        val article = WebPageContent.extract("<div>页面外侧内容</div><article>主体文章</article>", "text/html", url)
-        assertEquals("主体文章", article.content)
+        val main = WebPageContent.extract("<main><article>first article</article><article>second article</article></main>", "text/html", url)
+        assertTrue(main.content.contains("first article"))
+        assertTrue(main.content.contains("second article"))
+        val article = WebPageContent.extract("<div>content outside the page</div><article>the main article</article>", "text/html", url)
+        assertEquals("the main article", article.content)
     }
 
     @Test fun bodyFallbackRetainsParagraphsEntitiesAndPreformattedCode() {
-        val html = "<p>甲 &lt; 乙 &amp; 丙</p><p>下一段<br>换行</p><pre>  first\n    second</pre><table><tr><td>列甲</td><td>列乙</td></tr></table>"
+        val html = "<p>A &lt; B &amp; C</p><p>the next paragraph<br>line break</p><pre>  first\n    second</pre><table><tr><td>Column A</td><td>Column B</td></tr></table>"
         val document = WebPageContent.extract(html, "text/html", url)
-        assertTrue(document.content.contains("甲 < 乙 & 丙\n\n下一段\n换行"))
+        assertTrue(document.content.contains("A < B & C\n\nthe next paragraph\nline break"))
         assertTrue(document.content.contains("  first\n    second"))
-        assertTrue(document.content.contains("列甲 | 列乙"))
+        assertTrue(document.content.contains("Column A | Column B"))
     }
 
     @Test fun htmlLinksResolveAgainstBaseAndDeduplicateWithoutExecutableSchemes() {
         val html = """
             <head><base href="https://reference.example/docs/"></head><main>
-            <a href="../spec?q=1&amp;x=2">资料</a><a href="../spec?q=1&amp;x=2">再次引用</a>
-            <a href="javascript:alert(1)">脚本入口</a><a href="data:text/plain,test">内联数据</a>
-            <a href="mailto:test@example.com">邮箱</a><a href="/other#part">章节</a></main>
+            <a href="../spec?q=1&amp;x=2">material</a><a href="../spec?q=1&amp;x=2">cited again</a>
+            <a href="javascript:alert(1)">script entry</a><a href="data:text/plain,test">inline data</a>
+            <a href="mailto:test@example.com">email</a><a href="/other#part">section</a></main>
         """.trimIndent()
         val document = WebPageContent.extract(html, "application/xhtml+xml", url)
         assertEquals(listOf("https://reference.example/spec?q=1&x=2", "https://reference.example/other#part"), document.links.map { it.url })
-        assertTrue(document.content.contains("资料 [1]"))
-        assertTrue(document.content.contains("再次引用 [1]"))
-        assertTrue(document.content.contains("章节 [2]"))
+        assertTrue(document.content.contains("material [1]"))
+        assertTrue(document.content.contains("cited again [1]"))
+        assertTrue(document.content.contains("section [2]"))
     }
 
     @Test fun textMarkdownAndJsonAreNotReformattedOrParsedAsHtml() {
         val fixtures = mapOf(
-            "text/plain" to "  原始行\n\t保留缩进 <tag>\n",
-            "text/markdown" to "# 标题\n\n```html\n<b>源码</b>\n```\n[文档](https://example.com/spec)\n",
-            "application/problem+json; charset=UTF-8" to " {\n  \"value\": \"<p>不是 HTML</p>\"\n}\n",
+            "text/plain" to "  raw line\n\tpreserve indentation <tag>\n",
+            "text/markdown" to "# title\n\n```html\n<b>source code</b>\n```\n[document](https://example.com/spec)\n",
+            "application/problem+json; charset=UTF-8" to " {\n  \"value\": \"<p>not HTML</p>\"\n}\n",
         )
         for ((type, text) in fixtures) {
             val document = WebPageContent.extract(text, type, url)
@@ -76,7 +76,7 @@ class WebPageContentTest {
     }
 
     @Test fun textLinkExtractionPreservesBalancedParenthesesAndSourceText() {
-        val text = "[资料](https://example.com/a_(b))，另见 https://example.com/c."
+        val text = "[material](https://example.com/a_(b)), also see https://example.com/c."
         val document = WebPageContent.extract(text, "text/markdown", url)
         assertEquals(text, document.content)
         assertEquals(listOf("https://example.com/a_(b)", "https://example.com/c"), document.links.map { it.url })
@@ -108,10 +108,10 @@ class WebPageContentTest {
 
     @Test fun contentLimitKeepsAnIntactUnicodePrefix() {
         val prefix = "a".repeat(WebPageContent.MAX_CONTENT_CHARS - 1)
-        val document = WebPageContent.extract(prefix + "😀之后", "text/plain", url)
+        val document = WebPageContent.extract(prefix + "😀after", "text/plain", url)
         assertEquals(prefix, document.content)
         assertTrue(document.truncated)
-        val html = WebPageContent.extract("<article>$prefix😀之后<p>后续</p></article>", "text/html", url)
+        val html = WebPageContent.extract("<article>$prefix😀after<p>subsequent</p></article>", "text/html", url)
         assertEquals(prefix, html.content)
         assertTrue(html.truncated)
     }
@@ -121,28 +121,28 @@ class WebPageContentTest {
         val document = WebPageContent.extract("<main>$many</main>", "text/html", url)
         assertEquals(WebPageContent.MAX_LINKS, document.links.size)
         assertTrue(document.linksTruncated)
-        val long = (0 until 100).joinToString("") { "<a href='https://example.com/${"x".repeat(500)}/$it'>链接$it</a> " }
+        val long = (0 until 100).joinToString("") { "<a href='https://example.com/${"x".repeat(500)}/$it'>link$it</a> " }
         val longLinks = WebPageContent.extract("<main>$long</main>", "text/html", url)
         assertTrue(longLinks.linksTruncated)
         assertTrue(longLinks.links.sumOf { it.url.length + it.text.length } <= WebPageContent.MAX_LINK_TOTAL_CHARS)
-        assertTrue(longLinks.content.contains("链接99"))
+        assertTrue(longLinks.content.contains("link99"))
     }
 
     @Test fun htmlTitleHasAnIndependentBudgetAndCanUseHeadingFallback() {
         val title = "x".repeat(WebPageContent.MAX_TITLE_CHARS + 10)
-        val document = WebPageContent.extract("<title>$title</title><main>正文</main>", "text/html", url)
+        val document = WebPageContent.extract("<title>$title</title><main>body</main>", "text/html", url)
         assertEquals(WebPageContent.MAX_TITLE_CHARS, document.title!!.length)
         assertTrue(document.titleTruncated)
         assertFalse(document.truncated)
-        val heading = WebPageContent.extract("<article><h1>正文标题</h1>内容</article>", "text/html", url)
-        assertEquals("正文标题", heading.title)
+        val heading = WebPageContent.extract("<article><h1>body title</h1>content</article>", "text/html", url)
+        assertEquals("body title", heading.title)
     }
 
     @Test fun malformedHtmlIsToleratedWithoutRunningScriptContent() {
-        val document = WebPageContent.extract("<main><p>第一段<p>第二段<a href='/source'>来源<script>throw Error('秘密')", "text/html", url)
-        assertTrue(document.content.contains("第一段"))
-        assertTrue(document.content.contains("第二段"))
-        assertFalse(document.content.contains("秘密"))
+        val document = WebPageContent.extract("<main><p>first paragraph<p>second paragraph<a href='/source'>source<script>throw Error('secret')", "text/html", url)
+        assertTrue(document.content.contains("first paragraph"))
+        assertTrue(document.content.contains("second paragraph"))
+        assertFalse(document.content.contains("secret"))
         assertEquals("https://example.com/source", document.links.single().url)
     }
 
@@ -156,7 +156,7 @@ class WebPageContentTest {
     @Test fun cancellationFromCallerPropagatesDuringHtmlTraversal() {
         var checks = 0
         try {
-            WebPageContent.extract("<main>" + "<p>正文</p>".repeat(30) + "</main>", "text/html", url, ensureActive = {
+            WebPageContent.extract("<main>" + "<p>body</p>".repeat(30) + "</main>", "text/html", url, ensureActive = {
                 if (++checks == 8) throw InterruptedException("cancelled")
             })
             throw AssertionError("cancelled extraction completed")

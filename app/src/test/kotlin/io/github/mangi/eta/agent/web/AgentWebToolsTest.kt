@@ -20,7 +20,7 @@ import org.junit.Test
 
 class AgentWebToolsTest {
     @Test fun cachedPagesShareTheSameSnapshotWithoutAnotherRequest() {
-        val source = "第一行\n" + "a".repeat(998) + "😀" + "正文".repeat(900)
+        val source = "first line\n" + "a".repeat(998) + "😀" + "body".repeat(900)
         WebFixtureServer { WebFixtureResponse(body = source.toByteArray()) }.use { server ->
             tools().use { tools ->
                 val first = call(tools, "fetch_url", JSONObject().put("url", server.url()).put("max_chars", 1000))
@@ -93,10 +93,10 @@ class AgentWebToolsTest {
     }
 
     @Test fun htmlReturnsNumberedSourcesAndSeparatesSourceLossFromPagination() {
-        WebFixtureServer { WebFixtureResponse(headers = mapOf("Content-Type" to "text/html"), body = "<title>标题</title><main>正文<a href='/source'>来源</a></main>".toByteArray()) }.use { server ->
+        WebFixtureServer { WebFixtureResponse(headers = mapOf("Content-Type" to "text/html"), body = "<title>title</title><main>body<a href='/source'>source</a></main>".toByteArray()) }.use { server ->
             tools().use { tools ->
                 val result = call(tools, "fetch_url", JSONObject().put("url", server.url()))
-                assertEquals("标题", result.getString("title"))
+                assertEquals("title", result.getString("title"))
                 assertTrue(result.getString("text").contains("[1]"))
                 assertEquals(server.url("/source"), result.getJSONArray("links").getJSONObject(0).getString("url"))
                 assertEquals("untrusted_web_content", result.getString("source_role"))
@@ -121,7 +121,7 @@ class AgentWebToolsTest {
         val client = OkHttpClient.Builder().addInterceptor(Interceptor { chain ->
             Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
                 .header("Content-Type", "text/html")
-                .body("<div id='links'><div class='web-result'><h2><a class='result__a' href='https://example.test/page'>来源</a></h2><div class='result__snippet'>摘要</div></div></div>".toResponseBody()).build()
+                .body("<div id='links'><div class='web-result'><h2><a class='result__a' href='https://example.test/page'>source</a></h2><div class='result__snippet'>summary</div></div></div>".toResponseBody()).build()
         }).build()
         AgentWebTools(WebHttpTransport(client)).use { tools ->
             val result = call(tools, "web_search", JSONObject().put("query", "example"))
@@ -155,10 +155,10 @@ class AgentWebToolsTest {
                 JSONArray().put(
                     JSONObject()
                         .put("rerank_score", 2.4)
-                        .put("title", "DeepSeek Search 指南")
+                        .put("title", "DeepSeek Search guide")
                         .put("url", "https://api-docs.deepseek.com/zh-cn/guides/search/")
-                        .put("snippet", "短摘要")
-                        .put("summary", "长摘要：Search 和 Fetch 接口为 Agent 提供实时网页内容。")
+                        .put("snippet", "short snippet")
+                        .put("summary", "long summary: Search and Fetch APIs provide the Agent with real-time web content.")
                         .put("content", "")
                         .put("site_name", "DeepSeek Docs")
                         .put("date", "2026-10-17T00:00:00Z")
@@ -185,9 +185,9 @@ class AgentWebToolsTest {
             assertEquals(5, capturedBody?.getInt("count"))
             assertTrue(result.getBoolean("truncated"))
             val item = result.getJSONArray("results").getJSONObject(0)
-            assertEquals("DeepSeek Search 指南", item.getString("title"))
-            assertEquals("短摘要", item.getString("snippet"))
-            assertEquals("长摘要：Search 和 Fetch 接口为 Agent 提供实时网页内容。", item.getString("summary"))
+            assertEquals("DeepSeek Search guide", item.getString("title"))
+            assertEquals("short snippet", item.getString("snippet"))
+            assertEquals("long summary: Search and Fetch APIs provide the Agent with real-time web content.", item.getString("summary"))
             assertEquals("DeepSeek Docs", item.getString("site_name"))
             assertEquals(3, item.getInt("authority"))
         }
@@ -202,8 +202,8 @@ class AgentWebToolsTest {
                 remoteCalls++
                 if (remoteCalls == 1) {
                     val json = JSONObject()
-                        .put("title", "远端标题")
-                        .put("content", "# 标题\n\n" + "正文段落 ".repeat(300) + "https://example.test/ref")
+                        .put("title", "remote title")
+                        .put("content", "# title\n\n" + "body paragraph ".repeat(300) + "https://example.test/ref")
                     Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK")
                         .header("Content-Type", "application/json")
                         .body(json.toString().toResponseBody()).build()
@@ -215,7 +215,7 @@ class AgentWebToolsTest {
                 localCalls++
                 Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(200).message("OK")
                     .header("Content-Type", "text/html; charset=utf-8")
-                    .body("<title>本地回退标题</title><main>本地静态正文</main>".toResponseBody()).build()
+                    .body("<title>local fallback title</title><main>local static body</main>".toResponseBody()).build()
             }
         }).build()
         val config = WebToolsRuntimeConfig(
@@ -227,7 +227,7 @@ class AgentWebToolsTest {
             val first = call(tools, "fetch_url", JSONObject().put("url", "https://example.test/doc1").put("max_chars", 1000))
             assertTrue(first.toString(), first.getBoolean("ok"))
             assertEquals("deepseek", first.getString("provider"))
-            assertEquals("远端标题", first.getString("title"))
+            assertEquals("remote title", first.getString("title"))
             assertEquals("markdown", first.getString("format"))
             assertTrue(first.getBoolean("has_more"))
             val secondPage = call(
@@ -246,8 +246,8 @@ class AgentWebToolsTest {
             assertTrue(fallback.toString(), fallback.getBoolean("ok"))
             assertEquals("builtin_local", fallback.getString("provider"))
             assertEquals("deepseek", fallback.getString("fallback_from"))
-            assertEquals("本地回退标题", fallback.getString("title"))
-            assertTrue(fallback.getString("text").contains("本地静态正文"))
+            assertEquals("local fallback title", fallback.getString("title"))
+            assertTrue(fallback.getString("text").contains("local static body"))
             assertEquals(2, remoteCalls)
             assertEquals(1, localCalls)
         }
@@ -263,17 +263,17 @@ class AgentWebToolsTest {
                         "items",
                         JSONArray().put(
                             JSONObject()
-                                .put("headline", "自定义搜索标题")
+                                .put("headline", "custom search title")
                                 .put("link", "https://example.test/item")
-                                .put("desc", "自定义搜索摘要"),
+                                .put("desc", "custom search snippet"),
                         ),
                     ),
                 ).toString()
                 "/custom/fetch" -> JSONObject().put(
                     "data",
                     JSONObject()
-                        .put("page_title", "自定义读取标题")
-                        .put("markdown", "自定义抓取正文内容"),
+                        .put("page_title", "custom read title")
+                        .put("markdown", "custom fetched body content"),
                 ).toString()
                 else -> error("unexpected path: ${request.url.encodedPath}")
             }
@@ -300,16 +300,16 @@ class AgentWebToolsTest {
             ),
         )
         AgentWebTools(WebHttpTransport(client), runtimeConfig = { config }).use { tools ->
-            val search = call(tools, "web_search", JSONObject().put("query", "测试 \"引号\""))
+            val search = call(tools, "web_search", JSONObject().put("query", "test \"quote\""))
             assertTrue(search.toString(), search.getBoolean("ok"))
             assertEquals("custom", search.getString("provider"))
-            assertEquals("自定义搜索标题", search.getJSONArray("results").getJSONObject(0).getString("title"))
+            assertEquals("custom search title", search.getJSONArray("results").getJSONObject(0).getString("title"))
 
             val fetch = call(tools, "fetch_url", JSONObject().put("url", "https://example.test/target"))
             assertTrue(fetch.toString(), fetch.getBoolean("ok"))
             assertEquals("custom", fetch.getString("provider"))
-            assertEquals("自定义读取标题", fetch.getString("title"))
-            assertEquals("自定义抓取正文内容", fetch.getString("text"))
+            assertEquals("custom read title", fetch.getString("title"))
+            assertEquals("custom fetched body content", fetch.getString("text"))
         }
     }
 

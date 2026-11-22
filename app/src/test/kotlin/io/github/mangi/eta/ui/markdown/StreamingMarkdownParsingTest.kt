@@ -19,7 +19,7 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val parser = StreamingGfmParserSession()
         val published = mutableListOf<StreamingGfmSnapshot>()
-        val chunk = "继续分析这一段内容。\n\n"
+        val chunk = "continue analyzing this section.\n\n"
         targets.send(StreamingMarkdownTarget(chunk, isStreaming = true))
         var parseCount = 0
 
@@ -27,7 +27,7 @@ class StreamingMarkdownParsingTest {
             targets = targets,
             parse = { target ->
                 parseCount += 1
-                // 每次解析尚未返回时就收到下一批内容，模拟生产速度持续超过解析速度。
+                // a new batch arrives before the previous parse returns, simulating production speed continuously outpacing parse speed.
                 if (parseCount < 20) {
                     targets.send(target.copy(content = target.content + chunk))
                 } else {
@@ -48,7 +48,7 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val parser = StreamingGfmParserSession()
         val parsedSources = mutableListOf<String>()
-        repeat(100) { targets.send(StreamingMarkdownTarget("内容".repeat(it + 1), true)) }
+        repeat(100) { targets.send(StreamingMarkdownTarget("content".repeat(it + 1), true)) }
         targets.close()
 
         consumeStreamingMarkdownTargets(
@@ -60,7 +60,7 @@ class StreamingMarkdownParsingTest {
             publish = {},
         )
 
-        assertEquals(listOf("内容".repeat(100)), parsedSources)
+        assertEquals(listOf("content".repeat(100)), parsedSources)
     }
 
     @Test
@@ -68,13 +68,13 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val parser = StreamingGfmParserSession()
         val published = mutableListOf<StreamingGfmSnapshot>()
-        targets.send(StreamingMarkdownTarget("旧内容", isStreaming = true))
+        targets.send(StreamingMarkdownTarget("old content", isStreaming = true))
 
         consumeStreamingMarkdownTargets(
             targets = targets,
             parse = { target ->
-                if (target.content == "旧内容") {
-                    targets.send(StreamingMarkdownTarget("修正后的内容", isStreaming = false))
+                if (target.content == "old content") {
+                    targets.send(StreamingMarkdownTarget("corrected content", isStreaming = false))
                     targets.close()
                 }
                 parser.parse(target.content, isComplete = !target.isStreaming)
@@ -82,7 +82,7 @@ class StreamingMarkdownParsingTest {
             publish = published::add,
         )
 
-        assertEquals(listOf("修正后的内容"), published.map { it.originalSource })
+        assertEquals(listOf("corrected content"), published.map { it.originalSource })
         assertTrue(published.single().isComplete)
     }
 
@@ -91,7 +91,7 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val parser = StreamingGfmParserSession()
         val published = mutableListOf<StreamingGfmSnapshot>()
-        targets.send(StreamingMarkdownTarget("**最终内容**", isStreaming = true))
+        targets.send(StreamingMarkdownTarget("**final content**", isStreaming = true))
 
         consumeStreamingMarkdownTargets(
             targets = targets,
@@ -106,7 +106,7 @@ class StreamingMarkdownParsingTest {
         )
 
         assertEquals(listOf(false, true), published.map { it.isComplete })
-        assertNotNull(published.last().completedDocumentFor("**最终内容**"))
+        assertNotNull(published.last().completedDocumentFor("**final content**"))
     }
 
     @Test
@@ -114,7 +114,7 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val parser = StreamingGfmParserSession()
         val published = mutableListOf<StreamingGfmSnapshot>()
-        targets.send(StreamingMarkdownTarget("同一份内容", isStreaming = false))
+        targets.send(StreamingMarkdownTarget("the same content", isStreaming = false))
 
         consumeStreamingMarkdownTargets(
             targets = targets,
@@ -137,7 +137,7 @@ class StreamingMarkdownParsingTest {
         val targets = Channel<StreamingMarkdownTarget>(Channel.CONFLATED)
         val started = CompletableDeferred<Unit>()
         val published = mutableListOf<StreamingGfmSnapshot>()
-        targets.send(StreamingMarkdownTarget("思考内容", isStreaming = true))
+        targets.send(StreamingMarkdownTarget("thinking content", isStreaming = true))
         val job = launch(start = CoroutineStart.UNDISPATCHED) {
             consumeStreamingMarkdownTargets(
                 targets = targets,

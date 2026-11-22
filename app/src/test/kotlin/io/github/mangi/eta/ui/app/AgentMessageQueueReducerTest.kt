@@ -20,17 +20,17 @@ class AgentMessageQueueReducerTest {
         val image = PendingImageUi(id = "img-1", uri = "file:///1.jpg", dataUrl = "data:image/jpeg;base64,1", mimeType = "image/jpeg")
         val initial = baseState(
             isStreaming = true,
-            input = "草稿",
+            input = "draft",
             images = listOf(image),
         )
 
         val firstState = AgentMessageQueueReducer.enqueue(
             state = initial,
-            item = QueuedMessageUi(id = "q-1", content = "第一条", pendingImages = listOf(image)),
+            item = QueuedMessageUi(id = "q-1", content = "first item", pendingImages = listOf(image)),
         )
         val secondState = AgentMessageQueueReducer.enqueue(
             state = firstState,
-            item = QueuedMessageUi(id = "q-2", content = "第二条"),
+            item = QueuedMessageUi(id = "q-2", content = "second item"),
         )
 
         assertEquals("", secondState.input)
@@ -41,15 +41,15 @@ class AgentMessageQueueReducerTest {
     @Test
     fun immediateInterruptPreemptsQueueHeadAndDemotesPreviousInterrupt() {
         val state = baseState(isStreaming = true).let {
-            val s1 = AgentMessageQueueReducer.enqueue(it, QueuedMessageUi(id = "q-1", content = "普通排队"))
-            AgentMessageQueueReducer.enqueue(s1, QueuedMessageUi(id = "q-2", content = "第一次插话", immediateInterrupt = true))
+            val s1 = AgentMessageQueueReducer.enqueue(it, QueuedMessageUi(id = "q-1", content = "ordinary queued"))
+            AgentMessageQueueReducer.enqueue(s1, QueuedMessageUi(id = "q-2", content = "first interruption", immediateInterrupt = true))
         }
         assertEquals(listOf("q-2", "q-1"), state.queuedMessages.map { it.id })
         assertTrue(state.queuedMessages[0].immediateInterrupt)
 
         val next = AgentMessageQueueReducer.enqueue(
             state = state,
-            item = QueuedMessageUi(id = "q-3", content = "第二次插话", immediateInterrupt = true),
+            item = QueuedMessageUi(id = "q-3", content = "second interruption", immediateInterrupt = true),
         )
         assertEquals(listOf("q-3", "q-2", "q-1"), next.queuedMessages.map { it.id })
         assertTrue(next.queuedMessages[0].immediateInterrupt)
@@ -59,8 +59,8 @@ class AgentMessageQueueReducerTest {
     @Test
     fun promoteToInterruptMovesItemToFrontWhenStreamingAndPopsImmediatelyWhenIdle() {
         val queued = listOf(
-            QueuedMessageUi(id = "q-1", content = "第一条"),
-            QueuedMessageUi(id = "q-2", content = "第二条"),
+            QueuedMessageUi(id = "q-1", content = "first item"),
+            QueuedMessageUi(id = "q-2", content = "second item"),
         )
         val streamingState = baseState(isStreaming = true).copy(queuedMessages = queued)
         val (promotedStreaming, promotedItem) = AgentMessageQueueReducer.promoteToInterrupt(streamingState, "q-2")
@@ -95,21 +95,21 @@ class AgentMessageQueueReducerTest {
             queuedMessages = listOf(
                 QueuedMessageUi(
                     id = "q-1",
-                    content = "撤回的内容",
+                    content = "recalled content",
                     pendingImages = listOf(existingImage, queuedImage),
                     pendingFileReferences = listOf(queuedFile),
                 ),
-                QueuedMessageUi(id = "q-2", content = "保留的内容"),
+                QueuedMessageUi(id = "q-2", content = "retained content"),
             ),
         )
 
         val recalled = AgentMessageQueueReducer.recallToDraft(
             state = state,
-            currentInputText = "正在敲的半句话",
+            currentInputText = "the half sentence being typed",
             id = "q-1",
         )
         assertNotNull(recalled)
-        assertEquals("正在敲的半句话\n撤回的内容", recalled!!.input)
+        assertEquals("the half sentence being typed\nrecalled content", recalled!!.input)
         assertEquals(listOf("img-1", "img-2"), recalled.pendingImages.map { it.id })
         assertEquals(listOf("file-1"), recalled.pendingFileReferences.map { it.id })
         assertEquals(listOf("q-2"), recalled.queuedMessages.map { it.id })
@@ -119,12 +119,12 @@ class AgentMessageQueueReducerTest {
     @Test
     fun pollNextToSendAfterRunRespectsUserStopExceptForImmediateInterrupt() {
         val normalQueue = listOf(
-            QueuedMessageUi(id = "q-1", content = "第一条"),
-            QueuedMessageUi(id = "q-2", content = "第二条"),
+            QueuedMessageUi(id = "q-1", content = "first item"),
+            QueuedMessageUi(id = "q-2", content = "second item"),
         )
         val state = baseState(isStreaming = false).copy(queuedMessages = normalQueue)
 
-        // 用户主动点击停止按钮：队列保留，不自动发出
+        // user actively taps the stop button: the queue is retained and not sent automatically
         val (stoppedState, stoppedNext) = AgentMessageQueueReducer.pollNextToSendAfterRun(
             state = state,
             stoppedByUser = true,
@@ -132,7 +132,7 @@ class AgentMessageQueueReducerTest {
         assertNull(stoppedNext)
         assertEquals(2, stoppedState.queuedMessages.size)
 
-        // 自然完成：自动弹出队首第 1 条
+        // natural completion: automatically pop the first queued item
         val (completedState, completedNext) = AgentMessageQueueReducer.pollNextToSendAfterRun(
             state = state,
             stoppedByUser = false,
@@ -140,11 +140,11 @@ class AgentMessageQueueReducerTest {
         assertEquals("q-1", completedNext?.id)
         assertEquals(listOf("q-2"), completedState.queuedMessages.map { it.id })
 
-        // 插话触发的中止：即使运行因取消结束，队首插话项仍立即弹出发送
+        // interrupt-triggered abort: even if the run ends due to cancellation, the head interrupt item is still immediately popped and sent
         val interruptState = state.copy(
             queuedMessages = listOf(
-                QueuedMessageUi(id = "q-interrupt", content = "立即插话", immediateInterrupt = true),
-                QueuedMessageUi(id = "q-1", content = "第一条"),
+                QueuedMessageUi(id = "q-interrupt", content = "interrupt immediately", immediateInterrupt = true),
+                QueuedMessageUi(id = "q-1", content = "first item"),
             ),
         )
         val (afterInterruptState, interruptNext) = AgentMessageQueueReducer.pollNextToSendAfterRun(
@@ -160,8 +160,8 @@ class AgentMessageQueueReducerTest {
     fun promoteToQueueHeadEnqueueAtHeadAndClearInterruptFlagPreserveQueueWithoutInterrupt() {
         val initial = baseState(isStreaming = true).copy(
             queuedMessages = listOf(
-                QueuedMessageUi(id = "q-1", content = "第一条"),
-                QueuedMessageUi(id = "q-2", content = "第二条", immediateInterrupt = true),
+                QueuedMessageUi(id = "q-1", content = "first item"),
+                QueuedMessageUi(id = "q-2", content = "second item", immediateInterrupt = true),
             ),
         )
         val cleared = AgentMessageQueueReducer.clearInterruptFlag(initial, "q-2")
@@ -172,8 +172,8 @@ class AgentMessageQueueReducerTest {
         assertFalse(promotedHead.queuedMessages.any { it.immediateInterrupt })
 
         val enqueuedHead = AgentMessageQueueReducer.enqueueAtHead(
-            state = promotedHead.copy(input = "带图插话"),
-            item = QueuedMessageUi(id = "q-3", content = "带图插话", immediateInterrupt = true),
+            state = promotedHead.copy(input = "interrupt with image"),
+            item = QueuedMessageUi(id = "q-3", content = "interrupt with image", immediateInterrupt = true),
         )
         assertEquals("", enqueuedHead.input)
         assertEquals(listOf("q-3", "q-2", "q-1"), enqueuedHead.queuedMessages.map { it.id })

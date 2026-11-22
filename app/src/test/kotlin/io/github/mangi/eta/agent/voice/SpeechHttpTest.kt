@@ -21,7 +21,7 @@ class SpeechHttpTest {
                 server.accept().use { socket ->
                     socket.soTimeout = 3000
                     val input = socket.getInputStream().bufferedReader()
-                    while (!input.readLine().isNullOrEmpty()) { /* 读完请求头，再模拟未完成的响应。 */ }
+                    while (!input.readLine().isNullOrEmpty()) { /* Read the request headers, then simulate an incomplete response. */ }
                     socket.getOutputStream().apply {
                         write("HTTP/1.1 200 OK\r\nContent-Length: 100\r\nContent-Type: application/json\r\n\r\n{".toByteArray())
                         flush()

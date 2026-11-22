@@ -37,7 +37,7 @@ class DeepSeekSpeechRecognitionTest {
     }
 
     @Test fun transcriptTrimsTextAndRejectsErrorOrMissingText() {
-        assertEquals("上海今天天气怎么样？", deepSeekAsrTranscript(JSONObject().put("text", "  上海今天天气怎么样？\n")))
+        assertEquals("What's the weather in Shanghai today?", deepSeekAsrTranscript(JSONObject().put("text", "  What's the weather in Shanghai today?\n")))
         assertEquals("", deepSeekAsrTranscript(JSONObject().put("text", " \n")))
         val error = assertThrows(SpeechFailure::class.java) {
             deepSeekAsrTranscript(JSONObject().put("error", JSONObject().put("message", "private")))

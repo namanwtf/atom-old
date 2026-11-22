@@ -12,7 +12,7 @@ class GeminiModelFailureTest {
             "description":"private-key-fixture"},{"field":"generation_config.thinking_level"}]}]}}"""
         val failure = AgentModelFailure.http(400, body, includeParameterDetails = true)
         assertTrue(failure.message.orEmpty().contains("INVALID_ARGUMENT"))
-        assertTrue(failure.message.orEmpty().contains("tools[12].parameters.properties.<自定义字段>"))
+        assertTrue(failure.message.orEmpty().contains("tools[12].parameters.properties.<custom field>"))
         assertTrue(failure.message.orEmpty().contains("generation_config.thinking_level"))
         assertFalse(failure.message.orEmpty().contains("private"))
         assertFalse(failure.retryable)
@@ -42,7 +42,7 @@ class GeminiModelFailureTest {
     fun parameterDiagnosticsDoNotMaskBillingFailures() {
         val body = """{"error":{"status":"FAILED_PRECONDITION","message":"billing is required"}}"""
         val failure = AgentModelFailure.http(400, body, includeParameterDetails = true)
-        assertTrue(failure.message.orEmpty().contains("额度或计费受限"))
+        assertTrue(failure.message.orEmpty().contains("quota or billing limited"))
         assertFalse(failure.retryable)
     }
 
@@ -58,9 +58,9 @@ class GeminiModelFailureTest {
     @Test
     fun canonicalTransientStreamStatusesUseExistingRetryPolicy() {
         for (status in listOf("RESOURCE_EXHAUSTED", "UNAVAILABLE", "INTERNAL", "DEADLINE_EXCEEDED")) {
-            assertTrue(AgentModelFailure.stream(JSONObject().put("status", status), "请求暂时失败").retryable)
+            assertTrue(AgentModelFailure.stream(JSONObject().put("status", status), "request temporarily failed").retryable)
         }
-        assertFalse(AgentModelFailure.stream(JSONObject().put("status", "INVALID_ARGUMENT"), "参数无效").retryable)
+        assertFalse(AgentModelFailure.stream(JSONObject().put("status", "INVALID_ARGUMENT"), "invalid argument").retryable)
     }
 
     @Test

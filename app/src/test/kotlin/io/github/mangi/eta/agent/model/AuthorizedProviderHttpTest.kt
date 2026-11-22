@@ -58,7 +58,7 @@ class AuthorizedProviderHttpTest {
             AuthorizedProviderHttp.execute(
                 client, "account", ProviderAuthModes.OPENAI_CHATGPT, request(), AgentRunController(),
                 accessToken = { _, _, _, _ -> CodexOAuthFixture.accessToken() },
-            ) { error("未授权响应不应进入模型解析") }
+            ) { error("unauthorized responses must not enter model parsing") }
         }.exceptionOrNull()
         assertEquals("OAUTH_UNAUTHORIZED", (failure as AgentModelFailure).code)
         assertEquals(2, attempts.get())
@@ -80,8 +80,8 @@ class AuthorizedProviderHttpTest {
                 AuthorizedProviderHttp.execute(
                     OkHttpClient(), "account", ProviderAuthModes.OPENAI_CHATGPT,
                     Request.Builder().url(url).build(), AgentRunController(),
-                    accessToken = { _, _, _, _ -> error("不应读取凭据") },
-                ) { error("不应连接网络") }
+                    accessToken = { _, _, _, _ -> error("must not read credentials") },
+                ) { error("must not connect to the network") }
             }.exceptionOrNull()
             assertTrue(url, failure is IllegalArgumentException)
         }
@@ -117,7 +117,7 @@ class AuthorizedProviderHttpTest {
             Request.Builder().url("https://gateway.example/v1/models")
                 .header("Authorization", "Bearer api-fixture").build(),
             AgentRunController(),
-            accessToken = { _, _, _, _ -> error("API Key 不应读取 OAuth 凭据") },
+            accessToken = { _, _, _, _ -> error("API Key must not read OAuth credentials") },
         ) { it.code }
         assertEquals(401, status)
     }
@@ -140,7 +140,7 @@ class AuthorizedProviderHttpTest {
         server.start()
         try {
             val client = OkHttpClient.Builder().addInterceptor { chain ->
-                // 官方目标仍由生产入口校验，测试连接只改向本机 fixture。
+                // The official target is still validated by the production entry point; the test connection only redirects to a local fixture.
                 chain.proceed(chain.request().newBuilder()
                     .url("http://127.0.0.1:${server.address.port}/start").build())
             }.build()

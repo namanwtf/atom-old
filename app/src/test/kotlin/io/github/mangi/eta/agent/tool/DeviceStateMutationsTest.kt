@@ -72,7 +72,7 @@ class DeviceStateMutationsTest {
 
     @Test
     fun otherAndroidUserIsRejectedBeforeMutationOrQuery() {
-        val mutations = DeviceStateMutations(context) { error("不应执行跨用户命令") }
+        val mutations = DeviceStateMutations(context) { error("must not execute cross-user commands") }
         val args = JSONObject().put("user_id", DeviceToolContract.appUserId(context) + 1)
         listOf(mutations.setSetting(args), mutations.appStateControl(args), mutations.setDeviceState(args), mutations.setVolume(args))
             .forEach { assertEquals("USER_SCOPE_UNSUPPORTED", JSONObject(it).getString("code")) }

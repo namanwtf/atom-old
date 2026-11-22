@@ -13,9 +13,9 @@ import org.junit.Test
 
 class MimoSpeechSynthesisTest {
     @Test fun requestKeepsStyleSeparateAndPutsExactTextInAssistantMessage() {
-        val text = "今天下午三点出发。"
+        val text = "We leave at three this afternoon."
         val request = mimoTtsRequest(
-            MimoTtsConfig(baseUrl = "https://example.invalid/proxy/v1/", voice = " 茉莉 ", style = " 自然温和 "),
+            MimoTtsConfig(baseUrl = "https://example.invalid/proxy/v1/", voice = " Jasmine ", style = " natural and gentle "),
             " test-key ", text,
         )
         assertEquals("/proxy/v1/chat/completions", request.url.encodedPath)
@@ -29,11 +29,11 @@ class MimoSpeechSynthesisTest {
         val messages = body.getJSONArray("messages")
         assertEquals(2, messages.length())
         assertEquals("user", messages.getJSONObject(0).getString("role"))
-        assertEquals("自然温和", messages.getJSONObject(0).getString("content"))
+        assertEquals("natural and gentle", messages.getJSONObject(0).getString("content"))
         assertEquals("assistant", messages.getJSONObject(1).getString("role"))
         assertEquals(text, messages.getJSONObject(1).getString("content"))
         assertEquals("pcm16", body.getJSONObject("audio").getString("format"))
-        assertEquals("茉莉", body.getJSONObject("audio").getString("voice"))
+        assertEquals("Jasmine", body.getJSONObject("audio").getString("voice"))
 
         val plain = body(mimoTtsRequest(MimoTtsConfig(style = " \n"), "test-key", text))
         assertEquals(1, plain.getJSONArray("messages").length())

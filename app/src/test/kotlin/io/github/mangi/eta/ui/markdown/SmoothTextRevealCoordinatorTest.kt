@@ -43,8 +43,8 @@ class SmoothTextRevealCoordinatorTest {
         val coordinator = SmoothTextRevealCoordinator()
         val earlierKey = RevealBlockKey(0)
         val laterKey = RevealBlockKey(100)
-        val earlierNode = attach(coordinator, earlierKey, "早先的思考正文")
-        attach(coordinator, laterKey, "随后到达的工具输出内容")
+        val earlierNode = attach(coordinator, earlierKey, "earlier thinking body")
+        attach(coordinator, laterKey, "tool output content that arrived later")
 
         coordinator.detach(earlierKey, earlierNode)
 
@@ -100,11 +100,11 @@ class SmoothTextRevealCoordinatorTest {
     fun reattachedBlockKeepsCompletedPrefixAndAnimatesOnlyNewText() {
         val coordinator = SmoothTextRevealCoordinator()
         val key = RevealBlockKey(0)
-        val oldNode = attach(coordinator, key, "已有文字")
+        val oldNode = attach(coordinator, key, "existing text")
 
         coordinator.detach(key, oldNode)
         assertTrue(coordinator.drained.value)
-        attach(coordinator, key, "已有文字和新增文字")
+        attach(coordinator, key, "existing text and new text")
 
         val snapshot = coordinator.drawSnapshot(key)!!
         assertEquals(4f, snapshot.progress, 0f)
@@ -116,7 +116,7 @@ class SmoothTextRevealCoordinatorTest {
     fun layoutWithoutMountedNodeIsImmediatelyReadableOnLaterAttach() {
         val coordinator = SmoothTextRevealCoordinator()
         val key = RevealBlockKey(0)
-        val text = "尚未挂载时收到的历史内容"
+        val text = "history content received before mounting"
         val state = SmoothTextRevealState(key, coordinator)
         state.onTextLayout(text, layout(text))
 
@@ -132,8 +132,8 @@ class SmoothTextRevealCoordinatorTest {
     fun staleDetachDoesNotCompleteTheReplacementNode() {
         val coordinator = SmoothTextRevealCoordinator()
         val key = RevealBlockKey(0)
-        val oldNode = attach(coordinator, key, "原始内容")
-        val replacementNode = attach(coordinator, key, "替换后的完整内容")
+        val oldNode = attach(coordinator, key, "original content")
+        val replacementNode = attach(coordinator, key, "full content after replacement")
 
         coordinator.detach(key, oldNode)
 

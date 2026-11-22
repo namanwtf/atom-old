@@ -128,7 +128,7 @@ class ProviderOAuthClientTest {
                         .put("refresh_token", "fixture-refresh").put("token_type", "Bearer")
                         .put("expires_in", 3600).toString()
                 }
-                else -> error("非预期请求地址")
+                else -> error("unexpected request address")
             }
         }
         val client = LiveProviderOAuthClient(http, callbackReceiver = { LoopbackAuthorizationReceiver(port = 0) })

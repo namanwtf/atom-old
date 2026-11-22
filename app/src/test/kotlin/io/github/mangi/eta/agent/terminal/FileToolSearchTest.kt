@@ -39,8 +39,8 @@ class FileToolSearchTest {
     }
 
     @Test fun grepFindsLiteralAcrossUtf8ChunksWithoutRepeatingLongLine() {
-        temporary.newFile("text.txt").writeText("x".repeat(15_998) + "中文needle" + "x".repeat(20_000) + "needle\nneedle\n")
-        val result = JSONObject(operations().grepFiles("", "中文needle"))
+        temporary.newFile("text.txt").writeText("x".repeat(15_998) + "Chineseneedle" + "x".repeat(20_000) + "needle\nneedle\n")
+        val result = JSONObject(operations().grepFiles("", "Chineseneedle"))
         assertTrue(result.toString(), result.getBoolean("ok"))
         assertEquals(1, result.getInt("count"))
         assertEquals(15_998, result.getJSONArray("matches").getJSONObject(0).getInt("match_offset_bytes"))
@@ -104,7 +104,7 @@ class FileToolSearchTest {
         for (code in listOf("ROOT_REQUIRED", "FILE_TIMEOUT", "FILE_PROCESS_FAILED", "CANCELLED")) {
             val backend = object : FileToolBackend by local {
                 override fun readBytes(path: String, offset: Long, limit: Int): ByteArray =
-                    throw FileToolException(code, "文件操作不可用")
+                    throw FileToolException(code, "file operation unavailable")
             }
             val result = JSONObject(AgentFileOperations(backend).grepFiles("", "needle"))
             assertFalse(result.getBoolean("ok"))

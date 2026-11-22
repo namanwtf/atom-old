@@ -20,7 +20,7 @@ class AgentRuntimeServiceRetentionTest {
             val service = controller.get()
             val request = AgentRuntimeWire.RunRequest(
                 runId = "completed-run",
-                prompt = "请求",
+                prompt = "request",
                 config = AgentModelClient.ModelConfig(
                     baseUrl = "https://example.invalid/v1",
                     apiKey = "test-key",
@@ -28,10 +28,10 @@ class AgentRuntimeServiceRetentionTest {
                     systemPrompt = "",
                 ),
                 images = emptyList(),
-                history = listOf(AgentModelClient.ConversationMessage("user", "已完成的历史")),
+                history = listOf(AgentModelClient.ConversationMessage("user", "completed history")),
             )
             val run = RuntimeRunRegistry.Run(request, AgentRuntimeSession(request.runId)).apply {
-                completedContext = RuntimeRunRegistry.CompletedContext(request, AgentModelClient.ModelResponse.Text("完成"))
+                completedContext = RuntimeRunRegistry.CompletedContext(request, AgentModelClient.ModelResponse.Text("done"))
             }
             val retainedRun = AgentRuntimeService::class.java.getDeclaredField("displayedRun").apply {
                 isAccessible = true

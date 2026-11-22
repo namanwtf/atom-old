@@ -86,31 +86,31 @@ class ConversationPanePanelTest {
                 conversations = listOf(
                     ConversationSummaryUi(
                         id = "conv-pinned",
-                        title = "置顶系统调试",
-                        preview = "检查权限",
-                        timeLabel = "今天",
+                        title = "pin system debugging",
+                        preview = "check permissions",
+                        timeLabel = "Today",
                         updatedAtMillis = System.currentTimeMillis(),
                         mode = ConversationModeUi.Chat,
                         isPinned = true,
                     ),
                     ConversationSummaryUi(
                         id = "conv-today",
-                        title = "你好，你是谁呀",
-                        preview = "我是 Eta",
-                        timeLabel = "今天",
+                        title = "hello, who are you",
+                        preview = "I am Eta",
+                        timeLabel = "Today",
                         updatedAtMillis = System.currentTimeMillis(),
                         mode = ConversationModeUi.Chat,
                         isActiveRun = true,
-                        runStatus = "思考中",
+                        runStatus = "thinking",
                     ),
                     ConversationSummaryUi(
                         id = "conv-role",
-                        title = "清晨咖啡馆",
-                        preview = "早安",
-                        timeLabel = "昨天",
+                        title = "morning cafe",
+                        preview = "good morning",
+                        timeLabel = "Yesterday",
                         updatedAtMillis = 1_000L,
                         mode = ConversationModeUi.Chat,
-                        characterName = "林岚",
+                        characterName = "Lin Lan",
                     ),
                 ),
                 selectedConversationId = "conv-today",
@@ -182,12 +182,12 @@ class ConversationPanePanelTest {
                     )
                     assertTrue(
                         "Expected conversation title for $style / $theme",
-                        allTexts.any { it == "你好，你是谁呀" },
+                        allTexts.any { it == "hello, who are you" },
                     )
                 }
             }
 
-            // 切回 COUI 浅色验证工作台、底栏与新建按钮交互
+            // switch back to COUI light theme to verify workspace, bottom bar and new-button interactions
             appearance = AppearanceSettings(uiStyle = AppearanceUiStyle.COUI, themeMode = AppearanceThemeMode.LIGHT)
             pumpFrames(activity, frameClock)
 
@@ -198,7 +198,7 @@ class ConversationPanePanelTest {
             clickByLabel(activity, activity.getString(R.string.route_skills))
             clickByLabel(activity, activity.getString(R.string.conversation_permission_attention))
             clickByLabel(activity, activity.getString(R.string.route_settings))
-            clickByLabel(activity, "置顶系统调试")
+            clickByLabel(activity, "pin system debugging")
 
             assertEquals(1, newChatCount)
             assertEquals(1, modelsClicks)
@@ -209,13 +209,13 @@ class ConversationPanePanelTest {
             assertEquals(1, settingsClicks)
             assertEquals("conv-pinned", selectedConversation)
 
-            // 权限全部就绪后描述切换为正常“权限”，搜索时工作台收起以聚焦结果
+            // once all permissions are ready the description switches to the normal "permission", and the workspace collapses to focus results while searching
             hasPermissionAttention = false
-            paneState = paneState.copy(searchQuery = "咖啡")
+            paneState = paneState.copy(searchQuery = "coffee")
             pumpFrames(activity, frameClock)
 
             assertEquals(false, composedAttention)
-            assertEquals("咖啡", composedQuery)
+            assertEquals("coffee", composedQuery)
 
             val searchNodes = collectSemanticsNodes(activity.window.decorView)
             val searchTexts = searchNodes.flatMap { node ->
@@ -231,7 +231,7 @@ class ConversationPanePanelTest {
                 searchTexts.any { it == activity.getString(R.string.route_permissions) },
             )
 
-            // 点击原生搜索框清空按钮恢复工作台展示（COUI 原生 InputField 内置清空按钮文案为 "Clear text"）
+            // tap the native search box clear button to restore the workspace display (COUI's native InputField built-in clear button text is "Clear text")
             clickByLabel(activity, "Clear text")
             pumpFrames(activity, frameClock)
             assertEquals("", paneState.searchQuery)
@@ -241,7 +241,7 @@ class ConversationPanePanelTest {
                 restoredTexts.any { it == "claude-sonnet-4" },
             )
 
-            // 在 MIUIX 模式下也验证新建对话、工作台入口与底栏圆形按钮点击
+            // also verify new conversation, workspace entry and bottom-bar circular button clicks in MIUIX mode
             appearance = AppearanceSettings(uiStyle = AppearanceUiStyle.MIUIX, themeMode = AppearanceThemeMode.DARK)
             pumpFrames(activity, frameClock)
             clickByLabel(activity, activity.getString(R.string.action_new_conversation))
@@ -279,9 +279,9 @@ class ConversationPanePanelTest {
             listOf(
                 ConversationSummaryUi(
                     id = "conv-1",
-                    title = "临时对话",
-                    preview = "测试",
-                    timeLabel = "今天",
+                    title = "temporary conversation",
+                    preview = "test",
+                    timeLabel = "Today",
                     updatedAtMillis = System.currentTimeMillis(),
                     mode = ConversationModeUi.Chat,
                 ),
@@ -325,7 +325,7 @@ class ConversationPanePanelTest {
                 }
             }
             pumpFrames(activity, frameClock)
-            assertTrue(collectAllTexts(activity).any { it == "临时对话" })
+            assertTrue(collectAllTexts(activity).any { it == "temporary conversation" })
 
             conversations = emptyList()
             pumpFrames(activity, frameClock)
@@ -367,20 +367,20 @@ class ConversationPanePanelTest {
         val conversations = listOf(
             ConversationSummaryUi(
                 id = "conv-other",
-                title = "普通会话",
-                preview = "你好",
-                timeLabel = "今天",
+                title = "ordinary conversation",
+                preview = "hello",
+                timeLabel = "Today",
                 updatedAtMillis = System.currentTimeMillis(),
                 mode = ConversationModeUi.Chat,
             ),
             ConversationSummaryUi(
                 id = "conv-role",
-                title = "清晨咖啡馆",
-                preview = "早安",
-                timeLabel = "今天",
+                title = "morning cafe",
+                preview = "good morning",
+                timeLabel = "Today",
                 updatedAtMillis = System.currentTimeMillis() - 1_000L,
                 mode = ConversationModeUi.Chat,
-                characterName = "林岚",
+                characterName = "Lin Lan",
             ),
         )
 
@@ -430,7 +430,7 @@ class ConversationPanePanelTest {
                         .firstOrNull { node ->
                             node.config.getOrNull(SemanticsProperties.Text)
                                 .orEmpty()
-                                .any { it.text == "林" }
+                                .any { it.text == "Lin" }
                         }
                     assertTrue(
                         "Expected monogram avatar node for $uiStyle selection=$selection",
@@ -472,9 +472,9 @@ class ConversationPanePanelTest {
                 conversations = listOf(
                     ConversationSummaryUi(
                         id = "conv-1",
-                        title = "周末计划",
-                        preview = "整理清单",
-                        timeLabel = "今天",
+                        title = "weekend plan",
+                        preview = "organize the checklist",
+                        timeLabel = "Today",
                         updatedAtMillis = System.currentTimeMillis(),
                         mode = ConversationModeUi.Chat,
                     ),
@@ -527,13 +527,13 @@ class ConversationPanePanelTest {
                 paneState = paneState.copy(searchQuery = "")
                 repeat(8) { pumpFrames(activity, frameClock) }
 
-                // 收起态：权限、设置按钮可见可点，取消按钮不展示
+                // collapsed state: permission and settings buttons are visible and tappable, the cancel button is not shown
                 val collapsedTexts = collectAllTexts(activity)
                 assertTrue("Expected permissions button collapsed for $style", collapsedTexts.any { it == permissionsLabel })
                 assertTrue("Expected settings button collapsed for $style", collapsedTexts.any { it == settingsLabel })
                 assertFalse("Cancel button should stay hidden when collapsed for $style", collapsedTexts.any { it == cancelLabel })
 
-                // 点击搜索输入框展开搜索：取消按钮出现，权限/设置按钮退出语义与交互范围
+                // tap the search input to expand search: the cancel button appears, and the permission/settings buttons leave the semantic and interaction scope
                 val searchInput = collectSemanticsNodes(activity.window.decorView).first { node ->
                     node.config.contains(SemanticsActions.SetText)
                 }
@@ -545,8 +545,8 @@ class ConversationPanePanelTest {
                 assertFalse("Permissions button should hide when search expanded for $style", expandedTexts.any { it == permissionsLabel })
                 assertFalse("Settings button should hide when search expanded for $style", expandedTexts.any { it == settingsLabel })
 
-                // 输入查询后点击取消：清空查询并恢复权限/设置按钮
-                paneState = paneState.copy(searchQuery = "周末")
+                // tap cancel after typing a query: clear the query and restore the permission/settings buttons
+                paneState = paneState.copy(searchQuery = "weekend")
                 pumpFrames(activity, frameClock)
                 clickByLabel(activity, cancelLabel)
                 repeat(12) { pumpFrames(activity, frameClock) }
@@ -556,7 +556,7 @@ class ConversationPanePanelTest {
                 assertTrue("Permissions button should return after cancel for $style", restoredTexts.any { it == permissionsLabel })
                 assertTrue("Settings button should return after cancel for $style", restoredTexts.any { it == settingsLabel })
 
-                // 再次展开并用系统返回收起：返回优先关闭搜索，不关闭侧栏
+                // expand again and collapse with the system back button: back closes the search first, not the side panel
                 val searchInputAgain = collectSemanticsNodes(activity.window.decorView).first { node ->
                     node.config.contains(SemanticsActions.SetText)
                 }

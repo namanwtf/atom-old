@@ -60,7 +60,7 @@ class AgentRuntimeRunExecutorCompactionTest {
                 exchange.requestBody.use { it.readBytes().toString(Charsets.UTF_8) },
             )
             capturedBodies += requestBody
-            val replyText = if (capturedBodies.size == 1) "正常回答。" else "精简摘要。"
+            val replyText = if (capturedBodies.size == 1) "a normal answer." else "a condensed summary."
             val sse = sseChunk(JSONObject().put("content", replyText), finishReason = "stop") +
                 usageChunk(JSONObject().put("prompt_tokens", 1200).put("completion_tokens", 20)) +
                 "data: [DONE]\n\n"
@@ -76,7 +76,7 @@ class AgentRuntimeRunExecutorCompactionTest {
                 baseUrl = "http://127.0.0.1:${server.address.port}",
                 apiKey = "fixture",
                 model = "fixture",
-                systemPrompt = "固定规则",
+                systemPrompt = "fixed rule",
                 terminalTools = false,
                 browserTools = false,
                 deviceDirectTools = false,
@@ -92,8 +92,8 @@ class AgentRuntimeRunExecutorCompactionTest {
             )
             val history = (1..4).flatMap { turn ->
                 listOf(
-                    AgentModelClient.ConversationMessage("user", "第 $turn 轮提问"),
-                    AgentModelClient.ConversationMessage("assistant", "事实 ".repeat(800)),
+                    AgentModelClient.ConversationMessage("user", "question in turn $turn"),
+                    AgentModelClient.ConversationMessage("assistant", "fact ".repeat(800)),
                 )
             }
             val runtimeExecutor = AgentRuntimeRunExecutor(
@@ -113,7 +113,7 @@ class AgentRuntimeRunExecutorCompactionTest {
 
             val chatRequest = AgentRuntimeWire.RunRequest(
                 runId = "run-chat",
-                prompt = "继续",
+                prompt = "continue",
                 config = config,
                 images = emptyList(),
                 history = history,
@@ -132,8 +132,8 @@ class AgentRuntimeRunExecutorCompactionTest {
                 config = config,
                 images = emptyList(),
                 history = history + listOf(
-                    AgentModelClient.ConversationMessage("user", "继续"),
-                    AgentModelClient.ConversationMessage("assistant", "正常回答。"),
+                    AgentModelClient.ConversationMessage("user", "continue"),
+                    AgentModelClient.ConversationMessage("assistant", "a normal answer."),
                 ),
                 handoff = handoff,
                 operation = AgentRuntimeWire.OP_COMPACT,

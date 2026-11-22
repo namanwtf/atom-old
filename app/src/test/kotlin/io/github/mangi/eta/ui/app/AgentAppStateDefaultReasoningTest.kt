@@ -128,8 +128,8 @@ class AgentAppStateDefaultReasoningTest {
     @Test
     fun loadedConversationReasoningIsNotOverwrittenByDefaultSettingChanges() {
         runBlocking {
-            val message = UserMessageUi("u1", "你好")
-            val history = listOf(AgentModelClient.ConversationMessage(role = "user", content = "你好", messageId = "u1"))
+            val message = UserMessageUi("u1", "hello")
+            val history = listOf(AgentModelClient.ConversationMessage(role = "user", content = "hello", messageId = "u1"))
             val existing = AgentChatHomeUiState(
                 messages = listOf(message),
                 history = history,
@@ -144,7 +144,7 @@ class AgentAppStateDefaultReasoningTest {
                 context = context,
                 selectedConversationId = "conv-existing",
                 conversationsById = mapOf("conv-existing" to existing),
-                titles = mapOf("conv-existing" to "已有对话"),
+                titles = mapOf("conv-existing" to "existing conversation"),
                 updatedAt = mapOf("conv-existing" to 1L),
             )
         }
@@ -212,6 +212,6 @@ class AgentAppStateDefaultReasoningTest {
             ShadowLooper.idleMainLooper(10, TimeUnit.MILLISECONDS)
             Thread.sleep(1)
         }
-        assertTrue("条件未在限定时间内满足", condition())
+        assertTrue("condition was not met within the time limit", condition())
     }
 }

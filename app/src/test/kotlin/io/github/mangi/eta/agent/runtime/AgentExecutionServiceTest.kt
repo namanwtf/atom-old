@@ -106,7 +106,7 @@ class AgentExecutionServiceTest {
             assertEquals(MainActivity.ACTION_OPEN_CONVERSATION_ID, launchIntent.action)
             assertEquals("conv-42", launchIntent.getStringExtra(MainActivity.EXTRA_CONVERSATION_ID))
 
-            // GUI 悬浮胶囊接管顶部时，撤销 Live Update 提升，仅保留普通前台通知。
+            // GUI When the floating GUI capsule takes over the top, revoke the Live Update promotion and keep only the ordinary foreground notification.
             AgentExecutionService.updateRunStatus(
                 context = context,
                 status = AgentOverlayStatus.RunningTool("tap_element"),

@@ -43,9 +43,9 @@ class ConversationMarkdownExporterTest {
     @Test
     fun exportRendersFullConversationInOrder() {
         val messages = listOf(
-            UserMessageUi(id = "u1", content = "你好"),
-            AgentMessageUi(id = "a1", content = "你好！**有什么可以帮你？**"),
-            ThinkingMessageUi(id = "t1", content = "先思考", isStreaming = false),
+            UserMessageUi(id = "u1", content = "hello"),
+            AgentMessageUi(id = "a1", content = "Hello! **What can I help you with?**"),
+            ThinkingMessageUi(id = "t1", content = "think first", isStreaming = false),
             ToolActivityMessageUi(
                 id = "tool1",
                 toolName = "run_terminal_command",
@@ -55,27 +55,27 @@ class ConversationMarkdownExporterTest {
                 resultSummary = "ok",
             ),
             ToolSummaryMessageUi(id = "ts1", tools = listOf("observe_screen", "tap_element")),
-            SystemNoticeMessageUi(id = "n1", code = SystemNoticeCode.Stopped, detail = "用户取消"),
-            AgentMessageUi(id = "a2", content = "结束"),
+            SystemNoticeMessageUi(id = "n1", code = SystemNoticeCode.Stopped, detail = "user canceled"),
+            AgentMessageUi(id = "a2", content = "end"),
         )
 
-        val result = ConversationMarkdownExporter.export("周会纪要", messages, labels)
+        val result = ConversationMarkdownExporter.export("weekly meeting notes", messages, labels)
 
         val expected = """
-            # 周会纪要
+            # weekly meeting notes
 
             ## User
 
-            你好
+            hello
 
             ## Assistant
 
-            你好！**有什么可以帮你？**
+            Hello! **What can I help you with?**
 
             <details>
             <summary>Thinking</summary>
 
-            先思考
+            think first
 
             </details>
 
@@ -91,11 +91,11 @@ class ConversationMarkdownExporterTest {
 
             > Stopped
             >
-            > 用户取消
+            > user canceled
 
             ## Assistant
 
-            结束
+            end
         """.trimIndent()
         assertEquals(expected + "\n", result)
     }
@@ -103,7 +103,7 @@ class ConversationMarkdownExporterTest {
     @Test
     fun exportParsesFileReferencesInUserContent() {
         val content = AgentFileReferencePromptCodec.format(
-            request = "总结一下这个文件",
+            request = "summarize this file",
             references = listOf(
                 AgentFileReference("notes.txt", "/sdcard/notes.txt", AgentFileReferenceKind.File),
             ),
@@ -115,7 +115,7 @@ class ConversationMarkdownExporterTest {
             labels,
         )
 
-        assertTrue(result.contains("总结一下这个文件"))
+        assertTrue(result.contains("summarize this file"))
         assertTrue(result.contains("- /sdcard/notes.txt"))
         assertFalse(result.contains("# Files mentioned by the user:"))
     }
@@ -124,7 +124,7 @@ class ConversationMarkdownExporterTest {
     fun exportAnnotatesImagesWithoutEmbeddingDataUrls() {
         val message = UserMessageUi(
             id = "u",
-            content = "看这张图",
+            content = "look at this image",
             images = listOf("data:image/png;base64,AAAA", "data:image/jpeg;base64,BBBB"),
         )
 
@@ -139,7 +139,7 @@ class ConversationMarkdownExporterTest {
         val messages = listOf(
             AgentMessageUi(id = "a", content = "", isStreaming = true),
             RunTraceMessageUi(id = "r", capabilities = emptyList()),
-            SuggestionChipsMessageUi(id = "s", prompts = listOf("试试这个")),
+            SuggestionChipsMessageUi(id = "s", prompts = listOf("try this")),
         )
 
         val result = ConversationMarkdownExporter.export("t", messages, labels)
@@ -161,7 +161,7 @@ class ConversationMarkdownExporterTest {
                 id = "t2",
                 toolName = "tap_element",
                 status = ToolActivityStatusUi.Unknown,
-                argumentsSummary = "确定",
+                argumentsSummary = "confirm",
             ),
         )
 
@@ -169,18 +169,18 @@ class ConversationMarkdownExporterTest {
 
         assertTrue(result.contains("> Tool: observe_screen (Failed)"))
         assertTrue(result.contains("> Tool: tap_element (Result unknown)"))
-        assertTrue(result.contains("> Arguments: 确定"))
+        assertTrue(result.contains("> Arguments: confirm"))
     }
 
     @Test
     fun exportSanitizesMultilineTitle() {
         val result = ConversationMarkdownExporter.export(
-            "第一行\n第二行",
+            "first line\nsecond line",
             listOf(UserMessageUi(id = "u", content = "hi")),
             labels,
         )
 
-        assertTrue(result.startsWith("# 第一行 第二行\n"))
+        assertTrue(result.startsWith("# first line second line\n"))
     }
 
     @Test
@@ -216,7 +216,7 @@ class ConversationMarkdownExporterTest {
     @Test
     fun defaultFileNameTruncatesLongTitles() {
         val name = ConversationMarkdownExporter.defaultFileName(
-            title = "长".repeat(100),
+            title = "x".repeat(100),
             fallback = "Conversation",
             nowMillis = 0L,
         )

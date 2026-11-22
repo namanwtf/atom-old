@@ -25,12 +25,12 @@ class OssSpeechSignerTest {
     }
 
     @Test fun uploadIsPrivateAndAuthorizationIsNotAddedToReadUrl() {
-        val request = OssSpeechSigner.request(config, credentials, "录音/a b.wav", "PUT", byteArrayOf(1, 2).toRequestBody("audio/wav".toMediaType()), now)
+        val request = OssSpeechSigner.request(config, credentials, "recording/a b.wav", "PUT", byteArrayOf(1, 2).toRequestBody("audio/wav".toMediaType()), now)
         assertEquals("private", request.header("x-oss-object-acl"))
         assertEquals("20250411T064124Z", request.header("x-oss-date"))
         assertTrue(request.header("Authorization")!!.contains("20250411/cn-hangzhou/oss/aliyun_v4_request"))
         assertEquals("/%E5%BD%95%E9%9F%B3/a%20b.wav", request.url.encodedPath)
-        val url = okhttp3.HttpUrl.Companion.run { OssSpeechSigner.readUrl(config, credentials, "录音/a b.wav", now).toHttpUrl() }
+        val url = okhttp3.HttpUrl.Companion.run { OssSpeechSigner.readUrl(config, credentials, "recording/a b.wav", now).toHttpUrl() }
         assertEquals("900", url.queryParameter("x-oss-expires"))
         assertEquals("test-key/20250411/cn-hangzhou/oss/aliyun_v4_request", url.queryParameter("x-oss-credential"))
         assertFalse(url.toString().contains("test-secret"))

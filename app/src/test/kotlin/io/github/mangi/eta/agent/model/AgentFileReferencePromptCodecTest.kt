@@ -10,32 +10,32 @@ class AgentFileReferencePromptCodecTest {
     fun formatAndParse_roundTripsFilesDirectoriesAndUnicode() {
         val references = listOf(
             AgentFileReference(
-                displayName = "报告 终稿.txt",
-                absolutePath = "/storage/emulated/0/Download/报告 终稿.txt",
+                displayName = "report final draft.txt",
+                absolutePath = "/storage/emulated/0/Download/report final draft.txt",
                 kind = AgentFileReferenceKind.File,
             ),
             AgentFileReference(
-                displayName = "项目资料",
-                absolutePath = "/data/local/tmp/项目资料",
+                displayName = "project material",
+                absolutePath = "/data/local/tmp/project material",
                 kind = AgentFileReferenceKind.Directory,
             ),
         )
 
-        val formatted = AgentFileReferencePromptCodec.format("总结这些内容", references)
+        val formatted = AgentFileReferencePromptCodec.format("summarize this content", references)
 
         assertEquals(
             """# Files mentioned by the user:
 
-## 报告 终稿.txt: /storage/emulated/0/Download/报告 终稿.txt
+## report final draft.txt: /storage/emulated/0/Download/report final draft.txt
 
-## 项目资料/: /data/local/tmp/项目资料
+## project material/: /data/local/tmp/project material
 
 ## My request:
-总结这些内容""",
+summarize this content""",
             formatted,
         )
         assertEquals(
-            AgentFileReferencePrompt(request = "总结这些内容", references = references),
+            AgentFileReferencePrompt(request = "summarize this content", references = references),
             AgentFileReferencePromptCodec.parse(formatted),
         )
     }
@@ -49,7 +49,7 @@ class AgentFileReferencePromptCodecTest {
         )
 
         val parsed = AgentFileReferencePromptCodec.parse(
-            AgentFileReferencePromptCodec.format("", listOf(reference, reference.copy(displayName = "重复")))
+            AgentFileReferencePromptCodec.format("", listOf(reference, reference.copy(displayName = "duplicate")))
         )
 
         assertEquals("", parsed.request)
@@ -58,13 +58,13 @@ class AgentFileReferencePromptCodecTest {
 
     @Test
     fun parse_preservesOrdinaryOrMalformedUserText() {
-        val ordinary = "# Files mentioned by the user:\n\n这只是普通文本"
+        val ordinary = "# Files mentioned by the user:\n\nthis is just plain text"
 
         assertEquals(
             AgentFileReferencePrompt(request = ordinary, references = emptyList()),
             AgentFileReferencePromptCodec.parse(ordinary),
         )
-        assertEquals("原始请求", AgentFileReferencePromptCodec.format("原始请求", emptyList()))
+        assertEquals("original request", AgentFileReferencePromptCodec.format("original request", emptyList()))
     }
 
     @Test
@@ -79,6 +79,6 @@ class AgentFileReferencePromptCodecTest {
         assertTrue(AgentFileReferencePolicy.canSend(listOf(reference), terminalToolsEnabled = true))
         assertTrue(AgentFileReferencePolicy.canSend(emptyList(), terminalToolsEnabled = false))
         assertEquals("device.log", AgentFileReferencePolicy.titleSource("", listOf(reference)))
-        assertEquals("分析日志", AgentFileReferencePolicy.titleSource("分析日志", listOf(reference)))
+        assertEquals("analyze the log", AgentFileReferencePolicy.titleSource("analyze the log", listOf(reference)))
     }
 }

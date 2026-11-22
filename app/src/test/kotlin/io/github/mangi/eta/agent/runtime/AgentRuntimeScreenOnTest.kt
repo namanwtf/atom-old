@@ -80,7 +80,7 @@ class AgentRuntimeScreenOnTest {
             val wakeLock = ShadowPowerManager.getLatestWakeLock()
             assertTrue(wakeLock.isHeld)
 
-            session.complete(AgentRuntimeWire.RunResult(session.runId, true, "完成"))
+            session.complete(AgentRuntimeWire.RunResult(session.runId, true, "done"))
             service.invoke("updateKeepScreenOn")
             assertFalse(AgentRuntimeService.keepScreenOn.value)
             assertFalse(wakeLock.isHeld)
@@ -145,12 +145,12 @@ class AgentRuntimeScreenOnTest {
             assertTrue(AgentRuntimeService.keepScreenOn.value)
             assertTrue(wakeLock.isHeld)
 
-            background.session.complete(AgentRuntimeWire.RunResult(background.runId, true, "完成"))
+            background.session.complete(AgentRuntimeWire.RunResult(background.runId, true, "done"))
             service.invoke("updateKeepScreenOn")
             assertTrue(AgentRuntimeService.keepScreenOn.value)
             assertTrue(wakeLock.isHeld)
 
-            guiRun.session.complete(AgentRuntimeWire.RunResult(guiRun.runId, true, "完成"))
+            guiRun.session.complete(AgentRuntimeWire.RunResult(guiRun.runId, true, "done"))
             service.invoke("updateKeepScreenOn")
             assertFalse(AgentRuntimeService.keepScreenOn.value)
             assertFalse(wakeLock.isHeld)
@@ -222,7 +222,7 @@ class AgentRuntimeScreenOnTest {
             service.assertExecutionStatus(AgentOverlayStatus.Paused, 2)
 
             guiRun.session.controller.cancel()
-            guiRun.session.complete(AgentRuntimeWire.RunResult(guiRun.runId, true, "完成"))
+            guiRun.session.complete(AgentRuntimeWire.RunResult(guiRun.runId, true, "done"))
             service.assertExecutionStatus(background.overlayState.status, 1)
             val guiCoordinator = service.field<GuiControlCoordinator>("guiControl")
             assertTrue(guiCoordinator.state.value.userPaused)
@@ -230,7 +230,7 @@ class AgentRuntimeScreenOnTest {
             assertEquals(AgentOverlayPhase.PAUSED, service.field<MutableState<AgentOverlayState>>("state").value.phase)
             assertTrue(AgentRuntimeService.keepScreenOn.value)
 
-            background.session.complete(AgentRuntimeWire.RunResult(background.runId, true, "完成"))
+            background.session.complete(AgentRuntimeWire.RunResult(background.runId, true, "done"))
             service.invoke("updateKeepScreenOn")
             service.assertExecutionStatus(null, 0)
             assertTrue(guiCoordinator.state.value.userPaused)
@@ -260,7 +260,7 @@ class AgentRuntimeScreenOnTest {
         lateinit var session: AgentRuntimeSession
         session = AgentRuntimeSession(runId, beforeTerminalPublish = { registry.finish(runId, session) })
         val request = AgentRuntimeWire.RunRequest(
-            runId, "测试", AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test-key", model = "test-model", systemPrompt = ""),
+            runId, "test", AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test-key", model = "test-model", systemPrompt = ""),
             emptyList(),
         )
         val run = (registry.admit(request) { RuntimeRunRegistry.Run(request, session) } as RuntimeRunRegistry.Admission.Accepted).run

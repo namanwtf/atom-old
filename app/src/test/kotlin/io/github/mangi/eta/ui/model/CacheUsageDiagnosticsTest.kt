@@ -10,7 +10,7 @@ class CacheUsageDiagnosticsTest {
     @Test
     fun attributionSatisfiesExactTokenIdentityAcrossGrowthCompactionAndTtlExpiry() {
         val messages = listOf(
-            // 第 1 轮：冷启动 10,000（全部归入增量新内容）
+            // round 1: cold start 10,000 (all counted as incremental new content)
             AgentMessageUi(
                 id = "a1",
                 content = "r1",
@@ -22,7 +22,7 @@ class CacheUsageDiagnosticsTest {
                     stepCount = 1,
                 ),
             ),
-            // 第 2 轮：增长到 12,000，命中 10,000，增量 2,000
+            // round 2: grew to 12,000, hits 10,000, increment 2,000
             AgentMessageUi(
                 id = "a2",
                 content = "r2",
@@ -34,7 +34,7 @@ class CacheUsageDiagnosticsTest {
                     stepCount = 1,
                 ),
             ),
-            // 发生压缩（前文 80,000，摘要输出 1,000，压缩请求 98% 缓存命中）
+            // compaction occurs (prior text 80,000, summary output 1,000, the compaction request hits 98% cache)
             SystemNoticeMessageUi(
                 id = "c1",
                 code = SystemNoticeCode.ContextCompaction,
@@ -46,7 +46,7 @@ class CacheUsageDiagnosticsTest {
                     outputTokens = 1_000,
                 ),
             ),
-            // 压缩后首轮：重建上下文到 15,000（4,000 命中，11,000 计为压缩重付）
+            // first round after compaction: rebuilt context to 15,000 (4,000 hits, 11,000 counted as compaction re-payment)
             AgentMessageUi(
                 id = "a3",
                 content = "r3",
@@ -58,7 +58,7 @@ class CacheUsageDiagnosticsTest {
                     stepCount = 1,
                 ),
             ),
-            // 随后 TTL 过期：输入 16,000，cached = 0 -> 1,000 为增量，15,000 为非增量未命中
+            // later the TTL expires: input 16,000, cached = 0 -> 1,000 is incremental, 15,000 is a non-incremental miss
             AgentMessageUi(
                 id = "a4",
                 content = "r4",

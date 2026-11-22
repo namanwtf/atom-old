@@ -77,18 +77,18 @@ class MarkdownMathTest {
     @Test
     fun cjkAdjacentInlineMathRecognizesDelimitersAndAssignsBreathingKerning() {
         val session = StreamingGfmParserSession(testCache())
-        val source = "设\$x > 0\$，且（\$y = 1\$），满足\\(z_i = 2\\)时成立。"
+        val source = "Let \$x > 0\$, and (\$y = 1\$), which holds when \\(z_i = 2\\)."
         val paragraph = session.parse(source, isComplete = true)
             .document.blocks.single() as MarkdownParagraph
 
-        assertEquals("设\$x > 0\$，且（\$y = 1\$），满足\\(z_i = 2\\)时成立。", paragraph.text.text)
+        assertEquals("Let \$x > 0\$, and (\$y = 1\$), which holds when \\(z_i = 2\\).", paragraph.text.text)
         assertEquals(3, paragraph.inlineMath.size)
 
         val first = paragraph.inlineMath[0]
         assertEquals("x > 0", first.latex)
         assertEquals("\$x > 0\$", first.rawSource)
         assertTrue(first.leadingSpaceEm > 0f)
-        // 右侧紧邻全角逗号，标点自身带半宽字怀，不叠加额外空白。
+        // the right side is adjacent to a full-width comma; the punctuation carries its own half-width spacing, so no extra whitespace is added.
         assertEquals(0f, first.trailingSpaceEm, 0.0001f)
 
         val second = paragraph.inlineMath[1]
@@ -107,28 +107,28 @@ class MarkdownMathTest {
     fun currencyRangesAndIsolatedDollarDoNotSwallowSubsequentFormula() {
         val session = StreamingGfmParserSession(testCache())
         listOf(
-            "价格 \$4 和 \$20 每百万 token",
-            "成本区间 \$4-\$20 每月",
-            "赚了\$100，花了\$200",
-            "转义 \\\$x + y\\\$ 不是公式",
+            "price \$4 and \$20 per million token",
+            "cost range \$4-\$20 per month",
+            "earned\$100, spent\$200",
+            "escaped \\\$x + y\\\$ is not a formula",
         ).forEach { plain ->
             val paragraph = session.parse(plain, isComplete = true)
                 .document.blocks.single() as MarkdownParagraph
             assertTrue("Expected no inline math in: $plain", paragraph.inlineMath.isEmpty())
         }
 
-        val mixed = session.parse("单价 \$4，当 \$n \\ge 10\$ 时打折", isComplete = true)
+        val mixed = session.parse("unit price \$4, discount when \$n \\ge 10\$", isComplete = true)
             .document.blocks.single() as MarkdownParagraph
         assertEquals(1, mixed.inlineMath.size)
         assertEquals("n \\ge 10", mixed.inlineMath.single().latex)
-        assertEquals("单价 \$4，当 \$n \\ge 10\$ 时打折", mixed.text.text)
+        assertEquals("unit price \$4, discount when \$n \\ge 10\$", mixed.text.text)
     }
 
     @Test
     fun displayMathInterruptsParagraphAndProtectsInternalMarkdownSyntax() {
         val session = StreamingGfmParserSession(testCache())
         val source = """
-            推导如下：
+            derivation follows:
             $$
             \begin{aligned}
             x &= a + b \\
@@ -137,29 +137,29 @@ class MarkdownMathTest {
             = d
             \end{aligned}
             $$
-            证毕。
+            QED.
         """.trimIndent()
 
         val blocks = session.parse(source, isComplete = true).document.blocks
         assertEquals(3, blocks.size)
-        assertEquals("推导如下：", (blocks[0] as MarkdownParagraph).text.text)
+        assertEquals("derivation follows:", (blocks[0] as MarkdownParagraph).text.text)
         val math = blocks[1] as MarkdownMath
         assertTrue(math.latex.contains("- c"))
         assertTrue(math.latex.contains("= d"))
         assertNotNull(math.displayList)
-        assertEquals("证毕。", (blocks[2] as MarkdownParagraph).text.text)
+        assertEquals("QED.", (blocks[2] as MarkdownParagraph).text.text)
     }
 
     @Test
     fun blockQuoteAndListDisplayMathStripOuterContainerMarkers() {
         val session = StreamingGfmParserSession(testCache())
-        val quoted = session.parse("> 定理：\n> $$\n> a + b = c\n> $$", isComplete = true)
+        val quoted = session.parse("> Theorem:\n> $$\n> a + b = c\n> $$", isComplete = true)
             .document.blocks.single() as MarkdownQuote
         val quotedMath = quoted.blocks.last() as MarkdownMath
         assertEquals("a + b = c", quotedMath.latex)
         assertFalse(quotedMath.rawSource.contains(">"))
 
-        val list = session.parse("1. 第一步：\n   \\[\n   x^2 + 1 = 0\n   \\]", isComplete = true)
+        val list = session.parse("1. First step:\n   \\[\n   x^2 + 1 = 0\n   \\]", isComplete = true)
             .document.blocks.single() as MarkdownList
         val listMath = list.items.single().blocks.last() as MarkdownMath
         assertEquals("x^2 + 1 = 0", listMath.latex)
@@ -173,33 +173,33 @@ class MarkdownMathTest {
         val cache = testCache(engineCalls)
         val session = StreamingGfmParserSession(cache)
 
-        // 行内半开区间 $[0, 1)$ 不得被流式未闭合链接检测截断。
-        val halfOpen = session.parse("在区间 \$[0, 1)\$ 上继续输出", isComplete = false)
+        // an inline half-open interval $[0, 1)$ must not be truncated by streaming unclosed-link detection.
+        val halfOpen = session.parse("continue output on the interval \$[0, 1)\$", isComplete = false)
         val halfOpenParagraph = halfOpen.document.blocks.single() as MarkdownParagraph
-        assertEquals("在区间 \$[0, 1)\$ 上继续输出", halfOpenParagraph.text.text)
+        assertEquals("continue output on the interval \$[0, 1)\$", halfOpenParagraph.text.text)
         assertEquals("[0, 1)", halfOpenParagraph.inlineMath.single().latex)
 
-        // 未闭合多行块内含竖线 `|A|` 时，不得当作未确认表格隐藏。
+        // an unclosed multiline block containing a pipe `|A|` must not be hidden as an unconfirmed table.
         val unclosedDeterminant = session.parse("\$\$\n|A| = ad - bc", isComplete = false)
         assertTrue(unclosedDeterminant.renderedSource.contains("|A| = ad - bc"))
         assertTrue(unclosedDeterminant.document.blocks.none { it is MarkdownMath })
 
-        // 闭合后再排版，且后续段落追加时复用同一 MarkdownMath 实例与引擎缓存。
+        // re-layout after closing, and reuse the same MarkdownMath instance and engine cache when a later paragraph is appended.
         engineCalls.set(0)
         val closedBlock = session.parse("\$\$\n|A| = ad - bc\n\$\$", isComplete = false)
         val firstMathInstance = closedBlock.document.blocks.single() as MarkdownMath
         assertEquals(1, engineCalls.get())
 
         val withNextParagraph = session.parse(
-            "\$\$\n|A| = ad - bc\n\$\$\n\n其中 \$a\$ 为首项，继续补充说明",
+            "\$\$\n|A| = ad - bc\n\$\$\n\nwhere \$a\$ is the leading term, continuing with more explanation",
             isComplete = false,
         )
         assertSame(firstMathInstance, withNextParagraph.document.blocks.first())
         assertEquals(2, engineCalls.get())
 
-        // 同一末段继续追加文字时，段首已闭合的 `$a$` 直接命中公式布局缓存，不重复调用引擎。
+        // when appending more text to the same last paragraph, the already-closed `$a$` at the paragraph start hits the formula layout cache directly without re-invoking the engine.
         session.parse(
-            "\$\$\n|A| = ad - bc\n\$\$\n\n其中 \$a\$ 为首项，继续补充说明更多文字",
+            "\$\$\n|A| = ad - bc\n\$\$\n\nwhere \$a\$ is the leading term, continuing with more explanation and more text",
             isComplete = false,
         )
         assertEquals(2, engineCalls.get())
@@ -231,7 +231,7 @@ class MarkdownMathTest {
         )
         val session = StreamingGfmParserSession(testCache())
         val doc = session.parse(
-            "**重点结论：\$E = mc^2\$。**下文\n\n| 指标 | 公式 |\n| --- | --- |\n| 复杂度 | \$O(n \\log n)\$ |",
+            "**Key conclusion：\$E = mc^2\$.**following text\n\n| Metric | Formula |\n| --- | --- |\n| Complexity | \$O(n \\log n)\$ |",
             isComplete = true,
             style = style,
         ).document
@@ -251,7 +251,7 @@ class MarkdownMathTest {
 
     @Test
     fun inlineMathBoxMetricsKeepExactBaselineAlignmentAndAdaptToNarrowWidths() {
-        // 验证不同字高与上下不对称公式下的零基线误差与不裁切保证。
+        // verify zero baseline error and no-clipping guarantees across different glyph heights and vertically asymmetric formulas.
         listOf(
             Triple(0.85, 0.35, -42 to 11),
             Triple(1.40, 0.05, -44 to 12),
@@ -280,7 +280,7 @@ class MarkdownMathTest {
             assertFalse(metrics.scrollable)
         }
 
-        // 窄屏略超宽：温和微缩适配单行，不开启内部滚动。
+        // slightly over-wide on a narrow screen: gently shrink to fit a single line without enabling internal scrolling.
         val gentlyScaled = computeInlineMathBoxMetrics(
             displayListWidthEm = 5.0,
             displayListHeightEm = 0.8,
@@ -296,7 +296,7 @@ class MarkdownMathTest {
         assertFalse(gentlyScaled.scrollable)
         assertTrue(gentlyScaled.boxWidthPx <= 220)
 
-        // 窄屏超长行内公式：锁定最大占位宽度并启用内部横向滚动。
+        // over-long inline formula on a narrow screen: lock the maximum placeholder width and enable internal horizontal scrolling.
         val scrollableLong = computeInlineMathBoxMetrics(
             displayListWidthEm = 20.0,
             displayListHeightEm = 0.8,
@@ -318,7 +318,7 @@ class MarkdownMathTest {
     fun placeholderMeasurementPreservesLatexSourceAndDoesNotTruncateAcrossLineWraps() {
         val session = StreamingGfmParserSession(testCache())
         val paragraph = session.parse(
-            "这是一段较长的中文导语用于触发自动换行后紧跟行内公式 \$a_1 + b_1 = c_1\$ 再接下文。",
+            "This is a fairly long intro paragraph used to trigger automatic wrapping followed immediately by an inline Formula \$a_1 + b_1 = c_1\$ and then following text.",
             isComplete = true,
         ).document.blocks.single() as MarkdownParagraph
 
@@ -352,7 +352,7 @@ class MarkdownMathTest {
 
     @Test
     fun atomicRevealBoundariesKeepFormulaAsSingleStepAndMapProgressMonotonically() {
-        val text = "设 \$a_1 + b_1\$ 成立"
+        val text = "Let \$a_1 + b_1\$ hold"
         val formulaStart = text.indexOf('$')
         val formulaEnd = text.lastIndexOf('$') + 1
         val spans = listOf(RevealAtomicSpan(formulaStart, formulaEnd))
@@ -363,9 +363,9 @@ class MarkdownMathTest {
         )
 
         val boundaries = graphemeBoundariesWithAtomicSpans(text, spans)
-        // 显现尚未到达公式时，保持原有精确字素进度。
+        // when reveal has not yet reached the formula, keep the original precise grapheme progress.
         assertEquals(1.4f, mapProgressAcrossAtomicChange(boundaries, oldCharOffset = 1, oldFraction = 0.4f), 0.001f)
-        // 显现在公式闭合前已进入公式内部时，闭合瞬间对齐到该公式结束边界（下标 3），不跳过后续“ 成立”。
+        // when reveal enters a formula before it closes, it aligns to the formula's end boundary (index 3) at the moment of closing, without skipping the trailing "holds".
         assertEquals(3f, mapProgressAcrossAtomicChange(boundaries, oldCharOffset = 6, oldFraction = 0.7f), 0.001f)
     }
 }

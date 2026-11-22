@@ -31,7 +31,7 @@ class AgentRuntimeWireTest {
     @Test
     fun searchSuggestionsCapabilityIsOptionalAndHtmlIsNeverDurable() {
         val request = AgentRuntimeWire.RunRequest(
-            runId = "search", prompt = "测试", images = emptyList(),
+            runId = "search", prompt = "test", images = emptyList(),
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "",
                 supportsSearchSuggestions = true,
@@ -42,23 +42,23 @@ class AgentRuntimeWireTest {
         bundle.remove("supports_search_suggestions")
         assertFalse(AgentRuntimeWire.runRequestFromBundle(bundle).config.supportsSearchSuggestions)
 
-        val event = AgentEvent.SearchSuggestions(2, 4, "<div>搜索建议</div>")
+        val event = AgentEvent.SearchSuggestions(2, 4, "<div>search suggestion</div>")
         assertEquals(event, AgentRuntimeWire.eventFromBundle(AgentRuntimeWire.eventToBundle(event)))
         assertNull(event.recoveryProjection())
         assertEquals(event, event.replayProjection())
         assertThrows(IllegalArgumentException::class.java) { AgentEventJsonCodec.encode(event) }
-        assertNull(AgentEventJsonCodec.decode("""{"type":"search_suggestions","round":2,"index":4,"html":"不得恢复"}"""))
+        assertNull(AgentEventJsonCodec.decode("""{"type":"search_suggestions","round":2,"index":4,"html":"must not be restored"}"""))
         val oversized = AgentRuntimeWire.eventToBundle(event).apply {
-            putString("html", "中".repeat(SearchSuggestionsPayload.MAX_HTML_BYTES))
+            putString("html", "C".repeat(SearchSuggestionsPayload.MAX_HTML_BYTES))
         }
         assertNull(AgentRuntimeWire.eventFromBundle(oversized))
-        assertFalse(event.toLogLine().contains("搜索建议"))
+        assertFalse(event.toLogLine().contains("search suggestion"))
     }
 
     @Test
     fun oauthWireCarriesOnlyAuthenticationModeAndDropsLegacySecrets() {
         val request = AgentRuntimeWire.RunRequest(
-            runId = "oauth-wire", prompt = "测试", images = emptyList(),
+            runId = "oauth-wire", prompt = "test", images = emptyList(),
             config = AgentModelClient.ModelConfig(
                 providerId = "oauth-provider", authMode = ProviderAuthModes.OPENAI_CHATGPT,
                 baseUrl = "https://api.openai.com/v1", apiKey = "fixture-must-not-cross-ipc",
@@ -88,7 +88,7 @@ class AgentRuntimeWireTest {
         )
         for (enabled in listOf(false, true)) {
             val request = AgentRuntimeWire.RunRequest(
-                runId = "automatic-compaction", prompt = "继续", config = config.copy(autoCompactionEnabled = enabled),
+                runId = "automatic-compaction", prompt = "continue", config = config.copy(autoCompactionEnabled = enabled),
                 images = emptyList(),
             )
             val bundle = AgentRuntimeWire.toLegacyBundle(request)
@@ -143,7 +143,7 @@ class AgentRuntimeWireTest {
                 }
                 val image = AgentImageCodec.fromScreenBytes(original, "custom_capture_label", mime)
                 val request = AgentRuntimeWire.RunRequest(
-                    runId = "raw-screen", prompt = "解释当前屏幕", images = listOf(image),
+                    runId = "raw-screen", prompt = "explain the current screen", images = listOf(image),
                     config = AgentModelClient.ModelConfig(
                         baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "",
                         reasoningEffort = ReasoningEffort.OFF,
@@ -177,9 +177,9 @@ class AgentRuntimeWireTest {
     @Test
     fun assistantScreenContextRoundTripsSeparatelyFromPromptAndDefaultsForOldSenders() {
         val request = AgentRuntimeWire.RunRequest(
-            runId = "assistant-context", prompt = "这是什么？", images = emptyList(),
+            runId = "assistant-context", prompt = "What is this?", images = emptyList(),
             config = AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test", model = "test", systemPrompt = "", reasoningEffort = ReasoningEffort.OFF),
-            assistantScreenContext = "当前应用与画面内容",
+            assistantScreenContext = "current app and screen content",
         )
         val bundle = AgentRuntimeWire.toLegacyBundle(request)
         assertEquals(request, AgentRuntimeWire.runRequestFromBundle(bundle))
@@ -197,13 +197,13 @@ class AgentRuntimeWireTest {
     @Test
     fun replyRewriteTargetSurvivesRequestResultAndDrain() {
         val request = AgentRuntimeWire.RunRequest(
-            runId = "rewrite-1", prompt = "原回复", images = emptyList(),
+            runId = "rewrite-1", prompt = "original reply", images = emptyList(),
             config = AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "test", model = "test", systemPrompt = "",
                 reasoningEffort = ReasoningEffort.OFF),
             operation = AgentRuntimeWire.OP_REWRITE_REPLY, rewriteTargetMessageId = "assistant-1",
         )
         assertEquals(request, AgentRuntimeWire.runRequestFromBundle(AgentRuntimeWire.toLegacyBundle(request)))
-        val result = AgentRuntimeWire.RunResult("rewrite-1", true, "新回复", operation = AgentRuntimeWire.OP_REWRITE_REPLY,
+        val result = AgentRuntimeWire.RunResult("rewrite-1", true, "new reply", operation = AgentRuntimeWire.OP_REWRITE_REPLY,
             rewriteTargetMessageId = "assistant-1")
         assertEquals(result, AgentRuntimeWire.runResultFromBundle(AgentRuntimeWire.toBundle(result)))
         val completed = AgentRuntimeWire.CompletedRun(
@@ -217,15 +217,15 @@ class AgentRuntimeWireTest {
     @Test
     fun replyRewriteDoesNotAcceptSteering() {
         val session = AgentRuntimeSession("rewrite-1", operation = AgentRuntimeWire.OP_REWRITE_REPLY)
-        assertFalse(session.steer("额外请求"))
-        assertNull(session.steer("额外请求") { AgentEvent.UserSupplementReceived(1, "额外请求") })
+        assertFalse(session.steer("extra request"))
+        assertNull(session.steer("extra request") { AgentEvent.UserSupplementReceived(1, "extra request") })
     }
 
     @Test
     fun contextSnapshotRoundTripsDirectlyAndDrainOnlyCarriesReference() {
         val snapshot = io.github.mangi.eta.agent.model.AgentContextSnapshot(
             operationId = "compact-1", consumedUserTurns = 4, coveredUserTurns = 3,
-            messages = listOf(AgentModelClient.ConversationMessage("assistant", "摘要内容", contextSummary = true, compactedUserTurns = 3)),
+            messages = listOf(AgentModelClient.ConversationMessage("assistant", "summary content", contextSummary = true, compactedUserTurns = 3)),
         )
         val result = AgentRuntimeWire.RunResult("compact-1", true, "", contextSnapshot = snapshot,
             operation = AgentRuntimeWire.OP_COMPACT)
@@ -250,7 +250,7 @@ class AgentRuntimeWireTest {
     @Test
     fun modelSessionSurvivesIpcAndLegacyRequestsUseConversationIdentity() {
         val request = AgentRuntimeWire.RunRequest(
-            runId = "run-session", prompt = "测试",
+            runId = "run-session", prompt = "test",
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://example.invalid/v1", apiKey = "test-key",
                 model = "test-model", systemPrompt = "", reasoningEffort = ReasoningEffort.OFF,
@@ -292,7 +292,7 @@ class AgentRuntimeWireTest {
     fun oversizedLegacyInlineImageRequestIsRejectedBeforeMessengerSend() {
         val request = AgentRuntimeWire.RunRequest(
             runId = "run-large-image",
-            prompt = "分析图片",
+            prompt = "analyze the image",
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://example.invalid/v1",
                 apiKey = "test-key",
@@ -331,7 +331,7 @@ class AgentRuntimeWireTest {
         val dataUrl = "data:image/png;base64,${Base64.encodeToString(imageBytes, Base64.NO_WRAP)}"
         val request = AgentRuntimeWire.RunRequest(
             runId = "run-large-image",
-            prompt = "分析图片",
+            prompt = "analyze the image",
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://example.invalid/v1",
                 apiKey = "test-key",
@@ -372,7 +372,7 @@ class AgentRuntimeWireTest {
             val decodedBytes = Base64.decode(receivedImage.reference.substringAfter("base64,"), Base64.DEFAULT)
             assertEquals(decodedBytes.size, receivedImage.bytes)
             val decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                ?: error("传输后的图片无法解码")
+                ?: error("the image cannot be decoded after transfer")
             try {
                 assertEquals(640, decodedBitmap.width)
                 assertEquals(640, decodedBitmap.height)
@@ -399,11 +399,11 @@ class AgentRuntimeWireTest {
                 context = context,
                 value = sourceFile.absolutePath,
                 source = "test_local",
-            ) ?: error("测试图片解析失败")
+            ) ?: error("test image parse failed")
             assertEquals(sourceFile.absolutePath, image.reference)
             val request = AgentRuntimeWire.RunRequest(
                 runId = "run-local-image",
-                prompt = "分析本地图片",
+                prompt = "analyze the local image",
                 config = AgentModelClient.ModelConfig(
                     baseUrl = "https://example.invalid/v1",
                     apiKey = "test-key",
@@ -473,7 +473,7 @@ class AgentRuntimeWireTest {
     @Test
     fun legacyModelConfigJsonDefaultsBrowserToolsToEnabled() {
         val config = Json.decodeFromString<AgentModelClient.ModelConfig>(
-            """{"baseUrl":"https://api.openai.com/v1","apiKey":"test-key","model":"gpt-test","systemPrompt":"你是手机 Agent"}"""
+            """{"baseUrl":"https://api.openai.com/v1","apiKey":"test-key","model":"gpt-test","systemPrompt":"you are a phone Agent"}"""
         )
 
         assertEquals(true, config.browserTools)
@@ -503,14 +503,14 @@ class AgentRuntimeWireTest {
     fun runRequestBundleRoundTripPreservesConfigHistoryAndImages() {
         val request = AgentRuntimeWire.RunRequest(
             runId = "run-1",
-            prompt = "继续分析",
+            prompt = "continue analyzing",
             config = AgentModelClient.ModelConfig(
                 providerSourceType = "bailian",
                 baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1",
                 apiKey = "test-key",
                 model = "qwen3-max",
                 contextWindow = 262_144,
-                systemPrompt = "你是手机 Agent",
+                systemPrompt = "you are a phone Agent",
                 terminalTools = true,
                 browserTools = true,
                 deviceDirectTools = true,
@@ -537,11 +537,11 @@ class AgentRuntimeWireTest {
             history = listOf(
                 AgentModelClient.ConversationMessage(
                     role = "user",
-                    content = "上一轮问题",
+                    content = "previous-round question",
                 ),
                 AgentModelClient.ConversationMessage(
                     role = "assistant",
-                    content = "上一轮回答",
+                    content = "previous-round answer",
                 ),
             ),
             handoff = AgentRuntimeWire.EntryHandoff(
@@ -565,12 +565,12 @@ class AgentRuntimeWireTest {
     fun legacyRunRequestBundleDefaultsBrowserToolsToEnabled() {
         val request = AgentRuntimeWire.RunRequest(
             runId = "run-legacy",
-            prompt = "读取网页",
+            prompt = "read the page",
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://api.openai.com/v1",
                 apiKey = "test-key",
                 model = "gpt-test",
-                systemPrompt = "你是手机 Agent",
+                systemPrompt = "you are a phone Agent",
                 browserTools = false,
             ),
             images = emptyList(),
@@ -593,12 +593,12 @@ class AgentRuntimeWireTest {
     fun legacyRunRequestUsesSafeDeviceToolDefaults() {
         val request = AgentRuntimeWire.RunRequest(
             runId = "run-legacy-device-tools",
-            prompt = "查看设备状态",
+            prompt = "view device status",
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://api.openai.com/v1",
                 apiKey = "test-key",
                 model = "gpt-test",
-                systemPrompt = "你是手机 Agent",
+                systemPrompt = "you are a phone Agent",
                 deviceDirectTools = false,
                 deviceSensitiveReadTools = true,
                 deviceSensitiveActionTools = true,
@@ -672,20 +672,20 @@ class AgentRuntimeWireTest {
                 kind = AgentEvent.AssistantBlockKind.THINKING,
                 index = 0,
                 deltaChars = 4,
-                delta = "思考",
+                delta = "thinking",
             ),
             AgentEvent.AssistantBlockEnd(
                 round = 2,
                 kind = AgentEvent.AssistantBlockKind.THINKING,
                 index = 0,
                 contentChars = 4,
-                replacementContent = "思考",
+                replacementContent = "thinking",
                 elapsedMs = 4_200L,
             ),
             AgentEvent.AssistantReceived(
                 round = 2,
                 contentChars = 12,
-                reasoningContent = "完整思考内容",
+                reasoningContent = "complete reasoning content",
                 toolNames = listOf("observe_screen", "input_text"),
             ),
             AgentEvent.UsageReceived(
@@ -704,7 +704,7 @@ class AgentRuntimeWireTest {
                 round = 2,
                 toolCallId = "call_abc",
                 name = "run_command",
-                argsPreview = "执行命令 · Android · root",
+                argsPreview = "run command · Android · root",
                 command = "pm list packages | head",
             ),
             AgentEvent.ToolFinished(
@@ -716,7 +716,7 @@ class AgentRuntimeWireTest {
                 imageBytes = 2048,
                 success = true,
             ),
-            // 旧版本 Runtime 不发送 success 字段，缺省事件也必须完整往返
+            // Old Runtime versions don't send the success field; defaulted events must still round-trip completely
             AgentEvent.ToolFinished(
                 round = 2,
                 toolCallId = "call_legacy",
@@ -746,13 +746,13 @@ class AgentRuntimeWireTest {
         val result = AgentRuntimeWire.RunResult(
             runId = "run-1",
             ok = true,
-            content = "最终回答",
-            reasoningContent = "先分析问题，再调用工具，最后总结。",
+            content = "final answer",
+            reasoningContent = "First analyze the problem, then call tools, and finally summarize.",
             transcript = listOf(
                 AgentModelClient.ConversationMessage(
                     role = "assistant",
-                    content = "最终回答",
-                    reasoningContent = "先分析问题，再调用工具，最后总结。",
+                    content = "final answer",
+                    reasoningContent = "First analyze the problem, then call tools, and finally summarize.",
                 )
             ),
         )
@@ -767,7 +767,7 @@ class AgentRuntimeWireTest {
         val handoff = AgentRuntimeWire.EntryHandoff(
             id = "handoff-1",
             source = AgentRuntimeWire.ETA_VOICE_HANDOFF_SOURCE,
-            payload = """{"userText":"打开微信"}""",
+            payload = """{"userText":"open WeChat"}""",
             dismissEntrySurfaceOnForegroundOperation = true,
         )
 
@@ -810,9 +810,9 @@ class AgentRuntimeWireTest {
 
     @Test
     fun steerBundlesRoundTripTextAndAcceptanceStatus() {
-        val requestBundle = AgentRuntimeWire.steerBundle("run-steer", "改用另一种实现")
+        val requestBundle = AgentRuntimeWire.steerBundle("run-steer", "switch to a different implementation")
         assertEquals("run-steer", AgentRuntimeWire.runIdFromBundle(requestBundle))
-        assertEquals("改用另一种实现", AgentRuntimeWire.steerTextFromBundle(requestBundle))
+        assertEquals("switch to a different implementation", AgentRuntimeWire.steerTextFromBundle(requestBundle))
 
         val acceptedBundle = AgentRuntimeWire.steerResponseBundle("run-steer", accepted = true, supplementIndex = 3)
         assertEquals("run-steer", AgentRuntimeWire.runIdFromBundle(acceptedBundle))

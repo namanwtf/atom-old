@@ -70,7 +70,7 @@ class UserTerminalControllerTest {
             val secondId = (second as UserTerminalController.OpenResult.Ready).sessionId
             assertNotEquals(firstId, secondId)
 
-            // 第二个会话的 open 不再挤掉第一个会话。
+            // A second session's open no longer displaces the first session.
             assertTrue(controller.sessionAlive(firstId))
             assertTrue(controller.sessionAlive(secondId))
             assertEquals(2, controller.listSessions().size)
@@ -80,7 +80,7 @@ class UserTerminalControllerTest {
             controller.exec(firstId, "printf %s \"\$ETA_SESSION_MARK\"") { text, _ -> firstOutput.append(text) }
             assertEquals("one", firstOutput.toString())
 
-            // 另一个会话看不到第一个会话的环境变量。
+            // Another session cannot see the first session's environment variables.
             val secondOutput = StringBuilder()
             controller.exec(secondId, "printf %s \"\${ETA_SESSION_MARK:-empty}\"") { text, _ -> secondOutput.append(text) }
             assertEquals("empty", secondOutput.toString())
@@ -156,7 +156,7 @@ class UserTerminalControllerTest {
                 }
             }
 
-            // 命令整体约 1 秒才结束；首段输出必须在这之前流式到达。
+            // The whole command takes about 1 second to finish; the first chunk of output must stream in before that.
             assertTrue("first delta should arrive before exec completes", firstDelta.await(500, TimeUnit.MILLISECONDS))
             execThread.join(5_000)
             assertFalse(execThread.isAlive)
@@ -272,7 +272,7 @@ class UserTerminalControllerTest {
                     output.append(text)
                 }
             }
-            // read 阻塞期间状态标记不在 stdin 中；写入的用户输入完整到达前台命令。
+            // While read blocks, the status marker is not in stdin; the written user input reaches the foreground command intact.
             Thread.sleep(300)
             assertTrue(controller.writeInput(open.sessionId, "hello\n"))
             execThread.join(5_000)

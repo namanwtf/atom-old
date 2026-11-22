@@ -16,12 +16,12 @@ class DeepSeekSpeechSynthesisTest {
                 filterMarkdown = false,
             ),
             " test-key ",
-            "你好，DeepSeek。",
+            "Hello, DeepSeek.",
         )
         assertEquals("https://example.invalid/proxy/v1/tools/tts", request.url.toString())
         assertEquals("Bearer test-key", request.header("Authorization"))
         val body = JSONObject(Buffer().also { request.body!!.writeTo(it) }.readUtf8())
-        assertEquals("你好，DeepSeek。", body.getString("text"))
+        assertEquals("Hello, DeepSeek.", body.getString("text"))
         assertEquals("tide", body.getString("voice_id"))
         assertEquals("pcm", body.getString("format"))
         assertFalse(body.getBoolean("filter_markdown"))
@@ -41,7 +41,7 @@ class DeepSeekSpeechSynthesisTest {
     }
 
     @Test fun billingCharCountCountsHanAsTwoAndAsciiAsOne() {
-        assertEquals(2 + 2 + 5, deepSeekBillingCharCount("你好Hello"))
+        assertEquals(2 + 2 + 5, deepSeekBillingCharCount("helloHello"))
         assertTrue(supportsSpeechSession(TtsProvider.DEEPSEEK))
     }
 }

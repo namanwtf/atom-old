@@ -38,7 +38,7 @@ class OpenAiResponsesProviderTest {
             assertEquals(if (enabled) 0 else 1, all.count { it.optString("type") == "function" && it.optString("name") == "web_search" })
             assertEquals(1, all.count { it.optString("name") == "fetch_url" })
         }
-        assertEquals("原始目录不得被 Provider 投影修改", 2, functions.length())
+        assertEquals("the original catalog must not be modified by Provider projection", 2, functions.length())
     }
 
     @Test
@@ -47,7 +47,7 @@ class OpenAiResponsesProviderTest {
         val completed = CountDownLatch(1)
         val serverObservedCompletion = CountDownLatch(1)
         val completedBeforeClose = AtomicBoolean(false)
-        val reasoningText = "先分析输入，再整理答案。"
+        val reasoningText = "First analyze the input, then organize the answer."
         val nativeItem = JSONObject()
             .put("id", "rs_native")
             .put("type", "reasoning")
@@ -61,19 +61,19 @@ class OpenAiResponsesProviderTest {
             JSONObject().put("item_id", "rs_native")
                 .put("output_index", 0).put("content_index", 0).put(key, text),
         )
-        val firstChunk = reasoningEvent("response.reasoning_text.delta", "delta", "先分析输入，")
+        val firstChunk = reasoningEvent("response.reasoning_text.delta", "delta", "First analyze the input, ")
         val remainingChunks = buildString {
-            append(reasoningEvent("response.reasoning_text.delta", "delta", "再整理答案。"))
+            append(reasoningEvent("response.reasoning_text.delta", "delta", "then organize the answer."))
             append(reasoningEvent("response.reasoning_text.done", "text", reasoningText))
             append(event("response.output_item.done", JSONObject().put("output_index", 0).put("item", nativeItem)))
-            append(responseTextEvent("response.output_text.delta", "msg_1", 1, "delta", "答案"))
+            append(responseTextEvent("response.output_text.delta", "msg_1", 1, "delta", "answer"))
             append(
                 event(
                     "response.completed",
                     JSONObject().put(
                         "response",
                         JSONObject().put("status", "completed")
-                            .put("output", JSONArray().put(nativeItem).put(messageItem("msg_1", "答案"))),
+                            .put("output", JSONArray().put(nativeItem).put(messageItem("msg_1", "answer"))),
                     ),
                 ),
             )
@@ -84,7 +84,7 @@ class OpenAiResponsesProviderTest {
             writeBody = { output ->
                 output.write(firstChunk.toByteArray(Charsets.UTF_8))
                 output.flush()
-                // 服务端只有确认首个增量已经交付，才发送 done 和终态，排除读到 EOF 才输出。
+                // The server only sends done and the terminal state after confirming the first delta was delivered, ruling out output only on EOF.
                 check(firstDeltaDelivered.await(5, TimeUnit.SECONDS))
                 output.write(remainingChunks.toByteArray(Charsets.UTF_8))
                 output.flush()
@@ -96,7 +96,7 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 ProviderRequest(
                     config(baseUrl),
-                    JSONArray().put(JSONObject().put("role", "user").put("content", "测试推理")),
+                    JSONArray().put(JSONObject().put("role", "user").put("content", "test reasoning")),
                     JSONArray(),
                 ),
                 AgentRunController(),
@@ -111,7 +111,7 @@ class OpenAiResponsesProviderTest {
             assertTrue(serverObservedCompletion.await(5, TimeUnit.SECONDS))
             assertTrue(completedBeforeClose.get())
             assertEquals(
-                listOf("先分析输入，", "再整理答案。"),
+                listOf("First analyze the input, ", "then organize the answer."),
                 events.filterIsInstance<ProviderEvent.BlockDelta>()
                     .filter { it.kind == AssistantBlockKind.THINKING }.map { it.delta },
             )
@@ -120,7 +120,7 @@ class OpenAiResponsesProviderTest {
             assertEquals(reasoningText, end.content)
             assertFalse(end.replaceContent)
             assertEquals(reasoningText, result.assistantMessage.getString("reasoning_content"))
-            assertEquals("答案", result.assistantMessage.getString("content"))
+            assertEquals("answer", result.assistantMessage.getString("content"))
             assertEquals(
                 nativeItem.toString(),
                 ResponsesEphemeralState.outputItems(result.assistantMessage)?.getJSONObject(0)?.toString(),
@@ -131,19 +131,19 @@ class OpenAiResponsesProviderTest {
     @Test
     fun typedReasoningPartsKeepTheirIdentityAndOverrideLegacyAlias() {
         val item = JSONObject().put("id", "rs_parts").put("type", "reasoning")
-            .put("reasoning_text", "旧字段不应重复追加")
+            .put("reasoning_text", "the old field must not be appended again")
             .put(
                 "content",
                 JSONArray()
-                    .put(JSONObject().put("type", "reasoning_text").put("text", "第一段"))
-                    .put(JSONObject().put("type", "reasoning_text").put("text", "第二段补全")),
+                    .put(JSONObject().put("type", "reasoning_text").put("text", "first paragraph"))
+                    .put(JSONObject().put("type", "reasoning_text").put("text", "second-stage completion")),
             )
         val body = buildString {
             append(
                 event(
                     "response.reasoning_text.delta",
                     JSONObject().put("item_id", "rs_parts").put("output_index", 0)
-                        .put("content_index", 1).put("delta", "第二段"),
+                        .put("content_index", 1).put("delta", "second paragraph"),
                 ),
             )
             append(
@@ -162,24 +162,24 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 ProviderRequest(
                     config(baseUrl),
-                    JSONArray().put(JSONObject().put("role", "user").put("content", "测试推理")),
+                    JSONArray().put(JSONObject().put("role", "user").put("content", "test reasoning")),
                     JSONArray(),
                 ),
                 AgentRunController(),
                 events::add,
             )
 
-            assertEquals("第一段\n第二段补全", result.assistantMessage.getString("reasoning_content"))
+            assertEquals("first paragraph\nsecond-stage completion", result.assistantMessage.getString("reasoning_content"))
             val corrections = events.filterIsInstance<ProviderEvent.BlockEnd>().filter { it.replaceContent }
             assertEquals(1, corrections.size)
             assertEquals(0, corrections.single().index)
-            assertEquals("第二段补全", corrections.single().content)
+            assertEquals("second-stage completion", corrections.single().content)
         }
     }
 
     @Test
     fun requestUsesTypedInputProtectedFieldsAndOptionalHostedSearch() {
-        val assistant = JSONObject().put("role", "assistant").put("content", "先检查")
+        val assistant = JSONObject().put("role", "assistant").put("content", "check first")
         ResponsesEphemeralState.attachOutputItems(
             assistant,
             JSONArray().put(
@@ -194,7 +194,7 @@ class OpenAiResponsesProviderTest {
                 JSONObject().put("role", "user").put(
                     "content",
                     JSONArray()
-                        .put(JSONObject().put("type", "text").put("text", "看图"))
+                        .put(JSONObject().put("type", "text").put("text", "view the image"))
                         .put(
                             JSONObject()
                                 .put("type", "image_url")
@@ -214,7 +214,7 @@ class OpenAiResponsesProviderTest {
                 "function",
                 JSONObject()
                     .put("name", "device_info")
-                    .put("description", "读取设备")
+                    .put("description", "read the device")
                     .put("parameters", JSONObject().put("type", "object")),
             ),
         )
@@ -235,7 +235,7 @@ class OpenAiResponsesProviderTest {
         )
 
         assertEquals("test-model", request.getString("model"))
-        assertEquals("系统提示", request.getString("instructions"))
+        assertEquals("system prompt", request.getString("instructions"))
         assertTrue(request.getBoolean("stream"))
         assertFalse(request.getBoolean("store"))
         assertFalse(request.has("previous_response_id"))
@@ -253,11 +253,11 @@ class OpenAiResponsesProviderTest {
     @Test
     fun requestUsesMergedInstructionsAndTypedDurableHistoryMessages() {
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "基础约束"))
-            .put(JSONObject().put("role", "user").put("content", "旧问题"))
-            .put(JSONObject().put("role", "system").put("content", "压缩上下文"))
-            .put(JSONObject().put("role", "assistant").put("content", "旧回答"))
-            .put(JSONObject().put("role", "user").put("content", "当前问题"))
+            .put(JSONObject().put("role", "system").put("content", "base constraint"))
+            .put(JSONObject().put("role", "user").put("content", "old question"))
+            .put(JSONObject().put("role", "system").put("content", "compacted context"))
+            .put(JSONObject().put("role", "assistant").put("content", "old answer"))
+            .put(JSONObject().put("role", "user").put("content", "current question"))
 
         val request = OpenAiResponsesProvider.buildRequestJson(
             config = config("https://example.com/v1"),
@@ -265,11 +265,11 @@ class OpenAiResponsesProviderTest {
             tools = JSONArray(),
         )
 
-        assertEquals("基础约束\n\n压缩上下文", request.getString("instructions"))
+        assertEquals("base constraint\n\ncompacted context", request.getString("instructions"))
         val input = request.getJSONArray("input")
         assertEquals(listOf("user", "assistant", "user"), input.roles())
         assertEquals(listOf("message", "message", "message"), input.types())
-        assertEquals("旧回答", input.getJSONObject(1).getString("content"))
+        assertEquals("old answer", input.getJSONObject(1).getString("content"))
     }
 
     @Test
@@ -280,7 +280,7 @@ class OpenAiResponsesProviderTest {
                     .put("id", "rs_1")
                     .put("type", "reasoning")
                     .put("encrypted_content", "opaque")
-                    .put("summary", JSONArray().put(JSONObject().put("type", "summary_text").put("text", "完整摘要"))),
+                    .put("summary", JSONArray().put(JSONObject().put("type", "summary_text").put("text", "complete summary"))),
             )
             .put(JSONObject().put("id", "ws_1").put("type", "web_search_call").put("status", "completed"))
             .put(
@@ -292,7 +292,7 @@ class OpenAiResponsesProviderTest {
                         JSONArray().put(
                             JSONObject()
                                 .put("type", "output_text")
-                                .put("text", "你好世界")
+                                .put("text", "Hello world")
                                 .put(
                                     "annotations",
                                     JSONArray().put(
@@ -301,7 +301,7 @@ class OpenAiResponsesProviderTest {
                                             .put("start_index", 2)
                                             .put("end_index", 4)
                                             .put("url", "https://example.com/source")
-                                            .put("title", "来源"),
+                                            .put("title", "source"),
                                     ),
                                 ),
                         ),
@@ -331,7 +331,7 @@ class OpenAiResponsesProviderTest {
                     .put("output_tokens_details", JSONObject().put("reasoning_tokens", 5)),
             )
         val body = buildString {
-            append(event("response.reasoning_summary_text.delta", JSONObject().put("delta", "完整")))
+            append(event("response.reasoning_summary_text.delta", JSONObject().put("delta", "complete")))
             append(
                 event(
                     "response.output_item.added",
@@ -347,7 +347,7 @@ class OpenAiResponsesProviderTest {
                     ),
                 ),
             )
-            append(event("response.output_text.delta", JSONObject().put("delta", "你好")))
+            append(event("response.output_text.delta", JSONObject().put("delta", "hello")))
             append(event("response.completed", JSONObject().put("response", response)))
         }
         val requestBody = AtomicReference<String>()
@@ -357,7 +357,7 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 request = ProviderRequest(
                     config = config(baseUrl),
-                    messages = JSONArray().put(JSONObject().put("role", "user").put("content", "你好")),
+                    messages = JSONArray().put(JSONObject().put("role", "user").put("content", "hello")),
                     tools = JSONArray(),
                 ),
                 runController = AgentRunController(),
@@ -365,7 +365,7 @@ class OpenAiResponsesProviderTest {
             )
 
             assertTrue(requestBody.get().contains("\"store\":false"))
-            assertEquals("完整摘要", result.assistantMessage.getString("reasoning_content"))
+            assertEquals("complete summary", result.assistantMessage.getString("reasoning_content"))
             assertTrue(result.assistantMessage.getString("content").contains("[[1]]"))
             assertEquals("call_1", result.assistantMessage.getJSONArray("tool_calls").getJSONObject(0).getString("id"))
             assertNotNull(ResponsesEphemeralState.outputItems(result.assistantMessage))
@@ -382,9 +382,9 @@ class OpenAiResponsesProviderTest {
     @Test
     fun completeUsesStreamedTextWhenCompletedOutputIsEmpty() {
         val body = buildString {
-            append(event("response.reasoning_summary_text.delta", JSONObject().put("delta", "简要分析")))
-            append(event("response.output_text.delta", JSONObject().put("delta", "你好")))
-            append(event("response.output_text.delta", JSONObject().put("delta", "世界")))
+            append(event("response.reasoning_summary_text.delta", JSONObject().put("delta", "brief analysis")))
+            append(event("response.output_text.delta", JSONObject().put("delta", "hello")))
+            append(event("response.output_text.delta", JSONObject().put("delta", "world")))
             append(
                 event(
                     "response.completed",
@@ -400,14 +400,14 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 ProviderRequest(
                     config(baseUrl),
-                    JSONArray().put(JSONObject().put("role", "user").put("content", "你好")),
+                    JSONArray().put(JSONObject().put("role", "user").put("content", "hello")),
                     JSONArray(),
                 ),
                 AgentRunController(),
             )
 
-            assertEquals("你好世界", result.assistantMessage.getString("content"))
-            assertEquals("简要分析", result.assistantMessage.getString("reasoning_content"))
+            assertEquals("Hello world", result.assistantMessage.getString("content"))
+            assertEquals("brief analysis", result.assistantMessage.getString("reasoning_content"))
             assertEquals("stop", result.assistantMessage.getString("finish_reason"))
             assertNull(ResponsesEphemeralState.outputItems(result.assistantMessage))
         }
@@ -416,16 +416,16 @@ class OpenAiResponsesProviderTest {
     @Test
     fun completePreservesInterleavedResponseItemOrderAndBlockIdentity() {
         val terminalOutput = JSONArray()
-            .put(reasoningItem("rs_1", "先判断"))
-            .put(messageItem("msg_1", "我先查一下。"))
+            .put(reasoningItem("rs_1", "determine first"))
+            .put(messageItem("msg_1", "Let me check first."))
             .put(JSONObject().put("id", "ws_1").put("type", "web_search_call").put("status", "completed"))
-            .put(reasoningItem("rs_2", "整理结果"))
-            .put(messageItem("msg_2", "这是最终答案。"))
+            .put(reasoningItem("rs_2", "organize the result"))
+            .put(messageItem("msg_2", "This is the final answer."))
         val body = buildString {
-            append(responseTextEvent("response.reasoning_summary_text.delta", "rs_1", 0, "delta", "先判断"))
-            append(responseTextEvent("response.reasoning_summary_text.done", "rs_1", 0, "text", "先判断"))
-            append(responseTextEvent("response.output_text.delta", "msg_1", 1, "delta", "我先查一下。"))
-            append(responseTextEvent("response.output_text.done", "msg_1", 1, "text", "我先查一下。"))
+            append(responseTextEvent("response.reasoning_summary_text.delta", "rs_1", 0, "delta", "determine first"))
+            append(responseTextEvent("response.reasoning_summary_text.done", "rs_1", 0, "text", "determine first"))
+            append(responseTextEvent("response.output_text.delta", "msg_1", 1, "delta", "Let me check first."))
+            append(responseTextEvent("response.output_text.done", "msg_1", 1, "text", "Let me check first."))
             append(
                 event(
                     "response.output_item.added",
@@ -448,10 +448,10 @@ class OpenAiResponsesProviderTest {
                         ),
                 ),
             )
-            append(responseTextEvent("response.reasoning_summary_text.delta", "rs_2", 3, "delta", "整理结果"))
-            append(responseTextEvent("response.reasoning_summary_text.done", "rs_2", 3, "text", "整理结果"))
-            append(responseTextEvent("response.output_text.delta", "msg_2", 4, "delta", "这是最终答案。"))
-            append(responseTextEvent("response.output_text.done", "msg_2", 4, "text", "这是最终答案。"))
+            append(responseTextEvent("response.reasoning_summary_text.delta", "rs_2", 3, "delta", "organize the result"))
+            append(responseTextEvent("response.reasoning_summary_text.done", "rs_2", 3, "text", "organize the result"))
+            append(responseTextEvent("response.output_text.delta", "msg_2", 4, "delta", "This is the final answer."))
+            append(responseTextEvent("response.output_text.done", "msg_2", 4, "text", "This is the final answer."))
             append(
                 event(
                     "response.completed",
@@ -468,29 +468,29 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 ProviderRequest(
                     config(baseUrl),
-                    JSONArray().put(JSONObject().put("role", "user").put("content", "搜索")),
+                    JSONArray().put(JSONObject().put("role", "user").put("content", "search")),
                     JSONArray(),
                 ),
                 AgentRunController(),
                 events::add,
             )
 
-            assertEquals("我先查一下。这是最终答案。", result.assistantMessage.getString("content"))
+            assertEquals("Let me check first. This is the final answer.", result.assistantMessage.getString("content"))
             assertEquals(
                 listOf(
                     "start:THINKING:0",
-                    "delta:THINKING:0:先判断",
+                    "delta:THINKING:0:determine first",
                     "end:THINKING:0",
                     "start:TEXT:1",
-                    "delta:TEXT:1:我先查一下。",
+                    "delta:TEXT:1:Let me check first.",
                     "end:TEXT:1",
                     "hosted-start:ws_1",
                     "hosted-end:ws_1",
                     "start:THINKING:2",
-                    "delta:THINKING:2:整理结果",
+                    "delta:THINKING:2:organize the result",
                     "end:THINKING:2",
                     "start:TEXT:3",
-                    "delta:TEXT:3:这是最终答案。",
+                    "delta:TEXT:3:This is the final answer.",
                     "end:TEXT:3",
                 ),
                 events.mapNotNull(::timelineLabel),
@@ -537,7 +537,7 @@ class OpenAiResponsesProviderTest {
             val result = OpenAiResponsesProvider.complete(
                 ProviderRequest(
                     config(baseUrl),
-                    JSONArray().put(JSONObject().put("role", "user").put("content", "读取设备")),
+                    JSONArray().put(JSONObject().put("role", "user").put("content", "read the device")),
                     JSONArray(),
                 ),
                 AgentRunController(),
@@ -565,23 +565,23 @@ class OpenAiResponsesProviderTest {
                     AgentRunController(),
                 )
             }.exceptionOrNull()
-            assertTrue(thrown?.message.orEmpty().contains("缺少合法终止事件"))
+            assertTrue(thrown?.message.orEmpty().contains("missing a legal termination event"))
         }
     }
 
     @Test
     fun citationsDeduplicateAndFallBackForInvalidOffsets() {
         val formatted = CitationFormatter.apply(
-            "中文回答",
+            "Chinese answer",
             listOf(
                 CitationAnnotation(0, 2, "https://example.com/a", "A"),
-                CitationAnnotation(0, 2, "https://example.com/a", "重复"),
+                CitationAnnotation(0, 2, "https://example.com/a", "duplicate"),
                 CitationAnnotation(99, 120, "https://example.com/b", "B"),
             ),
         )
         assertEquals(1, "https://example.com/a".toRegex().findAll(formatted).count())
         assertTrue(formatted.contains("[[1]]"))
-        assertTrue(formatted.contains("来源："))
+        assertTrue(formatted.contains("Source: "))
         assertTrue(formatted.contains("https://example.com/b"))
     }
 
@@ -590,7 +590,7 @@ class OpenAiResponsesProviderTest {
         baseUrl = baseUrl,
         apiKey = "test-key",
         model = "test-model",
-        systemPrompt = "系统提示",
+        systemPrompt = "system prompt",
         openAiEndpointMode = OpenAiEndpointMode.RESPONSES,
     )
 

@@ -8,52 +8,52 @@ class StreamingMarkdownRestoreStateTest {
     @Test
     fun restoredContentWaitsForMatchingLayoutRegardlessOfEarlierLayoutCount() {
         val state = StreamingMarkdownRestoreState()
-        state.begin("后台已完成的内容")
+        state.begin("background-completed content")
 
         repeat(10) {
-            assertFalse(state.completeLayout(state.generation, "后台", "后台已完成的内容"))
+            assertFalse(state.completeLayout(state.generation, "background", "background-completed content"))
         }
-        assertTrue(state.completeLayout(state.generation, "后台已完成的内容", "后台已完成的内容"))
-        assertFalse(state.completeLayout(state.generation, "后台已完成的内容和增量", "后台已完成的内容和增量"))
+        assertTrue(state.completeLayout(state.generation, "background-completed content", "background-completed content"))
+        assertFalse(state.completeLayout(state.generation, "background-completed content plus increments", "background-completed content plus increments"))
     }
 
     @Test
     fun delayedOldLayoutCannotResumeAfterAnotherBackgroundCycle() {
         val state = StreamingMarkdownRestoreState()
-        state.begin("已有内容")
+        state.begin("existing content")
         val oldGeneration = state.generation
         state.pause()
-        assertFalse(state.completeLayout(oldGeneration, "已有内容", "已有内容"))
-        state.begin("已有内容和后台增量")
+        assertFalse(state.completeLayout(oldGeneration, "existing content", "existing content"))
+        state.begin("existing content and background increments")
 
-        assertFalse(state.completeLayout(oldGeneration, "已有内容和后台增量", "已有内容和后台增量"))
-        assertFalse(state.completeLayout(state.generation, "已有内容", "已有内容和后台增量"))
-        assertTrue(state.completeLayout(state.generation, "已有内容和后台增量", "已有内容和后台增量"))
+        assertFalse(state.completeLayout(oldGeneration, "existing content and background increments", "existing content and background increments"))
+        assertFalse(state.completeLayout(state.generation, "existing content", "existing content and background increments"))
+        assertTrue(state.completeLayout(state.generation, "existing content and background increments", "existing content and background increments"))
     }
 
     @Test
     fun newNetworkTextDoesNotKeepMovingTheRestoreBaseline() {
         val state = StreamingMarkdownRestoreState()
-        state.begin("历史")
+        state.begin("history")
 
-        assertTrue(state.completeLayout(state.generation, "历史", "历史和新内容"))
+        assertTrue(state.completeLayout(state.generation, "history", "history and new content"))
     }
 
     @Test
     fun authoritativeReplacementCanCompleteRestoreButStaleLayoutCannot() {
         val state = StreamingMarkdownRestoreState()
-        state.begin("旧内容")
+        state.begin("old content")
 
-        assertFalse(state.completeLayout(state.generation, "旧内容", "纠正后的内容"))
-        assertTrue(state.completeLayout(state.generation, "纠正后的内容", "纠正后的内容"))
+        assertFalse(state.completeLayout(state.generation, "old content", "corrected content"))
+        assertTrue(state.completeLayout(state.generation, "corrected content", "corrected content"))
     }
 
     @Test
     fun onlyCurrentTerminalSnapshotMayFinishReveal() {
-        assertFalse(isStreamingMarkdownTargetComplete("正文和增量", false, "正文", true))
-        assertFalse(isStreamingMarkdownTargetComplete("正文", true, "正文", true))
-        assertFalse(isStreamingMarkdownTargetComplete("正文", false, "正文", false))
-        assertFalse(isStreamingMarkdownTargetComplete("正文", false, null, false))
-        assertTrue(isStreamingMarkdownTargetComplete("正文", false, "正文", true))
+        assertFalse(isStreamingMarkdownTargetComplete("body and increments", false, "body", true))
+        assertFalse(isStreamingMarkdownTargetComplete("body", true, "body", true))
+        assertFalse(isStreamingMarkdownTargetComplete("body", false, "body", false))
+        assertFalse(isStreamingMarkdownTargetComplete("body", false, null, false))
+        assertTrue(isStreamingMarkdownTargetComplete("body", false, "body", true))
     }
 }

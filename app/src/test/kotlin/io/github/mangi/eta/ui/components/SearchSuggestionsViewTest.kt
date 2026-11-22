@@ -115,7 +115,7 @@ class SearchSuggestionsViewTest {
         assertTrue(isSearchSuggestionLink(Uri.parse("http://example.invalid/")))
         listOf("javascript:alert(1)", "file:///tmp/local", "content://authority/item", "intent://example", "/relative")
             .forEach { assertFalse(isSearchSuggestionLink(Uri.parse(it))) }
-        val original = "<style>.suggestion{padding:8px}</style><a href='https://google.com'>搜索</a>"
+        val original = "<style>.suggestion{padding:8px}</style><a href='https://google.com'>Search</a>"
         val document = searchSuggestionsDocument(original)
         assertTrue(document.contains(original))
         assertTrue(document.contains("frame-src 'none'"))
@@ -132,7 +132,7 @@ class SearchSuggestionsViewTest {
     }
 
     private fun drawContent(view: SearchSuggestionsWebView) {
-        // Robolectric 的 View.draw 不调用子类 onDraw，直接驱动实际绘制回调。
+        // Robolectric's View.draw does not invoke the subclass onDraw, so we drive the actual draw callback directly.
         SearchSuggestionsWebView::class.java.getDeclaredMethod("onDraw", Canvas::class.java)
             .apply { isAccessible = true }.invoke(view, Canvas())
     }

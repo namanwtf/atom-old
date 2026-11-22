@@ -39,7 +39,7 @@ class BrowserScreenshotTest {
                 for (preview in listOf(false, true)) {
                     view.setLayerType(layer, null)
                     capture.invoke(session, view, preview)
-                    assertEquals("截图不能改变后续前台绘制方式", layer, view.layerType)
+                    assertEquals("screenshot must not change how subsequent foreground frames are drawn", layer, view.layerType)
                 }
             }
         } finally { view.destroy() }
@@ -59,7 +59,7 @@ class BrowserScreenshotTest {
         try {
             try {
                 capture.invoke(session, view, true)
-                throw AssertionError("绘制失败必须向调用方传播")
+                throw AssertionError("a draw failure must propagate to the caller")
             } catch (failure: InvocationTargetException) {
                 assertTrue(failure.cause is IllegalStateException)
             }
@@ -76,7 +76,7 @@ class BrowserScreenshotTest {
                 canvas.drawRect(100f, 100f, 200f, 200f, Paint().apply { color = Color.RED })
             }
         }
-        // 模拟 WebView 没有真实渲染进程驱动 setFrame，直接设置要捕获的视口边界。
+        // Simulate a WebView without a real render process driving setFrame; set the viewport bounds to capture directly.
         view.right = 1_700
         view.bottom = 2_600
         assertEquals(1_700, view.width)
@@ -92,7 +92,7 @@ class BrowserScreenshotTest {
             assertEquals(1_700, image.width)
             assertEquals(2_600, image.height)
             val bytes = Base64.decode(image.dataUrl.substringAfter("base64,"), Base64.DEFAULT)
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("截图无法解码")
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("screenshot cannot be decoded")
             try {
                 assertEquals(1_700, bitmap.width)
                 assertEquals(2_600, bitmap.height)

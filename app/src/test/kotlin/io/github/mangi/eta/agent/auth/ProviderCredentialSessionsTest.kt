@@ -95,7 +95,7 @@ class ProviderCredentialSessionsTest {
         val refreshStarted = CountDownLatch(1)
         val releaseRefresh = CountDownLatch(1)
         val client = FakeOAuthClient(
-            login = { throw ProviderAuthException("oauth_access_denied", "测试拒绝登录") },
+            login = { throw ProviderAuthException("oauth_access_denied", "test rejected login") },
             refresh = { old, _ ->
                 refreshStarted.countDown()
                 await(releaseRefresh)
@@ -141,7 +141,7 @@ class ProviderCredentialSessionsTest {
         val original = credential()
         val storage = MemoryStorage().apply { write(PROVIDER_ID, original) }
         val sessions = ProviderCredentialSessions(storage, FakeOAuthClient(refresh = { _, _ ->
-            throw ProviderAuthException("oauth_network_error", "测试网络错误")
+            throw ProviderAuthException("oauth_network_error", "test network error")
         })) { NOW }
 
         val failure = assertThrows(ProviderAuthException::class.java) {
@@ -157,7 +157,7 @@ class ProviderCredentialSessionsTest {
         val original = credential()
         val storage = MemoryStorage().apply { write(PROVIDER_ID, original) }
         val client = FakeOAuthClient(refresh = { _, _ ->
-            throw ProviderAuthException("oauth_session_expired", "测试失效")
+            throw ProviderAuthException("oauth_session_expired", "test expiry")
         })
         val sessions = ProviderCredentialSessions(storage, client) { NOW }
 
@@ -246,6 +246,6 @@ class ProviderCredentialSessionsTest {
             accessToken = "old-access", refreshToken = "old-refresh", idToken = "fixture-id",
             accountId = "workspace", expiresAt = NOW - 1, scopes = CodexOAuth.SCOPE.split(' ').toSet(),
         )
-        fun await(latch: CountDownLatch) { assertTrue("异步操作未在限时内完成", latch.await(5, TimeUnit.SECONDS)) }
+        fun await(latch: CountDownLatch) { assertTrue("async operation did not finish within the time limit", latch.await(5, TimeUnit.SECONDS)) }
     }
 }

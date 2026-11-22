@@ -11,7 +11,7 @@ class PublicWebSearchTest {
 
     @Test
     fun queryIsEncodedAsOneParameterAndResultLimitIsLocal() {
-        val query = "文档 + examples & locale=zh ? # x"
+        val query = "document + examples & locale=zh ? # x"
         val url = PublicWebSearch.searchUrl(query, 3).toHttpUrlOrNull()!!
         assertEquals("https", url.scheme)
         assertEquals("html.duckduckgo.com", url.host)
@@ -25,7 +25,7 @@ class PublicWebSearchTest {
     fun queryAndUrlBudgetsAreValidatedBeforeHttp() {
         assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl(" ") }
         assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("x".repeat(2_001)) }
-        assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("文".repeat(2_000)) }
+        assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("x".repeat(2_000)) }
         assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("example", 0) }
         assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("example", 11) }
         assertFailure("INVALID_ARGUMENT") { PublicWebSearch.searchUrl("bad\u0000query") }

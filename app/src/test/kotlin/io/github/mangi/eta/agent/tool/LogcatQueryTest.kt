@@ -56,7 +56,7 @@ class LogcatQueryTest {
 
     @Test
     fun invalidFiltersDoNotReachShell() {
-        val query = LogcatQuery { error("不应执行命令") }
+        val query = LogcatQuery { error("must not execute a command") }
         listOf(
             JSONObject().put("tag", "x;touch /tmp/test"),
             JSONObject().put("since", "10-05 08:00:00"),

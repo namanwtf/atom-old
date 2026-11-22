@@ -33,7 +33,7 @@ class BackgroundTerminalJobsTest {
         val jobs = host(supervisor)
         val first = controller(supervisor, jobs)
         val started = JSONObject(first.executeTool("terminal_job", JSONObject().put("action", "start")
-            .put("command", "sleep 0.3; printf '完成\\n'").put("description", "生成报告").put("cwd", temporary.root.path)))
+            .put("command", "sleep 0.3; printf 'done\\n'").put("description", "generate a report").put("cwd", temporary.root.path)))
         assertTrue(started.toString(), started.getBoolean("ok"))
         first.closeAll()
         val second = controller(supervisor, jobs)
@@ -45,8 +45,8 @@ class BackgroundTerminalJobsTest {
             val result = JSONObject(second.executeTool("terminal_job", JSONObject().put("action", "read").put("job_id", jobId)))
             assertEquals("completed", result.getString("status"))
             assertEquals(0, result.getInt("exit_code"))
-            assertEquals("完成\n", result.getString("output"))
-            assertEquals("完成\n", File(result.getString("output_path")).readText())
+            assertEquals("done\n", result.getString("output"))
+            assertEquals("done\n", File(result.getString("output_path")).readText())
             assertEquals(1, notifications.get())
             assertEquals(1, JSONObject(jobs.list(false)).getJSONArray("tasks").length())
             assertEquals(0, JSONObject(jobs.list(true)).getJSONArray("tasks").length())
@@ -57,7 +57,7 @@ class BackgroundTerminalJobsTest {
         val supervisor = supervisor()
         val jobs = host(supervisor)
         val started = JSONObject(jobs.start(supervisor, "head -c 70000 /dev/zero | tr '\\000' x", temporary.root.path,
-            "user", TerminalEnvironment.ANDROID, "长日志", 5000))
+            "user", TerminalEnvironment.ANDROID, "long log", 5000))
         val id = started.getString("job_id")
         jobs.waitFor(id, 5000) { false }
         val result = JSONObject(jobs.read(id, 1024))
@@ -79,17 +79,17 @@ class BackgroundTerminalJobsTest {
         val supervisor = supervisor()
         val jobs = host(supervisor)
         val failed = JSONObject(jobs.start(supervisor, "printf problem; exit 7", temporary.root.path,
-            "user", TerminalEnvironment.ANDROID, "失败任务", 5000)).getString("job_id")
+            "user", TerminalEnvironment.ANDROID, "failed task", 5000)).getString("job_id")
         jobs.waitFor(failed, 5000) { false }
         val failure = JSONObject(jobs.read(failed))
         assertEquals("failed", failure.getString("status"))
         assertEquals(7, failure.getInt("exit_code"))
         val expired = JSONObject(jobs.start(supervisor, "sleep 30", temporary.root.path,
-            "user", TerminalEnvironment.ANDROID, "超时任务", 100)).getString("job_id")
+            "user", TerminalEnvironment.ANDROID, "timeout task", 100)).getString("job_id")
         jobs.waitFor(expired, 5000) { false }
         assertEquals("timed_out", JSONObject(jobs.read(expired)).getString("status"))
         val stopped = JSONObject(jobs.start(supervisor, "sleep 30", temporary.root.path,
-            "user", TerminalEnvironment.ANDROID, "停止任务", 0)).getString("job_id")
+            "user", TerminalEnvironment.ANDROID, "stop task", 0)).getString("job_id")
         assertEquals("stopped", JSONObject(jobs.stop(stopped)).getString("status"))
         assertEquals("stopped", JSONObject(jobs.read(stopped)).getString("status"))
         assertEquals(3, notifications.get())
@@ -99,7 +99,7 @@ class BackgroundTerminalJobsTest {
         val supervisor = supervisor()
         val jobs = host(supervisor)
         val started = JSONObject(jobs.start(supervisor, "printf must-not-run", File(temporary.root, "missing").path,
-            "user", TerminalEnvironment.ANDROID, "错误目录", 5000))
+            "user", TerminalEnvironment.ANDROID, "wrong directory", 5000))
         val id = started.getString("job_id")
         jobs.waitFor(id, 5000) { false }
         val result = JSONObject(jobs.read(id))
@@ -114,7 +114,7 @@ class BackgroundTerminalJobsTest {
         val jobs = host(supervisor)
         repeat(12) { index ->
             val started = JSONObject(jobs.start(supervisor, "printf '$index'", temporary.root.path,
-                "user", TerminalEnvironment.ANDROID, "快速命令", 5000))
+                "user", TerminalEnvironment.ANDROID, "quick command", 5000))
             assertTrue(started.toString(), started.getBoolean("ok"))
             val id = started.getString("job_id")
             jobs.waitFor(id, 5000) { false }
@@ -127,7 +127,7 @@ class BackgroundTerminalJobsTest {
         val supervisor = supervisor()
         val jobs = host(supervisor)
         val id = JSONObject(jobs.start(supervisor, "sleep 30", temporary.root.path,
-            "user", TerminalEnvironment.ANDROID, "等待测试", 0)).getString("job_id")
+            "user", TerminalEnvironment.ANDROID, "wait test", 0)).getString("job_id")
         val timeout = JSONObject(jobs.waitFor(id, 10) { false })
         assertTrue(timeout.getBoolean("wait_timed_out"))
         assertEquals("CANCELLED", JSONObject(jobs.waitFor(id, 1000) { true }).getString("code"))

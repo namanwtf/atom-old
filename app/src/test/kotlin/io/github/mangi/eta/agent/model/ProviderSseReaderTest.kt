@@ -11,14 +11,14 @@ import org.junit.Test
 class ProviderSseReaderTest {
     @Test
     fun framingHandlesCommentsMultilineDataAndFinalFrameWithoutBlankLine() {
-        val source = ": keepalive\r\n\r\nevent: delta\r\ndata: 第一行\r\ndata: 第二行\r\n\r\n" +
-            "event: done\ndata: 终态"
+        val source = ": keepalive\r\n\r\nevent: delta\r\ndata: first line\r\ndata: second line\r\n\r\n" +
+            "event: done\ndata: terminal state"
         val events = mutableListOf<Pair<String, String>>()
         readProviderSse(source.byteInputStream(), AgentRunController()) { name, data ->
             events += name to data
             true
         }
-        assertEquals(listOf("delta" to "第一行\n第二行", "done" to "终态"), events)
+        assertEquals(listOf("delta" to "first line\nsecond line", "done" to "terminal state"), events)
     }
 
     @Test

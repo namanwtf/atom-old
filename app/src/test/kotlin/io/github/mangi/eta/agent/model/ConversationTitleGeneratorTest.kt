@@ -56,7 +56,7 @@ class ConversationTitleGeneratorTest {
     @Test
     fun generatesCleanTitleWithoutToolsAndStripsBoilerplate() = runBlocking {
         val promptWithFiles = AgentFileReferencePromptCodec.format(
-            request = "帮我分析这个崩溃日志的原因",
+            request = "analyze the cause of this crash log",
             references = listOf(
                 AgentFileReference(
                     displayName = "crash.txt",
@@ -65,14 +65,14 @@ class ConversationTitleGeneratorTest {
                 ),
             ),
         )
-        val title = generator { _, _ -> textReply("「崩溃日志原因分析。」\n补充说明忽略") }
+        val title = generator { _, _ -> textReply("\"Crash log cause analysis.\"\nsupplementary note ignored") }
             .generate(
                 userPrompt = promptWithFiles,
-                assistantReply = "根据堆栈信息，空指针发生在初始化阶段。",
+                assistantReply = "From the stack trace, the null pointer happens during initialization.",
                 conversationModelId = "primary-model",
             )
 
-        assertEquals("崩溃日志原因分析", title)
+        assertEquals("Crash log cause analysis", title)
         val request = requests.single()
         assertEquals(ProviderRequestPurpose.TITLE_GENERATION, request.purpose)
         assertEquals(0, request.effectiveTools.length())
@@ -81,23 +81,23 @@ class ConversationTitleGeneratorTest {
             request.messages.getJSONObject(0).getString("content"),
         )
         val userPayload = request.messages.getJSONObject(1).getString("content")
-        assertTrue(userPayload.contains("帮我分析这个崩溃日志的原因"))
+        assertTrue(userPayload.contains("analyze the cause of this crash log"))
         assertTrue(!userPayload.contains("/sdcard/Download/crash.txt"))
     }
 
     @Test
     fun sanitizeTitleRemovesPrefixesQuotesMarkdownAndCapsLength() {
         assertEquals("Android Gradle Upgrade", ConversationTitleGenerator.sanitizeTitle("Title: \"Android Gradle Upgrade.\""))
-        assertEquals("Jetpack Compose 主题优化", ConversationTitleGenerator.sanitizeTitle("**标题：《Jetpack Compose 主题优化》**"))
+        assertEquals("Jetpack Compose theme optimization", ConversationTitleGenerator.sanitizeTitle("**Title: \"Jetpack Compose theme optimization\"**"))
         assertEquals("Python JSON Parsing", ConversationTitleGenerator.sanitizeTitle("# `Python JSON Parsing`!"))
         assertNull(ConversationTitleGenerator.sanitizeTitle("   "))
         assertNull(ConversationTitleGenerator.sanitizeTitle("null"))
 
-        val longTitle = "超长标题".repeat(20)
+        val longTitle = "overly long title".repeat(20)
         val sanitized = ConversationTitleGenerator.sanitizeTitle(longTitle)!!
         assertEquals(ConversationTitleGenerator.MAX_TITLE_CHARS, sanitized.length)
 
-        // 不截断代理对高半区
+        // don't truncate surrogate pairs
         val emojiBoundary = "A".repeat(ConversationTitleGenerator.MAX_TITLE_CHARS - 1) + "\uD83D\uDE00"
         val truncatedEmoji = ConversationTitleGenerator.sanitizeTitle(emojiBoundary)!!
         assertEquals(ConversationTitleGenerator.MAX_TITLE_CHARS - 1, truncatedEmoji.length)
@@ -107,17 +107,17 @@ class ConversationTitleGeneratorTest {
     fun returnsNullWhenDisabledEmptyOrIncomplete() = runBlocking {
         assertNull(generator(config = null) { _, _ -> error("should not invoke") }.generate("hello", "world"))
         assertNull(generator { _, _ -> error("should not invoke") }.generate("  ", "  "))
-        assertNull(generator { _, _ -> textReply("半截标题", finish = "length") }.generate("hello", "world"))
+        assertNull(generator { _, _ -> textReply("half title", finish = "length") }.generate("hello", "world"))
     }
 
     @Test
     fun supportsImageOnlyUserTurnUsingAssistantReply() = runBlocking {
-        val title = generator { _, _ -> textReply("植物品种识别") }
-            .generate(userPrompt = "", assistantReply = "这张照片里的植物是龟背竹。")
-        assertEquals("植物品种识别", title)
+        val title = generator { _, _ -> textReply("plant species identification") }
+            .generate(userPrompt = "", assistantReply = "The plant in this photo is a monstera.")
+        assertEquals("plant species identification", title)
         val userPayload = requests.single().messages.getJSONObject(1).getString("content")
         assertTrue(userPayload.contains("[Sent image attachment]"))
-        assertTrue(userPayload.contains("龟背竹"))
+        assertTrue(userPayload.contains("monstera"))
     }
 
     @Test

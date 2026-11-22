@@ -52,15 +52,15 @@ class AgentRunStoreTest {
     fun interleavedDeltasAndTerminalBoundariesFlushOnlyTheirOwnRun() {
         store.register("a", "conversation-a")
         store.register("b", "conversation-b")
-        store.enqueue("a", delta("甲"))
-        store.enqueue("b", delta("乙"))
-        store.enqueue("a", delta("丙"))
+        store.enqueue("a", delta("A"))
+        store.enqueue("b", delta("B"))
+        store.enqueue("a", delta("C"))
         store.enqueue("b", AgentEvent.RunFinished(1, 1))
 
         assertEquals(listOf("b", "b"), delivered.map { it.first })
-        assertEquals("乙", (delivered.first().second as AgentEvent.AssistantBlockDelta).delta)
+        assertEquals("B", (delivered.first().second as AgentEvent.AssistantBlockDelta).delta)
         store.flush("a")
-        assertEquals("甲丙", (delivered.last().second as AgentEvent.AssistantBlockDelta).delta)
+        assertEquals("AC", (delivered.last().second as AgentEvent.AssistantBlockDelta).delta)
     }
 
     @Test
@@ -68,7 +68,7 @@ class AgentRunStoreTest {
         store.register("a", "conversation-a")
         store.register("b", "conversation-b")
         store.updateGuiStatus("b", GuiControlStatus.Waiting)
-        store.enqueue("a", delta("未提交"))
+        store.enqueue("a", delta("uncommitted"))
         store.remove("a")
         store.enqueue("a", AgentEvent.RunFinished(1, 1))
         store.updateGuiStatus("a", GuiControlStatus.Acquired)
@@ -92,7 +92,7 @@ class AgentRunStoreTest {
         store.register("a", "conversation-a")
         assertTrue(store.beginSettlement("a"))
         assertFalse(store.beginSettlement("a"))
-        store.enqueue("a", delta("迟到的增量"))
+        store.enqueue("a", delta("late increment"))
         assertTrue(delivered.isEmpty())
         assertFalse(store.register("next-a", "conversation-a"))
         store.remove("a")

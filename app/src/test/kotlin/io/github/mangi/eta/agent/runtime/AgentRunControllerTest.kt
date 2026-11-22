@@ -143,9 +143,9 @@ class AgentRunControllerTest {
 
         try {
             assertTrue(entered.await(1, TimeUnit.SECONDS))
-            assertTrue(controller.steer("补充条件"))
+            assertTrue(controller.steer("supplemental condition"))
             assertFalse(finished.await(100, TimeUnit.MILLISECONDS))
-            assertEquals("补充条件", controller.pollSteeringMessage())
+            assertEquals("supplemental condition", controller.pollSteeringMessage())
             controller.resume()
             assertTrue(finished.await(1, TimeUnit.SECONDS))
         } finally {

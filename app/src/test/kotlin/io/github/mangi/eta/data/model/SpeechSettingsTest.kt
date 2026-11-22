@@ -72,7 +72,7 @@ class SpeechSettingsTest {
         assertEquals(MiniMaxTtsConfig(), old.minimaxTts)
         val updated = old.copy(
             tts = TtsProvider.GEMINI,
-            geminiTts = old.geminiTts.copy(model = GeminiTtsModel.FLASH_LITE, style = "自然"),
+            geminiTts = old.geminiTts.copy(model = GeminiTtsModel.FLASH_LITE, style = "natural"),
             minimaxTts = old.minimaxTts.copy(model = MiniMaxTtsModel.HD, speed = 1.25f),
         )
         assertEquals(updated, json.decodeFromString<SpeechSettings>(json.encodeToString(updated)))
@@ -137,7 +137,7 @@ class SpeechSettingsTest {
         }
         assertThrows(SpeechFailure::class.java) {
             validateSpeechSettings(SpeechSettings(tts = TtsProvider.GEMINI,
-                geminiTts = GeminiTtsConfig(style = "字".repeat(501))), secrets, true)
+                geminiTts = GeminiTtsConfig(style = "x".repeat(501))), secrets, true)
         }
     }
 
@@ -170,7 +170,7 @@ class SpeechSettingsTest {
             mimoTts = MimoTtsConfig(
                 baseUrl = "https://synthesis.example.test/v1",
                 voice = "Mia",
-                style = "自然、温和",
+                style = "natural and gentle",
             ),
         )
         assertEquals(mimo, json.decodeFromString<SpeechSettings>(json.encodeToString(mimo)))
@@ -206,7 +206,7 @@ class SpeechSettingsTest {
         val credentials = SpeechCredentials(mimoTts = "playback-key")
         validateSpeechSettings(settings, credentials, true)
         assertThrows(SpeechFailure::class.java) {
-            validateSpeechSettings(settings.copy(mimoTts = settings.mimoTts.copy(style = "字".repeat(501))),
+            validateSpeechSettings(settings.copy(mimoTts = settings.mimoTts.copy(style = "x".repeat(501))),
                 credentials, true)
         }
     }

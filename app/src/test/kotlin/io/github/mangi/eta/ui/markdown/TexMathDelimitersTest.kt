@@ -36,10 +36,10 @@ class TexMathDelimitersTest {
 
     @Test
     fun inlineParenthesesKeepLatexSourceIntactAndProduceInlineMath() {
-        val paragraph = blocks("行内 \\(a_i + b_j = \\frac{1}{2}\\) 结束").single() as MarkdownParagraph
+        val paragraph = blocks("inline \\(a_i + b_j = \\frac{1}{2}\\) end").single() as MarkdownParagraph
 
         val rawFormula = "\\(a_i + b_j = \\frac{1}{2}\\)"
-        assertEquals("行内 $rawFormula 结束", paragraph.text.text)
+        assertEquals("inline $rawFormula end", paragraph.text.text)
         val mathSpec = paragraph.inlineMath.single()
         assertEquals("a_i + b_j = \\frac{1}{2}", mathSpec.latex)
         assertEquals(rawFormula, mathSpec.rawSource)
@@ -47,9 +47,9 @@ class TexMathDelimitersTest {
 
     @Test
     fun failedInlineMathPreservesExactOriginalText() {
-        val paragraph = blocks("解析失败 \\(\\invalid{x}\\) 保留原文").single() as MarkdownParagraph
+        val paragraph = blocks("parse failed \\(\\invalid{x}\\) keep original text").single() as MarkdownParagraph
 
-        assertEquals("解析失败 \\(\\invalid{x}\\) 保留原文", paragraph.text.text)
+        assertEquals("parse failed \\(\\invalid{x}\\) keep original text", paragraph.text.text)
         assertTrue(paragraph.inlineMath.isEmpty())
     }
 
@@ -64,7 +64,7 @@ class TexMathDelimitersTest {
 
     @Test
     fun singleLineDisplayBracketsAreMath() {
-        val math = blocks("推导如下：\n\n\\[ E = mc^2 \\]").last() as MarkdownMath
+        val math = blocks("derivation follows:\n\n\\[ E = mc^2 \\]").last() as MarkdownMath
         assertEquals("E = mc^2", math.latex)
         assertEquals("\\[ E = mc^2 \\]", math.rawSource)
         assertNotNull(math.displayList)
@@ -87,12 +87,12 @@ class TexMathDelimitersTest {
     @Test
     fun escapedMarkdownBracketsAndCodeAreNotMath() {
         listOf(
-            "数组 arr\\[0\\] 的值",
-            "`\\(x\\)` 是行内代码",
+            "array arr\\[0\\]  value",
+            "`\\(x\\)` is inline code",
             "```latex\n\\[\nx\n\\]\n```",
-            "转义反斜杠 \\\\(x\\\\) 不是公式",
-            "未闭合 \\(x 后面没有了",
-            "跨空行 \\(x\n\ny\\) 不是公式",
+            "escaped backslash \\\\(x\\\\) is not a formula",
+            "unclosed \\(x nothing follows",
+            "across blank lines \\(x\n\ny\\) is not a formula",
         ).forEach { source ->
             assertEquals(source, TexMathDelimiters.normalize(source))
         }
@@ -138,18 +138,18 @@ class TexMathDelimitersTest {
 
     @Test
     fun unmatchedBacktickDoesNotHideLaterFormula() {
-        val normalized = TexMathDelimiters.normalize("单个 ` 反引号，然后 \\(x\\)")
-        assertEquals("单个 ` 反引号，然后 \$\$x\$\$", normalized)
+        val normalized = TexMathDelimiters.normalize("a single ` backtick, then \\(x\\)")
+        assertEquals("single ` backtick, then \$\$x\$\$", normalized)
     }
 
     @Test
     fun dollarMathAndCurrencyStayUnchanged() {
-        listOf("价格 \$4 和 \$20 每百万", "行内 \$E=mc^2\$ 结束").forEach { source ->
+        listOf("price \$4 and \$20 per million", "inline \$E=mc^2\$ end").forEach { source ->
             assertEquals(source, TexMathDelimiters.normalize(source))
         }
-        val paragraph = blocks("价格 \$4 和 \$20 每百万").single() as MarkdownParagraph
+        val paragraph = blocks("price \$4 and \$20 per million").single() as MarkdownParagraph
         assertTrue(paragraph.inlineMath.isEmpty())
-        assertEquals("价格 \$4 和 \$20 每百万", paragraph.text.text)
+        assertEquals("price \$4 and \$20 per million", paragraph.text.text)
     }
 
     @Test
@@ -166,7 +166,7 @@ class TexMathDelimitersTest {
         listOf("```", "~~~").forEach { fence ->
             val session = StreamingGfmParserSession(fakeMathCache)
             val code = "\\(a_i\\)\n\n\n\\[\nb_j\n\\]"
-            val openSource = "前 \\(before\\)\n\n${fence}latex\n$code"
+            val openSource = "front \\(before\\)\n\n${fence}latex\n$code"
             val source = "$openSource\n$fence\n\n\\[after\\]"
 
             for (end in 0..source.length) {
@@ -183,7 +183,7 @@ class TexMathDelimitersTest {
             val complete = session.parse(source, isComplete = true)
             assertEquals(source, complete.originalSource)
             assertEquals(
-                "前 \$\$before\$\$\n\n${fence}latex\n$code\n$fence\n\n\$\$after\$\$",
+                "front \$\$before\$\$\n\n${fence}latex\n$code\n$fence\n\n\$\$after\$\$",
                 complete.renderedSource,
             )
             val fencedCode = complete.document.blocks.filterIsInstance<MarkdownCode>().single()

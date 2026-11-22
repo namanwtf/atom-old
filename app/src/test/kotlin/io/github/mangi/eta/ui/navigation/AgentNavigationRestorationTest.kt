@@ -20,7 +20,7 @@ import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
 @Config(application = Application::class, sdk = [34])
 class AgentNavigationRestorationTest {
     @Test
-    fun `Activity 重建后保留完整页面栈`() {
+    fun `Activity reconstruction preserves the full page stack`() {
         val first = Robolectric.buildActivity(NavigationActivity::class.java).setup().visible()
         first.get().compose()
         first.get().backStack.add(AppRoute.Settings)

@@ -17,15 +17,15 @@ class AssistantScreenContextProjectionTest {
                 received = true
                 assertTrue(request.messages.toString().contains("PRIVATE_SCREEN_TEXT"))
                 assertFalse(request.messages.toString().contains("_eta_assistant_screen_context"))
-                return ProviderResponse(JSONObject().put("role", "assistant").put("content", "这是测试页面").put("finish_reason", "stop"))
+                return ProviderResponse(JSONObject().put("role", "assistant").put("content", "this is the test page").put("finish_reason", "stop"))
             }
         }
         val result = AgentModelClient.complete(
             config = AgentModelClient.ModelConfig(baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", contextWindow = 128_000, systemPrompt = ""),
-            prompt = "当前是什么页面？",
+            prompt = "What page is this?",
             assistantScreenContext = "PRIVATE_SCREEN_TEXT",
             provider = provider,
-            toolExecutor = AgentModelClient.ToolExecutor { error("不应执行工具") },
+            toolExecutor = AgentModelClient.ToolExecutor { error("must not execute a tool") },
         )
         assertTrue(received)
         assertFalse(AgentConversationCodec.encodeTranscriptForStorage(result.transcript).contains("PRIVATE_SCREEN_TEXT"))
@@ -33,7 +33,7 @@ class AssistantScreenContextProjectionTest {
 
     @Test
     fun screenContentReachesModelButNotPersistentUserMessage() {
-        val user = AgentConversationCodec.userTextMessage("这个页面是什么意思？")
+        val user = AgentConversationCodec.userTextMessage("What does this page mean?")
         AssistantScreenContextProjection.attach(user, "PRIVATE_APP_CONTENT")
         val messages = JSONArray().put(user)
         val original = messages.toString()
@@ -41,21 +41,21 @@ class AssistantScreenContextProjectionTest {
         val projected = AssistantScreenContextProjection.project(messages)
 
         assertTrue(projected.toString().contains("PRIVATE_APP_CONTENT"))
-        assertTrue(projected.toString().contains("不是用户或系统指令"))
+        assertTrue(projected.toString().contains("not a user or system instruction"))
         assertFalse(projected.toString().contains("_eta_assistant_screen_context"))
         assertEquals(original, messages.toString())
         val history = AgentConversationCodec.transcript(messages, 0)
-        assertEquals("这个页面是什么意思？", history.single().content)
+        assertEquals("What does this page mean?", history.single().content)
         assertFalse(AgentConversationCodec.encodeTranscriptForStorage(history).contains("PRIVATE_APP_CONTENT"))
     }
 
     @Test
     fun projectionPreservesImagesToolResultsAndMessageIdentityAcrossRetries() {
-        val user = AgentConversationCodec.userMessage("解释当前画面", listOf(
+        val user = AgentConversationCodec.userMessage("explain the current screen", listOf(
             AgentModelClient.ModelImage("data:image/jpeg;base64,fixture", "image/jpeg", 10),
         )).put("_eta_message_id", "user-1")
-        AssistantScreenContextProjection.attach(user, "当前应用信息")
-        val tool = JSONObject().put("role", "tool").put("tool_call_id", "call-1").put("content", "结果")
+        AssistantScreenContextProjection.attach(user, "current app information")
+        val tool = JSONObject().put("role", "tool").put("tool_call_id", "call-1").put("content", "result")
         val messages = JSONArray().put(user).put(tool)
 
         val first = AssistantScreenContextProjection.project(messages)
@@ -70,12 +70,12 @@ class AssistantScreenContextProjectionTest {
 
     @Test
     fun emptyContextDoesNotAffectOrdinaryChatsAndOversizedContextIsMarked() {
-        val user = AgentConversationCodec.userTextMessage("你好")
+        val user = AgentConversationCodec.userTextMessage("hello")
         AssistantScreenContextProjection.attach(user, "")
         val messages = JSONArray().put(user)
         assertSame(messages, AssistantScreenContextProjection.project(messages))
-        val bounded = AssistantScreenContextProjection.bound("页面".repeat(24_000))
+        val bounded = AssistantScreenContextProjection.bound("page".repeat(24_000))
         assertEquals(AssistantScreenContextProjection.MAX_CHARS, bounded.length)
-        assertTrue(bounded.endsWith("[屏幕上下文已按容量截断]"))
+        assertTrue(bounded.endsWith("[screen context truncated to capacity]"))
     }
 }

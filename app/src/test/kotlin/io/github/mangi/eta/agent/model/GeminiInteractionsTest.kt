@@ -94,15 +94,15 @@ class GeminiInteractionsTest {
     fun thoughtSummaryStartAndDeltaReachVisibleThinkingWithoutExposingSignature() {
         val events = mutableListOf<ProviderEvent>()
         val result = read(
-            start(0, """{"type":"thought","summary":[{"type":"text","text":"检查"}]}""") +
-                delta(0, """{"type":"thought_summary","content":{"type":"text","text":"条件"}}""") +
+            start(0, """{"type":"thought","summary":[{"type":"text","text":"check"}]}""") +
+                delta(0, """{"type":"thought_summary","content":{"type":"text","text":"condition"}}""") +
                 delta(0, """{"type":"thought_signature","signature":"opaque-fixture"}""") + stop(0) +
-                start(1, """{"type":"model_output","content":[{"type":"text","text":"答案"}]}""") +
+                start(1, """{"type":"model_output","content":[{"type":"text","text":"answer"}]}""") +
                 stop(1) + complete("completed"), events,
         )
-        assertEquals("检查条件", result.getString("reasoning_content"))
-        assertEquals("答案", result.getString("content"))
-        assertEquals(listOf("检查", "条件"), events.filterIsInstance<ProviderEvent.BlockDelta>()
+        assertEquals("check the condition", result.getString("reasoning_content"))
+        assertEquals("answer", result.getString("content"))
+        assertEquals(listOf("check", "condition"), events.filterIsInstance<ProviderEvent.BlockDelta>()
             .filter { it.kind == AssistantBlockKind.THINKING }.map { it.delta })
         assertFalse(events.toString().contains("opaque-fixture"))
     }
@@ -115,15 +115,15 @@ class GeminiInteractionsTest {
                 delta(0, """{"type":"thought_signature","signature":"opaque-fixture"}""") + stop(0) +
                 start(1, """{"type":"function_call","id":"call-a","name":"lookup","arguments":{}}""") +
                 delta(1, JSONObject().put("type", "arguments_delta").put("arguments", "{\"query\":")) +
-                delta(1, JSONObject().put("type", "arguments_delta").put("arguments", "\"甲\"}")) + stop(1) +
-                start(2, """{"type":"function_call","id":"call-b","name":"lookup","arguments":{"query":"乙"}}""") + stop(2) +
+                delta(1, JSONObject().put("type", "arguments_delta").put("arguments", "\"A\"}")) + stop(1) +
+                start(2, """{"type":"function_call","id":"call-b","name":"lookup","arguments":{"query":"B"}}""") + stop(2) +
                 complete("requires_action"), events,
         )
         assertEquals("tool_calls", result.getString("finish_reason"))
         val calls = AgentConversationCodec.parseToolCalls(result)
         assertEquals(listOf("call-a", "call-b"), calls.map { it.id })
         assertEquals(listOf("lookup", "lookup"), calls.map { it.name })
-        assertEquals("甲", JSONObject(calls.first().argumentsJson).getString("query"))
+        assertEquals("A", JSONObject(calls.first().argumentsJson).getString("query"))
         assertEquals("opaque-fixture", GeminiEphemeralState.steps(result)!!.getJSONObject(0).getString("signature"))
         assertFalse(result.has("reasoning_content"))
         assertEquals(2, events.filterIsInstance<ProviderEvent.BlockStart>().count { it.kind == AssistantBlockKind.TOOL_CALL })
@@ -134,10 +134,10 @@ class GeminiInteractionsTest {
         val response = read(start(0, """{"type":"thought","signature":"test-signature","summary":[]}""") + stop(0) +
             start(1, """{"type":"function_call","id":"call-a","name":"capture","arguments":{}}""") + stop(1) + complete("requires_action"))
         val assistant = AgentConversationCodec.assistantHistoryMessage(response, AgentConversationCodec.parseToolCalls(response))
-        val user = AgentConversationCodec.userTextMessage("查看屏幕").also(GeminiEphemeralState::markRunStart)
+        val user = AgentConversationCodec.userTextMessage("view the screen").also(GeminiEphemeralState::markRunStart)
         val messages = JSONArray().put(user).put(assistant)
             .put(JSONObject().put("role", "tool").put("tool_call_id", "call-a").put("content", "{\"ok\":false}"))
-            .put(AgentConversationCodec.userMessage("工具截图", listOf(AgentModelClient.ModelImage("data:image/png;base64,AA==", "image/png", 1)))
+            .put(AgentConversationCodec.userMessage("tool screenshot", listOf(AgentModelClient.ModelImage("data:image/png;base64,AA==", "image/png", 1)))
                 .put("_eta_observation", true))
         assertTrue(GeminiEphemeralState.hasPendingToolResponse(messages))
         val input = GeminiInteractionsRequest.build(config(), messages, JSONArray()).getJSONArray("input")
@@ -156,19 +156,19 @@ class GeminiInteractionsTest {
 
     @Test
     fun durableAndCompactedToolsAreExplicitTextHistory() {
-        val oldAssistant = JSONObject("""{"role":"assistant","content":"旧答复","tool_calls":[{"id":"old","type":"function","function":{"name":"lookup","arguments":"{}"}}]}""")
-        val oldResult = JSONObject("""{"role":"tool","tool_call_id":"old","content":"旧结果"}""")
-        val current = AgentConversationCodec.userTextMessage("新问题").also(GeminiEphemeralState::markRunStart)
-        val input = GeminiInteractionHistory.input(JSONArray().put(AgentConversationCodec.userTextMessage("旧问题"))
+        val oldAssistant = JSONObject("""{"role":"assistant","content":"old reply","tool_calls":[{"id":"old","type":"function","function":{"name":"lookup","arguments":"{}"}}]}""")
+        val oldResult = JSONObject("""{"role":"tool","tool_call_id":"old","content":"old result"}""")
+        val current = AgentConversationCodec.userTextMessage("new question").also(GeminiEphemeralState::markRunStart)
+        val input = GeminiInteractionHistory.input(JSONArray().put(AgentConversationCodec.userTextMessage("old question"))
             .put(oldAssistant).put(oldResult).put(current))
         assertEquals(2, input.length())
-        assertTrue(input.getJSONObject(0).getJSONArray("content").getJSONObject(0).getString("text").contains("历史对话文本记录"))
-        assertEquals("新问题", input.getJSONObject(1).getJSONArray("content").getJSONObject(0).getString("text"))
+        assertTrue(input.getJSONObject(0).getJSONArray("content").getJSONObject(0).getString("text").contains("historical conversation text record"))
+        assertEquals("new question", input.getJSONObject(1).getJSONArray("content").getJSONObject(0).getString("text"))
         assertFalse((0 until input.length()).any { input.getJSONObject(it).getString("type") == "function_call" })
 
         val compacted = GeminiInteractionHistory.input(JSONArray().put(current).put(oldAssistant).put(oldResult))
         assertEquals("user_input", compacted.getJSONObject(1).getString("type"))
-        assertTrue(compacted.getJSONObject(1).getJSONArray("content").getJSONObject(0).getString("text").contains("旧结果"))
+        assertTrue(compacted.getJSONObject(1).getJSONArray("content").getJSONObject(0).getString("text").contains("old result"))
     }
 
     @Test
@@ -177,11 +177,11 @@ class GeminiInteractionsTest {
         val usage = JSONObject().put("total_tokens", 16).put("total_input_tokens", 10)
             .put("total_output_tokens", 4).put("total_thought_tokens", 2).put("total_cached_tokens", 6)
         val result = read(start(0, """{"type":"model_output"}""") +
-            delta(0, """{"type":"text","text":"你好"}""") +
+            delta(0, """{"type":"text","text":"hello"}""") +
             event(JSONObject().put("event_type", "step.stop").put("index", 0).put("usage", usage)) +
             event(JSONObject().put("event_type", "interaction.status_update").put("status", "in_progress").put("usage", usage)) +
             complete("completed", usage), events)
-        assertEquals("你好", result.getString("content"))
+        assertEquals("hello", result.getString("content"))
         assertEquals(1, events.filterIsInstance<ProviderEvent.Usage>().size)
         assertEquals(4, events.filterIsInstance<ProviderEvent.Usage>().single().usage.outputTokens)
         assertEquals(16, events.filterIsInstance<ProviderEvent.Usage>().single().usage.contextTokens)
@@ -195,7 +195,7 @@ class GeminiInteractionsTest {
             .put("usage", JSONObject().put("total_tokens", 125).put("total_input_tokens", 100)))) +
             start(0, """{"type":"model_output"}""") +
             event(JSONObject().put("event_type", "step.delta").put("index", 0)
-                .put("delta", JSONObject().put("type", "text").put("text", "完成"))
+                .put("delta", JSONObject().put("type", "text").put("text", "done"))
                 .put("metadata", JSONObject().put("total_usage", JSONObject().put("total_cached_tokens", 60)))) +
             event(JSONObject().put("event_type", "step.stop").put("index", 0)
                 .put("usage", JSONObject().put("total_output_tokens", 20))) +
@@ -212,7 +212,7 @@ class GeminiInteractionsTest {
     @Test
     fun totalOnlyUsageDoesNotInventInputTokensAndToolTurnsStillPublishUsage() {
         val totalOnly = mutableListOf<ProviderEvent>()
-        read(start(0, """{"type":"model_output","content":[{"type":"text","text":"完成"}]}""") +
+        read(start(0, """{"type":"model_output","content":[{"type":"text","text":"done"}]}""") +
             stop(0) + complete("completed", JSONObject().put("total_tokens", 125)), totalOnly)
         val total = totalOnly.filterIsInstance<ProviderEvent.Usage>().single()
         assertEquals(125, total.usage.contextTokens)
@@ -230,10 +230,10 @@ class GeminiInteractionsTest {
     @Test
     fun incompleteTextIsOutputLimitAndIncompleteCallsNeverExecute() {
         val events = mutableListOf<ProviderEvent>()
-        val partial = start(0, """{"type":"model_output","content":[{"type":"text","text":"半段"}]}""") + stop(0)
+        val partial = start(0, """{"type":"model_output","content":[{"type":"text","text":"half"}]}""") + stop(0)
         val failure = assertFailure("MODEL_OUTPUT_LIMIT", partial + complete("incomplete"), events)
         assertFalse(failure.retryable)
-        assertEquals("半段", events.filterIsInstance<ProviderEvent.BlockEnd>().single().content)
+        assertEquals("half", events.filterIsInstance<ProviderEvent.BlockEnd>().single().content)
         assertFalse(events.any { it is ProviderEvent.Completed })
         val call = start(0, """{"type":"function_call","id":"a","name":"lookup","arguments":{}}""")
         assertFalse(assertFailure("MODEL_OUTPUT_LIMIT", call + stop(0) + complete("incomplete")).retryable)
@@ -247,7 +247,7 @@ class GeminiInteractionsTest {
     fun incompleteSearchAnswerKeepsReceivedSuggestionsWithItsPartialText() {
         val events = mutableListOf<ProviderEvent>()
         val failure = assertFailure("MODEL_OUTPUT_LIMIT", searchSteps() + start(2, """{"type":"model_output"}""") +
-            delta(2, """{"type":"text","text":"未完整的搜索答复"}""") + complete("incomplete"), events)
+            delta(2, """{"type":"text","text":"incomplete search reply"}""") + complete("incomplete"), events)
         assertFalse(failure.retryable)
         val suggestion = events.filterIsInstance<ProviderEvent.SearchSuggestions>().single()
         assertEquals(2, suggestion.index)
@@ -256,10 +256,10 @@ class GeminiInteractionsTest {
 
     @Test
     fun unknownEventsAreIgnoredButUnsupportedOutputAndMalformedEventsFail() {
-        assertEquals("好", read(event(JSONObject().put("event_type", "future.event")) + textResponse("好")).getString("content"))
+        assertEquals("ok", read(event(JSONObject().put("event_type", "future.event")) + textResponse("ok")).getString("content"))
         assertFailure("GEMINI_UNSUPPORTED_OUTPUT", start(0, """{"type":"model_output"}""") + delta(0, """{"type":"audio","data":"redacted"}"""))
         assertFailure("GEMINI_STREAM_INVALID", "data: {broken fixture}\n\n")
-        assertFailure("GEMINI_STREAM_INVALID", delta(0, """{"type":"text","text":"孤立"}"""))
+        assertFailure("GEMINI_STREAM_INVALID", delta(0, """{"type":"text","text":"orphan"}"""))
         assertFailure("GEMINI_STREAM_INVALID", start(0, """{"type":"thought","signature":7}"""))
         assertFailure("GEMINI_STREAM_INVALID", start(0, """{"type":"function_call","id":"a","name":"lookup","arguments":{}}""") +
             delta(0, JSONObject().put("type", "arguments_delta").put("arguments", "{\"query\":")) + stop(0))
@@ -269,7 +269,7 @@ class GeminiInteractionsTest {
     @Test
     fun prematureEofDoneMarkerAndUnstoppedStepsFailClosed() {
         assertFailure("STREAM_INCOMPLETE", "data: [DONE]\n\n")
-        assertFailure("STREAM_INCOMPLETE", start(0, """{"type":"model_output"}""") + delta(0, """{"type":"text","text":"部分"}"""))
+        assertFailure("STREAM_INCOMPLETE", start(0, """{"type":"model_output"}""") + delta(0, """{"type":"text","text":"part"}"""))
         assertFailure("STREAM_INCOMPLETE", start(0, """{"type":"model_output"}""") + complete("completed"))
     }
 
@@ -298,27 +298,27 @@ class GeminiInteractionsTest {
 
     @Test
     fun utf8CitationOffsetsKeepChineseAndEmojiBoundaries() {
-        val text = "中😀文"
+        val text = "C😀x"
         assertEquals(text, GeminiCitationFormatter.apply(text, JSONArray()))
         val annotation = JSONObject().put("type", "url_citation").put("url", "https://example.test/source")
-            .put("title", "来源").put("start_index", 0).put("end_index", 7)
+            .put("title", "source").put("start_index", 0).put("end_index", 7)
         val formatted = GeminiCitationFormatter.apply(text, JSONArray().put(annotation))
-        assertEquals("中😀 [[1]](<https://example.test/source>)文", formatted)
+        assertEquals("C😀 [[1]](<https://example.test/source>)x", formatted)
         annotation.put("end_index", 5)
         val fallback = GeminiCitationFormatter.apply(text, JSONArray().put(annotation))
-        assertTrue(fallback.startsWith("中😀文\n\n来源："))
+        assertTrue(fallback.startsWith("C😀x\n\nSource: "))
         annotation.put("end_index", 4_294_967_296L)
-        assertTrue(GeminiCitationFormatter.apply(text, JSONArray().put(annotation)).startsWith("中😀文\n\n来源："))
+        assertTrue(GeminiCitationFormatter.apply(text, JSONArray().put(annotation)).startsWith("C😀x\n\nSource: "))
     }
 
     @Test
     fun searchSignaturesAndSuggestionsAreBoundToFollowingTextAfterBlockEnd() {
         val events = mutableListOf<ProviderEvent>()
         val response = read(searchSteps() + start(2, """{"type":"model_output"}""") +
-            delta(2, """{"type":"text","text":"查询结果"}""") + stop(2) + complete("completed"), events)
+            delta(2, """{"type":"text","text":"query result"}""") + stop(2) + complete("completed"), events)
         val suggestion = events.filterIsInstance<ProviderEvent.SearchSuggestions>().single()
         assertEquals(2, suggestion.index)
-        assertEquals("<div>建议</div>", suggestion.html)
+        assertEquals("<div>suggestion</div>", suggestion.html)
         assertTrue(events.indexOf(suggestion) > events.indexOfLast { it is ProviderEvent.BlockEnd })
         assertEquals(1, events.filterIsInstance<ProviderEvent.HostedToolStarted>().size)
         assertTrue(events.filterIsInstance<ProviderEvent.HostedToolFinished>().single().success)
@@ -339,14 +339,14 @@ class GeminiInteractionsTest {
         GeminiEphemeralState.copyAssistantState(first, copied)
         val secondEvents = mutableListOf<ProviderEvent>()
         val second = GeminiInteractionsStream(secondEvents::add, GeminiEphemeralState.pendingSuggestions(copied))
-            .read(ByteArrayInputStream(textResponse("最终答案").toByteArray()), AgentRunController())
+            .read(ByteArrayInputStream(textResponse("final answer").toByteArray()), AgentRunController())
         assertEquals(0, secondEvents.filterIsInstance<ProviderEvent.SearchSuggestions>().single().index)
         assertEquals(0, GeminiEphemeralState.pendingSuggestions(second).length())
     }
 
     @Test
     fun oversizedSuggestionsFailInsteadOfDisplayingTruncatedHtml() {
-        val html = "中".repeat(22_000)
+        val html = "C".repeat(22_000)
         assertFailure("GEMINI_SEARCH_SUGGESTIONS_LIMIT", searchSteps(html))
     }
 
@@ -356,7 +356,7 @@ class GeminiInteractionsTest {
             extraBodyJson = """{"store":true,"previous_interaction_id":"forbidden","generation_config":{"thinking_level":"high","max_output_tokens":120}}""",
             customBody = listOf(CustomBody("stream", JsonPrimitive(false)), CustomBody("model", JsonPrimitive("wrong"))))
         val tools = JSONArray("""[{"type":"function","function":{"name":"lookup","parameters":{"type":"object","oneOf":[{"required":["query"]}],"properties":{"query":{"type":"string","minLength":2}}}}}]""")
-        val request = GeminiInteractionsRequest.build(cfg, JSONArray().put(AgentConversationCodec.userTextMessage("问题")), tools)
+        val request = GeminiInteractionsRequest.build(cfg, JSONArray().put(AgentConversationCodec.userTextMessage("question")), tools)
         assertTrue(request.getBoolean("stream"))
         assertFalse(request.getBoolean("store"))
         assertFalse(request.has("previous_interaction_id"))
@@ -370,7 +370,7 @@ class GeminiInteractionsTest {
 
         val compactionRequest = GeminiInteractionsRequest.build(
             cfg,
-            JSONArray().put(AgentConversationCodec.userTextMessage("摘要")),
+            JSONArray().put(AgentConversationCodec.userTextMessage("summary")),
             tools,
             ProviderRequestPurpose.COMPACTION,
         )
@@ -393,9 +393,9 @@ class GeminiInteractionsTest {
         for (effort in listOf(ReasoningEffort.OFF, ReasoningEffort.MAX)) {
             try {
                 GeminiInteractionsRequest.build(cfg.copy(reasoningEffort = effort), JSONArray(), JSONArray())
-                fail("不支持的档位必须拒绝")
+                fail("unsupported tiers must be rejected")
             } catch (_: IllegalArgumentException) {
-                // 配置错误在发出 HTTP 请求前报告。
+                // Configuration errors are reported before issuing the HTTP request.
             }
         }
     }
@@ -404,12 +404,12 @@ class GeminiInteractionsTest {
     fun cancellationClosesStreamingReader() {
         val controller = AgentRunController()
         var closed = false
-        val stream = object : ByteArrayInputStream(textResponse("回答").toByteArray()) {
+        val stream = object : ByteArrayInputStream(textResponse("answer").toByteArray()) {
             override fun close() { closed = true; super.close() }
         }
         try {
             GeminiInteractionsStream(onEvent = { controller.cancel() }).read(stream, controller)
-            fail("取消必须传播")
+            fail("cancellation must propagate")
         } catch (_: AgentRunCancelledException) {
             assertTrue(closed)
         }
@@ -422,7 +422,7 @@ class GeminiInteractionsTest {
         val authorization = AtomicReference<String>()
         val accept = AtomicReference<String>()
         val contentType = AtomicReference<String>()
-        withServer(200, textResponse("完成"), { body, headers ->
+        withServer(200, textResponse("done"), { body, headers ->
             requestBody.set(body)
             apiKey.set(headers.getFirst("x-goog-api-key"))
             authorization.set(headers.getFirst("Authorization"))
@@ -433,10 +433,10 @@ class GeminiInteractionsTest {
                 ProviderRequest(config().copy(baseUrl = base,
                     customHeaders = listOf(CustomHeader("x-goog-api-key", "wrong-fixture"),
                         CustomHeader("Accept", "application/json"), CustomHeader("Content-Type", "text/plain"))),
-                    JSONArray().put(AgentConversationCodec.userTextMessage("问题")), JSONArray()),
+                    JSONArray().put(AgentConversationCodec.userTextMessage("question")), JSONArray()),
                 AgentRunController(),
             )
-            assertEquals("完成", result.assistantMessage.getString("content"))
+            assertEquals("done", result.assistantMessage.getString("content"))
         }
         assertEquals("test-key", apiKey.get())
         assertEquals(null, authorization.get())
@@ -451,7 +451,7 @@ class GeminiInteractionsTest {
         withServer(401, """{"error":{"status":"UNAUTHENTICATED","message":"private-error-fixture"}}""") { base ->
             try {
                 GeminiInteractionsProvider.complete(ProviderRequest(config().copy(baseUrl = base), JSONArray(), JSONArray()), AgentRunController())
-                fail("认证失败必须报告")
+                fail("auth failure must be reported")
             } catch (failure: AgentModelFailure) {
                 assertEquals("PROVIDER_AUTH_FAILED", failure.code)
                 assertFalse(failure.retryable)
@@ -471,17 +471,17 @@ class GeminiInteractionsTest {
     private fun assertFailure(code: String, stream: String, events: MutableList<ProviderEvent> = mutableListOf()): AgentModelFailure {
         try {
             read(stream, events)
-            fail("预期失败：$code")
+            fail("expected failure:$code")
         } catch (failure: AgentModelFailure) {
             assertEquals(code, failure.code)
             return failure
         }
-        error("不可达")
+        error("unreachable")
     }
 
-    private fun searchSteps(html: String = "<div>建议</div>"): String =
+    private fun searchSteps(html: String = "<div>suggestion</div>"): String =
         start(0, """{"type":"google_search_call","id":"search-a","signature":""}""") +
-            delta(0, """{"type":"google_search_call","arguments":{"queries":["问题"]},"signature":"call-signature"}""") + stop(0) +
+            delta(0, """{"type":"google_search_call","arguments":{"queries":["question"]},"signature":"call-signature"}""") + stop(0) +
             start(1, """{"type":"google_search_result","call_id":"search-a"}""") +
             delta(1, JSONObject().put("type", "google_search_result").put("signature", "result-signature")
                 .put("result", JSONArray().put(JSONObject().put("search_suggestions", html)))) + stop(1)

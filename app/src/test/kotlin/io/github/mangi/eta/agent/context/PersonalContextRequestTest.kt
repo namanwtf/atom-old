@@ -66,14 +66,14 @@ class PersonalContextRequestTest {
         val arguments = JSONObject().put("action", "search").put("source", "notes")
         val emoji = "😀".repeat(200)
         assertEquals(emoji, PersonalContextRequest.parse(arguments.put("query", emoji)).query)
-        expectInvalid { PersonalContextRequest.parse(arguments.put("query", emoji + "甲")) }
+        expectInvalid { PersonalContextRequest.parse(arguments.put("query", emoji + "A")) }
         expectInvalid { PersonalContextRequest.parse(arguments.put("query", "private\u0000content")) }
         try {
-            PersonalContextRequest.parse(JSONObject().put("action", "search").put("source", "私人数据源标识"))
+            PersonalContextRequest.parse(JSONObject().put("action", "search").put("source", "private data source identifier"))
             throw AssertionError("invalid source accepted")
         } catch (error: PersonalContextArgumentException) {
             assertEquals("INVALID_ARGUMENT", error.code)
-            assertFalse(error.message.orEmpty().contains("私人数据源标识"))
+            assertFalse(error.message.orEmpty().contains("private data source identifier"))
         }
     }
 

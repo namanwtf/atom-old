@@ -40,7 +40,7 @@ class AgentSensitiveTranscriptTest {
                                         .put("name", "set_setting")
                                         .put(
                                             "arguments",
-                                            """{"namespace":"global","key":"demo","value":"敏感值"}""",
+                                            """{"namespace":"global","key":"demo","value":"sensitive value"}""",
                                         ),
                                 ),
                         ),
@@ -59,9 +59,9 @@ class AgentSensitiveTranscriptTest {
             sensitiveToolCallIds = setOf(callId),
         ).joinToString { it.content + it.toolCallsJson }
 
-        assertFalse(encoded.contains("敏感值"))
+        assertFalse(encoded.contains("sensitive value"))
         assertFalse(encoded.contains("secret-value"))
         assertTrue(encoded.contains("redacted"))
-        assertTrue(encoded.contains("未写入持久会话"))
+        assertTrue(encoded.contains("not persisted to session"))
     }
 }

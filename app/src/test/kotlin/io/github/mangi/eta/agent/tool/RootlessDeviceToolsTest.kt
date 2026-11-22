@@ -36,7 +36,7 @@ class RootlessDeviceToolsTest {
             controller.tap(10, 10),
             controller.swipe(10, 10, 20, 20, 100),
             controller.scroll("down"),
-            controller.waitForText("目标", 60_000, true, "exact"),
+            controller.waitForText("target", 60_000, true, "exact"),
             controller.waitForPackage("example.app", 60_000),
         ).forEach { result ->
             assertEquals("ACCESSIBILITY_UNAVAILABLE", JSONObject(result).getString("code"))
@@ -78,7 +78,7 @@ class RootlessDeviceToolsTest {
             )
             val result = JSONObject(tools.execute("search_personal_orders", JSONObject())!!.content)
             assertEquals("DEVICE_UNSUPPORTED", result.getJSONObject("system_memory").getString("code"))
-            val personalContext = tools.execute("create_note", JSONObject().put("content", "测试"))!!
+            val personalContext = tools.execute("create_note", JSONObject().put("content", "test"))!!
             assertEquals("DEVICE_UNSUPPORTED", JSONObject(personalContext.content).getString("code"))
             assertTrue(personalContext.sensitive)
         }
@@ -96,9 +96,9 @@ class RootlessDeviceToolsTest {
         try {
             service.onListenerConnected()
             shadowOf(service).addActiveNotification("example.target", 1,
-                Notification.Builder(context, "test").setContentTitle("当前通知").setContentText("正文").build())
+                Notification.Builder(context, "test").setContentTitle("current notification").setContentText("body").build())
             shadowOf(service).addActiveNotification("example.other", 2,
-                Notification.Builder(context, "test").setContentTitle("其他通知").build())
+                Notification.Builder(context, "test").setContentTitle("other notification").build())
             rejectingRootExecutor().use { root ->
                 val tools = AgentStructuredDeviceTools(context, NoOpLogger, root, rootAvailable = { false })
                 val result = tools.execute("recent_notifications", JSONObject().put("package_name", "example.target"))!!
@@ -106,7 +106,7 @@ class RootlessDeviceToolsTest {
                 val json = JSONObject(result.content)
                 assertTrue(json.getBoolean("ok"))
                 assertEquals(1, json.getInt("count"))
-                assertEquals("当前通知", json.getJSONArray("items").getJSONObject(0).getString("title"))
+                assertEquals("current notification", json.getJSONArray("items").getJSONObject(0).getString("title"))
                 service.onListenerDisconnected()
                 val disconnected = JSONObject(tools.execute("recent_notifications", JSONObject())!!.content)
                 assertFalse(disconnected.getBoolean("ok"))
@@ -118,7 +118,7 @@ class RootlessDeviceToolsTest {
     }
 
     private fun rejectingRootExecutor() = BoundedRootCommandExecutor(NoOpLogger) {
-        error("普通实现不应尝试调用 Root")
+        error("the ordinary implementation must not attempt to call Root")
     }
 
     private object NoOpLogger : AgentLogger {

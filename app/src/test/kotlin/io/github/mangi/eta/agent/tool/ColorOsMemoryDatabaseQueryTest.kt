@@ -35,10 +35,10 @@ class ColorOsMemoryDatabaseQueryTest {
     @Test
     fun memoriesExcludeDeletedRowsAndIncludeActiveRelatedDetails() {
         createMemories()
-        insertMemory("old", "较早的记忆", createdTime = 1)
-        insertMemory("new", "最近的记忆", createdTime = 2)
-        insertMemory("deleted", "删除的记忆", createdTime = 3, deleted = 1)
-        insertMemory("recycled", "回收站记忆", createdTime = 4, recycleTime = 4)
+        insertMemory("old", "earlier memory", createdTime = 1)
+        insertMemory("new", "recent memory", createdTime = 2)
+        insertMemory("deleted", "deleted memory", createdTime = 3, deleted = 1)
+        insertMemory("recycled", "recycled memory", createdTime = 4, recycleTime = 4)
         database.execSQL(
             "CREATE TABLE bills (associate_memory_id TEXT, amount REAL, currency TEXT, status INTEGER)",
         )
@@ -66,11 +66,11 @@ class ColorOsMemoryDatabaseQueryTest {
     @Test
     fun ordersSearchAssociatedShipmentAndProjectReservedOrderColumn() {
         createMemories()
-        insertMemory("shipment", "保存的单据")
-        insertMemory("unrelated", "普通记忆")
+        insertMemory("shipment", "saved receipt")
+        insertMemory("unrelated", "ordinary memory")
         database.execSQL("CREATE TABLE shipments (associate_memory_id TEXT, \"order\" TEXT, status TEXT)")
         val order = "ETA_'%_123"
-        database.execSQL("INSERT INTO shipments VALUES (?, ?, ?)", arrayOf<Any>("shipment", order, "待取件"))
+        database.execSQL("INSERT INTO shipments VALUES (?, ?, ?)", arrayOf<Any>("shipment", order, "awaiting pickup"))
 
         val result = query(ColorOsMemoryBridgeProtocol.OPERATION_ORDERS, order)
 
@@ -81,16 +81,16 @@ class ColorOsMemoryDatabaseQueryTest {
         assertEquals("shipment", item.getString("memory_id"))
         val shipment = item.getJSONObject("details").getJSONArray("shipments").getJSONObject(0)
         assertEquals(order, shipment.getString("order"))
-        assertEquals("待取件", shipment.getString("status"))
+        assertEquals("awaiting pickup", shipment.getString("status"))
     }
 
     @Test
     fun memorySearchTreatsLikeWildcardsQuotesAndBackslashesAsLiteralText() {
         createMemories()
-        val keyword = "100%_O'Brien\\笔记"
-        insertMemory("literal", "前缀 $keyword 后缀")
-        insertMemory("wildcard", "100AAO'Brien\\笔记")
-        insertMemory("other", "其他笔记")
+        val keyword = "100%_O'Brien\\note"
+        insertMemory("literal", "prefix $keyword suffix")
+        insertMemory("wildcard", "100AAO'Brien\\note")
+        insertMemory("other", "other note")
 
         val result = query(ColorOsMemoryBridgeProtocol.OPERATION_SEARCH, keyword)
 
@@ -106,14 +106,14 @@ class ColorOsMemoryDatabaseQueryTest {
             "CREATE TABLE memory_address (memory_id TEXT, name TEXT, address TEXT, " +
                 "longitude REAL, latitude REAL, create_time INTEGER)",
         )
-        val keyword = "100%_O'Brien\\站"
+        val keyword = "100%_O'Brien\\station"
         database.execSQL(
             "INSERT INTO memory_address VALUES (?, ?, ?, ?, ?, ?)",
-            arrayOf<Any>("place", keyword, "测试街道", 120.5, 30.25, 2),
+            arrayOf<Any>("place", keyword, "test street", 120.5, 30.25, 2),
         )
         database.execSQL(
             "INSERT INTO memory_address VALUES (?, ?, ?, ?, ?, ?)",
-            arrayOf<Any>("other", "100AAO'Brien\\站", "另一街道", 0.0, 0.0, 1),
+            arrayOf<Any>("other", "100AAO'Brien\\station", "another street", 0.0, 0.0, 1),
         )
 
         val result = query(ColorOsMemoryBridgeProtocol.OPERATION_PLACES, keyword)

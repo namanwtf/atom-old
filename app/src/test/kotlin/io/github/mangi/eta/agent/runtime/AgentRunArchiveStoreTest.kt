@@ -27,16 +27,16 @@ class AgentRunArchiveStoreTest {
 
     @Test
     fun archiveDropsSearchSuggestionsAndKeepsAnswer() {
-        val answer = AgentEvent.AssistantBlockDelta(1, AgentEvent.AssistantBlockKind.TEXT, 0, 2, "回答")
+        val answer = AgentEvent.AssistantBlockDelta(1, AgentEvent.AssistantBlockKind.TEXT, 0, 2, "answer")
         AgentRunArchiveStore.add(context, AgentRunArchiveStore.ArchivedRun(
             handoff = AgentRuntimeWire.EntryHandoff("search", "external_test", "fixture"),
-            events = listOf(answer, AgentEvent.SearchSuggestions(1, 0, "<div>不应保存</div>")),
-            result = AgentRuntimeWire.RunResult("search", true, "回答"),
+            events = listOf(answer, AgentEvent.SearchSuggestions(1, 0, "<div>must not be saved</div>")),
+            result = AgentRuntimeWire.RunResult("search", true, "answer"),
             createdAt = 1L,
         ))
         val restored = AgentRunArchiveStore.list(context).single()
         assertEquals(listOf(answer), restored.events)
-        assertEquals("回答", restored.result.content)
+        assertEquals("answer", restored.result.content)
     }
 
     @Test
@@ -56,7 +56,7 @@ class AgentRunArchiveStoreTest {
             AgentRuntimeWire.EntryHandoff(
                 id = "external-run",
                 source = "external_test",
-                payload = AgentExternalArchivePayload("请求", "session", "外部入口").toJson(),
+                payload = AgentExternalArchivePayload("request", "session", "external entry").toJson(),
             )
         ))
     }
@@ -69,9 +69,9 @@ class AgentRunArchiveStoreTest {
                 id = "run-1",
                 source = "external_test",
                 payload = AgentExternalArchivePayload(
-                    userText = "查一下系统状态",
+                    userText = "check the system status",
                     conversationKey = "session-1",
-                    title = "外部入口",
+                    title = "external entry",
                 ).toJson(),
             ),
             events = listOf(
@@ -80,20 +80,20 @@ class AgentRunArchiveStoreTest {
                     kind = AgentEvent.AssistantBlockKind.THINKING,
                     index = 0,
                     deltaChars = 2,
-                    delta = "先",
+                    delta = "look",
                 ),
                 AgentEvent.AssistantBlockDelta(
                     round = 1,
                     kind = AgentEvent.AssistantBlockKind.THINKING,
                     index = 0,
                     deltaChars = 2,
-                    delta = "看",
+                    delta = " at first",
                 ),
                 AgentEvent.ToolStarted(
                     round = 1,
                     toolCallId = "call-1",
                     name = "run_command",
-                    argsPreview = "执行命令 · Android · root",
+                    argsPreview = "run command · Android · root",
                     command = "uptime",
                 ),
                 AgentEvent.ToolFinished(
@@ -112,12 +112,12 @@ class AgentRunArchiveStoreTest {
             result = AgentRuntimeWire.RunResult(
                 runId = "run-1",
                 ok = true,
-                content = "系统状态正常",
-                reasoningContent = "先看系统状态",
+                content = "system status normal",
+                reasoningContent = "check the system status first",
                 transcript = listOf(
                     AgentModelClient.ConversationMessage(
                         role = "assistant",
-                        content = "系统状态正常",
+                        content = "system status normal",
                     )
                 ),
             ),
@@ -141,7 +141,7 @@ class AgentRunArchiveStoreTest {
                 kind = AgentEvent.AssistantBlockKind.THINKING,
                 index = 0,
                 deltaChars = 4,
-                delta = "先看",
+                delta = "look at first",
             ),
             restored.events.first()
         )
@@ -159,9 +159,9 @@ class AgentRunArchiveStoreTest {
                     id = "handoff-1",
                     source = "external_test",
                     payload = AgentExternalArchivePayload(
-                        userText = "查一下系统状态",
+                        userText = "check the system status",
                         conversationKey = "session-1",
-                        title = "外部入口",
+                        title = "external entry",
                     ).toJson(),
                 ),
                 events = emptyList(),

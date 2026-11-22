@@ -59,10 +59,10 @@ class GeminiModelCapabilitiesTest {
     fun nativeProxyIdentityDoesNotChangeExistingCompatibleConnections() {
         val url = "https://proxy.example/v1beta"
         assertEquals(ProviderSourceTypes.GEMINI,
-            ProviderSourceRegistry.resolve(GeminiProviderSetting(id = "proxy", name = "代理", baseUrl = url,
+            ProviderSourceRegistry.resolve(GeminiProviderSetting(id = "proxy", name = "Proxy", baseUrl = url,
                 sourceType = ProviderSourceTypes.CUSTOM)))
         assertEquals(ProviderSourceTypes.CUSTOM,
-            ProviderSourceRegistry.resolve(CustomProviderSetting(id = "old", name = "旧兼容连接",
+            ProviderSourceRegistry.resolve(CustomProviderSetting(id = "old", name = "legacy compatible connection",
                 baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai")))
     }
 

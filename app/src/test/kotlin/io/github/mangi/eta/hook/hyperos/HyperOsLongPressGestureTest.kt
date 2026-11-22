@@ -24,7 +24,7 @@ import java.time.Duration
 @LooperMode(LooperMode.Mode.PAUSED)
 class HyperOsLongPressGestureTest {
     @Test
-    fun `静止长按仅触发一次并取消原始手势`() = withView { view ->
+    fun `a stationary long press triggers only once and cancels the original gesture`() = withView { view ->
         var calls = 0
         val gesture = HyperOsLongPressGesture(view, { true }) { calls++; true }
         touch(gesture, MotionEvent.ACTION_DOWN)
@@ -36,7 +36,7 @@ class HyperOsLongPressGestureTest {
     }
 
     @Test
-    fun `滑动抬手取消和多指中断不会触发`() = withView { view ->
+    fun `sliding, lifting, and multi-touch interruption do not trigger`() = withView { view ->
         var calls = 0
         val gesture = HyperOsLongPressGesture(view, { true }) { calls++; true }
         for (action in listOf(MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_DOWN)) {
@@ -49,7 +49,7 @@ class HyperOsLongPressGestureTest {
     }
 
     @Test
-    fun `等待期间关闭开关或移除视图会取消`() = withView { view ->
+    fun `disabling the switch or removing the view during the wait cancels`() = withView { view ->
         var enabled = true
         var calls = 0
         val gesture = HyperOsLongPressGesture(view, { enabled }) { calls++; true }
@@ -66,7 +66,7 @@ class HyperOsLongPressGestureTest {
     }
 
     @Test
-    fun `触发失败保留原始手势且不同视图不串扰`() = withView { first ->
+    fun `trigger failure keeps the original gesture and different views do not interfere`() = withView { first ->
         val second = View(first.context)
         (first.parent as FrameLayout).addView(second)
         var calls = 0

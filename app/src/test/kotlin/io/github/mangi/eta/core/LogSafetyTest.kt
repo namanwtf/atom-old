@@ -54,7 +54,7 @@ class LogSafetyTest {
         assertEquals("unknown", null.toSafeLogToken())
         assertEquals("unknown", "".toSafeLogToken())
         assertEquals("unknown", "tool\nforged-entry".toSafeLogToken())
-        assertEquals("unknown", "包含用户内容".toSafeLogToken())
+        assertEquals("unknown", "contains user content".toSafeLogToken())
         assertEquals("unknown", "a".repeat(65).toSafeLogToken())
     }
 }

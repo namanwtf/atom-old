@@ -58,7 +58,7 @@ class EtaBackupRepositoryTest {
     @Test
     fun oauthBackupPreservesConnectionModeButCannotRestoreSecretThroughApiKey() = runBlocking {
         ProviderRepository.addProvider(OpenAiCompatibleProviderSetting(
-            id = "oauth-backup", name = "订阅", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-backup", name = "subscription", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
         ))
         val dao = EtaDatabase.get(context).providerDao()
@@ -84,16 +84,16 @@ class EtaBackupRepositoryTest {
     @Test
     fun oauthRestoreActivatesConnectionAfterCleanupAndRemembersItsModelWhileRequiringLogin() = runBlocking {
         val provider = OpenAiCompatibleProviderSetting(
-            id = "oauth-restore", name = "原连接", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-restore", name = "original connection", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
-            models = listOf(Model(id = "oauth-restored-model", modelId = "fixture-model", displayName = "测试模型")),
+            models = listOf(Model(id = "oauth-restored-model", modelId = "fixture-model", displayName = "test model")),
         )
         ProviderRepository.addProvider(provider)
         val dao = EtaDatabase.get(context).providerDao()
         val stored = requireNotNull(dao.providerById(provider.id))
         val document = EtaBackupDocument(
             exportedAt = 0,
-            providers = listOf(EtaBackupProvider(stored.provider.copy(name = "导入连接"), stored.models)),
+            providers = listOf(EtaBackupProvider(stored.provider.copy(name = "imported connection"), stored.models)),
             selectedProviderId = provider.id,
             selectedModelId = provider.models.single().id,
         )
@@ -105,7 +105,7 @@ class EtaBackupRepositoryTest {
             forgetCredentials = { id ->
                 assertTrue(committed)
                 val pending = runBlocking { requireNotNull(dao.providerById(provider.id)).provider }
-                assertEquals("导入连接", pending.name)
+                assertEquals("imported connection", pending.name)
                 assertEquals(ProviderAuthModes.API_KEY, pending.authMode)
                 assertFalse(pending.isEnabled)
                 assertEquals("", pending.apiKey)
@@ -125,15 +125,15 @@ class EtaBackupRepositoryTest {
     @Test
     fun cleanupFailureReportsCommittedDataAndLeavesImportedOAuthConnectionsUnableToAuthenticate() = runBlocking {
         val provider = OpenAiCompatibleProviderSetting(
-            id = "oauth-cleanup-failure", name = "原连接", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-cleanup-failure", name = "original connection", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
         )
         ProviderRepository.addProvider(provider)
-        AgentMemoryRepository.replaceAll("旧记忆")
+        AgentMemoryRepository.replaceAll("old memory")
         val dao = EtaDatabase.get(context).providerDao()
         val stored = requireNotNull(dao.providerById(provider.id))
-        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "导入记忆", providers = listOf(
-            EtaBackupProvider(stored.provider.copy(name = "导入连接")),
+        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "imported memory", providers = listOf(
+            EtaBackupProvider(stored.provider.copy(name = "imported connection")),
         ))
         var committed = false
         val failure = runCatching {
@@ -151,17 +151,17 @@ class EtaBackupRepositoryTest {
             failure?.message,
         )
         val restored = requireNotNull(dao.providerById(provider.id)).provider
-        assertEquals("导入连接", restored.name)
+        assertEquals("imported connection", restored.name)
         assertEquals(ProviderAuthModes.API_KEY, restored.authMode)
         assertFalse(restored.isEnabled)
         assertEquals("", restored.apiKey)
-        assertEquals("导入记忆", AgentMemoryRepository.snapshot().content)
+        assertEquals("imported memory", AgentMemoryRepository.snapshot().content)
     }
 
     @Test
     fun cancellationAfterCommitStillFinishesCredentialCleanupAndConnectionActivation() = runBlocking {
         val provider = OpenAiCompatibleProviderSetting(
-            id = "oauth-commit-cancel", name = "订阅", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-commit-cancel", name = "subscription", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
         )
         ProviderRepository.addProvider(provider)
@@ -192,11 +192,11 @@ class EtaBackupRepositoryTest {
         val provider = ProviderRepository.allProviders().first().withApiKey("sk-backup-test")
         ProviderRepository.updateProvider(provider)
         SettingsDataStore.setSelection(provider.id, provider.models.first().id)
-        AgentMemoryRepository.replaceAll("# 核心记忆\n喜欢 Kotlin")
+        AgentMemoryRepository.replaceAll("# Core memory\nLikes Kotlin")
 
         val conversation = ConversationEntity(
             id = "conversation-backup",
-            title = "备份会话",
+            title = "backup conversation",
             thinkingEnabled = true,
             createdAt = 1L,
             updatedAt = 2L,
@@ -209,7 +209,7 @@ class EtaBackupRepositoryTest {
                     conversationId = conversation.id,
                     sortIndex = 0,
                     type = "user",
-                    content = "保留这条消息",
+                    content = "keep this message",
                 ),
             ),
             contextCheckpoints = listOf(
@@ -225,7 +225,7 @@ class EtaBackupRepositoryTest {
         val exported = EtaBackupRepository.export(context, output)
         assertEquals(1, exported.conversationCount)
         assertTrue(exported.providerCount > 0)
-        assertEquals("# 核心记忆\n喜欢 Kotlin", AgentMemoryRepository.snapshot().content)
+        assertEquals("# Core memory\nLikes Kotlin", AgentMemoryRepository.snapshot().content)
 
         ProviderRepository.updateProvider(provider.withApiKey("changed"))
         AgentMemoryRepository.replaceAll("changed")
@@ -241,9 +241,9 @@ class EtaBackupRepositoryTest {
             ByteArrayInputStream(output.toByteArray()),
         )
         assertEquals(1, imported.conversationCount)
-        assertEquals("# 核心记忆\n喜欢 Kotlin", AgentMemoryRepository.snapshot().content)
+        assertEquals("# Core memory\nLikes Kotlin", AgentMemoryRepository.snapshot().content)
         assertEquals(
-            "保留这条消息",
+            "keep this message",
             EtaDatabase.get(context).conversationDao().messages().single().content,
         )
         val restoredSettings = SettingsDataStore.settings()
@@ -263,33 +263,33 @@ class EtaBackupRepositoryTest {
     @Test
     fun roleplayBackupRestoresCardsPersonaAvatarMemoryAndLargeSessionMetadata() = runBlocking {
         CharacterRepository.initialize(context)
-        val profile = CharacterRepository.create(CharacterCardCodec.create("角色").withEdits(description = "设定".repeat(40_000)))
+        val profile = CharacterRepository.create(CharacterCardCodec.create("character").withEdits(description = "setup".repeat(40_000)))
         CharacterRepository.writeAvatar(profile.id, Base64.getDecoder().decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMwdgn9DwADRgHM73L1cQAAAABJRU5ErkJggg==",
         )).let { CharacterRepository.save(profile.copy(avatarPath = it)) }
-        CharacterRepository.savePersona(UserPersona("旅人", "来自远方"))
-        CharacterMemoryRepository.replaceAll(context, profile.id, "# 剧情\n到过山中")
+        CharacterRepository.savePersona(UserPersona("traveler", "from afar"))
+        CharacterMemoryRepository.replaceAll(context, profile.id, "# story\nbeen to the mountains")
         val binding = CharacterRepository.binding(profile.id)
         val revisions = Json.encodeToString(RoleplayMessageState(
             links = mapOf("role-message" to RoleplayMessageLink("role-message")),
-            revisions = mapOf("role-message" to RoleplayReplyRevision("原版", listOf("原版", "版本".repeat(40_000)), 1)),
+            revisions = mapOf("role-message" to RoleplayReplyRevision("original version", listOf("original version", "version".repeat(40_000)), 1)),
         ))
         EtaDatabase.get(context).conversationDao().insertConversations(listOf(
-            ConversationEntity("role-session", "剧情", false, roleplayJson = Json.encodeToString(binding),
+            ConversationEntity("role-session", "story", false, roleplayJson = Json.encodeToString(binding),
                 revisionsJson = revisions, createdAt = 1, updatedAt = 1),
         ))
         EtaDatabase.get(context).conversationDao().insertMessages(listOf(
-            ConversationMessageEntity("role-message", "role-session", 0, "assistant", "版本".repeat(40_000)),
+            ConversationMessageEntity("role-message", "role-session", 0, "assistant", "version".repeat(40_000)),
         ))
         val output = ByteArrayOutputStream()
         assertEquals(1, EtaBackupRepository.export(context, output).characterCount)
-        CharacterRepository.save(profile.copy(card = profile.card.withEdits(description = "改动")))
-        CharacterMemoryRepository.replaceAll(context, profile.id, "改动")
-        CharacterRepository.savePersona(UserPersona("其他", ""))
+        CharacterRepository.save(profile.copy(card = profile.card.withEdits(description = "change")))
+        CharacterMemoryRepository.replaceAll(context, profile.id, "change")
+        CharacterRepository.savePersona(UserPersona("other", ""))
         EtaBackupRepository.import(context, ByteArrayInputStream(output.toByteArray()))
-        assertEquals("设定".repeat(40_000), CharacterRepository.get(profile.id)?.card?.description)
-        assertEquals("旅人", CharacterRepository.persona().name)
-        assertEquals("# 剧情\n到过山中", CharacterMemoryRepository.snapshot(context, profile.id).content)
+        assertEquals("setup".repeat(40_000), CharacterRepository.get(profile.id)?.card?.description)
+        assertEquals("traveler", CharacterRepository.persona().name)
+        assertEquals("# story\nbeen to the mountains", CharacterMemoryRepository.snapshot(context, profile.id).content)
         val row = EtaDatabase.get(context).conversationDao().conversationEntities().single()
         assertEquals(revisions, row.revisionsJson)
         val restoredBinding = Json.decodeFromString<RoleplayBinding>(row.roleplayJson)
@@ -347,26 +347,26 @@ class EtaBackupRepositoryTest {
     fun memoryWriteFailureRollsBackDatabaseAndEarlierMemoryFiles() = runBlocking {
         CharacterRepository.initialize(context)
         ProviderRepository.addProvider(OpenAiCompatibleProviderSetting(
-            id = "existing-provider", name = "原订阅", baseUrl = "https://api.openai.com/v1",
+            id = "existing-provider", name = "original subscription", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
         ))
-        val first = CharacterRepository.create(CharacterCardCodec.create("原角色"))
-        val blocked = CharacterRepository.create(CharacterCardCodec.create("阻塞角色"))
-        CharacterMemoryRepository.replaceAll(context, first.id, "原剧情记忆")
-        AgentMemoryRepository.replaceAll("原现实记忆")
+        val first = CharacterRepository.create(CharacterCardCodec.create("original character"))
+        val blocked = CharacterRepository.create(CharacterCardCodec.create("blocked character"))
+        CharacterMemoryRepository.replaceAll(context, first.id, "original story memory")
+        AgentMemoryRepository.replaceAll("original real-world memory")
         val database = EtaDatabase.get(context)
         val records = database.characterDao().characters().map { row ->
-            if (row.id == first.id) row.copy(cardJson = CharacterCardCodec.encodeJson(first.card.withEdits(name = "备份角色"))) else row
+            if (row.id == first.id) row.copy(cardJson = CharacterCardCodec.encodeJson(first.card.withEdits(name = "backup character"))) else row
         }
-        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "新的现实记忆",
+        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "new real-world memory",
             roleplay = CharacterBackupData(characters = records, assets = listOf(
-                CharacterBackupAsset(first.id, memoryMd = "新的剧情记忆"),
-                CharacterBackupAsset(blocked.id, memoryMd = "写入失败"),
+                CharacterBackupAsset(first.id, memoryMd = "new story memory"),
+                CharacterBackupAsset(blocked.id, memoryMd = "write failure"),
             )),
         )
         val blocker = java.io.File(context.filesDir, "roleplay/${blocked.id}/memory")
         check(blocker.parentFile!!.mkdirs() || blocker.parentFile!!.isDirectory)
-        blocker.writeText("阻止创建目录")
+        blocker.writeText("block directory creation")
         val credentials = mutableMapOf("existing-provider" to "fixture-existing-credential")
         var committed = false
         try {
@@ -383,9 +383,9 @@ class EtaBackupRepositoryTest {
             assertTrue(failed)
             assertFalse(committed)
             assertEquals(mapOf("existing-provider" to "fixture-existing-credential"), credentials)
-            assertEquals("原角色", CharacterRepository.get(first.id)?.card?.name)
-            assertEquals("原剧情记忆", CharacterMemoryRepository.snapshot(context, first.id).content)
-            assertEquals("原现实记忆", AgentMemoryRepository.snapshot().content)
+            assertEquals("original character", CharacterRepository.get(first.id)?.card?.name)
+            assertEquals("original story memory", CharacterMemoryRepository.snapshot(context, first.id).content)
+            assertEquals("original real-world memory", AgentMemoryRepository.snapshot().content)
         } finally {
             check(blocker.delete())
         }
@@ -394,20 +394,20 @@ class EtaBackupRepositoryTest {
     @Test
     fun invalidRevisionBackupIsRejectedBeforeExistingConversationsAreChanged() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
-        val original = ConversationEntity("original", "原会话", false, createdAt = 1, updatedAt = 1)
+        val original = ConversationEntity("original", "original conversation", false, createdAt = 1, updatedAt = 1)
         dao.insertConversations(listOf(original))
         val invalidStates = listOf(
             "not-json",
             Json.encodeToString(RoleplayMessageState(
                 links = mapOf("reply" to RoleplayMessageLink("reply")),
-                revisions = mapOf("reply" to RoleplayReplyRevision("原版", listOf("原版"), 9)),
+                revisions = mapOf("reply" to RoleplayReplyRevision("original version", listOf("original version"), 9)),
             )),
             Json.encodeToString(RoleplayMessageState(pendingRewrites = mapOf("run" to "outside-conversation"))),
         )
         invalidStates.forEach { revisions ->
             val document = EtaBackupDocument(exportedAt = 0,
-                conversations = listOf(ConversationEntity("new", "导入会话", false, revisionsJson = revisions, createdAt = 1, updatedAt = 1)),
-                messages = listOf(ConversationMessageEntity("reply", "new", 0, "assistant", "原版")),
+                conversations = listOf(ConversationEntity("new", "imported conversation", false, revisionsJson = revisions, createdAt = 1, updatedAt = 1)),
+                messages = listOf(ConversationMessageEntity("reply", "new", 0, "assistant", "original version")),
             )
             var failed = false
             try {

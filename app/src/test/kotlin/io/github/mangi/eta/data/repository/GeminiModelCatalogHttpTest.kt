@@ -123,8 +123,8 @@ class GeminiModelCatalogHttpTest {
         withServer(listOf(
             """{"models":[{"name":"models/gemini-3.8-flash","displayName":"Flash","inputTokenLimit":1048576,
                  "supportedGenerationMethods":["generateContent"]}],"nextPageToken":"page-2"}""",
-            """{"models":[{"name":"models/gemini-future","displayName":"未来模型","supportedGenerationMethods":["generateContent"]},
-                 {"name":"models/gemini-3.8-flash","displayName":"重复"},
+            """{"models":[{"name":"models/gemini-future","displayName":"future model","supportedGenerationMethods":["generateContent"]},
+                 {"name":"models/gemini-3.8-flash","displayName":"duplicate"},
                  {"name":"models/gemini-embedding","supportedGenerationMethods":["embedContent"]}]}""",
         )) { url, requests ->
             val provider = provider(url).copy(customHeaders = listOf(CustomHeader("x-goog-api-key", "replacement-must-not-apply")))
@@ -151,7 +151,7 @@ class GeminiModelCatalogHttpTest {
         withServer(listOf(body, body)) { url, requests ->
             val result = RemoteModelFetcher.fetchCatalog(provider(url), OkHttpClient(), noOAuth)
             assertTrue(result.isFailure)
-            assertTrue(result.exceptionOrNull()!!.message!!.contains("重复分页令牌"))
+            assertTrue(result.exceptionOrNull()!!.message!!.contains("duplicate pagination token"))
             assertEquals(2, requests.size)
         }
     }
@@ -165,7 +165,7 @@ class GeminiModelCatalogHttpTest {
         )) { url, requests ->
             val result = RemoteModelFetcher.fetchCatalog(provider(url), OkHttpClient(), noOAuth)
             assertTrue(result.isFailure)
-            assertTrue(result.exceptionOrNull()!!.message!!.contains("大小限制"))
+            assertTrue(result.exceptionOrNull()!!.message!!.contains("size limit"))
             assertEquals(2, requests.size)
         }
     }
@@ -197,7 +197,7 @@ class GeminiModelCatalogHttpTest {
         try {
             val operation = launch {
                 RemoteModelFetcher.fetchCatalog(provider("http://127.0.0.1:${server.address.port}"), OkHttpClient(), noOAuth)
-                error("取消后不应成功返回目录")
+                error("must not successfully return the catalog after cancellation")
             }
             assertTrue(withContext(Dispatchers.IO) { started.await(3, TimeUnit.SECONDS) })
             withTimeout(3_000) { operation.cancelAndJoin() }
@@ -237,9 +237,9 @@ class GeminiModelCatalogHttpTest {
     )
 
     private val noOAuth = object : RemoteModelFetcher.Credentials {
-        override fun binding(providerId: String, authMode: String): ProviderCredentialBinding = error("不应读取 OAuth 账号")
-        override fun isCurrent(binding: ProviderCredentialBinding): Boolean = error("不应读取 OAuth 账号")
+        override fun binding(providerId: String, authMode: String): ProviderCredentialBinding = error("must not read OAuth account")
+        override fun isCurrent(binding: ProviderCredentialBinding): Boolean = error("must not read OAuth account")
         override fun accessToken(providerId: String, authMode: String, controller: AgentRunController, rejected: String?): String =
-            error("不应读取 OAuth 令牌")
+            error("must not read OAuth token")
     }
 }

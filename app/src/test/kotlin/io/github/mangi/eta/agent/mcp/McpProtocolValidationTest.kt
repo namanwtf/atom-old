@@ -452,19 +452,19 @@ data: "id":1,"result":{"resultType":"complete","ttlMs":1000,"tools":[]}}
                 lastProtocolVersion = McpProtocolMode.LATEST,
             )
             val tool = McpToolDefinition(
-                name = "执行任务",
+                name = "execute the task",
                 inputSchemaJson = """{"type":"object","properties":{"region":{"type":"string","x-mcp-header":"Region"},"page":{"type":"integer","x-mcp-header":"Page"}}}""",
             )
 
             McpHttpClient(configured, bearerToken = null).use { client ->
                 client.callTool(
                     tool,
-                    JSONObject().put("region", "华东").put("page", 42),
+                    JSONObject().put("region", "East China").put("page", 42),
                 )
             }
 
-            assertEquals(encodeMcpHeaderValue("执行任务"), nameHeader.get())
-            assertEquals(encodeMcpHeaderValue("华东"), regionHeader.get())
+            assertEquals(encodeMcpHeaderValue("execute the task"), nameHeader.get())
+            assertEquals(encodeMcpHeaderValue("East China"), regionHeader.get())
             assertEquals("42", pageHeader.get())
         } finally {
             server.stop(0)
@@ -500,7 +500,7 @@ data: "id":1,"result":{"resultType":"complete","ttlMs":1000,"tools":[]}}
             singleServer.stop(0)
         }
 
-        // 10 页 × 25 条 = 250 条，且故意使用空字符串 "" 作为首个 nextCursor（MCP 规范合法不透明游标）。
+        // 10 pages x 25 items = 250 items, and deliberately use the empty string "" as the first nextCursor (a legal opaque cursor per MCP).
         val pageCalls = AtomicInteger()
         val seenCursors = CopyOnWriteArrayList<String?>()
         val pagedServer = localServer { exchange ->

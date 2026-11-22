@@ -26,16 +26,16 @@ class AppStringsTest {
     fun fallsBackToTemplateWhenContextIsNotInitialized() {
         AppStrings.resetForTest()
         assertEquals(
-            "字段 model",
-            AppStrings.get(R.string.provider_param_field, "字段 %1\$s", "model"),
+            "field model",
+            AppStrings.get(R.string.provider_param_field, "field %1\$s", "model"),
         )
         assertEquals(
-            "1 个",
-            AppStrings.quantity(R.plurals.provider_models_count, 1, "%1\$d 个", "%1\$d 个", 1),
+            "1 item(s)",
+            AppStrings.quantity(R.plurals.provider_models_count, 1, "%1\$d item(s)", "%1\$d item(s)", 1),
         )
         assertEquals(
-            "3 个",
-            AppStrings.quantity(R.plurals.provider_models_count, 3, "%1\$d 个", "%1\$d 个", 3),
+            "3 item(s)",
+            AppStrings.quantity(R.plurals.provider_models_count, 3, "%1\$d item(s)", "%1\$d item(s)", 3),
         )
     }
 
@@ -46,33 +46,33 @@ class AppStringsTest {
         applyLocale("en-US")
         assertEquals(
             "Invalid Vertex AI endpoint URL.",
-            AppStrings.get(R.string.provider_url_vertex_invalid, "Vertex AI 接口地址无效。"),
+            AppStrings.get(R.string.provider_url_vertex_invalid, "Invalid Vertex AI endpoint URL."),
         )
         assertEquals(
             "1 model",
-            AppStrings.quantity(R.plurals.provider_models_count, 1, "%1\$d 个模型", "%1\$d 个模型", 1),
+            AppStrings.quantity(R.plurals.provider_models_count, 1, "%1\$d model(s)", "%1\$d model(s)", 1),
         )
         assertEquals(
             "2 models",
-            AppStrings.quantity(R.plurals.provider_models_count, 2, "%1\$d 个模型", "%1\$d 个模型", 2),
+            AppStrings.quantity(R.plurals.provider_models_count, 2, "%1\$d model(s)", "%1\$d model(s)", 2),
         )
 
         applyLocale("zh-CN")
         assertEquals(
-            "Vertex AI 接口地址无效。",
-            AppStrings.get(R.string.provider_url_vertex_invalid, "Vertex AI 接口地址无效。"),
+            "Invalid Vertex AI endpoint URL.",
+            AppStrings.get(R.string.provider_url_vertex_invalid, "Invalid Vertex AI endpoint URL."),
         )
 
         applyLocale("zh-TW")
         assertEquals(
-            "Vertex AI 接口位址無效。",
-            AppStrings.get(R.string.provider_url_vertex_invalid, "Vertex AI 接口地址无效。"),
+            "Invalid Vertex AI endpoint URL.",
+            AppStrings.get(R.string.provider_url_vertex_invalid, "Invalid Vertex AI endpoint URL."),
         )
 
         applyLocale("fr-FR")
         assertEquals(
             "Invalid Vertex AI endpoint URL.",
-            AppStrings.get(R.string.provider_url_vertex_invalid, "Vertex AI 接口地址无效。"),
+            AppStrings.get(R.string.provider_url_vertex_invalid, "Invalid Vertex AI endpoint URL."),
         )
     }
 

@@ -15,7 +15,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-// 数据库由用例管理，避免 EtaApp 的后台预热与关闭、重开数据库竞争。
+// The database is managed by the test case, avoiding races with EtaApp's background warm-up and close/reopen.
 @Config(sdk = [36], application = Application::class)
 class AgentContextPersistenceTest {
     private lateinit var context: Context
@@ -40,7 +40,7 @@ class AgentContextPersistenceTest {
             emptyList(), handoff = AgentRuntimeWire.EntryHandoff("context-persist", AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE, "conversation"),
             operation = AgentRuntimeWire.OP_COMPACT,
         )
-        val summary = AgentModelClient.ConversationMessage("assistant", "已完成前序操作。",
+        val summary = AgentModelClient.ConversationMessage("assistant", "Finished the preceding operations.",
             contextSummary = true, compactedUserTurns = 2, summaryThroughUserTurn = 2)
         val snapshot = AgentContextSnapshot(operationId = request.runId, messages = listOf(summary),
             coveredUserTurns = 2, consumedUserTurns = 2)

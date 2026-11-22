@@ -113,7 +113,7 @@ class ShellFileToolBackendTest {
                     result(selected.joinToString("") { metadata() + '\u0000' })
                 }
                 "stat -c" in command && "if [ -L '/workspace' ]" in command -> result(metadata("directory"))
-                else -> throw AssertionError("目录条目没有使用批量查询")
+                else -> throw AssertionError("directory entries did not use batched query")
             }
         }
         val first = backend.list("/workspace", 0, 2)
@@ -254,7 +254,7 @@ class ShellFileToolBackendTest {
         var cancellation: String? = "CANCELLED"
         var calls = 0
         val backend = ShellFileToolBackend("linux", "user", "/workspace", "/guest-home", ensureActive = {
-            cancellation?.let { throw FileToolException(it, "操作不可继续") }
+            cancellation?.let { throw FileToolException(it, "operation cannot continue") }
         }) { _, _, _ ->
             calls++
             cancellation = "ROOT_REQUIRED"
@@ -298,7 +298,7 @@ class ShellFileToolBackendTest {
     }
 
     private fun runShell(command: String, input: ByteArray? = null): OneShotShellResult {
-        // 这里验证 Shell 脚本及文件保护合同；用文件供给输入，避免提前退出与父进程写管道竞争。
+        // Here we verify the Shell script and the file protection contract; feed input from a file to avoid racing with the parent process pipe on early exit.
         val inputFile = temporaryFolder.newFile().apply { writeBytes(input ?: byteArrayOf()) }
         val process = ProcessBuilder("sh", "-c", command)
             .directory(temporaryFolder.root)
@@ -306,7 +306,7 @@ class ShellFileToolBackendTest {
             .start()
         val output = process.inputStream.readBytes()
         val error = process.errorStream.readBytes()
-        assertTrue("测试 Shell 没有正常结束", process.waitFor(5, TimeUnit.SECONDS))
+        assertTrue("test Shell did not end normally", process.waitFor(5, TimeUnit.SECONDS))
         return OneShotShellResult(process.exitValue(), output, error)
     }
 }

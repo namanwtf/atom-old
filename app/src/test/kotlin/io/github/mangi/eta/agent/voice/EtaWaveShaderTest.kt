@@ -18,7 +18,7 @@ class EtaWaveShaderTest {
         try {
             RuntimeShader("uniform shader child; half4 main(float2 p) { return child.eval(p); }")
         } catch (error: IllegalArgumentException) {
-            // Robolectric native runtime 的子着色器支持见 upstream issue #9691。
+            // Robolectric native runtime sub-shader support is tracked in upstream issue #9691.
             assumeNoException("Native test runtime lacks child shader support", error)
         }
         val source = RuntimeEnvironment.getApplication().assets.open("assistant/wave.agsl").bufferedReader().use { it.readText() }

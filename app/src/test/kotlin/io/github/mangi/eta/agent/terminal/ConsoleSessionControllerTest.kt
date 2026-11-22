@@ -10,7 +10,7 @@ class ConsoleSessionControllerTest {
 
     @Test
     fun openFailureLeavesNoSessionBehind() {
-        // 缺失原生 PTY 组件的 supervisor 保证进程启动失败，不依赖宿主机环境。
+        // A supervisor missing the native PTY component guarantees process startup failure, without depending on the host environment.
         val controller = ConsoleSessionController(
             logger = NoopLogger,
             processSupervisor = ShellProcessSupervisor(ptyExecutable = { null }),
@@ -50,7 +50,7 @@ class ConsoleSessionControllerTest {
                     onOutput = { _, _ -> },
                     onExit = { },
                 )
-                // 失败路径必须先于上限检查清理自身；反复失败不得退化出 SESSION_LIMIT_REACHED。
+                // The failure path must clean itself up before the limit check; repeated failures must not degrade into SESSION_LIMIT_REACHED.
                 assertEquals(
                     "PROCESS_START_FAILED",
                     (result as ConsoleSessionController.OpenResult.Failed).code,
@@ -71,7 +71,7 @@ class ConsoleSessionControllerTest {
 
         assertTrue(controller.listSessions().isEmpty())
         assertFalse(controller.sessionAlive("missing"))
-        // close 后 supervisor 已 closing，任何 open 都不再启动进程。
+        // After close, the supervisor is already closing; no open starts a process anymore.
         val result = controller.open(
             environment = TerminalEnvironment.ANDROID,
             cols = 80,

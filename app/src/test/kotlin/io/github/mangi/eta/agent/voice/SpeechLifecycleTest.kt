@@ -78,15 +78,15 @@ class SpeechLifecycleTest {
 
     @Test fun dictationWaitsForUserConfirmationBeforeSubmitting() {
         val session = start()
-        session.emitPreview("可编辑的草稿")
+        session.emitPreview("editable draft")
         shadowOf(Looper.getMainLooper()).idle()
         assertTrue(results.isEmpty())
-        assertEquals("可编辑的草稿", controller.state.value.preview)
+        assertEquals("editable draft", controller.state.value.preview)
         controller.finish()
         controller.finish()
-        session.complete("可编辑的草稿")
+        session.complete("editable draft")
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(listOf("可编辑的草稿"), results)
+        assertEquals(listOf("editable draft"), results)
         assertFalse(controller.state.value.active)
     }
 
@@ -94,21 +94,21 @@ class SpeechLifecycleTest {
         val old = start()
         controller.cancel()
         val current = start()
-        old.emitPreview("旧草稿")
-        old.complete("旧结果")
-        current.emitPreview("新草稿")
+        old.emitPreview("old draft")
+        old.complete("old result")
+        current.emitPreview("new draft")
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals("新草稿", controller.state.value.preview)
+        assertEquals("new draft", controller.state.value.preview)
         controller.finish()
-        current.complete("新结果")
+        current.complete("new result")
         shadowOf(Looper.getMainLooper()).idle()
-        assertEquals(listOf("新结果"), results)
+        assertEquals(listOf("new result"), results)
     }
 
     @Test fun closingOwnerReleasesRecognition() {
         val session = start()
         controller.cancel()
-        session.complete("迟到")
+        session.complete("late")
         shadowOf(Looper.getMainLooper()).idle()
         assertTrue(session.canceled)
         assertTrue(results.isEmpty())
@@ -156,7 +156,7 @@ class SpeechLifecycleTest {
         val session = start()
         controller.start(SpeechSettings(recognitionEnabled = false))
         shadowOf(Looper.getMainLooper()).idle()
-        session.complete("迟到的旧识别")
+        session.complete("late old recognition")
         shadowOf(Looper.getMainLooper()).idle()
         assertTrue(session.canceled)
         assertFalse(controller.state.value.active)
@@ -168,10 +168,10 @@ class SpeechLifecycleTest {
         try {
             val session = start(overlay, SpeechSettings())
             assertEquals(SpeechSettings.DEFAULT_AUTO_SEND_SILENCE_MS, session.endpointSilenceMs)
-            session.serverEndpoint("打开设置")
+            session.serverEndpoint("open settings")
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(session.finished)
-            assertEquals(listOf("打开设置"), results)
+            assertEquals(listOf("open settings"), results)
         } finally {
             overlay.cancel()
         }
@@ -186,15 +186,15 @@ class SpeechLifecycleTest {
             try {
                 val session = start(overlay, settings, holdToTalk = hold)
                 assertEquals(0, session.endpointSilenceMs)
-                session.emitPreview("还没说完")
+                session.emitPreview("not finished speaking")
                 shadowOf(Looper.getMainLooper()).idle()
                 assertFalse(session.finished)
                 assertTrue(results.isEmpty())
                 overlay.finish()
-                session.complete("还没说完")
+                session.complete("not finished speaking")
                 shadowOf(Looper.getMainLooper()).idle()
                 assertTrue(session.finished)
-                assertEquals(listOf("还没说完"), results)
+                assertEquals(listOf("not finished speaking"), results)
             } finally {
                 overlay.cancel()
                 results.clear()
@@ -223,13 +223,13 @@ class SpeechLifecycleTest {
             },
         )
         listOf(
-            refiner { "用 Python 写脚本" } to "用 Python 写脚本",
-            refiner { throw java.io.IOException("offline") } to "用配森写脚本",
+            refiner { "write a script with Python" } to "write a script with Python",
+            refiner { throw java.io.IOException("offline") } to "write a script with Python",
         ).forEach { (refiner, expected) ->
             val overlay = createController(automaticEndpoint = true, refiner = refiner)
             try {
                 val session = start(overlay, SpeechSettings(refineTranscript = true))
-                session.serverEndpoint("用配森写脚本")
+                session.serverEndpoint("write a script with Python")
                 val deadline = System.nanoTime() + 3_000_000_000
                 while (results.isEmpty() && System.nanoTime() < deadline) {
                     shadowOf(Looper.getMainLooper()).idle()
@@ -254,14 +254,14 @@ class SpeechLifecycleTest {
             shadowOf(Looper.getMainLooper()).idle()
             assertTrue(dictation.state.value.holdToTalk)
             assertEquals(EtaSpeechPhase.RECOGNIZING, dictation.state.value.phase)
-            holdSession.complete("按住直接发送")
+            holdSession.complete("hold to send directly")
             shadowOf(Looper.getMainLooper()).idle()
-            assertEquals(listOf("按住直接发送"), holdResults)
+            assertEquals(listOf("hold to send directly"), holdResults)
             assertTrue(results.isEmpty())
             assertFalse(dictation.state.value.active)
             assertFalse(dictation.state.value.holdToTalk)
 
-            // 失败（空语音）或取消后再次轻点听写，不能残留 holdToTalk 状态。
+            // After a failure (empty voice) or cancel, tapping dictation again must not leave holdToTalk state behind.
             val failedHold = start(dictation, holdToTalk = true)
             dictation.finish()
             failedHold.complete("   ")
@@ -273,9 +273,9 @@ class SpeechLifecycleTest {
             val tapSession = start(dictation, holdToTalk = false)
             assertFalse(dictation.state.value.holdToTalk)
             dictation.finish()
-            tapSession.complete("轻点插入草稿")
+            tapSession.complete("tap to insert draft")
             shadowOf(Looper.getMainLooper()).idle()
-            assertEquals(listOf("轻点插入草稿"), results)
+            assertEquals(listOf("tap to insert draft"), results)
             assertEquals(1, holdResults.size)
         } finally {
             dictation.cancel()

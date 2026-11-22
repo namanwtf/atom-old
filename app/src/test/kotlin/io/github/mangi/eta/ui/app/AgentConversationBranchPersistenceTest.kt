@@ -46,7 +46,7 @@ class AgentConversationBranchPersistenceTest {
     @Test
     fun branchCopiesUnloadedPrefixAndRebuildsHistoryWithoutFutureSummary() = runBlocking {
         val original = conversation(180).let { it.copy(history = listOf(ConversationMessage(
-            "assistant", "含后续秘密的摘要", contextSummary = true, compactedUserTurns = 180, summaryThroughUserTurn = 180,
+            "assistant", "summary containing a later secret", contextSummary = true, compactedUserTurns = 180, summaryThroughUserTurn = 180,
         ))) }
         val persistence = AgentConversationPersistence()
         persistence.save(context, snapshot(original))
@@ -54,13 +54,13 @@ class AgentConversationBranchPersistenceTest {
         assertTrue(source.hasEarlierMessages)
         assertFalse(source.messages.any { it.id == "assistant-30-0" })
 
-        val child = persistence.branch(context, "source", "assistant-30-0", "child", "原对话 · 分支", 2L)
+        val child = persistence.branch(context, "source", "assistant-30-0", "child", "original conversation · branch", 2L)
         val copied = AgentConversationStore.loadAllMessages(context, "child")
         assertEquals(62, copied.size)
-        assertEquals("回答 30", (copied.last() as AgentMessageUi).content)
+        assertEquals("answer 30", (copied.last() as AgentMessageUi).content)
         assertEquals(original.journal.take(62).map { it.content }, child.history.map { it.content })
         assertEquals(child.history, child.journal)
-        assertFalse(child.history.any { it.contextSummary || "秘密" in it.content })
+        assertFalse(child.history.any { it.contextSummary || "secret" in it.content })
         assertEquals(360, dao.messageCount("source"))
         assertEquals(original.history, AgentConversationStore.loadConversation(context, "source")!!.history)
         assertTrue(original.messages.map { it.id }.toSet().intersect(copied.map { it.id }.toSet()).isEmpty())
@@ -78,7 +78,7 @@ class AgentConversationBranchPersistenceTest {
         val base = conversation(5)
         val summary = ConversationMessage(
             role = "assistant",
-            content = "前三轮摘要",
+            content = "first three rounds summary",
             contextSummary = true,
             compactedUserTurns = 3,
             summaryThroughUserTurn = 3,
@@ -90,12 +90,12 @@ class AgentConversationBranchPersistenceTest {
         val persistence = AgentConversationPersistence()
         persistence.save(context, snapshot(compacted))
 
-        val child = persistence.branch(context, "source", "assistant-4-0", "child", "压缩后分支", 2L)
+        val child = persistence.branch(context, "source", "assistant-4-0", "child", "branch after compaction", 2L)
         assertEquals(10, child.journal.size)
         assertEquals(5, child.history.size)
         assertTrue(child.history.first().contextSummary)
-        assertEquals("前三轮摘要", child.history.first().content)
-        assertEquals(listOf("问题 3", "回答 3", "问题 4", "回答 4"), child.history.drop(1).map { it.content })
+        assertEquals("first three rounds summary", child.history.first().content)
+        assertEquals(listOf("question 3", "answer 3", "question 4", "answer 4"), child.history.drop(1).map { it.content })
 
         val loaded = AgentConversationStore.loadConversation(context, "child")!!
         assertEquals(child.history, loaded.history)
@@ -106,7 +106,7 @@ class AgentConversationBranchPersistenceTest {
             "child",
             ConversationBranchBoundary.remapId("child", "assistant-1-0"),
             "grandchild",
-            "回退早期分支",
+            "fall back to the earlier branch",
             3L,
         )
         assertFalse(earlier.history.any { it.contextSummary })
@@ -118,13 +118,13 @@ class AgentConversationBranchPersistenceTest {
         val initial = snapshot(conversation(100))
         val persistence = AgentConversationPersistence()
         persistence.save(context, initial)
-        val child = persistence.branch(context, "source", "assistant-99-0", "child", "分支", 2L)
+        val child = persistence.branch(context, "source", "assistant-99-0", "child", "branch", 2L)
         assertTrue(child.hasEarlierMessages)
         repeat(2) { persistence.save(context, initial) }
         assertEquals(200, dao.messageCount("child"))
 
         val published = initial.copy(conversationsById = initial.conversationsById + ("child" to child),
-            titles = initial.titles + ("child" to "分支"), updatedAt = initial.updatedAt + ("child" to 2L))
+            titles = initial.titles + ("child" to "branch"), updatedAt = initial.updatedAt + ("child" to 2L))
         persistence.save(context, published)
         persistence.save(context, initial)
         assertNull(dao.conversation("child"))
@@ -133,17 +133,17 @@ class AgentConversationBranchPersistenceTest {
 
     @Test
     fun longBodiesImagesAndCheckpointChunksSurviveDeletingSourceAndRestarting() = runBlocking {
-        val longText = "长正文😀".repeat(30_000)
+        val longText = "long body😀".repeat(30_000)
         val image = "data:image/png;base64," + "A".repeat(180_000)
         val original = conversation(1).copy(
-            messages = listOf(UserMessageUi("user-0", "图片", images = listOf(image)), AgentMessageUi("assistant-0-0", longText)),
-            history = listOf(ConversationMessage("user", "图片", messageId = "user-0"),
+            messages = listOf(UserMessageUi("user-0", "image", images = listOf(image)), AgentMessageUi("assistant-0-0", longText)),
+            history = listOf(ConversationMessage("user", "image", messageId = "user-0"),
                 ConversationMessage("assistant", longText, messageId = "assistant-0")),
             journal = emptyList(),
         )
         val persistence = AgentConversationPersistence()
         persistence.save(context, snapshot(original))
-        persistence.branch(context, "source", "assistant-0-0", "child", "分支", 2L)
+        persistence.branch(context, "source", "assistant-0-0", "child", "branch", 2L)
         dao.deleteConversation("source")
         EtaDatabase.closeForTests()
 
@@ -158,48 +158,48 @@ class AgentConversationBranchPersistenceTest {
 
     @Test
     fun roleplayCandidatesBlockLinksAndGreetingRemainIndependentAcrossRepeatedBranches() = runBlocking {
-        val binding = RoleplayBinding(characterId = "character", characterName = "旅人", userName = "朋友", userDescription = "同行者",
-            cardSnapshotJson = CharacterCardCodec.encodeJson(CharacterCardCodec.create("旅人")))
-        val journal = listOf(ConversationMessage("assistant", "开场白", messageId = "greeting-source"),
-            ConversationMessage("user", "出发", messageId = "user-0"),
-            ConversationMessage("assistant", "第一块\n\n第二块", messageId = "assistant-0"),
-            ConversationMessage("user", "后续问题", messageId = "user-1"),
-            ConversationMessage("assistant", "后续回答", messageId = "assistant-1"))
+        val binding = RoleplayBinding(characterId = "character", characterName = "traveler", userName = "friend", userDescription = "companion",
+            cardSnapshotJson = CharacterCardCodec.encodeJson(CharacterCardCodec.create("traveler")))
+        val journal = listOf(ConversationMessage("assistant", "opening line", messageId = "greeting-source"),
+            ConversationMessage("user", "depart", messageId = "user-0"),
+            ConversationMessage("assistant", "first block\n\nsecond block", messageId = "assistant-0"),
+            ConversationMessage("user", "follow-up question", messageId = "user-1"),
+            ConversationMessage("assistant", "follow-up answer", messageId = "assistant-1"))
         var source = conversation(0).copy(roleplay = binding, history = journal, journal = journal,
-            messages = listOf(AgentMessageUi("greeting-source", "开场白"), UserMessageUi("user-0", "出发"),
-                AgentMessageUi("assistant-0-0", "第一块"), AgentMessageUi("assistant-0-1", "第二块"),
-                UserMessageUi("user-1", "后续问题"), AgentMessageUi("assistant-1-0", "后续回答")),
+            messages = listOf(AgentMessageUi("greeting-source", "opening line"), UserMessageUi("user-0", "depart"),
+                AgentMessageUi("assistant-0-0", "first block"), AgentMessageUi("assistant-0-1", "second block"),
+                UserMessageUi("user-1", "follow-up question"), AgentMessageUi("assistant-1-0", "follow-up answer")),
             roleplayMessages = RoleplayMessageState(links = mapOf(
                 "greeting-source" to RoleplayMessageLink("greeting-source"), "user-0" to RoleplayMessageLink("user-0"),
                 "assistant-0-0" to RoleplayMessageLink("assistant-0", 0), "assistant-0-1" to RoleplayMessageLink("assistant-0", 1),
                 "user-1" to RoleplayMessageLink("user-1"), "assistant-1-0" to RoleplayMessageLink("assistant-1"))))
-        source = RoleplayConversationReducer.edit(source, "assistant-0-1", "改写第二块")!!
-        source = RoleplayConversationReducer.edit(source, "assistant-1-0", "后续改写")!!
+        source = RoleplayConversationReducer.edit(source, "assistant-0-1", "rewrite the second block")!!
+        source = RoleplayConversationReducer.edit(source, "assistant-1-0", "follow-up rewrite")!!
         val initial = snapshot(source)
         val persistence = AgentConversationPersistence()
         persistence.save(context, initial)
-        val child = persistence.branch(context, "source", "assistant-0-1", "child", "分支", 2L)
+        val child = persistence.branch(context, "source", "assistant-0-1", "child", "branch", 2L)
         val target = ConversationBranchBoundary.remapId("child", "assistant-0-1")
         assertEquals(binding, child.roleplay)
-        assertEquals("第一块\n\n改写第二块", child.history.last().content)
-        assertEquals("第一块\n\n第二块", child.journal.last().content)
-        assertEquals(listOf("第二块", "改写第二块"), child.roleplayMessages.revisions.getValue(target).candidates)
+        assertEquals("first block\n\nrewrite the second block", child.history.last().content)
+        assertEquals("first block\n\nsecond block", child.journal.last().content)
+        assertEquals(listOf("second block", "rewrite the second block"), child.roleplayMessages.revisions.getValue(target).candidates)
         assertEquals(setOf(target), child.roleplayMessages.revisions.keys)
         assertTrue(child.messages.first().id.startsWith("greeting-"))
         assertEquals(1, (child.messages.last() as AgentMessageUi).selectedCandidate)
 
-        val grandchild = persistence.branch(context, "child", target, "grandchild", "再次分支", 3L)
+        val grandchild = persistence.branch(context, "child", target, "grandchild", "branch again", 3L)
         assertEquals(child.history.map { it.content }, grandchild.history.map { it.content })
         val changedChild = RoleplayConversationReducer.select(child, target, 0)!!
         persistence.save(context, initial.copy(conversationsById = initial.conversationsById + ("child" to changedChild),
-            titles = initial.titles + ("child" to "分支"), updatedAt = initial.updatedAt + ("child" to 2L)))
-        assertEquals("第一块\n\n第二块", AgentConversationStore.loadConversation(context, "child")!!.history.last().content)
-        assertEquals("第一块\n\n改写第二块", AgentConversationStore.loadConversation(context, "grandchild")!!.history.last().content)
+            titles = initial.titles + ("child" to "branch"), updatedAt = initial.updatedAt + ("child" to 2L)))
+        assertEquals("first block\n\nsecond block", AgentConversationStore.loadConversation(context, "child")!!.history.last().content)
+        assertEquals("first block\n\nrewrite the second block", AgentConversationStore.loadConversation(context, "grandchild")!!.history.last().content)
         assertEquals(source.history, AgentConversationStore.loadConversation(context, "source")!!.history)
 
-        val greeting = persistence.branch(context, "child", child.messages.first().id, "greeting-child", "开场分支", 4L)
+        val greeting = persistence.branch(context, "child", child.messages.first().id, "greeting-child", "opening branch", 4L)
         assertEquals(1, greeting.messages.size)
-        assertEquals("开场白", greeting.history.single().content)
+        assertEquals("opening line", greeting.history.single().content)
     }
 
     @Test
@@ -211,7 +211,7 @@ class AgentConversationBranchPersistenceTest {
         database.openHelper.writableDatabase.execSQL("CREATE TRIGGER reject_branch BEFORE INSERT ON conversation_messages " +
             "WHEN NEW.conversation_id = 'child' AND NEW.sort_index = 1 BEGIN SELECT RAISE(ABORT, 'branch_test_failure'); END")
         var failed = false
-        try { persistence.branch(context, "source", "assistant-2-0", "child", "分支", 2L) } catch (_: android.database.SQLException) { failed = true }
+        try { persistence.branch(context, "source", "assistant-2-0", "child", "branch", 2L) } catch (_: android.database.SQLException) { failed = true }
         assertTrue(failed)
         assertNull(dao.conversation("child"))
         assertNull(dao.contextCheckpointRow("child"))
@@ -220,18 +220,18 @@ class AgentConversationBranchPersistenceTest {
         persistence.save(context, initial)
         assertNull(dao.conversation("child"))
         database.openHelper.writableDatabase.execSQL("DROP TRIGGER reject_branch")
-        persistence.branch(context, "source", "assistant-2-0", "child", "分支", 2L)
+        persistence.branch(context, "source", "assistant-2-0", "child", "branch", 2L)
         assertEquals(6, dao.messageCount("child"))
     }
 
     @Test
     fun missingLegacyHistoryRefusesBranchWithoutChangingSource() = runBlocking {
-        val source = conversation(3).copy(journal = listOf(ConversationMessage("assistant", "已丢失旧历史",
+        val source = conversation(3).copy(journal = listOf(ConversationMessage("assistant", "lost old history",
             contextSummary = true, compactedUserTurns = 3, summaryThroughUserTurn = 3)))
         val persistence = AgentConversationPersistence()
         persistence.save(context, snapshot(source))
         var refused = false
-        try { persistence.branch(context, "source", "assistant-0-0", "child", "分支", 2L) }
+        try { persistence.branch(context, "source", "assistant-0-0", "child", "branch", 2L) }
         catch (_: ConversationBranchUnavailable) { refused = true }
         assertTrue(refused)
         assertEquals(1, dao.conversationIdentities().size)
@@ -240,18 +240,18 @@ class AgentConversationBranchPersistenceTest {
     }
 
     private fun conversation(turns: Int): AgentChatHomeUiState {
-        val history = (0 until turns).flatMap { listOf(ConversationMessage("user", "问题 $it", messageId = "user-$it"),
-            ConversationMessage("assistant", "回答 $it", messageId = "assistant-$it")) }
+        val history = (0 until turns).flatMap { listOf(ConversationMessage("user", "question $it", messageId = "user-$it"),
+            ConversationMessage("assistant", "answer $it", messageId = "assistant-$it")) }
         return AgentChatHomeUiState(
-            messages = (0 until turns).flatMap { listOf(UserMessageUi("user-$it", "问题 $it"), AgentMessageUi("assistant-$it-0", "回答 $it")) },
-            history = history, journal = history, input = "源草稿", isStreaming = false, thinkingEnabled = true,
+            messages = (0 until turns).flatMap { listOf(UserMessageUi("user-$it", "question $it"), AgentMessageUi("assistant-$it-0", "answer $it")) },
+            history = history, journal = history, input = "source draft", isStreaming = false, thinkingEnabled = true,
             reasoningEffort = ReasoningEffort.HIGH, modelId = "model-local", appliedRuntimeRunIds = listOf("old-run"),
             pendingImages = listOf(PendingImageUi("pending", "uri", "data", "image/png")),
-            queuedMessages = listOf(QueuedMessageUi(id = "queued", content = "待发送")),
+            queuedMessages = listOf(QueuedMessageUi(id = "queued", content = "pending")),
         )
     }
 
     private fun snapshot(source: AgentChatHomeUiState) = AgentConversationStore.Snapshot(
-        "source", mapOf("source" to source), mapOf("source" to "原对话"), mapOf("source" to 1L), pinnedIds = setOf("source"),
+        "source", mapOf("source" to source), mapOf("source" to "original conversation"), mapOf("source" to 1L), pinnedIds = setOf("source"),
     )
 }

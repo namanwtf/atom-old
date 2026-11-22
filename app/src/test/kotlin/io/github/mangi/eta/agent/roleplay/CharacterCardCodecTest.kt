@@ -10,34 +10,34 @@ class CharacterCardCodecTest {
     @Test
     fun legacyCardIsUpgradedAndUnknownValuesSurviveEditingAndPngRoundTrip() {
         val card = CharacterCardCodec.decodeJson("""{
-          "name":"旧名","description":"原设定","vendor":{"nested":[1,true,null]},
+          "name":"old name","description":"original setting","vendor":{"nested":[1,true,null]},
           "extensions":{"foreign":{"values":["a",{"x":2}]}}
         }""")
-        val edited = card.withEdits(name = "新名", description = "新设定")
+        val edited = card.withEdits(name = "new name", description = "new setting")
         val png = CharacterCardPng.write(avatar(), edited)
         val decoded = CharacterCardPng.read(png)
-        assertEquals("新名", decoded.name)
-        assertEquals("新设定", decoded.description)
+        assertEquals("new name", decoded.name)
+        assertEquals("new setting", decoded.description)
         assertEquals(card.raw["vendor"], decoded.raw["vendor"])
         assertEquals(card.extensions, decoded.extensions)
         assertEquals("chara_card_v3", decoded.raw.text("spec"))
         assertTrue(png.toString(Charsets.ISO_8859_1).contains("chara"))
         assertTrue(png.toString(Charsets.ISO_8859_1).contains("ccv3"))
-        val second = CharacterCardPng.read(CharacterCardPng.write(png, decoded.withEdits(name = "再编辑")))
-        assertEquals("再编辑", second.name)
+        val second = CharacterCardPng.read(CharacterCardPng.write(png, decoded.withEdits(name = "re-edit")))
+        assertEquals("re-edit", second.name)
     }
 
     @Test
     fun versionedDataWinsOverStaleLegacyMirrors() {
         val card = CharacterCardCodec.decodeJson("""{
-          "spec":"chara_card_v3","spec_version":"3.0","name":"过时镜像",
-          "data":{"name":"当前名称","nickname":"简称","assets":[{"uri":"x","type":"other"}],"extensions":{}}
+          "spec":"chara_card_v3","spec_version":"3.0","name":"stale mirror",
+          "data":{"name":"current name","nickname":"nickname","assets":[{"uri":"x","type":"other"}],"extensions":{}}
         }""")
-        assertEquals("当前名称", card.name)
+        assertEquals("current name", card.name)
         val roundTrip = CharacterCardCodec.decodeJson(CharacterCardCodec.exportView(card, 3))
         assertEquals(card.data["assets"], roundTrip.data["assets"])
-        assertEquals("当前名称", roundTrip.raw.text("name"))
-        assertEquals("简称", roundTrip.nickname)
+        assertEquals("current name", roundTrip.raw.text("name"))
+        assertEquals("nickname", roundTrip.nickname)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -45,33 +45,33 @@ class CharacterCardCodecTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun corruptPngIsRejected() {
-        val bytes = CharacterCardPng.write(avatar(), CharacterCardCodec.create("角色"))
+        val bytes = CharacterCardPng.write(avatar(), CharacterCardCodec.create("character"))
         bytes[20] = (bytes[20].toInt() xor 1).toByte()
         CharacterCardPng.read(bytes)
     }
 
     @Test
     fun macrosExpandKnownFieldsWithoutExecutingUnknownVariables() {
-        val card = CharacterCardCodec.create("林").withEdits(description = "{{char}}住在山间。")
-        val result = CharacterMacros.expand("{{description}} <USER> {{original}} {{setvar::x::1}}", card, "小安", original = "原指令")
-        assertEquals("林住在山间。 小安 原指令 {{setvar::x::1}}", result)
+        val card = CharacterCardCodec.create("Lin").withEdits(description = "{{char}}lives in the mountains.")
+        val result = CharacterMacros.expand("{{description}} <USER> {{original}} {{setvar::x::1}}", card, "Xiao'an", original = "original instruction")
+        assertEquals("Lin lives in the mountains. Xiao'an original instruction {{setvar::x::1}}", result)
         assertEquals("{{description}}", CharacterMacros.expand("{{description}}", card.withEdits(description = "{{description}}")))
-        assertFalse(CharacterMacros.expand("{{//注释}}你好", card).contains("注释"))
+        assertFalse(CharacterMacros.expand("{{//comment}}hello", card).contains("comment"))
     }
 
     @Test
     fun editingWorldbookPreservesForeignBookAndEntryExtensions() {
-        val card = CharacterCardCodec.decodeJson("""{"name":"角色","character_book":{
-          "name":"世界","vendor":"保留","extensions":{"vendor":{"x":[1,2]}},
-          "entries":[{"id":7,"keys":["山"],"content":"旧正文","enabled":true,"insertion_order":3,
+        val card = CharacterCardCodec.decodeJson("""{"name":"character","character_book":{
+          "name":"world","vendor":"keep","extensions":{"vendor":{"x":[1,2]}},
+          "entries":[{"id":7,"keys":["mountain"],"content":"old body","enabled":true,"insertion_order":3,
             "extensions":{"position":0,"unknown":["a",{"b":true}]}}]
         }}""")
         val draft = card.worldbookDraft()
-        val updated = card.withWorldbook(draft.copy(name = "新世界", scanDepth = 4,
-            entries = draft.entries.map { it.copy(content = "新正文", position = "after_char") },
+        val updated = card.withWorldbook(draft.copy(name = "New World", scanDepth = 4,
+            entries = draft.entries.map { it.copy(content = "new body", position = "after_char") },
         ))
         val result = CharacterCardCodec.decodeJson(CharacterCardCodec.encodeJson(updated)).worldbookDraft()
-        assertEquals("新正文", result.entries.single().content)
+        assertEquals("new body", result.entries.single().content)
         assertEquals("after_char", result.entries.single().position)
         assertEquals(draft.raw["vendor"], result.raw["vendor"])
         assertEquals(draft.raw["extensions"], result.raw["extensions"])
@@ -81,30 +81,30 @@ class CharacterCardCodecTest {
 
     @Test
     fun compatibilityWarningsShareMacroAndWorldbookSupportWithoutEchoingCardText() {
-        val card = CharacterCardCodec.decodeJson("""{"name":"角色",
+        val card = CharacterCardCodec.decodeJson("""{"name":"character",
           "description":"{{setvar::private_key::private_value}} <script>private_script()</script>",
           "extensions":{"regex_scripts":[{"x":"private_regex"}],"scripts":["private_script"],
-            "depth_prompt":{"prompt":"备注","depth":"invalid"}},
-          "character_book":{"entries":[{"enabled":true,"constant":true,"content":"正文","extensions":{"group":"private_group"}}]}
+            "depth_prompt":{"prompt":"note","depth":"invalid"}},
+          "character_book":{"entries":[{"enabled":true,"constant":true,"content":"body","extensions":{"group":"private_group"}}]}
         }""")
         val warnings = CharacterCardCompatibility.warnings(card)
-        assertTrue(warnings.any { it.contains("未支持的宏") })
+        assertTrue(warnings.any { it.contains("unsupported macro") })
         assertTrue(warnings.any { it.contains("HTML") })
-        assertTrue(warnings.any { it.contains("正则替换") })
-        assertTrue(warnings.any { it.contains("1 条世界书") })
-        assertTrue(warnings.any { it.contains("深度备注") })
+        assertTrue(warnings.any { it.contains("regex replacement") })
+        assertTrue(warnings.any { it.contains("1 worldbook entry") })
+        assertTrue(warnings.any { it.contains("depth note") })
         assertFalse(warnings.any { it.contains("private_") })
         assertEquals(null, card.depthPrompt)
-        assertEquals(emptyList<String>(), CharacterCardCompatibility.warnings(CharacterCardCodec.create("角色")
-            .withEdits(description = "{{char}}与{{user}}交流。<START> {{original}}")))
+        assertEquals(emptyList<String>(), CharacterCardCompatibility.warnings(CharacterCardCodec.create("character")
+            .withEdits(description = "{{char}} and {{user}} converse.<START> {{original}}")))
     }
 
     @Test
     fun unrelatedWorldbookEditPreservesUnsupportedPosition() {
-        val card = CharacterCardCodec.decodeJson("""{"name":"角色","character_book":{"entries":[
-          {"enabled":true,"constant":true,"content":"正文","position":"at_depth","extensions":{"position":4,"depth":2}}
+        val card = CharacterCardCodec.decodeJson("""{"name":"character","character_book":{"entries":[
+          {"enabled":true,"constant":true,"content":"body","position":"at_depth","extensions":{"position":4,"depth":2}}
         ]}}""")
-        val updated = card.withWorldbook(card.worldbookDraft().copy(name = "新书名"))
+        val updated = card.withWorldbook(card.worldbookDraft().copy(name = "new book title"))
         assertEquals("at_depth", updated.worldbookDraft().entries.single().position)
         assertEquals(1, CharacterWorldbook.unsupportedEntries(updated).size)
     }
@@ -128,23 +128,23 @@ class CharacterCardCodecTest {
     @Test
     fun changingOneVersionThreeFieldDoesNotMaterializeOtherMissingFields() {
         val card = CharacterCardCodec.decodeJson("""{"spec":"chara_card_v3","spec_version":"3.0",
-          "foreign":{"x":1},"data":{"name":"原名","description":"描述","extensions":{"vendor":[1,true]}}}""")
-        val updated = card.withEdits(name = "新名")
+          "foreign":{"x":1},"data":{"name":"original name","description":"description","extensions":{"vendor":[1,true]}}}""")
+        val updated = card.withEdits(name = "new name")
         val restored = CharacterCardCodec.decodeJson(CharacterCardCodec.encodeJson(updated))
         assertEquals(card.data.filterKeys { it != "name" }, restored.data.filterKeys { it != "name" })
         assertEquals(card.data.keys, restored.data.keys)
         assertEquals(card.raw["foreign"], restored.raw["foreign"])
-        assertEquals("新名", restored.name)
+        assertEquals("new name", restored.name)
         assertFalse(restored.data.containsKey("alternate_greetings"))
         assertFalse(restored.data.containsKey("creator_notes"))
     }
 
     @Test
     fun amplifiedCrossFieldMacrosFailBeforeBuildingUnboundedOutput() {
-        val card = CharacterCardCodec.create("角色").withEdits(
+        val card = CharacterCardCodec.create("character").withEdits(
             description = "{{scenario}}".repeat(100),
             scenario = "{{personality}}".repeat(100),
-            personality = "设定".repeat(200),
+            personality = "setting".repeat(200),
         )
         try {
             CharacterMacros.expand("{{description}}", card)

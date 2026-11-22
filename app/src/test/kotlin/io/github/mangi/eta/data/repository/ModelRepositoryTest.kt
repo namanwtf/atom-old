@@ -41,7 +41,7 @@ class ModelRepositoryTest {
     @Test
     fun saveModelCommitsValidatedManualDraftOnlyOnce() = runBlocking {
         addEmptyProvider()
-        val draft = Model(id = "", modelId = "  custom-model  ", displayName = "  自定义模型  ")
+        val draft = Model(id = "", modelId = "  custom-model  ", displayName = "  custom model  ")
 
         assertTrue(ModelRepository.modelsByProvider(PROVIDER_ID).isEmpty())
         val saved = ModelRepository.saveModel(PROVIDER_ID, draft)
@@ -49,7 +49,7 @@ class ModelRepositoryTest {
         val restored = ModelRepository.modelsByProvider(PROVIDER_ID).single()
         assertEquals(saved.id, restored.id)
         assertEquals("custom-model", restored.modelId)
-        assertEquals("自定义模型", restored.displayName)
+        assertEquals("custom model", restored.displayName)
         assertEquals(ModelSource.MANUAL, restored.source)
     }
 
@@ -64,13 +64,13 @@ class ModelRepositoryTest {
         val blankFailure = runCatching {
             ModelRepository.saveModel(
                 PROVIDER_ID,
-                Model(id = "", modelId = " ", displayName = "空模型"),
+                Model(id = "", modelId = " ", displayName = "empty model"),
             )
         }
         val duplicateFailure = runCatching {
             ModelRepository.saveModel(
                 PROVIDER_ID,
-                Model(id = "", modelId = "MODEL-A", displayName = "重复模型"),
+                Model(id = "", modelId = "MODEL-A", displayName = "duplicate model"),
             )
         }
 
@@ -208,10 +208,10 @@ class ModelRepositoryTest {
 
     @Test
     fun catalogCapturedBeforeAuthenticationModeChangeCannotModifyModels() = runBlocking {
-        val original = provider(models = listOf(Model(id = "kept", modelId = "kept", displayName = "保留")))
+        val original = provider(models = listOf(Model(id = "kept", modelId = "kept", displayName = "kept")))
         ProviderRepository.addProvider(original)
         val catalog = RemoteModelCatalog(
-            listOf(Model(id = "incoming", modelId = "incoming", displayName = "旧请求结果")),
+            listOf(Model(id = "incoming", modelId = "incoming", displayName = "old request result")),
             requireNotNull(ProviderRepository.providerById(PROVIDER_ID)), null,
         )
         ProviderRepository.updateProvider(original.copy(authMode = ProviderAuthModes.OPENAI_CHATGPT))
@@ -223,7 +223,7 @@ class ModelRepositoryTest {
 
     @Test
     fun codexCatalogWithoutAnAccountBindingIsRejectedBeforeDatabaseMutation() = runBlocking {
-        val original = provider(models = listOf(Model(id = "kept", modelId = "kept", displayName = "保留")))
+        val original = provider(models = listOf(Model(id = "kept", modelId = "kept", displayName = "kept")))
             .copy(authMode = ProviderAuthModes.OPENAI_CHATGPT)
         ProviderRepository.addProvider(original)
         val catalog = RemoteModelCatalog(emptyList(), requireNotNull(ProviderRepository.providerById(PROVIDER_ID)), null)
@@ -239,7 +239,7 @@ class ModelRepositoryTest {
         val original = provider().copy(apiKey = "fixture-original-key")
         ProviderRepository.addProvider(original)
         val catalog = RemoteModelCatalog(
-            listOf(Model(id = "remote-one", modelId = "remote-one", displayName = "远端")),
+            listOf(Model(id = "remote-one", modelId = "remote-one", displayName = "remote")),
             requireNotNull(ProviderRepository.providerById(PROVIDER_ID)), null,
         )
         assertTrue(ModelRepository.syncRemoteCatalog(catalog, setOf("remote-one")).applied)

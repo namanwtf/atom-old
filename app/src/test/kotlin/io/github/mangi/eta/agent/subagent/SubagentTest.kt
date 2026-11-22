@@ -78,10 +78,10 @@ class SubagentTest {
         try {
             val saved = SubagentProfileCatalog.saveCustomProfile(
                 name = "bill-analyzer",
-                description = "专门检索与汇总个人账单与订单",
-                whenToUse = "当用户需要统计账单或查询订单时使用",
+                description = "specifically retrieve and summarize personal bills and orders",
+                whenToUse = "Use when the user needs to tally bills or look up orders",
                 tools = listOf("summarize_bills", "search_personal_orders", "observe_screen", "subagent"),
-                prompt = "你是专门负责账单分析的 Subagent。",
+                prompt = "You are a Subagent specialized in bill analysis.",
                 agentsDir = tempDir,
             )
             assertFalse(saved.builtin)
@@ -101,11 +101,11 @@ class SubagentTest {
             assertTrue(SubagentProfileCatalog.deleteCustomProfile("bill-analyzer", tempDir))
             assertFalse(SubagentProfileCatalog.listAll(tempDir).any { it.name == "bill-analyzer" })
 
-            // 未保存在磁盘的任意 subagent_type 可直接当场生成临时专职 Subagent 运行，不落盘
+            // an arbitrary subagent_type not persisted to disk an arbitrary subagent_type not persisted to disk can be generated on the spot as a temporary dedicated Subagent run, without persisting
             val ephemeral = SubagentProfile.resolve(
                 name = "ad-hoc-auditor",
                 catalog = SubagentProfileCatalog.listAll(tempDir),
-                customRole = "专门核对近三天通知与日程冲突",
+                customRole = "specifically reconcile notifications and schedule conflicts from the last three days",
                 customTools = listOf("search_calendar_events", "recent_notifications", "observe_screen"),
             )
             assertEquals("ad-hoc-auditor", ephemeral.name)
@@ -157,8 +157,8 @@ class SubagentTest {
                                             "arguments",
                                             JSONObject()
                                                 .put("subagent_type", "explore")
-                                                .put("description", "检索日历")
-                                                .put("prompt", "查找本周日历")
+                                                .put("description", "retrieve the calendar")
+                                                .put("prompt", "look up this week's calendar")
                                                 .toString(),
                                         ),
                                 ),
@@ -175,8 +175,8 @@ class SubagentTest {
                                             "arguments",
                                             JSONObject()
                                                 .put("subagent_type", "coder")
-                                                .put("description", "检查日志")
-                                                .put("prompt", "分析错误日志")
+                                                .put("description", "check the log")
+                                                .put("prompt", "analyze the error log")
                                                 .toString(),
                                         ),
                                 ),
@@ -192,14 +192,14 @@ class SubagentTest {
                 return ProviderResponse(
                     assistantMessage = JSONObject()
                         .put("role", "assistant")
-                        .put("content", "汇总完成")
+                        .put("content", "summary complete")
                         .put("finish_reason", "stop"),
                 )
             }
         }
 
         val tools = JSONArray().put(AgentSubagentToolCatalog.schema())
-        val messages = JSONArray().put(JSONObject().put("role", "user").put("content", "开始"))
+        val messages = JSONArray().put(JSONObject().put("role", "user").put("content", "start"))
         val loop = AgentLoop(
             config = AgentModelClient.ModelConfig(
                 baseUrl = "https://example.com/v1",
@@ -212,7 +212,7 @@ class SubagentTest {
             provider = provider,
             toolExecutor = AgentModelClient.ToolExecutor { call ->
                 startedLatch.countDown()
-                // 只有两个调用真正并发进入时，startedLatch 才能归零。
+                // startedLatch can only reach zero when the two calls truly enter concurrently.
                 assertTrue(
                     "Multiple subagent tool calls in the same turn must run concurrently",
                     startedLatch.await(3, TimeUnit.SECONDS),
@@ -240,7 +240,7 @@ class SubagentTest {
         )
 
         val result = loop.run()
-        assertEquals("汇总完成", result.content)
+        assertEquals("summary complete", result.content)
         val toolMessages = (0 until messages.length())
             .map { messages.getJSONObject(it) }
             .filter { it.optString("role") == "tool" }
@@ -258,16 +258,16 @@ class SubagentTest {
         val snapshot = SubagentActivitySnapshot(
             subagentId = "sub_1",
             subagentType = "explore",
-            description = "检索近期便签",
-            prompt = "查找最近 7 天的便签记录",
+            description = "retrieve recent notes",
+            prompt = "look up recent 7 days of note records",
             model = "GPT-5.4 Mini",
             status = SubagentActivitySnapshot.STATUS_RUNNING,
-            currentAction = "正在调用 search_notes",
+            currentAction = "calling search_notes",
             steps = listOf(
                 SubagentStepSnapshot(
                     id = "tool-1-tc1",
                     kind = SubagentStepSnapshot.KIND_TOOL,
-                    title = "查询便签",
+                    title = "look up notes",
                     detail = "",
                     status = SubagentStepSnapshot.STATUS_RUNNING,
                     toolName = "search_notes",
@@ -292,7 +292,7 @@ class SubagentTest {
         val snapshot = SubagentActivitySnapshot(
             subagentId = "sub_2",
             subagentType = "explore",
-            description = "统计",
+            description = "tally",
             status = SubagentActivitySnapshot.STATUS_COMPLETED,
             usage = SubagentUsageSnapshot(
                 inputTokens = 12_000,
@@ -314,8 +314,8 @@ class SubagentTest {
             SubagentStepSnapshot(
                 id = "tool-1-call_$index",
                 kind = if (index % 3 == 0) SubagentStepSnapshot.KIND_THINKING else SubagentStepSnapshot.KIND_TOOL,
-                title = "步骤 $index \"引号\" \\ 反斜杠 $emojiUnit",
-                detail = ("详情内容$index\\\"\n$emojiUnit").repeat(160),
+                title = "step $index \"quote\" \\ backslash $emojiUnit",
+                detail = ("detail content$index\\\"\n$emojiUnit").repeat(160),
                 status = SubagentStepSnapshot.STATUS_SUCCESS,
                 toolName = if (index % 3 == 0) "" else "read_file",
             )
@@ -332,13 +332,13 @@ class SubagentTest {
         val huge = SubagentActivitySnapshot(
             subagentId = "sub_oversized",
             subagentType = "coder",
-            description = "长任务压力测试 $emojiUnit",
-            prompt = ("任务要求 $emojiUnit\n").repeat(600),
+            description = "long-task stress test $emojiUnit",
+            prompt = ("task requirements $emojiUnit\n").repeat(600),
             model = "Test Model",
             status = SubagentActivitySnapshot.STATUS_COMPLETED,
-            currentAction = "完成 · $expectedToolSteps 次工具调用",
+            currentAction = "done · $expectedToolSteps tool calls",
             steps = steps,
-            output = ("汇报行 \"quoted\" $emojiUnit\n").repeat(600),
+            output = ("report line \"quoted\" $emojiUnit\n").repeat(600),
             usage = usage,
         )
 
@@ -366,7 +366,7 @@ class SubagentTest {
             SubagentStepSnapshot(
                 id = "tool-$index",
                 kind = SubagentStepSnapshot.KIND_TOOL,
-                title = "读取文件 $index",
+                title = "read file $index",
                 detail = "x".repeat(1_800),
                 status = SubagentStepSnapshot.STATUS_SUCCESS,
                 toolName = "read_file",
@@ -376,10 +376,10 @@ class SubagentTest {
         val rawOversizedJson = SubagentActivitySnapshot(
             subagentId = "sub_wire",
             subagentType = "explore",
-            description = "跨进程超限兜底",
+            description = "cross-process overflow fallback",
             status = SubagentActivitySnapshot.STATUS_COMPLETED,
             steps = steps,
-            output = "总结内容".repeat(2_000),
+            output = "summarize the content".repeat(2_000),
             usage = usage,
         ).encode()
         assertTrue("Raw snapshot must exceed 16_000 chars to exercise wire guard", rawOversizedJson.length > 16_000)
@@ -404,7 +404,7 @@ class SubagentTest {
                 round = 1,
                 toolCallId = "call_progress",
                 name = AgentSubagentToolCatalog.TOOL_NAME,
-                resultSummary = "完成 · 24 次工具调用",
+                resultSummary = "done · 24 tool calls",
                 imageCount = 0,
                 imageBytes = 0,
                 success = true,
@@ -456,19 +456,19 @@ class SubagentTest {
     fun customProfileYamlQuotesAndBackslashesRoundTripWithoutDuplication() {
         val tempDir = java.nio.file.Files.createTempDirectory("eta-subagent-yaml-test").toFile()
         try {
-            val description = "专门解析 \"JSON\" 与路径 C:\\work\\logs: 快速定位"
-            val whenToUse = "当需要分析 \"错误\" 或 C:\\temp 下的日志时"
+            val description = "specifically parse \"JSON\" and paths C:\\work\\logs: quickly locate"
+            val whenToUse = "when you need to analyze \"error\" or C:\\temp"
             val first = SubagentProfileCatalog.saveCustomProfile(
                 name = "quote-tester",
                 description = description,
                 whenToUse = whenToUse,
-                prompt = "请直接返回结论。",
+                prompt = "Please return the conclusion directly.",
                 agentsDir = tempDir,
             )
             assertEquals(description, first.summary)
             assertEquals(whenToUse, first.whenToUse)
 
-            // 模拟设置页二次编辑保存，确认反斜杠不会翻倍。
+            // Simulate a second edit-and-save from the settings page to confirm backslashes don't double.
             val second = SubagentProfileCatalog.saveCustomProfile(
                 name = first.name,
                 description = first.summary,

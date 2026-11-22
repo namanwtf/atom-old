@@ -12,44 +12,44 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 行内渲染的聊天场景宽松规则：模型常写 `**加粗。**接下文`，按 CommonMark flanking
- * 规则不构成强调（解析器留下落单分隔符），渲染层按书写意图宽松配对。
+ * relaxed rules for inline rendering in chat: models often write `**bold.**then text`, which under CommonMark flanking
+ * rules do not form emphasis (the parser leaves lone delimiters), so the renderer pairs them loosely according to the writer's intent.
  */
 class MarkdownInlineTest {
 
     @Test
     fun boldClosingBetweenCjkPunctuationAndTextIsPairedByIntent() {
-        val paragraph = paragraphOf("**这不代表你的真机。**但你研究")
+        val paragraph = paragraphOf("**This does not represent your real device.** but you study")
 
-        assertEquals("这不代表你的真机。但你研究", paragraph.text.text)
-        assertTrue(paragraph.text.hasSpanCovering("这不代表你的真机。") { it.fontWeight == FontWeight.Bold })
-        assertFalse(paragraph.text.hasSpanCovering("但你研究") { it.fontWeight == FontWeight.Bold })
+        assertEquals("This does not represent your real device. but you study", paragraph.text.text)
+        assertTrue(paragraph.text.hasSpanCovering("This does not represent your real device.") { it.fontWeight == FontWeight.Bold })
+        assertFalse(paragraph.text.hasSpanCovering("but you study") { it.fontWeight == FontWeight.Bold })
     }
 
     @Test
     fun boldFollowedImmediatelyByCjkTextIsPairedByIntent() {
-        val paragraph = paragraphOf("**我建议你先别把假期变成“大厂题库全背一遍”。**先准备好：")
+        val paragraph = paragraphOf("**I suggest you don't turn your holiday into "memorizing the whole big-tech question bank".** first get ready:")
 
         assertFalse(paragraph.text.text.contains('*'))
-        assertTrue(paragraph.text.hasSpanCovering("我建议你先别把假期变成“大厂题库全背一遍”。") { it.fontWeight == FontWeight.Bold })
-        assertFalse(paragraph.text.hasSpanCovering("先准备好") { it.fontWeight == FontWeight.Bold })
+        assertTrue(paragraph.text.hasSpanCovering("I suggest you don't turn your holiday into "memorizing the whole big-tech question bank".") { it.fontWeight == FontWeight.Bold })
+        assertFalse(paragraph.text.hasSpanCovering("first get ready") { it.fontWeight == FontWeight.Bold })
     }
 
     @Test
     fun boldAroundInlineCodeInCjkSentenceIsPairedByIntent() {
-        val paragraph = paragraphOf("发现 **Android 17 的 `mmd`（内存管理守护程序）**值得你了解")
+        val paragraph = paragraphOf("found that **Android 17's `mmd` (memory management daemon)** is worth knowing about")
 
         assertFalse(paragraph.text.text.contains('*'))
-        assertTrue(paragraph.text.hasSpanCovering("内存管理守护程序") { it.fontWeight == FontWeight.Bold })
+        assertTrue(paragraph.text.hasSpanCovering("memory management daemon") { it.fontWeight == FontWeight.Bold })
         assertTrue(paragraph.text.hasSpanCovering("mmd") { it.fontFamily == EtaMonospace })
     }
 
     @Test
     fun unmatchedDelimiterStaysLiteral() {
-        val paragraph = paragraphOf("未闭合 **标记")
+        val paragraph = paragraphOf("unclosed **marker")
 
-        assertEquals("未闭合 **标记", paragraph.text.text)
-        assertFalse(paragraph.text.hasSpanCovering("标记") { it.fontWeight == FontWeight.Bold })
+        assertEquals("unclosed **marker", paragraph.text.text)
+        assertFalse(paragraph.text.hasSpanCovering("marker") { it.fontWeight == FontWeight.Bold })
     }
 
     @Test
@@ -62,50 +62,50 @@ class MarkdownInlineTest {
 
     @Test
     fun looseSingleStarPairsAsItalic() {
-        val paragraph = paragraphOf("这是 *斜体* 内容")
+        val paragraph = paragraphOf("this is *italic* content")
 
         assertFalse(paragraph.text.text.contains('*'))
-        assertTrue(paragraph.text.hasSpanCovering("斜体") { it.fontStyle == FontStyle.Italic })
+        assertTrue(paragraph.text.hasSpanCovering("italic") { it.fontStyle == FontStyle.Italic })
     }
 
     @Test
     fun looseTildePairsAsStrikethrough() {
-        val paragraph = paragraphOf("这是 ~~删除线~~ 内容")
+        val paragraph = paragraphOf("this is ~~strikethrough~~ content")
 
         assertFalse(paragraph.text.text.contains('~'))
-        assertTrue(paragraph.text.hasSpanCovering("删除线") { it.textDecoration == TextDecoration.LineThrough })
+        assertTrue(paragraph.text.hasSpanCovering("strikethrough") { it.textDecoration == TextDecoration.LineThrough })
     }
 
     @Test
     fun parserStrongKeepsWorkingWithoutLoosePairing() {
-        val paragraph = paragraphOf("普通 **加粗** 普通")
+        val paragraph = paragraphOf("plain **bold** plain")
 
-        assertEquals("普通 加粗 普通", paragraph.text.text)
-        assertTrue(paragraph.text.hasSpanCovering("加粗") { it.fontWeight == FontWeight.Bold })
+        assertEquals("plain bold plain", paragraph.text.text)
+        assertTrue(paragraph.text.hasSpanCovering("bold") { it.fontWeight == FontWeight.Bold })
     }
 
     @Test
     fun nestedLooseEmphasisPairsIndependently() {
-        val paragraph = paragraphOf("**加粗 *斜体* 结束**接")
+        val paragraph = paragraphOf("**bold *italic* end** then")
 
         assertFalse(paragraph.text.text.contains('*'))
-        assertTrue(paragraph.text.hasSpanCovering("结束") { it.fontWeight == FontWeight.Bold })
-        assertTrue(paragraph.text.hasSpanCovering("斜体") { it.fontStyle == FontStyle.Italic })
+        assertTrue(paragraph.text.hasSpanCovering("end") { it.fontWeight == FontWeight.Bold })
+        assertTrue(paragraph.text.hasSpanCovering("italic") { it.fontStyle == FontStyle.Italic })
     }
 
     @Test
     fun streamingPrefixAndFinalTextRenderTheSameBold() {
-        val partial = paragraphOf("**它。", isComplete = false)
-        val complete = paragraphOf("**它。**但", isComplete = true)
+        val partial = paragraphOf("**it.", isComplete = false)
+        val complete = paragraphOf("**it.** but", isComplete = true)
 
-        assertTrue(partial.text.hasSpanCovering("它。") { it.fontWeight == FontWeight.Bold })
-        assertEquals("它。但", complete.text.text)
-        assertTrue(complete.text.hasSpanCovering("它。") { it.fontWeight == FontWeight.Bold })
+        assertTrue(partial.text.hasSpanCovering("it.") { it.fontWeight == FontWeight.Bold })
+        assertEquals("it. but", complete.text.text)
+        assertTrue(complete.text.hasSpanCovering("it.") { it.fontWeight == FontWeight.Bold })
     }
 
     @Test
     fun kbdTagRendersContentAsInlineCode() {
-        val paragraph = paragraphOf("按 <kbd>Ctrl</kbd> 继续")
+        val paragraph = paragraphOf("press <kbd>Ctrl</kbd> to continue")
 
         assertFalse(paragraph.text.text.contains('<'))
         assertTrue(paragraph.text.text.contains("Ctrl"))

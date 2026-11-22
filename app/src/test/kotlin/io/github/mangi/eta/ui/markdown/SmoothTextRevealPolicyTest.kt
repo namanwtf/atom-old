@@ -23,7 +23,7 @@ class SmoothTextRevealPolicyTest {
     @Test
     fun emptyAndOrdinaryTextExposeEveryGraphemeBoundary() {
         assertArrayEquals(intArrayOf(0), graphemeBoundaries(""))
-        assertArrayEquals(intArrayOf(0, 1, 2, 3), graphemeBoundaries("A中B"))
+        assertArrayEquals(intArrayOf(0, 1, 2, 3), graphemeBoundaries("AxB"))
     }
 
     @Test
@@ -91,7 +91,7 @@ class SmoothTextRevealPolicyTest {
 
     @Test
     fun replacementSharingPrefixInsideSurrogatePairFallsBackToCompleteScan() {
-        // 增量重建只处理纯追加；替换即使共享 UTF-16 前缀也整体重扫，不会切开代理对。
+        // incremental rebuild only handles pure appends; a replacement is fully rescanned even if it shares a UTF-16 prefix, so surrogate pairs are never split.
         assertReplacementFallsBackToCompleteScan(previous = "😀 alpha", replacement = "😁 beta")
         assertReplacementFallsBackToCompleteScan(previous = "A😀x", replacement = "A😀y")
         assertReplacementFallsBackToCompleteScan(previous = "first", replacement = "second")
@@ -99,7 +99,7 @@ class SmoothTextRevealPolicyTest {
 
     @Test
     fun changedExtendedGraphemeFallsBackToCompleteScanWithoutSplitting() {
-        // “👨‍👩X”与“👨‍👧Y”共享的前缀结束在 ZWJ 序列中间，只能整体重扫而不是复用半截字素。
+        // the prefix shared by "👨‍👩X" and "👨‍👧Y" ends in the middle of a ZWJ sequence, so it must be fully rescanned rather than reusing a half grapheme.
         val previous = "👨‍👩X"
         val replacement = "👨‍👧Y"
 
@@ -198,21 +198,21 @@ class SmoothTextRevealPolicyTest {
     @Test
     fun markdownDocumentCollapsesSourceBlankLinesIntoSemanticBlocks() {
         val snapshot = StreamingGfmParserSession().parse(
-            source = "第一段\n\n\n第二段",
+            source = "first paragraph\n\n\nsecond paragraph",
             isComplete = true,
         )
 
         val blocks = snapshot.document.blocks
         assertEquals(2, blocks.size)
-        assertEquals(listOf("第一段", "第二段"), blocks.map { block -> (block as MarkdownParagraph).text.text })
+        assertEquals(listOf("first paragraph", "second paragraph"), blocks.map { block -> (block as MarkdownParagraph).text.text })
     }
 
     @Test
     fun markdownBlockGapBuildsReadableHierarchyWithoutLeadingGap() {
-        val first = MarkdownParagraph(0, AnnotatedString("第一段"))
-        val second = MarkdownParagraph(4, AnnotatedString("第二段"))
-        val heading = MarkdownHeading(8, level = 2, text = AnnotatedString("小节"))
-        val subHeading = MarkdownHeading(12, level = 3, text = AnnotatedString("子节"))
+        val first = MarkdownParagraph(0, AnnotatedString("first paragraph"))
+        val second = MarkdownParagraph(4, AnnotatedString("second paragraph"))
+        val heading = MarkdownHeading(8, level = 2, text = AnnotatedString("subsection"))
+        val subHeading = MarkdownHeading(12, level = 3, text = AnnotatedString("sub-subsection"))
         val list = MarkdownList(16, ordered = false, loose = false, items = emptyList())
         val table = MarkdownTable(20, alignments = emptyList(), header = emptyList(), rows = emptyList())
         val rule = MarkdownRule(24)
@@ -239,7 +239,7 @@ class SmoothTextRevealPolicyTest {
         assertEquals(8.sp, markdownCompactGap(first, quote, MarkdownTone.Answer))
         assertEquals(8.sp, markdownCompactGap(first, math, MarkdownTone.Answer))
 
-        // 思考语气的间距整体收敛。
+        // the spacing of thinking tone collapses overall.
         assertEquals(0.sp, markdownBlockGap(null, first, MarkdownTone.Thinking))
         assertEquals(8.25.sp, markdownBlockGap(first, second, MarkdownTone.Thinking))
         assertEquals(10.5.sp, markdownBlockGap(first, math, MarkdownTone.Thinking))
@@ -256,8 +256,8 @@ class SmoothTextRevealPolicyTest {
 
     @Test
     fun listMarkerStaysHiddenForEmptyItemsUntilRevealEnds() {
-        // 图片已降级为行内链接，不再存在“项内无文字但因图片而恒可见”的特例；
-        // 空项在流式期间保持隐藏，非流式渲染不再隐藏任何 marker。
+        // images are downgraded to inline links, so the special case of "an item with no text that stays visible because of an image" no longer exists;
+        // empty items stay hidden during streaming, and non-streaming rendering no longer hides any marker.
         assertFalse(listMarkerVisible(revealActive = true, markerKey = null, started = emptySet()))
         assertTrue(listMarkerVisible(revealActive = false, markerKey = null, started = null))
         assertTrue(listMarkerVisible(revealActive = false, markerKey = RevealBlockKey(10), started = emptySet()))

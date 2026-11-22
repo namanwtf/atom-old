@@ -129,7 +129,7 @@ class GlassComponentsTest {
                                         .nestedScroll(connection, dispatcher)
                                         .testTag("firstGroup"),
                                 ) {
-                                    CouiText("安装")
+                                    CouiText("install")
                                 }
                                 if (longPage) Spacer(Modifier.height(1000.dp))
                             }
@@ -177,41 +177,41 @@ class GlassComponentsTest {
                     node.config.getOrNull(SemanticsProperties.Text).orEmpty().any { it.text == "Skills" }
                 }.maxOf { it.boundsInRoot.bottom }
                 val restingBounds = rowBounds()
-                assertTrue("首组静止时应位于大标题下方，lazy=$lazy", restingBounds.top >= expandedTitleBottom)
+                assertTrue("the first group at rest should sit below the large title, lazy=$lazy", restingBounds.top >= expandedTitleBottom)
 
-                // 短页下拉应触发越界回弹并在松手后回到原位
+                // pulling down on a short page should trigger overscroll rebound and return to the resting position after release
                 dispatcher.dispatchPostScroll(Offset.Zero, Offset(0f, 72f), NestedScrollSource.UserInput)
                 pumpFrames(activity, frameClock)
                 val pulledDown = rowBounds()
-                assertTrue("短页下拉应向下位移，lazy=$lazy", pulledDown.top > restingBounds.top)
+                assertTrue("pulling down on a short page should shift downward, lazy=$lazy", pulledDown.top > restingBounds.top)
                 scope.launch { dispatcher.dispatchPreFling(Velocity.Zero) }
                 repeat(16) { pumpFrames(activity, frameClock) }
-                assertEquals("短页松手后应回弹到原位，lazy=$lazy", restingBounds, rowBounds())
+                assertEquals("after release the short page should rebound to the resting position, lazy=$lazy", restingBounds, rowBounds())
 
-                // 短页真触摸上滑应折叠大标题、正文随之平滑上移
+                // a real touch swipe up on a short page should collapse the large title and move the body up smoothly
                 dispatchDrag(startY = 520f, endY = 220f)
                 val collapsedBounds = rowBounds()
                 assertTrue(
-                    "短页上滑应折叠大标题使首组上移，lazy=$lazy rest=${restingBounds.top} collapsed=${collapsedBounds.top}",
+                    "swiping up on a short page should collapse the large title so the first group moves up, lazy=$lazy rest=${restingBounds.top} collapsed=${collapsedBounds.top}",
                     collapsedBounds.top < restingBounds.top - 20f,
                 )
 
-                // 短页真触摸下滑应重新展开大标题回到原位
+                // a real touch swipe down on a short page should re-expand the large title back to the resting position
                 dispatchDrag(startY = 220f, endY = 520f)
                 val reExpandedBounds = rowBounds()
-                assertEquals("短页下滑应重新展开大标题回到原位，lazy=$lazy", restingBounds.top, reExpandedBounds.top, 2f)
+                assertEquals("swiping down on a short page should re-expand the large title back to the resting position, lazy=$lazy", restingBounds.top, reExpandedBounds.top, 2f)
             }
             longPage = true
             for (lazy in listOf(false, true)) {
                 lazyPage = lazy
                 pumpFrames(activity, frameClock)
                 val consumed = dispatcher.dispatchPreScroll(Offset(0f, -240f), NestedScrollSource.UserInput)
-                assertTrue("长页上滑应折叠顶栏，lazy=$lazy", consumed.y < 0f)
+                assertTrue("swiping up on a long page should collapse the top bar, lazy=$lazy", consumed.y < 0f)
                 scope.launch {
                     if (lazy) listState.scrollToItem(0, 96) else scrollState.scrollTo(96)
                 }
                 pumpFrames(activity, frameClock)
-                assertTrue("长页正文应能继续滚动，lazy=$lazy", if (lazy) listState.canScrollBackward else scrollState.canScrollBackward)
+                assertTrue("the long-page body should be able to keep scrolling, lazy=$lazy", if (lazy) listState.canScrollBackward else scrollState.canScrollBackward)
             }
         } finally {
             recomposer.cancel()
@@ -272,11 +272,11 @@ class GlassComponentsTest {
                 ) {
                     Column {
                         EtaGlassSpinnerPreference(
-                            title = "运行方式",
+                            title = "run mode",
                             items = listOf(
-                                DropdownItem(text = "PRoot", summary = "无需 Root", enabled = true),
-                                DropdownItem(text = "Chroot", summary = "需要 Root", enabled = false),
-                                DropdownItem(text = "Direct", summary = "原生终端", enabled = true),
+                                DropdownItem(text = "PRoot", summary = "no Root required", enabled = true),
+                                DropdownItem(text = "Chroot", summary = "Root required", enabled = false),
+                                DropdownItem(text = "Direct", summary = "native terminal", enabled = true),
                             ),
                             selectedIndex = selectedIndex,
                             onSelectedIndexChange = { selectedIndex = it },
@@ -286,20 +286,20 @@ class GlassComponentsTest {
             }
             pumpFrames(activity, frameClock)
 
-            // 点击 Preference 行打开 GlassDropdownPopup
-            clickByText(activity, "运行方式")
+            // tap the Preference row to open GlassDropdownPopup
+            clickByText(activity, "run mode")
             pumpFrames(activity, frameClock)
 
             val texts = collectAllTexts(activity)
-            assertTrue("Expected summary in dropdown: $texts", texts.any { it == "无需 Root" })
-            assertTrue("Expected disabled option summary: $texts", texts.any { it == "需要 Root" })
+            assertTrue("Expected summary in dropdown: $texts", texts.any { it == "no Root required" })
+            assertTrue("Expected disabled option summary: $texts", texts.any { it == "Root required" })
 
-            // 禁用项不可选中（不会修改 selectedIndex）
+            // disabled items cannot be selected (selectedIndex is not modified)
             val disabledNode = findClickableNodeByText(activity, "Chroot")
             assertTrue(disabledNode == null || disabledNode.config.contains(SemanticsProperties.Disabled))
             assertEquals(0, selectedIndex)
 
-            // 点击可用项更新选中索引
+            // tap an available item to update the selected index
             clickByText(activity, "Direct")
             pumpFrames(activity, frameClock)
             assertEquals(2, selectedIndex)
@@ -329,10 +329,10 @@ class GlassComponentsTest {
                 ) {
                     Scaffold {
                         EtaGlassSpinnerPreference(
-                            title = "音色",
+                            title = "voice",
                             items = listOf(
-                                DropdownItem(text = "Cherry", summary = "清澈女声"),
-                                DropdownItem(text = "Ethan", summary = "沉稳男声"),
+                                DropdownItem(text = "Cherry", summary = "clear female voice"),
+                                DropdownItem(text = "Ethan", summary = "steady male voice"),
                             ),
                             selectedIndex = selectedIndex,
                             onSelectedIndexChange = { selectedIndex = it },
@@ -342,9 +342,9 @@ class GlassComponentsTest {
             }
             pumpFrames(activity, frameClock)
 
-            clickByText(activity, "音色")
+            clickByText(activity, "voice")
             pumpFrames(activity, frameClock)
-            assertTrue(collectAllTexts(activity).any { it == "沉稳男声" })
+            assertTrue(collectAllTexts(activity).any { it == "steady male voice" })
 
             clickByText(activity, "Ethan")
             pumpFrames(activity, frameClock)
@@ -376,7 +376,7 @@ class GlassComponentsTest {
                 ) {
                     MiuixTopBarActionButton(
                         icon = MiuixIcons.Glass.Refresh,
-                        contentDescription = "刷新",
+                        contentDescription = "refresh",
                         enabled = enabled,
                         onClick = { clickCount++ },
                     )
@@ -385,7 +385,7 @@ class GlassComponentsTest {
             pumpFrames(activity, frameClock)
 
             val disabledNode = collectSemanticsNodes(activity.window.decorView).first { node ->
-                node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any { it == "刷新" } &&
+                node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any { it == "refresh" } &&
                     node.config.contains(SemanticsActions.OnClick)
             }
             assertTrue(disabledNode.config.contains(SemanticsProperties.Disabled))
@@ -396,7 +396,7 @@ class GlassComponentsTest {
             pumpFrames(activity, frameClock)
 
             val enabledNode = collectSemanticsNodes(activity.window.decorView).first { node ->
-                node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any { it == "刷新" } &&
+                node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty().any { it == "refresh" } &&
                     node.config.contains(SemanticsActions.OnClick)
             }
             assertFalse(enabledNode.config.contains(SemanticsProperties.Disabled))
@@ -423,9 +423,9 @@ class GlassComponentsTest {
             groups = listOf(
                 ToolGroupUi(
                     id = "root",
-                    title = "高级",
+                    title = "advanced",
                     tools = listOf(
-                        ToolItemUi(id = "get_logcat", title = "日志检查", summary = "需要 Root"),
+                        ToolItemUi(id = "get_logcat", title = "log inspection", summary = "Root required"),
                     ),
                 ),
             ),
@@ -447,7 +447,7 @@ class GlassComponentsTest {
 
             assertTrue(
                 "Switching to All tab should expose root-gated tools",
-                collectAllTexts(activity).any { it == "日志检查" },
+                collectAllTexts(activity).any { it == "log inspection" },
             )
         } finally {
             recomposer.cancel()
@@ -480,7 +480,7 @@ class GlassComponentsTest {
             }
             pumpFrames(activity, frameClock)
 
-            // 打开配色风格菜单验证 CMF 选项可用
+            // open the color style menu to verify the CMF options are available
             clickByText(activity, activity.getString(R.string.appearance_palette_style))
             pumpFrames(activity, frameClock)
             assertTrue(
@@ -539,7 +539,7 @@ class GlassComponentsTest {
             }
             pumpFrames(activity, frameClock)
 
-            // 打开界面样式下拉并点击 COUI
+            // open the UI style dropdown and tap COUI
             clickByText(activity, activity.getString(R.string.appearance_ui_style))
             pumpFrames(activity, frameClock)
             clickByText(activity, activity.getString(R.string.appearance_ui_style_coui))
@@ -547,7 +547,7 @@ class GlassComponentsTest {
             pumpFrames(activity, frameClock)
             assertTrue(collectAllTexts(activity).any { it == activity.getString(R.string.appearance_title) })
 
-            // 切回 MIUIX 并等待动画与布局稳定
+            // switch back to MIUIX and wait for animation and layout to stabilize
             appearance = appearance.copy(uiStyle = AppearanceUiStyle.MIUIX)
             repeat(4) { pumpFrames(activity, frameClock) }
             assertTrue(collectAllTexts(activity).any { it == activity.getString(R.string.appearance_title) })
@@ -640,9 +640,9 @@ class GlassComponentsTest {
             mount(activity, scope, recomposer) {
                 AgentAppTheme(appearance = AppearanceSettings(uiStyle = style)) {
                     if (style == AppearanceUiStyle.COUI) {
-                        CouiTextField(state = state, label = "密钥", secretVisible = visible)
+                        CouiTextField(state = state, label = "secret key", secretVisible = visible)
                     } else {
-                        MiuixSecureTextField(state = state, label = "密钥", visible = visible)
+                        MiuixSecureTextField(state = state, label = "secret key", visible = visible)
                     }
                 }
             }
@@ -691,28 +691,28 @@ class GlassComponentsTest {
                     resolvedContentColor = io.github.suqi8.coui.kmp.theme.LocalContentColor.current
                     Column {
                         io.github.mangi.eta.ui.components.coui.CouiSwitchPreference(
-                            title = "受保护开关",
+                            title = "protected switch",
                             checked = false,
                             onCheckedChange = { rejectedSwitchClicks++ },
                         )
                         io.github.mangi.eta.ui.components.coui.CouiSearchBarBox(
                             query = query,
                             onQueryChange = { query = it },
-                            placeholder = "搜索模型",
+                            placeholder = "search models",
                         )
                     }
                 }
             }
             pumpFrames(activity, frameClock)
 
-            // 1. 深色模式下 COUI LocalContentColor 不能停留在默认黑色
+            // 1. in dark mode COUI LocalContentColor must not stay at the default black
             assertTrue(
                 "COUI dark mode LocalContentColor should be light, got $resolvedContentColor",
                 resolvedContentColor != androidx.compose.ui.graphics.Color.Black &&
                     resolvedContentColor.red > 0.7f,
             )
 
-            // 2. CouiSwitchPreference 拒绝切换后不应卡在开启态
+            // 2. CouiSwitchPreference must not stay stuck in the on state after refusing to toggle
             val switchNode = collectSemanticsNodes(activity.window.decorView).first { node ->
                 node.config.contains(SemanticsProperties.ToggleableState) &&
                     node.config.contains(SemanticsActions.OnClick)
@@ -728,7 +728,7 @@ class GlassComponentsTest {
                 afterSwitchNode.config[SemanticsProperties.ToggleableState],
             )
 
-            // 3. CouiSearchBarBox 收起态不应展示取消按钮
+            // 3. CouiSearchBarBox must not show the cancel button when collapsed
             val cancelLabel = activity.getString(R.string.action_cancel)
             assertFalse(
                 "Cancel button must not show when CouiSearchBarBox is collapsed",

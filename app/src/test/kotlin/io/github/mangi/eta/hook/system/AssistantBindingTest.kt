@@ -98,10 +98,10 @@ class AssistantBindingTest {
         val coordinator = AssistantConfigurationCoordinator()
 
         assertTrue(coordinator.tryBegin(0))
-        // 并发请求同一用户不会并行执行，但会标记结束后需要追平最新选择
+        // Concurrent requests for the same user do not run in parallel, but mark that the latest selection must be reconciled after finishing.
         assertFalse(coordinator.tryBegin(0))
         assertFalse(coordinator.tryBegin(0))
-        // 其他用户互不阻塞
+        // Other users do not block each other.
         assertTrue(coordinator.tryBegin(10))
         assertFalse(coordinator.finish(10))
 

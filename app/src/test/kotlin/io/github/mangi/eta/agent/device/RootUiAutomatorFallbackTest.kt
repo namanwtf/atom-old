@@ -24,7 +24,7 @@ class RootUiAutomatorFallbackTest {
             ReflectionHelpers.callInstanceMethod<Unit>(serviceController.get(), "onServiceConnected")
             RootShellDeviceController(
                 logger = NoOpLogger,
-                rootAvailable = { error("无障碍已重连，不应再进入 Root 读取通道") },
+                rootAvailable = { error("accessibility reconnected; must not enter the Root read channel again") },
             ).use { device ->
                 val result = ReflectionHelpers.callInstanceMethod<Any>(
                     device,
@@ -50,9 +50,9 @@ class RootUiAutomatorFallbackTest {
             ReflectionHelpers.callInstanceMethod<Unit>(serviceController.get(), "onServiceConnected")
             RootShellDeviceController(
                 logger = NoOpLogger,
-                rootAvailable = { error("无障碍在线时 waitForText 不应回退 Root dump") },
+                rootAvailable = { error("when accessibility is online, waitForText must not fall back to a Root dump") },
             ).use { device ->
-                val result = JSONObject(device.waitForText("不存在", 500, true, "contains"))
+                val result = JSONObject(device.waitForText("does not exist", 500, true, "contains"))
                 assertFalse(result.getBoolean("ok"))
                 assertEquals("TIMEOUT", result.getString("code"))
             }
@@ -65,13 +65,13 @@ class RootUiAutomatorFallbackTest {
     fun virtualDisplayWithoutAccessibilityNeverInvokesRootDump() {
         RootShellDeviceController(
             logger = NoOpLogger,
-            rootAvailable = { error("虚拟屏无障碍缺失时不应调用 Root uiautomator") },
+            rootAvailable = { error("when the virtual display lacks accessibility, Root uiautomator must not be called") },
         ).use { device ->
             val scrollResult = JSONObject(device.scroll("down", displayId = 3))
             assertFalse(scrollResult.getBoolean("ok"))
             assertEquals("ACCESSIBILITY_UNAVAILABLE", scrollResult.getString("code"))
 
-            val waitResult = JSONObject(device.waitForText("目标", 500, true, "contains", displayId = 3))
+            val waitResult = JSONObject(device.waitForText("target", 500, true, "contains", displayId = 3))
             assertFalse(waitResult.getBoolean("ok"))
             assertEquals("ACCESSIBILITY_UNAVAILABLE", waitResult.getString("code"))
         }

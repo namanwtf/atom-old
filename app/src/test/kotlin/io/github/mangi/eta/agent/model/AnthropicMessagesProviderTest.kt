@@ -50,12 +50,12 @@ class AnthropicMessagesProviderTest {
     @Test
     fun toolResultRequestReplaysOrderedThinkingAndRedactedBlocksWithoutPersistingThem() {
         val firstResponse = buildString {
-            append(blockStart(0, JSONObject().put("type", "thinking").put("thinking", "先判断")))
-            append(blockDelta(0, JSONObject().put("type", "thinking_delta").put("thinking", "所需信息")))
+            append(blockStart(0, JSONObject().put("type", "thinking").put("thinking", "determine first")))
+            append(blockDelta(0, JSONObject().put("type", "thinking_delta").put("thinking", "needed information")))
             append(blockDelta(0, JSONObject().put("type", "signature_delta").put("signature", "signature-")))
             append(blockDelta(0, JSONObject().put("type", "signature_delta").put("signature", "one")))
             append(blockStop(0))
-            append(blockStart(1, JSONObject().put("type", "text").put("text", "开始查询")))
+            append(blockStart(1, JSONObject().put("type", "text").put("text", "start the query")))
             append(blockStop(1))
             append(blockStart(2, JSONObject().put("type", "tool_use").put("id", "toolu_one")
                 .put("name", "device_info").put("input", JSONObject())))
@@ -88,11 +88,11 @@ class AnthropicMessagesProviderTest {
         assertFalse(durable.contains("redacted-one"))
 
         val messages = JSONArray()
-            .put(AgentConversationCodec.userTextMessage("读取设备信息和当前上下文"))
+            .put(AgentConversationCodec.userTextMessage("read device information and the current context"))
             .put(assistantHistory)
-            .put(AgentConversationCodec.toolResultMessage(calls[0], AgentModelClient.ToolResult("设备信息")))
-            .put(AgentConversationCodec.toolResultMessage(calls[1], AgentModelClient.ToolResult("当前上下文")))
-        val secondResponse = blockStart(0, JSONObject().put("type", "text").put("text", "已完成")) +
+            .put(AgentConversationCodec.toolResultMessage(calls[0], AgentModelClient.ToolResult("device information")))
+            .put(AgentConversationCodec.toolResultMessage(calls[1], AgentModelClient.ToolResult("current context")))
+        val secondResponse = blockStart(0, JSONObject().put("type", "text").put("text", "completed")) +
             blockStop(0) + event("message_stop", JSONObject())
         val requestBody = AtomicReference<String>()
         withAnthropicServer(secondResponse, onRequest = requestBody::set) { baseUrl ->
@@ -106,9 +106,9 @@ class AnthropicMessagesProviderTest {
         val blocks = requestMessages.getJSONObject(1).getJSONArray("content")
         assertEquals(listOf("thinking", "text", "tool_use", "redacted_thinking", "thinking", "tool_use"),
             (0 until blocks.length()).map { blocks.getJSONObject(it).getString("type") })
-        assertEquals("先判断所需信息", blocks.getJSONObject(0).getString("thinking"))
+        assertEquals("first determine the needed information", blocks.getJSONObject(0).getString("thinking"))
         assertEquals("signature-one", blocks.getJSONObject(0).getString("signature"))
-        assertEquals("开始查询", blocks.getJSONObject(1).getString("text"))
+        assertEquals("start the query", blocks.getJSONObject(1).getString("text"))
         assertTrue(blocks.getJSONObject(2).getJSONObject("input").getBoolean("detail"))
         assertEquals("redacted-one", blocks.getJSONObject(3).getString("data"))
         assertEquals("", blocks.getJSONObject(4).getString("thinking"))
@@ -127,7 +127,7 @@ class AnthropicMessagesProviderTest {
             AgentWebToolCatalog.appendTo(array)
             array.put(AgentToolSchema.function(
                 name = "nested",
-                description = "嵌套组合子",
+                description = "nested combinators",
                 parameters = JSONObject().put("type", "object").put("properties", JSONObject()
                     .put("value", JSONObject().put("anyOf", JSONArray()
                         .put(JSONObject().put("type", "string"))
@@ -164,11 +164,11 @@ class AnthropicMessagesProviderTest {
                 .put(JSONObject().put("id", "toolu_b").put("type", "function")
                     .put("function", JSONObject().put("name", "get_current_context").put("arguments", "{}"))))
         val messages = JSONArray()
-            .put(AgentConversationCodec.userTextMessage("开始"))
+            .put(AgentConversationCodec.userTextMessage("start"))
             .put(assistant)
             .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_a").put("content", "A"))
             .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_b").put("content", "B"))
-            .put(AgentConversationCodec.userTextMessage("用户补充"))
+            .put(AgentConversationCodec.userTextMessage("user supplement"))
         val requestBody = AtomicReference<String>()
         withAnthropicServer(event("message_stop", JSONObject()), onRequest = requestBody::set) { baseUrl ->
             AnthropicMessagesProvider.complete(providerRequest(baseUrl).copy(messages = messages), AgentRunController())
@@ -179,7 +179,7 @@ class AnthropicMessagesProviderTest {
         val turn = sent.getJSONObject(2).getJSONArray("content")
         assertEquals(listOf("tool_result", "tool_result", "text"), (0 until turn.length()).map { turn.getJSONObject(it).getString("type") })
         assertEquals("toolu_b", turn.getJSONObject(1).getString("tool_use_id"))
-        assertEquals("用户补充", turn.getJSONObject(2).getString("text"))
+        assertEquals("user supplement", turn.getJSONObject(2).getString("text"))
     }
 
     @Test
@@ -187,7 +187,7 @@ class AnthropicMessagesProviderTest {
         val body = event("message_start", JSONObject().put("message", JSONObject().put("usage", JSONObject()
             .put("input_tokens", 100).put("cache_read_input_tokens", 900).put("cache_creation_input_tokens", 50)
             .put("output_tokens", 1)))) +
-            blockStart(0, JSONObject().put("type", "text").put("text", "好")) + blockStop(0) +
+            blockStart(0, JSONObject().put("type", "text").put("text", "ok")) + blockStop(0) +
             event("message_delta", JSONObject().put("delta", JSONObject().put("stop_reason", "end_turn"))
                 .put("usage", JSONObject().put("output_tokens", 42))) +
             event("message_stop", JSONObject())
@@ -225,11 +225,11 @@ class AnthropicMessagesProviderTest {
                 )
             }
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "系统"))
-            .put(AgentConversationCodec.userTextMessage("问题"))
+            .put(JSONObject().put("role", "system").put("content", "system"))
+            .put(AgentConversationCodec.userTextMessage("question"))
             .put(assistant)
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "结果"))
-            .put(AgentConversationCodec.userTextMessage("生成摘要").put("_eta_compaction_prompt", true))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "result"))
+            .put(AgentConversationCodec.userTextMessage("generate a summary").put("_eta_compaction_prompt", true))
 
         val requestBody = AtomicReference<String>()
         withAnthropicServer(event("message_stop", JSONObject()), onRequest = requestBody::set) { baseUrl ->
@@ -243,16 +243,16 @@ class AnthropicMessagesProviderTest {
 
     @Test
     fun refusalStopDetailsReachAssistantMessage() {
-        val body = blockStart(0, JSONObject().put("type", "text").put("text", "部分")) + blockStop(0) +
+        val body = blockStart(0, JSONObject().put("type", "text").put("text", "part")) + blockStop(0) +
             event("message_delta", JSONObject().put("delta", JSONObject()
                 .put("stop_reason", "refusal")
                 .put("stop_details", JSONObject().put("type", "refusal").put("category", JSONObject.NULL)
-                    .put("explanation", "说明")))) +
+                    .put("explanation", "description")))) +
             event("message_stop", JSONObject())
         withAnthropicServer(body) { baseUrl ->
             val response = AnthropicMessagesProvider.complete(providerRequest(baseUrl), AgentRunController())
             assertEquals(AssistantStopReason.CONTENT_FILTER, response.stopReason)
-            assertEquals("说明", response.assistantMessage.getJSONObject("stop_details").getString("explanation"))
+            assertEquals("description", response.assistantMessage.getJSONObject("stop_details").getString("explanation"))
         }
     }
 
@@ -260,7 +260,7 @@ class AnthropicMessagesProviderTest {
     fun completedToolRoundsDoNotReplayOldThinkingSignatures() {
         fun toolAssistant(id: String, signature: String) = JSONObject()
             .put("role", "assistant")
-            .put("content", "读取")
+            .put("content", "read")
             .put("tool_calls", JSONArray().put(JSONObject().put("id", id).put("type", "function")
                 .put("function", JSONObject().put("name", "device_info").put("arguments", "{}"))))
             .also { message ->
@@ -271,15 +271,15 @@ class AnthropicMessagesProviderTest {
                         .put("name", "device_info").put("input", JSONObject())))
             }
         val messages = JSONArray()
-            .put(AgentConversationCodec.userTextMessage("旧问题"))
+            .put(AgentConversationCodec.userTextMessage("old question"))
             .put(toolAssistant("toolu_old", "OLD_SIGNATURE"))
             .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_old")
-                .put("content", "旧结果"))
-            .put(JSONObject().put("role", "assistant").put("content", "旧回答"))
-            .put(AgentConversationCodec.userTextMessage("新问题"))
+                .put("content", "old result"))
+            .put(JSONObject().put("role", "assistant").put("content", "old answer"))
+            .put(AgentConversationCodec.userTextMessage("new question"))
             .put(toolAssistant("toolu_current", "CURRENT_SIGNATURE"))
             .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_current")
-                .put("content", "新结果"))
+                .put("content", "new result"))
         val requestBody = AtomicReference<String>()
         withAnthropicServer(event("message_stop", JSONObject()), onRequest = requestBody::set) { baseUrl ->
             AnthropicMessagesProvider.complete(
@@ -312,13 +312,13 @@ class AnthropicMessagesProviderTest {
                         .put("name", "device_info").put("input", JSONObject())))
             }
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "系统"))
-            .put(AgentConversationCodec.userTextMessage("问题"))
+            .put(JSONObject().put("role", "system").put("content", "system"))
+            .put(AgentConversationCodec.userTextMessage("question"))
             .put(toolAssistant("toolu_1", "FIRST_SIGNATURE"))
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "结果一"))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "result one"))
             .put(toolAssistant("toolu_2", "SECOND_SIGNATURE"))
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_2").put("content", "结果二"))
-            .put(AgentConversationCodec.userMessage("观察", listOf(AgentModelClient.ModelImage(reference = "data:image/png;base64,AA==", mimeType = "image/png", bytes = 1)))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_2").put("content", "result two"))
+            .put(AgentConversationCodec.userMessage("observe", listOf(AgentModelClient.ModelImage(reference = "data:image/png;base64,AA==", mimeType = "image/png", bytes = 1)))
                 .put("_eta_observation", true))
         val tools = JSONArray()
             .put(JSONObject().put("type", "function").put("function", JSONObject().put("name", "a").put("parameters", JSONObject().put("type", "object"))))
@@ -339,7 +339,7 @@ class AnthropicMessagesProviderTest {
         assertFalse(sentTools.getJSONObject(0).has("cache_control"))
         assertTrue(sentTools.getJSONObject(1).has("cache_control"))
         assertTrue(body.getJSONArray("system").getJSONObject(0).has("cache_control"))
-        // 观察截图下一轮就会移除，断点落在它前面的工具结果上。
+        // The observation screenshot is removed on the next turn; the breakpoint lands on the tool result before it.
         val lastTurn = body.getJSONArray("messages").let { it.getJSONObject(it.length() - 1) }.getJSONArray("content")
         val marked = (0 until lastTurn.length()).map(lastTurn::getJSONObject).filter { it.has("cache_control") }
         assertEquals(listOf("tool_result"), marked.map { it.getString("type") })
@@ -359,13 +359,13 @@ class AnthropicMessagesProviderTest {
                         .put("name", "device_info").put("input", JSONObject())))
             }
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "系统"))
-            .put(AgentConversationCodec.userTextMessage("问题"))
+            .put(JSONObject().put("role", "system").put("content", "system"))
+            .put(AgentConversationCodec.userTextMessage("question"))
             .put(toolAssistant("toolu_1", "FIRST_SIGNATURE"))
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "结果一"))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_1").put("content", "result one"))
             .put(toolAssistant("toolu_2", "SECOND_SIGNATURE"))
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_2").put("content", "结果二"))
-            .put(AgentConversationCodec.userTextMessage("请改用第二种方案").put("_eta_steering", true))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "toolu_2").put("content", "result two"))
+            .put(AgentConversationCodec.userTextMessage("please switch to the second approach").put("_eta_steering", true))
         val requestBody = AtomicReference<String>()
         withAnthropicServer(event("message_stop", JSONObject()), onRequest = requestBody::set) { baseUrl ->
             AnthropicMessagesProvider.complete(
@@ -391,9 +391,9 @@ class AnthropicMessagesProviderTest {
         val completed = CountDownLatch(1)
         val serverObservedCompletion = CountDownLatch(1)
         val completedBeforeClose = AtomicBoolean(false)
-        val firstChunk = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "开始分析，"))
+        val firstChunk = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "Start analyzing, "))
         val remaining = buildString {
-            append(blockDelta(0, JSONObject().put("type", "thinking_delta").put("thinking", "需要工具。")))
+            append(blockDelta(0, JSONObject().put("type", "thinking_delta").put("thinking", "Need a tool.")))
             append(blockDelta(0, JSONObject().put("type", "signature_delta").put("signature", "opaque-signature")))
             append(blockStop(0))
             append(blockStop(0))
@@ -403,10 +403,10 @@ class AnthropicMessagesProviderTest {
             append(blockDelta(1, JSONObject().put("type", "input_json_delta").put("partial_json", "{}")))
             append(blockStop(1))
             append(blockStart(2, JSONObject().put("type", "thinking").put("thinking", "")))
-            append(blockDelta(2, JSONObject().put("type", "thinking_delta").put("thinking", "继续分析。")))
+            append(blockDelta(2, JSONObject().put("type", "thinking_delta").put("thinking", "Continue analyzing.")))
             append(blockDelta(2, JSONObject().put("type", "signature_delta").put("signature", "opaque-signature-two")))
             append(blockStop(2))
-            append(blockStart(3, JSONObject().put("type", "text").put("text", "最终答案")))
+            append(blockStart(3, JSONObject().put("type", "text").put("text", "final answer")))
             append(blockStop(3))
             append(event("message_delta", JSONObject().put("delta", JSONObject().put("stop_reason", "tool_use"))))
             append(event("message_stop", JSONObject()))
@@ -435,13 +435,13 @@ class AnthropicMessagesProviderTest {
 
             assertTrue(serverObservedCompletion.await(5, TimeUnit.SECONDS))
             assertTrue(completedBeforeClose.get())
-            assertEquals("开始分析，需要工具。继续分析。", response.assistantMessage.getString("reasoning_content"))
-            assertEquals("最终答案", response.assistantMessage.getString("content"))
+            assertEquals("Start analyzing, need a tool. Continue analyzing.", response.assistantMessage.getString("reasoning_content"))
+            assertEquals("final answer", response.assistantMessage.getString("content"))
             val ends = events.filterIsInstance<ProviderEvent.BlockEnd>()
             assertEquals(listOf(0, 1, 2, 3), ends.map { it.index })
-            assertEquals(listOf("开始分析，需要工具。", "{}", "继续分析。", "最终答案"), ends.map { it.content })
+            assertEquals(listOf("Start analyzing, need a tool.", "{}", "Continue analyzing.", "final answer"), ends.map { it.content })
             assertEquals("tool_1", response.assistantMessage.getJSONArray("tool_calls").getJSONObject(0).getString("id"))
-            assertEquals(listOf("开始分析，", "需要工具。", "继续分析。"), events.filterIsInstance<ProviderEvent.BlockDelta>()
+            assertEquals(listOf("Start analyzing, ", "Need a tool.", "Continue analyzing."), events.filterIsInstance<ProviderEvent.BlockDelta>()
                 .filter { it.kind == AssistantBlockKind.THINKING }.map { it.delta })
         }
     }
@@ -454,7 +454,7 @@ class AnthropicMessagesProviderTest {
             append(blockStop(0))
             append(blockStart(1, JSONObject().put("type", "redacted_thinking").put("data", "opaque-data")))
             append(blockStop(1))
-            append(blockStart(2, JSONObject().put("type", "text").put("text", "答案")))
+            append(blockStart(2, JSONObject().put("type", "text").put("text", "answer")))
             append(blockStop(2))
             append(event("message_stop", JSONObject()))
         }
@@ -462,21 +462,21 @@ class AnthropicMessagesProviderTest {
             val events = mutableListOf<ProviderEvent>()
             val response = AnthropicMessagesProvider.complete(providerRequest(baseUrl), AgentRunController(), events::add)
             assertEquals("", response.assistantMessage.getString("reasoning_content"))
-            assertEquals("答案", response.assistantMessage.getString("content"))
+            assertEquals("answer", response.assistantMessage.getString("content"))
             assertTrue(events.filterIsInstance<ProviderEvent.BlockDelta>().none { it.kind == AssistantBlockKind.THINKING })
         }
     }
 
     @Test
     fun rejectsUnclosedThinkingBlockEvenWhenMessageStopArrives() {
-        val body = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "部分内容")) +
+        val body = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "partial content")) +
             event("message_stop", JSONObject())
         withAnthropicServer(body) { baseUrl ->
             val events = mutableListOf<ProviderEvent>()
             val failure = runCatching {
                 AnthropicMessagesProvider.complete(providerRequest(baseUrl), AgentRunController(), events::add)
             }.exceptionOrNull()
-            assertTrue(failure?.message.orEmpty().contains("内容块未正常结束"))
+            assertTrue(failure?.message.orEmpty().contains("content block did not end normally"))
             assertFalse(events.any { it is ProviderEvent.Completed })
         }
     }
@@ -484,7 +484,7 @@ class AnthropicMessagesProviderTest {
     @Test
     fun rejectsToolRoundWhoseThinkingBlockHasNoSignature() {
         val body = buildString {
-            append(blockStart(0, JSONObject().put("type", "thinking").put("thinking", "需要调用工具")))
+            append(blockStart(0, JSONObject().put("type", "thinking").put("thinking", "need to call a tool")))
             append(blockStop(0))
             append(blockStart(1, JSONObject().put("type", "tool_use").put("id", "toolu_1")
                 .put("name", "device_info").put("input", JSONObject())))
@@ -495,16 +495,16 @@ class AnthropicMessagesProviderTest {
             val failure = runCatching {
                 AnthropicMessagesProvider.complete(providerRequest(baseUrl), AgentRunController())
             }.exceptionOrNull()
-            assertTrue(failure?.message.orEmpty().contains("缺少思考签名"))
+            assertTrue(failure?.message.orEmpty().contains("missing thinking signature"))
         }
     }
 
     @Test
     fun thinkingStreamErrorsAndEarlyEofDoNotReportCompletion() {
-        val prefix = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "部分思考"))
+        val prefix = blockStart(0, JSONObject().put("type", "thinking").put("thinking", "partial thinking"))
         val endings = listOf(
-            "" to "未正常结束",
-            event("error", JSONObject().put("error", JSONObject().put("type", "overloaded_error"))) to "返回错误",
+            "" to "did not end normally",
+            event("error", JSONObject().put("error", JSONObject().put("type", "overloaded_error"))) to "return an error",
         )
         endings.forEach { (ending, expectedError) ->
             withAnthropicServer(prefix + ending) { baseUrl ->
@@ -513,7 +513,7 @@ class AnthropicMessagesProviderTest {
                     AnthropicMessagesProvider.complete(providerRequest(baseUrl), AgentRunController(), events::add)
                 }.exceptionOrNull()
                 assertTrue(failure?.message.orEmpty().contains(expectedError))
-                assertEquals("部分思考", events.filterIsInstance<ProviderEvent.BlockDelta>().single().delta)
+                assertEquals("partial thinking", events.filterIsInstance<ProviderEvent.BlockDelta>().single().delta)
                 assertFalse(events.any { it is ProviderEvent.Completed })
             }
         }
@@ -663,7 +663,7 @@ class AnthropicMessagesProviderTest {
             model = "test-model",
             systemPrompt = "",
         ),
-        messages = JSONArray().put(JSONObject().put("role", "user").put("content", "测试推理")),
+        messages = JSONArray().put(JSONObject().put("role", "user").put("content", "test reasoning")),
         tools = JSONArray(),
     )
 

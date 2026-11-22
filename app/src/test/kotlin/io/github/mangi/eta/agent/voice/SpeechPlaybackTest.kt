@@ -39,7 +39,7 @@ class SpeechPlaybackTest {
     @After fun close() { playback.stop(); scope.cancel() }
 
     private fun start(id: String) {
-        playback.speak(id, "回答正文", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
+        playback.speak(id, "answer body", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
         val deadline = System.nanoTime() + 3_000_000_000
         while (playback.state.value.loading && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
@@ -74,7 +74,7 @@ class SpeechPlaybackTest {
     }
 
     @Test fun microphoneWinsWhileOldPlaybackIsStillPreparing() {
-        playback.speak("preparing", "尚未合成的回答", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
+        playback.speak("preparing", "answer not yet synthesized", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
         val microphone = SpeechAudioLease(context) {}
         try {
             microphone.acquire(playback = false)
@@ -87,7 +87,7 @@ class SpeechPlaybackTest {
     @Test fun ownerCancellationClosesAudioWithoutExplicitStop() {
         start("answer")
         scope.cancel()
-        // 播放端在 IO 线程，取消后需等它退出再回到主线程收尾。
+        // The playback side runs on the IO thread; after cancellation, wait for it to exit before returning to the main thread to finish up.
         val deadline = System.nanoTime() + 3_000_000_000
         while (!outputs.single().closed && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
@@ -113,7 +113,7 @@ class SpeechPlaybackTest {
             createOutput = { output },
         )
         try {
-            controller.speak("short", "简短回答", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
+            controller.speak("short", "short answer", SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
             val deadline = System.nanoTime() + 3_000_000_000
             while (!output.closed && System.nanoTime() < deadline) {
                 shadowOf(Looper.getMainLooper()).idle()
@@ -143,7 +143,7 @@ class SpeechPlaybackTest {
             createOutput = { output },
         )
         try {
-            val text = "很长的回答。".repeat(250)
+            val text = "a very long answer.".repeat(250)
             val chunkCount = SpeechText.chunks(SpeechText.readable(text)).size
             assertTrue(chunkCount > 2)
             controller.speak("long", text, SpeechSettings(tts = TtsProvider.QWEN), SpeechCredentials(qwenTts = "test-key"))
@@ -189,7 +189,7 @@ class SpeechPlaybackTest {
             createOutput = { output },
         )
         try {
-            val text = "很长的回答。".repeat(250)
+            val text = "a very long answer.".repeat(250)
             speakUntilClosed(controller, output, text)
             assertEquals(1, sessions.size)
             assertEquals(SpeechText.chunks(SpeechText.readable(text)), sessions.single())
@@ -208,7 +208,7 @@ class SpeechPlaybackTest {
             createOutput = { output },
         )
         try {
-            speakUntilClosed(controller, output, "第一句。第二句。")
+            speakUntilClosed(controller, output, "First sentence. Second sentence.")
             assertEquals(1, segments.get())
             assertTrue(output.finished)
             assertNull(controller.state.value.error)
@@ -227,7 +227,7 @@ class SpeechPlaybackTest {
             createOutput = { output },
         )
         try {
-            speakUntilClosed(controller, output, "第一句。第二句。")
+            speakUntilClosed(controller, output, "First sentence. Second sentence.")
             assertEquals(0, segments.get())
             assertEquals("dropped", controller.state.value.error)
         } finally { controller.stop() }
@@ -247,7 +247,7 @@ class SpeechPlaybackTest {
                 createOutput = { output },
             )
             try {
-                val text = "这是一段较长的回答。".repeat(100)
+                val text = "This is a somewhat long answer.".repeat(100)
                 speakUntilClosed(controller, output, text, provider)
                 assertEquals(SpeechText.chunks(text), segments)
                 assertTrue(output.finished)
@@ -258,12 +258,12 @@ class SpeechPlaybackTest {
 
     @Test fun sessionAndSegmentSynthesisReceiveTheSameReadableBody() {
         val markdown = """
-            # 操作说明
+            # instructions
 
-            开始前请确认权限，并查看[帮助说明](https://example.invalid/help)。
-            下载地址：https://example.invalid/download?token=fixture
+            Please confirm permissions before starting and see the [help notes](https://example.invalid/help).
+            Download:https://example.invalid/download?token=fixture
 
-            | 内部项目 | 标记 |
+            | internal item | marker |
             | --- | --- |
             | table_item | table_value |
 
@@ -275,7 +275,7 @@ class SpeechPlaybackTest {
 
             <div>htmlOnlyContent</div>
 
-            完成后返回聊天。
+            return to chat when done.
         """.trimIndent()
         var previousText: String? = null
         for (provider in listOf(TtsProvider.QWEN, TtsProvider.MIMO)) {
@@ -302,14 +302,14 @@ class SpeechPlaybackTest {
                 assertEquals(if (provider == TtsProvider.MIMO) 1 else 0, segments)
                 val spoken = submitted.joinToString("\n")
                 for (text in listOf(
-                    "操作说明", "开始前请确认权限", "帮助说明", "完成后返回聊天",
+                    "instructions", "confirm permissions before starting", "help notes", "return to chat when done",
                 )) {
                     assertTrue(spoken.contains(text))
                 }
                 for (text in listOf(
                     "https://", "example.invalid", "codeCommand",
-                    "内部项目", "标记", "table_item", "table_value", "表格",
-                    "imageAlt", "htmlOnlyContent", "链接见正文", "请查看正文", "图片见正文", "内容见正文",
+                    "internal item", "marker", "table_item", "table_value", "table",
+                    "imageAlt", "htmlOnlyContent", "see body for link", "see the body", "see body for image", "see body for content",
                 )) {
                     assertFalse(spoken.contains(text))
                 }
@@ -330,14 +330,14 @@ class SpeechPlaybackTest {
                     assertEquals(provider, settings.tts)
                     attempts++
                     audio(byteArrayOf(1, 2))
-                    throw SpeechFailure(SpeechErrorCode.NETWORK, "连接中断")
+                    throw SpeechFailure(SpeechErrorCode.NETWORK, "connection interrupted")
                 },
                 createOutput = { output },
             )
             try {
-                speakUntilClosed(controller, output, "回答正文。".repeat(150), provider)
+                speakUntilClosed(controller, output, "the answer body.".repeat(150), provider)
                 assertEquals(1, attempts)
-                assertEquals("连接中断", controller.state.value.error)
+                assertEquals("connection interrupted", controller.state.value.error)
                 assertFalse(output.finished)
             } finally { controller.stop() }
         }

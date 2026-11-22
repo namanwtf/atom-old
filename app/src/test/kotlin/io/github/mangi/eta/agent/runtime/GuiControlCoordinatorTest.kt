@@ -80,12 +80,12 @@ class GuiControlCoordinatorTest {
         val pool = Executors.newSingleThreadExecutor()
         try {
             a.withAction { }
-            val result = pool.submit { b.withAction { error("已取消的等待者不能执行") } }
+            val result = pool.submit { b.withAction { error("a canceled waiter must not execute") } }
             await(bQueued)
             bController.cancel()
             try {
                 result.get(2, TimeUnit.SECONDS)
-                error("应传播取消")
+                error("cancellation must propagate")
             } catch (failure: ExecutionException) {
                 assertTrue(failure.cause is AgentRunCancelledException)
             }
@@ -168,6 +168,6 @@ class GuiControlCoordinatorTest {
     }
 
     private fun await(latch: CountDownLatch) {
-        assertTrue("并发步骤未到达", latch.await(2, TimeUnit.SECONDS))
+        assertTrue("concurrent steps did not arrive", latch.await(2, TimeUnit.SECONDS))
     }
 }

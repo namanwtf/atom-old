@@ -230,7 +230,7 @@ class BrowserSessionRegistryTest {
             cancellation.set(true)
             try {
                 task.get(2L, TimeUnit.SECONDS)
-                throw AssertionError("已取消的等待者执行了浏览器动作")
+                throw AssertionError("a canceled waiter performed a browser action")
             } catch (failure: ExecutionException) {
                 assertTrue(failure.cause is AgentRunCancelledException)
             }
@@ -280,7 +280,7 @@ class BrowserSessionRegistryTest {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(5L)
         }
-        assertTrue("异步浏览器操作未在期限内完成", condition())
+        assertTrue("async browser operation did not complete within the deadline", condition())
     }
 
     private fun newKey(): String = UUID.randomUUID().toString().also(keys::add)

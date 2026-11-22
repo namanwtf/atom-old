@@ -114,7 +114,7 @@ class AlpineEnvironmentInstallerTest {
             ManagedLinuxTool.NODE,
             LinuxPackageProfiles.NODE.spec(LinuxDistribution.DEBIAN).managedTool,
         )
-        // Node 官方 arm64 二进制依赖 libatomic.so.1，Debian 规格必须补装 libatomic1。
+        // Node's official arm64 binary depends on libatomic.so.1; the Debian spec must additionally install libatomic1.
         assertTrue(
             LinuxPackageProfiles.NODE.spec(LinuxDistribution.DEBIAN).packages.contains("libatomic1"),
         )

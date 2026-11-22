@@ -128,7 +128,7 @@ class AgentRunRecoveryCoordinatorTest {
         result = AgentRuntimeWire.RunResult(
             runId = runId,
             ok = true,
-            content = "完成",
+            content = "done",
         ),
         createdAt = 3L,
     )

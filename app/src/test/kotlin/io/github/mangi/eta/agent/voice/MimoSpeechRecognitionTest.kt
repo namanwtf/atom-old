@@ -64,16 +64,16 @@ class MimoSpeechRecognitionTest {
     }
 
     @Test fun onlyCompletedTextIsAcceptedAndBlankTextIsLeftToTheInputController() {
-        assertEquals("请打开设置。", mimoAsrTranscript(response("  请打开设置。\n")))
+        assertEquals("Please open settings.", mimoAsrTranscript(response("  Please open settings.\n")))
         assertEquals("", mimoAsrTranscript(response(" \n\t")))
         for (reason in listOf("length", "content_filter")) {
             assertEquals(SpeechErrorCode.SERVER, assertThrows(SpeechFailure::class.java) {
-                mimoAsrTranscript(response("未完成的转写", reason))
+                mimoAsrTranscript(response("incomplete transcript", reason))
             }.code)
         }
         for (reason in listOf("", "tool_calls", "unknown")) {
             assertEquals(SpeechErrorCode.PROTOCOL, assertThrows(SpeechFailure::class.java) {
-                mimoAsrTranscript(response("未完成的转写", reason))
+                mimoAsrTranscript(response("incomplete transcript", reason))
             }.code)
         }
     }

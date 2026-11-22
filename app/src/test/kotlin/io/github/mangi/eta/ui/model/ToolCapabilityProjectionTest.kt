@@ -12,7 +12,7 @@ class ToolCapabilityProjectionTest {
     private fun card(id: String) = ToolItemUi(id, id, id)
 
     @Test fun currentDeviceRetainsPartialCapabilitiesAndHidesRootOnlyTools() {
-        val groups = listOf(ToolGroupUi("device", "设备", listOf(card("terminal"), card("wifi_credentials"), card("observe_screen"))))
+        val groups = listOf(ToolGroupUi("device", "Device", listOf(card("terminal"), card("wifi_credentials"), card("observe_screen"))))
         assertEquals(listOf("terminal", "observe_screen"),
             projectToolGroups(groups, false, false, true).single().tools.map { it.id })
         assertEquals(groups, projectToolGroups(groups, true, false, true))
@@ -20,7 +20,7 @@ class ToolCapabilityProjectionTest {
     }
 
     @Test fun viewingAllDoesNotMutateSourceOrChangeToolOrder() {
-        val groups = listOf(ToolGroupUi("root", "增强", listOf(card("wifi_credentials"))))
+        val groups = listOf(ToolGroupUi("root", "Enhanced", listOf(card("wifi_credentials"))))
         assertTrue(projectToolGroups(groups, false, false, false).isEmpty())
         assertEquals(groups, projectToolGroups(groups, true, false, false))
         assertTrue(projectToolGroups(groups, false, false, false).isEmpty())

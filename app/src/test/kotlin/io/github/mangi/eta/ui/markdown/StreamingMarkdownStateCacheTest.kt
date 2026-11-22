@@ -35,12 +35,12 @@ class StreamingMarkdownStateCacheTest {
     fun detachedLiveMessageKeepsItsParsingAndRevealState() {
         val cache = StreamingMarkdownStateCache()
         val state = cache.getOrCreate("live")
-        state.revealedContent = "已显示的前缀"
+        state.revealedContent = "already-revealed prefix"
 
         cache.discardUnused(setOf("live"))
 
         assertSame(state, cache.getOrCreate("live"))
-        assertEquals("已显示的前缀", cache.states["live"]?.revealedContent)
+        assertEquals("already-revealed prefix", cache.states["live"]?.revealedContent)
         assertTrue(cache.unusedMessageIds(setOf("live")).isEmpty())
     }
 
@@ -63,7 +63,7 @@ class StreamingMarkdownStateCacheTest {
     @Test
     fun evictionHandsTheFinalDocumentToTheBoundedStaticCache() {
         val cache = StreamingMarkdownStateCache()
-        val content = "**完成后的答复：缓存交接**"
+        val content = "**finalized answer: cache handoff**"
         val snapshot = StreamingGfmParserSession().parse(content, isComplete = true)
         cache.getOrCreate("completed").snapshot = snapshot
 
@@ -76,7 +76,7 @@ class StreamingMarkdownStateCacheTest {
     @Test
     fun anIncompleteDetachedSnapshotNeverBecomesAStaticDocument() {
         val cache = StreamingMarkdownStateCache()
-        val content = "**尚未完成的快照：不进入静态缓存"
+        val content = "**unfinished snapshot: not entering the static cache"
         val snapshot = StreamingGfmParserSession().parse(content, isComplete = false)
         cache.getOrCreate("unfinished").snapshot = snapshot
 
@@ -90,14 +90,14 @@ class StreamingMarkdownStateCacheTest {
     fun movingCompletedDocumentsToStaticRenderingStillHasABoundedHistoryCache() {
         val cache = StreamingMarkdownStateCache()
         repeat(128) { index ->
-            val content = "有界文档缓存回归测试 $index"
+            val content = "bounded document cache regression test $index"
             cache.getOrCreate("answer-$index").snapshot =
                 StreamingGfmParserSession().parse(content, isComplete = true)
             cache.discardUnused(emptySet())
         }
 
         assertTrue(cache.states.isEmpty())
-        assertNull(staticMarkdownDocumentCache.get("有界文档缓存回归测试 0", MarkdownInlineStyle.Default))
-        assertNotNull(staticMarkdownDocumentCache.get("有界文档缓存回归测试 127", MarkdownInlineStyle.Default))
+        assertNull(staticMarkdownDocumentCache.get("bounded document cache regression test 0", MarkdownInlineStyle.Default))
+        assertNotNull(staticMarkdownDocumentCache.get("bounded document cache regression test 127", MarkdownInlineStyle.Default))
     }
 }

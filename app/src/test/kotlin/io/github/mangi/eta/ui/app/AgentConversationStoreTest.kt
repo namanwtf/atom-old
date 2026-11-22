@@ -51,12 +51,12 @@ class AgentConversationStoreTest {
     @Test
     fun repeatedSavePreservesRoleBindingRevisionsPendingRewriteAndOriginalJournal() = runBlocking {
         val original = AgentModelClient.ConversationMessage(
-            role = "assistant", content = "原始回答", messageId = "assistant-role-1",
+            role = "assistant", content = "original answer", messageId = "assistant-role-1",
         )
         val binding = RoleplayBinding(
             characterId = "character-1",
-            cardSnapshotJson = CharacterCardCodec.encodeJson(CharacterCardCodec.create("旅人")),
-            characterName = "旅人", userName = "朋友", userDescription = "同行的伙伴",
+            cardSnapshotJson = CharacterCardCodec.encodeJson(CharacterCardCodec.create("traveler")),
+            characterName = "traveler", userName = "friend", userDescription = "traveling companion",
         )
         val state = AgentChatHomeUiState(
             messages = listOf(AgentMessageUi(id = original.messageId, content = original.content, isStreaming = false)),
@@ -67,27 +67,27 @@ class AgentConversationStoreTest {
                 pendingRewrites = mapOf("rewrite-in-flight" to original.messageId),
             ),
         )
-        var role = RoleplayConversationReducer.edit(state, original.messageId, "用户修订的回答")!!
+        var role = RoleplayConversationReducer.edit(state, original.messageId, "user-revised answer")!!
         repeat(2) {
             AgentConversationStore.save(
                 context, "role", mapOf("role" to role, "ordinary" to AgentChatHomeUiState(
-                    messages = listOf(UserMessageUi(id = "ordinary-user", content = "查看电量")),
+                    messages = listOf(UserMessageUi(id = "ordinary-user", content = "check battery")),
                     input = "", isStreaming = false, thinkingEnabled = false,
-                )), mapOf("role" to "旅人", "ordinary" to "查看电量"), mapOf("role" to 1L, "ordinary" to 2L),
+                )), mapOf("role" to "traveler", "ordinary" to "check battery"), mapOf("role" to 1L, "ordinary" to 2L),
             )
             val restored = AgentConversationStore.load(context)
             role = restored.conversationsById.getValue("role")
             assertEquals(binding, role.roleplay)
             assertEquals(listOf(original), role.journal)
-            assertEquals("用户修订的回答", role.history.single().content)
+            assertEquals("user-revised answer", role.history.single().content)
             assertEquals("rewrite-in-flight", role.roleplayMessages.pendingRewrites.keys.single())
-            assertEquals(listOf("原始回答", "用户修订的回答"), role.roleplayMessages.revisions.getValue(original.messageId).candidates)
+            assertEquals(listOf("original answer", "user-revised answer"), role.roleplayMessages.revisions.getValue(original.messageId).candidates)
             assertEquals(2, (role.messages.single() as AgentMessageUi).candidateCount)
             assertEquals(null, restored.conversationsById.getValue("ordinary").roleplay)
             assertTrue(restored.conversationsById.getValue("ordinary").roleplayMessages.revisions.isEmpty())
         }
         val switched = RoleplayConversationReducer.select(role, original.messageId, 0)!!
-        assertEquals("原始回答", switched.history.single().content)
+        assertEquals("original answer", switched.history.single().content)
         assertEquals(listOf(original), switched.journal)
     }
 
@@ -97,12 +97,12 @@ class AgentConversationStoreTest {
             messages = listOf(
                 UserMessageUi(
                     id = "user-1",
-                    content = "看一下当前屏幕",
+                    content = "look at the current screen",
                     isEdited = true,
                 ),
                 ThinkingMessageUi(
                     id = "thinking-1",
-                    content = "需要先观察屏幕",
+                    content = "need to observe the screen first",
                     isStreaming = false,
                     elapsedSeconds = 3,
                     collapsed = true,
@@ -111,14 +111,14 @@ class AgentConversationStoreTest {
                     id = "tool-1",
                     toolName = "run_command",
                     status = ToolActivityStatusUi.Success,
-                    argumentsSummary = "执行命令 · Android · root",
+                    argumentsSummary = "execute command · Android · root",
                     command = "pm list packages | head",
                     resultSummary = "ok=true, chars=100",
                     imageCount = 1,
                 ),
                 AgentMessageUi(
                     id = "assistant-1",
-                    content = "| 项目 | 内容 |\n| --- | --- |\n| 电量 | 88% |",
+                    content = "| Item | content |\n| --- | --- |\n| Battery | 88% |",
                     isStreaming = false,
                     renderMarkdown = true,
                     usage = TokenUsageUi(
@@ -133,7 +133,7 @@ class AgentConversationStoreTest {
                 SystemNoticeMessageUi(
                     id = "compaction-1",
                     code = SystemNoticeCode.ContextCompaction,
-                    detail = "上下文已压缩（fold-1）",
+                    detail = "context compacted (fold-1)",
                     usage = TokenUsageUi(
                         inputTokens = 95,
                         outputTokens = 12,
@@ -148,12 +148,12 @@ class AgentConversationStoreTest {
             history = listOf(
                 io.github.mangi.eta.agent.model.AgentModelClient.ConversationMessage(
                     role = "user",
-                    content = "看一下当前屏幕",
+                    content = "look at the current screen",
                 ),
                 io.github.mangi.eta.agent.model.AgentModelClient.ConversationMessage(
                     role = "assistant",
                     content = "",
-                    reasoningContent = "需要先观察屏幕",
+                    reasoningContent = "need to observe the screen first",
                     toolCallsJson = """[{"id":"toolu_1","type":"function","function":{"name":"observe_screen","arguments":"{}"}}]""",
                 ),
                 io.github.mangi.eta.agent.model.AgentModelClient.ConversationMessage(
@@ -163,10 +163,10 @@ class AgentConversationStoreTest {
                 ),
                 io.github.mangi.eta.agent.model.AgentModelClient.ConversationMessage(
                     role = "assistant",
-                    content = "| 项目 | 内容 |\n| --- | --- |\n| 电量 | 88% |",
+                    content = "| Item | content |\n| --- | --- |\n| Battery | 88% |",
                 ),
             ),
-            input = "不应该保存草稿",
+            input = "must not save the draft",
             isStreaming = true,
             thinkingEnabled = true,
             reasoningEffort = ReasoningEffort.HIGH,
@@ -177,7 +177,7 @@ class AgentConversationStoreTest {
                 context = context,
                 selectedConversationId = "conv-1",
                 conversationsById = mapOf("conv-1" to conversation),
-                titles = mapOf("conv-1" to "屏幕分析"),
+                titles = mapOf("conv-1" to "screen analysis"),
                 updatedAt = mapOf("conv-1" to 1234L),
             )
         }
@@ -185,7 +185,7 @@ class AgentConversationStoreTest {
         val snapshot = AgentConversationStore.load(context)
 
         assertEquals("conv-1", snapshot.selectedConversationId)
-        assertEquals("屏幕分析", snapshot.titles.getValue("conv-1"))
+        assertEquals("screen analysis", snapshot.titles.getValue("conv-1"))
         assertEquals(1234L, snapshot.updatedAt.getValue("conv-1"))
         val restored = snapshot.conversationsById.getValue("conv-1")
         assertEquals("", restored.input)
@@ -230,7 +230,7 @@ class AgentConversationStoreTest {
 
     @Test
     fun conversationModelBindingRoundTripsAndChangeAloneIsPersisted() = runBlocking {
-        val user = UserMessageUi(id = "user-1", content = "你好")
+        val user = UserMessageUi(id = "user-1", content = "hello")
         val base = AgentChatHomeUiState(
             messages = listOf(user), input = "", isStreaming = false, thinkingEnabled = false,
             reasoningEffort = ReasoningEffort.OFF,
@@ -350,11 +350,11 @@ class AgentConversationStoreTest {
     fun unopenedConversationOnlyReadsItsBoundedPreview() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
         dao.insertConversations(listOf(
-            ConversationEntity("active", "当前", false, createdAt = 1L, updatedAt = 2L),
-            ConversationEntity("dormant", "未打开", false, revisionsJson = "invalid deferred revisions",
+            ConversationEntity("active", "current", false, createdAt = 1L, updatedAt = 2L),
+            ConversationEntity("dormant", "unopened", false, revisionsJson = "invalid deferred revisions",
                 createdAt = 1L, updatedAt = 1L),
         ))
-        dao.insertMessages(listOf(ConversationMessageEntity("dormant-last", "dormant", 0, "assistant", "内容".repeat(20_000))))
+        dao.insertMessages(listOf(ConversationMessageEntity("dormant-last", "dormant", 0, "assistant", "content".repeat(20_000))))
         dao.insertState(ConversationStateEntity(selectedConversationId = "active"))
 
         val dormant = AgentConversationStore.load(context).conversationsById.getValue("dormant")
@@ -369,21 +369,21 @@ class AgentConversationStoreTest {
     fun unloadedCharacterKeepsItsIdentityWithoutRetainingTheCard() = runBlocking {
         val base = AgentChatHomeUiState(messages = emptyList(), input = "", isStreaming = false, thinkingEnabled = false)
         val role = base.copy(roleplay = RoleplayBinding(
-            characterId = "character", cardSnapshotJson = "角色😀".repeat(20_000), characterName = "旅人",
-            avatarPath = "/test/avatar.png", userDescription = "很长的用户设定".repeat(5_000),
+            characterId = "character", cardSnapshotJson = "character😀".repeat(20_000), characterName = "traveler",
+            avatarPath = "/test/avatar.png", userDescription = "very long user setting".repeat(5_000),
         ))
         AgentConversationStore.save(context, "active", mapOf("active" to base, "role" to role),
-            mapOf("active" to "当前", "role" to "旅人"), mapOf("active" to 2L, "role" to 1L))
+            mapOf("active" to "current", "role" to "traveler"), mapOf("active" to 2L, "role" to 1L))
 
         val placeholder = AgentConversationStore.load(context).conversationsById.getValue("role")
 
         assertFalse(placeholder.isConversationLoaded)
         assertEquals(null, placeholder.roleplay)
-        assertEquals("旅人", placeholder.conversationCharacterName)
+        assertEquals("traveler", placeholder.conversationCharacterName)
         assertEquals("/test/avatar.png", placeholder.conversationCharacterAvatarPath)
         val unloaded = AgentConversationStore.unloadConversation(role)
         assertEquals(null, unloaded.roleplay)
-        assertEquals("旅人", unloaded.conversationCharacterName)
+        assertEquals("traveler", unloaded.conversationCharacterName)
         assertEquals("/test/avatar.png", unloaded.conversationCharacterAvatarPath)
     }
 
@@ -391,15 +391,15 @@ class AgentConversationStoreTest {
     fun searchFindsUnloadedChunkBoundariesAndTreatsSqlWildcardsLiterally() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
         dao.insertConversations(listOf(
-            ConversationEntity("literal", "文字", false, createdAt = 1L, updatedAt = 1L),
-            ConversationEntity("other", "另一条", false, createdAt = 1L, updatedAt = 2L),
+            ConversationEntity("literal", "text", false, createdAt = 1L, updatedAt = 1L),
+            ConversationEntity("other", "another one", false, createdAt = 1L, updatedAt = 2L),
         ))
         dao.insertMessages(listOf(
-            ConversationMessageEntity("literal-message", "literal", 0, "assistant", "x".repeat(16_381) + "跨越边界 100%_done"),
+            ConversationMessageEntity("literal-message", "literal", 0, "assistant", "x".repeat(16_381) + "cross boundary 100%_done"),
             ConversationMessageEntity("other-message", "other", 0, "assistant", "100xxfinished"),
         ))
 
-        assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "跨越边界"))
+        assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "cross boundary"))
         assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "%_"))
         assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "DONE"))
         assertEquals(emptySet<String>(), AgentConversationStore.searchConversationIds(context, "eta:chunks"))
@@ -410,14 +410,14 @@ class AgentConversationStoreTest {
     fun searchRetainsUnicodeCaseFoldingAndQueriesSpanningManyChunks() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
         dao.insertConversations(listOf(
-            ConversationEntity("unicode", "文字", false, createdAt = 1L, updatedAt = 1L),
-            ConversationEntity("large", "长文字", false, createdAt = 1L, updatedAt = 2L),
-            ConversationEntity("folded", "兼容字符", false, createdAt = 1L, updatedAt = 3L),
+            ConversationEntity("unicode", "text", false, createdAt = 1L, updatedAt = 1L),
+            ConversationEntity("large", "long text", false, createdAt = 1L, updatedAt = 2L),
+            ConversationEntity("folded", "compatible characters", false, createdAt = 1L, updatedAt = 3L),
         ))
-        val query = "开始" + "a".repeat(60_000) + "结束"
+        val query = "start" + "a".repeat(60_000) + "end"
         dao.insertMessages(listOf(
             ConversationMessageEntity("unicode-message", "unicode", 0, "assistant", "äpfel"),
-            ConversationMessageEntity("large-message", "large", 0, "assistant", "前缀$query 后缀"),
+            ConversationMessageEntity("large-message", "large", 0, "assistant", "prefix$query suffix"),
             ConversationMessageEntity("folded-message", "folded", 0, "assistant", "İKſ"),
         ))
 
@@ -429,28 +429,28 @@ class AgentConversationStoreTest {
     @Test
     fun searchIncludesMatchingLocalizedNoticeCodesFromEarlierMessages() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
-        dao.insertConversations(listOf(ConversationEntity("notice", "标题", false, createdAt = 1L, updatedAt = 1L)))
+        dao.insertConversations(listOf(ConversationEntity("notice", "title", false, createdAt = 1L, updatedAt = 1L)))
         dao.insertMessages(listOf(
             ConversationMessageEntity("old-notice", "notice", 0, "system_notice", SystemNoticeCode.Interrupted.wireValue),
-            ConversationMessageEntity("new-message", "notice", 1, "assistant", "新的回答"),
+            ConversationMessageEntity("new-message", "notice", 1, "assistant", "new answer"),
         ))
 
-        assertEquals(setOf("notice"), AgentConversationStore.searchConversationIds(context, "已中断", listOf(SystemNoticeCode.Interrupted)))
+        assertEquals(setOf("notice"), AgentConversationStore.searchConversationIds(context, "interrupted", listOf(SystemNoticeCode.Interrupted)))
     }
 
     @Test
     fun savePreservesCompleteContextAndDisplayedMessages() {
-        val displayedContent = "展示消息-${"d".repeat(120_000)}"
+        val displayedContent = "display message-${"d".repeat(120_000)}"
         val history = buildList {
             repeat(20) { index ->
                 add(
                     AgentModelClient.ConversationMessage(
                         role = "assistant",
-                        content = "历史-$index-${"h".repeat(20_000)}",
+                        content = "history-$index-${"h".repeat(20_000)}",
                     )
                 )
             }
-            add(AgentModelClient.ConversationMessage(role = "user", content = "最新上下文"))
+            add(AgentModelClient.ConversationMessage(role = "user", content = "latest context"))
         }
 
         runBlocking {
@@ -468,7 +468,7 @@ class AgentConversationStoreTest {
                         thinkingEnabled = false,
                     )
                 ),
-                titles = mapOf("conv-large" to "长对话"),
+                titles = mapOf("conv-large" to "long conversation"),
                 updatedAt = mapOf("conv-large" to 1L),
             )
         }
@@ -486,7 +486,7 @@ class AgentConversationStoreTest {
         assertEquals(history, restored.history)
         assertEquals(history, restored.journal)
         assertEquals(displayedContent, (restored.messages.single() as UserMessageUi).content)
-        assertEquals("最新上下文", restored.history.last().content)
+        assertEquals("latest context", restored.history.last().content)
     }
 
     @Test
@@ -497,7 +497,7 @@ class AgentConversationStoreTest {
                 listOf(
                     ConversationEntity(
                         id = "conv-legacy-large",
-                        title = "旧长对话",
+                        title = "old long conversation",
                         thinkingEnabled = false,
                         historyJson = "x".repeat(2_500_000),
                         createdAt = 1L,
@@ -512,7 +512,7 @@ class AgentConversationStoreTest {
                         conversationId = "conv-legacy-large",
                         sortIndex = 0,
                         type = "user",
-                        content = "从消息记录恢复",
+                        content = "restore from message records",
                     )
                 )
             )
@@ -522,8 +522,8 @@ class AgentConversationStoreTest {
             .conversationsById
             .getValue("conv-legacy-large")
 
-        assertEquals("从消息记录恢复", restored.history.single().content)
-        assertEquals("从消息记录恢复", (restored.messages.single() as UserMessageUi).content)
+        assertEquals("restore from message records", restored.history.single().content)
+        assertEquals("restore from message records", (restored.messages.single() as UserMessageUi).content)
     }
 
     @Test
@@ -540,12 +540,12 @@ class AgentConversationStoreTest {
         try {
             val state = AgentAppState(context, scope)
             val binding = RoleplayBinding(
-                "local-character", CharacterCardCodec.encodeJson(CharacterCardCodec.create("旅人")),
-                "旅人", userName = "小林",
+                "local-character", CharacterCardCodec.encodeJson(CharacterCardCodec.create("traveler")),
+                "traveler", userName = "Xiaolin",
             )
-            state.startCharacterConversation(binding, "你好，{{user}}，我是{{char}}。")
+            state.startCharacterConversation(binding, "Hello, {{user}}, I am {{char}}.")
             assertFalse(state.homeState.isStreaming)
-            assertEquals("你好，小林，我是旅人。", (state.homeState.messages.single() as AgentMessageUi).content)
+            assertEquals("Hello, Xiaolin, I am the traveler.", (state.homeState.messages.single() as AgentMessageUi).content)
             assertEquals(binding, state.homeState.roleplay)
             assertTrue(state.homeState.appliedRuntimeRunIds.isEmpty())
             assertTrue(state.homeState.roleplayMessages.pendingRewrites.isEmpty())
@@ -620,19 +620,19 @@ class AgentConversationStoreTest {
                 selectedConversationId = "conv-1",
                 conversationsById = mapOf(
                     "conv-1" to AgentChatHomeUiState(
-                        messages = listOf(UserMessageUi(id = "user-1", content = "第一条")),
+                        messages = listOf(UserMessageUi(id = "user-1", content = "first item")),
                         input = "",
                         isStreaming = false,
                         thinkingEnabled = false,
                     ),
                     "conv-2" to AgentChatHomeUiState(
-                        messages = listOf(UserMessageUi(id = "user-2", content = "第二条")),
+                        messages = listOf(UserMessageUi(id = "user-2", content = "second item")),
                         input = "",
                         isStreaming = false,
                         thinkingEnabled = false,
                     ),
                 ),
-                titles = mapOf("conv-1" to "会话一", "conv-2" to "会话二"),
+                titles = mapOf("conv-1" to "conversation one", "conv-2" to "conversation two"),
                 updatedAt = mapOf("conv-1" to 2L, "conv-2" to 1L),
                 pinnedIds = setOf("conv-1"),
             )
@@ -641,7 +641,7 @@ class AgentConversationStoreTest {
             val loaded = AgentConversationStore.load(context)
             assertEquals(setOf("conv-1"), loaded.pinnedIds)
 
-            // conv-2 处于未展开（isConversationLoaded = false）状态时切换置顶，也应正确写回数据库。
+            // when conv-2 is in the unexpanded state (isConversationLoaded = false) and its pin state is toggled, it should also be written back to the database correctly.
             val secondPersistence = AgentConversationPersistence(loaded)
             secondPersistence.save(
                 context,

@@ -184,7 +184,7 @@ class UiStyleThemeAndScreensTest {
             assertEquals(baseDensity, pageDensity, 0.001f)
             assertEquals(baseDensity, activity.resources.displayMetrics.density, 0.001f)
 
-            // 再切回 COUI：状态依然保持不变
+            // switch back to COUI: the state still stays unchanged
             appearance = appearance.copy(uiStyle = AppearanceUiStyle.COUI)
             settle()
 
@@ -216,9 +216,9 @@ class UiStyleThemeAndScreensTest {
             groups = listOf(
                 ToolGroupUi(
                     id = "device",
-                    title = "设备控制",
+                    title = "device control",
                     tools = listOf(
-                        ToolItemUi(id = "terminal", title = "终端", summary = "执行命令"),
+                        ToolItemUi(id = "terminal", title = "terminal", summary = "execute command"),
                     ),
                 ),
             ),
@@ -229,7 +229,7 @@ class UiStyleThemeAndScreensTest {
                 SkillItemUi(
                     id = "demo-skill",
                     name = "Demo Skill",
-                    description = "测试技能描述",
+                    description = "test skill description",
                     source = "builtin",
                     installed = true,
                     enabled = true,
@@ -241,10 +241,10 @@ class UiStyleThemeAndScreensTest {
             items = listOf(
                 PermissionHealthItemUi(
                     id = "overlay",
-                    title = "悬浮窗权限",
-                    summary = "用于显示运行胶囊",
+                    title = "floating window permission",
+                    summary = "used to show the running capsule",
                     status = PermissionStatusUi.Available,
-                    primaryActionLabel = "已授权",
+                    primaryActionLabel = "authorized",
                 ),
             ),
         )
@@ -260,7 +260,7 @@ class UiStyleThemeAndScreensTest {
         val browserSession = BrowserSessionRegistry.get("test-session")
 
         try {
-            // Robolectric 的 ApplicationInfo 未载入 Manifest 引用的语言资源。
+            // Robolectric's ApplicationInfo does not load the language resources referenced by the manifest.
             ReflectionHelpers.setField(appInfo, "localeConfigRes", R.xml.locales_config)
             activity.setContent {
                 key(screenIndex, uiStyle) {
@@ -336,7 +336,7 @@ class UiStyleThemeAndScreensTest {
                 }
             }
 
-            // 验证 AppearanceSettingsScreen 在 COUI 模式下的返回按钮语义点击可触发 onBack
+            // verify that a semantic click on AppearanceSettingsScreen's back button triggers onBack in COUI mode
             screenIndex = 0
             uiStyle = AppearanceUiStyle.COUI
             looper.idle()
@@ -404,17 +404,17 @@ class UiStyleThemeAndScreensTest {
                             visible = false
                         }
                         if (useBottomSheet) {
-                            CouiBottomSheet(show = visible, title = "测试底部面板", onDismissRequest = dismiss) {
+                            CouiBottomSheet(show = visible, title = "test bottom panel", onDismissRequest = dismiss) {
                                 LazyColumn(Modifier.fillMaxWidth().height(160.dp), state = sheetListState) {
-                                    items(20) { Text("列表条目 ${it + 1}") }
+                                    items(20) { Text("list item ${it + 1}") }
                                 }
                             }
                         } else {
                             CouiConfirmDialog(
                                 visible = visible,
-                                title = "测试弹窗",
+                                title = "test dialog",
                                 message = null,
-                                confirmText = "确认",
+                                confirmText = "confirm",
                                 onConfirm = {},
                                 onDismissRequest = dismiss,
                             )
@@ -431,15 +431,15 @@ class UiStyleThemeAndScreensTest {
 
             listOf(false, true).forEach { bottomSheet ->
                 useBottomSheet = bottomSheet
-                val title = if (bottomSheet) "测试底部面板" else "测试弹窗"
+                val title = if (bottomSheet) "test bottom panel" else "test dialog"
                 repeat(2) {
                     visible = true
                     settle()
-                    assertTrue("应显示$title", showsText(title))
+                    assertTrue("should show $title", showsText(title))
                     if (bottomSheet) {
                         val layout = sheetListState.layoutInfo
                         assertTrue(
-                            "面板列表应有可见条目，实际视口为 ${layout.viewportSize}",
+                            "the panel list should have visible items, actual viewport is ${layout.viewportSize}",
                             layout.visibleItemsInfo.any { it.index == 0 },
                         )
                     }
@@ -448,7 +448,7 @@ class UiStyleThemeAndScreensTest {
                     settle()
                     assertEquals(previousDismissals + 1, dismissals)
                     assertEquals(0, pageBacks)
-                    assertTrue("关闭后应隐藏$title", !showsText(title))
+                    assertTrue("should hide $title after closing", !showsText(title))
                 }
             }
             activity.onBackPressedDispatcher.onBackPressed()

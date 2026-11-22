@@ -44,7 +44,7 @@ class AgentLocalToolsPermissionTest {
     @Test
     fun lostVirtualDisplayDoesNotSilentlyObserveOrOperateTheMainDisplay() {
         tools(
-            screenObservationProvider = { error("虚拟屏已失效，不应把观察路由到主屏") },
+            screenObservationProvider = { error("The virtual display is gone; observation must not be routed to the main screen") },
         ).use { tools ->
             AgentLocalTools::class.java.getDeclaredField("activeDisplayId").apply {
                 isAccessible = true
@@ -70,7 +70,7 @@ class AgentLocalToolsPermissionTest {
             screenObservationProvider = { observation("observed", it.includeScreenshot) },
             beforeToolExecution = { name ->
                 if (name in setOf("observe_screen", "release_gui")) ToolExecutionDecision.Allow
-                else ToolExecutionDecision.Reject("ACTION_REACHED", "动作执行前测试边界")
+                else ToolExecutionDecision.Reject("ACTION_REACHED", "test boundary before action execution")
             },
         )
         fun call(name: String, arguments: String = "{}") = JSONObject(
@@ -85,9 +85,9 @@ class AgentLocalToolsPermissionTest {
             assertTrue(call("observe_screen").getBoolean("ok"))
             assertTrue(coordinator.pauseForUser("gui-test"))
             assertTrue(coordinator.resumeForUser())
-            assertEquals("NO_OBSERVATION", call("type_text", """{"text":"旧页面不能输入"}""").getString("code"))
+            assertEquals("NO_OBSERVATION", call("type_text", """{"text":"cannot type into the old page"}""").getString("code"))
             assertTrue(call("observe_screen").getBoolean("ok"))
-            assertEquals("ACTION_REACHED", call("type_text", """{"text":"新观察后到达动作边界"}""").getString("code"))
+            assertEquals("ACTION_REACHED", call("type_text", """{"text":"reached the action boundary after a new observation"}""").getString("code"))
         }
     }
 
@@ -133,7 +133,7 @@ class AgentLocalToolsPermissionTest {
     fun personalContextRechecksSensitiveReadPermissionAndRedactsDeniedCalls() {
         val enabled = AtomicBoolean(true)
         val tools = tools(rootAvailable = { true }, sensitiveReadEnabled = enabled::get,
-            beforeToolExecution = { error("已关闭个人信息读取时不能进入数据源执行阶段") })
+            beforeToolExecution = { error("When personal-information reading is disabled, the data-source execution stage must not be entered") })
         tools.use {
             enabled.set(false)
             val result = it.execute(AgentModelClient.ToolCall("personal", "search_bills", "{}"))
@@ -223,7 +223,7 @@ class AgentLocalToolsPermissionTest {
             beforeToolExecution = {
                 ToolExecutionDecision.Reject(
                     code = "ENTRY_SURFACE_NOT_READY",
-                    message = "入口窗口尚未确认关闭",
+                    message = "the entry window has not yet confirmed closing",
                 )
             },
         )
@@ -246,7 +246,7 @@ class AgentLocalToolsPermissionTest {
             beforeToolExecution = {
                 ToolExecutionDecision.Reject(
                     code = "ACCESSIBILITY_PROTECTION_UNAVAILABLE",
-                    message = "无障碍保护后端不可用",
+                    message = "accessibility protection backend unavailable",
                 )
             },
         )
@@ -261,7 +261,7 @@ class AgentLocalToolsPermissionTest {
         val json = JSONObject(result.content)
 
         assertEquals("ACCESSIBILITY_PROTECTION_UNAVAILABLE", json.getString("code"))
-        assertEquals("无障碍保护后端不可用", json.getString("message"))
+        assertEquals("accessibility protection backend unavailable", json.getString("message"))
         tools.close()
     }
 
@@ -341,7 +341,7 @@ class AgentLocalToolsPermissionTest {
             val result = tools.execute(AgentModelClient.ToolCall(id = "call-1", name = "type_text", argumentsJson = arguments))
             assertEquals(arguments, "INVALID_ARGUMENT", JSONObject(result.content).getString("code"))
         }
-        // 无障碍未连接时 replace 明确失败，不会退回到盲发按键。
+        // When accessibility is disconnected, replace fails explicitly instead of falling back to blind key injection.
         val replace = tools.execute(AgentModelClient.ToolCall(id = "call-2", name = "type_text", argumentsJson = "{\"text\":\"hi\"}"))
         assertEquals("ACCESSIBILITY_UNAVAILABLE", JSONObject(replace.content).getString("code"))
         tools.close()

@@ -27,11 +27,11 @@ class AgentColorOsMemoryToolsTest {
     fun hookBridgeRoundTripsBoundedPayload() {
         val encodedRequest = ColorOsMemoryBridgeProtocol.encodeRequest(
             ColorOsMemoryBridgeProtocol.OPERATION_SEARCH,
-            JSONObject().put("query", "快递").put("limit", 10),
+            JSONObject().put("query", "delivery").put("limit", 10),
         )
         val request = requireNotNull(ColorOsMemoryBridgeProtocol.decodeRequest(encodedRequest))
         assertEquals(ColorOsMemoryBridgeProtocol.OPERATION_SEARCH, request.operation)
-        assertEquals("快递", request.args.getString("query"))
+        assertEquals("delivery", request.args.getString("query"))
 
         val content = JSONObject().put("ok", true).put("count", 2).toString()
         val envelope = ColorOsMemoryBridgeProtocol.encodeResponse(content)
@@ -43,14 +43,14 @@ class AgentColorOsMemoryToolsTest {
     fun hookCommandContainsOnlyFixedProviderAndEncodedArgument() {
         val encodedRequest = ColorOsMemoryBridgeProtocol.encodeRequest(
             ColorOsMemoryBridgeProtocol.OPERATION_PLACES,
-            JSONObject().put("query", "公司"),
+            JSONObject().put("query", "company"),
         )
         val command = ColorOsMemoryBridgeProtocol.buildRootCommand(encodedRequest)
 
         assertTrue(command.contains(ColorOsMemoryBridgeProtocol.PROVIDER_URI))
         assertTrue(command.contains(ColorOsMemoryBridgeProtocol.METHOD))
         assertTrue(command.contains(encodedRequest))
-        assertFalse(command.contains("公司"))
+        assertFalse(command.contains("company"))
     }
 
     @Test

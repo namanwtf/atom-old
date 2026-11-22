@@ -20,7 +20,7 @@ class BackgroundCommandNotificationTest {
     @Test fun notificationShowsOutcomeAndOpensTerminalWithoutCommandOrLogContents() {
         val context = RuntimeEnvironment.getApplication()
         val task = DetachedTask("notification-job", 42, "token", "echo secret-command", "/private", "user",
-            TerminalEnvironment.ANDROID, "/private/log", 1, commandTask = true, description = "生成报告",
+            TerminalEnvironment.ANDROID, "/private/log", 1, commandTask = true, description = "generate a report",
             completedAt = 2, exitCode = 0)
         BackgroundCommandNotification.show(context, task)
         val notification = context.getSystemService(NotificationManager::class.java).activeNotifications.single().notification
@@ -28,7 +28,7 @@ class BackgroundCommandNotificationTest {
             context.getString(R.string.execution_bg_cmd_completed),
             notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString(),
         )
-        assertEquals("生成报告", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals("generate a report", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
         assertFalse(notification.extras.toString().contains("secret-command"))
         assertEquals(Notification.VISIBILITY_PRIVATE, notification.visibility)
         assertEquals(MainActivity.ACTION_OPEN_TERMINAL, shadowOf(notification.contentIntent).savedIntent.action)

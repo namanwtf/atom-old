@@ -14,18 +14,18 @@ class AgentRoleplayRuntimeTest {
     @Test
     fun continuationPromptAndLaterSteeringKeepTheirUiSupplementIdentifiers() {
         val controller = AgentRunController()
-        controller.steer("后一条补充")
+        controller.steer("the later supplement")
         val provider = provider { request ->
             val users = (0 until request.messages.length()).map { request.messages.getJSONObject(it) }
                 .filter { it.optString("role") == "user" }
             assertEquals(listOf("user-next-supplement-7", "user-next-supplement-8"),
                 users.map { it.getString("_eta_message_id") })
-            reply("完成补充")
+            reply("supplement completed")
         }
         val result = AgentModelClient.complete(
-            config = config(), prompt = "最初续接", operationId = "next",
+            config = config(), prompt = "initial continuation", operationId = "next",
             initialUserMessageId = "user-next-supplement-7", initialSupplementIndex = 7,
-            runController = controller, provider = provider, toolExecutor = { error("无需工具") },
+            runController = controller, provider = provider, toolExecutor = { error("no tool needed") },
         )
         assertEquals("user-next-supplement-8", result.transcript.first().messageId)
     }
@@ -35,12 +35,12 @@ class AgentRoleplayRuntimeTest {
         val context = roleplay()
         val provider = provider { request ->
             val text = request.messages.toString()
-            assertTrue(text.contains("林舟"))
-            assertTrue(text.contains("工具合同"))
-            assertFalse(text.contains("你是 Eta。"))
+            assertTrue(text.contains("Lin Zhou"))
+            assertTrue(text.contains("tool contract"))
+            assertFalse(text.contains("you are Eta."))
             assertFalse(text.contains("PROVIDER_IDENTITY"))
-            assertFalse(text.contains("现实工具操作仍由 Eta 完成"))
-            assertTrue(text.contains("执行现实任务时也保持角色的身份和语气"))
+            assertFalse(text.contains("real-world tool operations are still performed by Eta"))
+            assertTrue(text.contains("keep the character's identity and tone even when performing real-world tasks"))
             val names = (0 until request.tools.length()).map {
                 request.tools.getJSONObject(it).getJSONObject("function").getString("name")
             }
@@ -48,13 +48,13 @@ class AgentRoleplayRuntimeTest {
             assertTrue("memory_get" in names)
             assertFalse("memory_write" in names)
             assertTrue(CharacterMemoryTools.WRITE in names)
-            reply("我们走吧。")
+            reply("Let's go.")
         }
         val response = AgentModelClient.complete(
-            config = config(), prompt = "同行", roleplayContext = context,
+            config = config(), prompt = "travel together", roleplayContext = context,
             memoryContext = AgentMemoryContextBuilder.empty(null),
             additionalTools = JSONArray().also(CharacterMemoryTools::appendSchemas),
-            provider = provider, toolExecutor = { error("本次不应执行工具") },
+            provider = provider, toolExecutor = { error("no tool should run this time") },
             sessionId = "conversation", operationId = "run-one",
         )
         assertEquals("assistant-run-one-1", response.transcript.single().messageId)
@@ -68,16 +68,16 @@ class AgentRoleplayRuntimeTest {
             assertEquals(0, request.effectiveTools.length())
             assertFalse(request.effectiveConfig.hostedWebSearchEnabled)
             assertEquals("", request.effectiveConfig.extraBodyJson)
-            assertTrue(request.messages.toString().contains("原来的实际结果"))
-            reply("改写后的结果")
+            assertTrue(request.messages.toString().contains("the original actual result"))
+            reply("the rewritten result")
         }
         val result = AgentModelClient.complete(
             config = config().copy(hostedWebSearchEnabled = true, extraBodyJson = "{\"tools\":[{}]}"),
-            prompt = "原来的实际结果", roleplayContext = roleplay(), rewriteReply = true,
-            provider = provider, toolExecutor = { error("改写不能执行任何工具") },
+            prompt = "the original actual result", roleplayContext = roleplay(), rewriteReply = true,
+            provider = provider, toolExecutor = { error("rewriting must not execute any tool") },
             onContextSnapshot = { snapshots++ },
         )
-        assertEquals("改写后的结果", result.content)
+        assertEquals("the rewritten result", result.content)
         assertNull(result.contextSnapshot)
         assertEquals(0, snapshots)
     }
@@ -95,7 +95,7 @@ class AgentRoleplayRuntimeTest {
         }
         val failure = assertThrows(AgentModelExecutionException::class.java) {
             AgentModelClient.complete(
-                config = config(), prompt = "重新措辞", rewriteReply = true,
+                config = config(), prompt = "rephrase", rewriteReply = true,
                 provider = provider,
                 toolExecutor = { executions++; AgentModelClient.ToolResult("{}") },
                 onTranscript = { transcriptCommits++ },
@@ -111,54 +111,54 @@ class AgentRoleplayRuntimeTest {
     fun worldbookUsesCurrentDialogueAndDepthNeverSplitsToolExchange() {
         val context = RoleplayRunContext(
             "fixture", CharacterCardCodec.decodeJson("""{
-                "name":"林舟","description":"旅人",
+                "name":"Lin Zhou","description":"traveler",
                 "character_book":{"scan_depth":1,"entries":[
-                    {"keys":["钟楼"],"content":"塔顶住着信使","enabled":true}
-                ]},"extensions":{"depth_prompt":{"prompt":"深度设定","depth":1,"role":"user"}}
-            }"""), "用户", "", contextWindow = 16_000,
+                    {"keys":["clock tower"],"content":"a messenger lives at the top of the tower","enabled":true}
+                ]},"extensions":{"depth_prompt":{"prompt":"depth setting","depth":1,"role":"user"}}
+            }"""), "user", "", contextWindow = 16_000,
         )
         val source = JSONArray().put(context.personaMessage())
-            .put(AgentConversationCodec.userTextMessage("在广场等候"))
-            .put(JSONObject().put("role", "assistant").put("content", "钟楼")
+            .put(AgentConversationCodec.userTextMessage("wait at the plaza"))
+            .put(JSONObject().put("role", "assistant").put("content", "clock tower")
                 .put("tool_calls", JSONArray().put(JSONObject().put("id", "call"))))
-            .put(JSONObject().put("role", "tool").put("tool_call_id", "call").put("content", "钟楼"))
+            .put(JSONObject().put("role", "tool").put("tool_call_id", "call").put("content", "clock tower"))
         val original = source.toString()
         val first = context.projectMessages(source)
-        assertFalse(first.toString().contains("塔顶住着信使"))
+        assertFalse(first.toString().contains("a messenger lives at the top of the tower"))
         assertEquals(original, source.toString())
         val toolCallIndex = (0 until first.length()).first { first.getJSONObject(it).has("tool_calls") }
         assertEquals("tool", first.getJSONObject(toolCallIndex + 1).getString("role"))
-        source.put(AgentConversationCodec.userTextMessage("我们去钟楼"))
-        assertTrue(context.projectMessages(source).toString().contains("塔顶住着信使"))
+        source.put(AgentConversationCodec.userTextMessage("let's go to the clock tower"))
+        assertTrue(context.projectMessages(source).toString().contains("a messenger lives at the top of the tower"))
     }
 
     @Test
     fun worldbookDoesNotScanImageUrlsOrStructuredContentFieldNames() {
         val context = RoleplayRunContext("fixture", CharacterCardCodec.decodeJson("""{
-            "name":"林舟","character_book":{"entries":[
-                {"keys":["image_url"],"content":"不该被结构字段触发"},
-                {"keys":["tower.png"],"content":"不该被图片链接触发"},
-                {"keys":["钟楼"],"content":"正文触发的设定"}
+            "name":"Lin Zhou","character_book":{"entries":[
+                {"keys":["image_url"],"content":"must not be triggered by structural fields"},
+                {"keys":["tower.png"],"content":"must not be triggered by image links"},
+                {"keys":["clock tower"],"content":"the setting triggered by body text"}
             ]}
-        }"""), "用户", "", contextWindow = 128_000)
+        }"""), "user", "", contextWindow = 128_000)
         val input = JSONArray().put(context.personaMessage()).put(JSONObject().put("role", "user").put("content",
-            JSONArray().put(JSONObject().put("type", "text").put("text", "前往钟楼"))
+            JSONArray().put(JSONObject().put("type", "text").put("text", "head to the clock tower"))
                 .put(JSONObject().put("type", "image_url").put("image_url", JSONObject().put("url", "https://example.com/tower.png")))))
         val persona = context.projectMessages(input).getJSONObject(0).getString("content")
-        assertTrue(persona.contains("正文触发的设定"))
-        assertFalse(persona.contains("不该被"))
+        assertTrue(persona.contains("the setting triggered by body text"))
+        assertFalse(persona.contains("must not be"))
     }
 
     @Test
     fun worldbookBudgetUsesConfiguredWindowWithoutEstimatingDialogue() {
-        val lore = "世界知识".repeat(1_000)
-        val card = CharacterCardCodec.decodeJson(JSONObject().put("name", "林舟")
+        val lore = "world knowledge".repeat(1_000)
+        val card = CharacterCardCodec.decodeJson(JSONObject().put("name", "Lin Zhou")
             .put("character_book", JSONObject().put("entries", JSONArray().put(JSONObject()
                 .put("constant", true).put("content", lore)))).toString())
-        val context = RoleplayRunContext("fixture", card, "用户", "", contextWindow = 64_000)
-        val source = JSONArray().put(context.personaMessage()).put(AgentConversationCodec.userTextMessage("出发"))
+        val context = RoleplayRunContext("fixture", card, "user", "", contextWindow = 64_000)
+        val source = JSONArray().put(context.personaMessage()).put(AgentConversationCodec.userTextMessage("depart"))
         assertTrue(context.projectMessages(source).toString().contains(lore))
-        source.put(JSONObject().put("role", "assistant").put("content", "长历史".repeat(30_000)))
+        source.put(JSONObject().put("role", "assistant").put("content", "long history".repeat(30_000)))
         assertTrue(context.projectMessages(source).toString().contains(lore))
         assertFalse(context.copy(contextWindow = 8_000).projectMessages(source).toString().contains(lore))
     }
@@ -167,26 +167,26 @@ class AgentRoleplayRuntimeTest {
     fun providerProjectionKeepsDialogueDepthAndSystemTextWithoutInternalIdentifiers() {
         listOf("user", "assistant", "system").forEach { depthRole ->
             val card = CharacterCardCodec.decodeJson("""{
-                "name":"林舟","extensions":{"depth_prompt":{"prompt":"深度设定","depth":1,"role":"$depthRole"}}
+                "name":"Lin Zhou","extensions":{"depth_prompt":{"prompt":"depth setting","depth":1,"role":"$depthRole"}}
             }""")
-            val context = RoleplayRunContext("fixture", card, "用户", "", contextWindow = 128_000)
+            val context = RoleplayRunContext("fixture", card, "user", "", contextWindow = 128_000)
             val source = JSONArray().put(context.personaMessage())
-                .put(AgentConversationCodec.userTextMessage("第一句").put("_eta_message_id", "first-id"))
-                .put(JSONObject().put("role", "assistant").put("content", "第二句"))
+                .put(AgentConversationCodec.userTextMessage("first sentence").put("_eta_message_id", "first-id"))
+                .put(JSONObject().put("role", "assistant").put("content", "second sentence"))
             val projected = context.projectMessages(source)
             val chat = OpenAiRequestMessages.forChatCompletions(projected)
             val responses = ResponsesRequestBuilder.build(config(), projected, JSONArray())
-            assertTrue(chat.toString().contains("深度设定"))
-            assertTrue(responses.toString().contains("深度设定"))
+            assertTrue(chat.toString().contains("depth setting"))
+            assertTrue(responses.toString().contains("depth setting"))
             assertFalse(chat.toString().contains("_eta_message_id"))
             assertFalse(responses.toString().contains("_eta_message_id"))
             if (depthRole != "system") {
                 val chatTexts = (0 until chat.length()).map { chat.getJSONObject(it).optString("content") }
-                assertTrue(chatTexts.indexOf("第一句") < chatTexts.indexOf("深度设定"))
-                assertTrue(chatTexts.indexOf("深度设定") < chatTexts.indexOf("第二句"))
+                assertTrue(chatTexts.indexOf("first sentence") < chatTexts.indexOf("depth setting"))
+                assertTrue(chatTexts.indexOf("depth setting") < chatTexts.indexOf("second sentence"))
                 val input = responses.getJSONArray("input").toString()
-                assertTrue(input.indexOf("第一句") < input.indexOf("深度设定"))
-                assertTrue(input.indexOf("深度设定") < input.indexOf("第二句"))
+                assertTrue(input.indexOf("first sentence") < input.indexOf("depth setting"))
+                assertTrue(input.indexOf("depth setting") < input.indexOf("second sentence"))
             }
         }
     }
@@ -195,21 +195,21 @@ class AgentRoleplayRuntimeTest {
     fun roleplaySummarySeparatesStoryFromRealExecution() {
         val provider = provider { request ->
             assertEquals(ProviderRequestPurpose.COMPACTION, request.purpose)
-            assertTrue(request.messages.toString().contains("虚构剧情与真实设备操作分开记录"))
-            reply("剧情：二人在塔下相识。现实：尚未执行设备操作。")
+            assertTrue(request.messages.toString().contains("fictional plot and real device operations are recorded separately"))
+            reply("Plot: the two meet at the foot of the tower. Reality: no device operations were performed yet.")
         }
-        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", "固定规则"))
+        val messages = JSONArray().put(JSONObject().put("role", "system").put("content", "fixed rule"))
         repeat(8) { index ->
-            messages.put(AgentConversationCodec.userTextMessage("第$index 幕".repeat(300)))
-            messages.put(JSONObject().put("role", "assistant").put("content", "剧情内容".repeat(300)))
+            messages.put(AgentConversationCodec.userTextMessage("act $index".repeat(300)))
+            messages.put(JSONObject().put("role", "assistant").put("content", "story content".repeat(300)))
         }
         val result = AgentContextCompactor(config(), provider, AgentRunController(), roleplay = true)
             .compact(messages, 1, emptySet())
-        assertTrue(result.toString().contains("剧情：二人在塔下相识"))
+        assertTrue(result.toString().contains("Plot: the two meet at the foot of the tower"))
     }
 
     private fun roleplay() = RoleplayRunContext(
-        "fixture", CharacterCardCodec.create("林舟").withEdits(description = "一位旅人"), "旅伴", "",
+        "fixture", CharacterCardCodec.create("Lin Zhou").withEdits(description = "a traveler"), "companion", "",
         contextWindow = 128_000,
     )
 

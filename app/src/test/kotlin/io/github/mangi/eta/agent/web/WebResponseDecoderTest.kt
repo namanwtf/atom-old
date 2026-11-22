@@ -8,7 +8,7 @@ import org.junit.Test
 
 class WebResponseDecoderTest {
     @Test fun bomOverridesHttpCharsetAndHtmlMeta() {
-        val text = "<meta charset='GBK'><p>中文😀</p>"
+        val text = "<meta charset='GBK'><p>Chinese😀</p>"
         val bytes = byteArrayOf(0xef.toByte(), 0xbb.toByte(), 0xbf.toByte()) + text.toByteArray(Charsets.UTF_8)
         val decoded = decode(bytes, "text/html; charset=GBK")
         assertEquals(text, decoded.text)
@@ -18,7 +18,7 @@ class WebResponseDecoderTest {
     }
 
     @Test fun httpCharsetOverridesConflictingHtmlMetaForChineseContent() {
-        val text = "<meta charset='UTF-8'><article>中文说明</article>"
+        val text = "<meta charset='UTF-8'><article>Chinese description</article>"
         val decoded = decode(text.toByteArray(Charset.forName("GBK")), "text/html; Charset=\"GBK\"")
         assertEquals(text, decoded.text)
         assertEquals("GBK", decoded.charset)
@@ -27,8 +27,8 @@ class WebResponseDecoderTest {
 
     @Test fun htmlMetaSupportsCharsetAndHttpEquivDeclarations() {
         val documents = listOf(
-            "<html><head><meta charset='GBK'></head><body>中文正文</body></html>",
-            "<html><head><meta HTTP-EQUIV='Content-Type' content='text/html; charset=GBK'></head><body>中文正文</body></html>",
+            "<html><head><meta charset='GBK'></head><body>Chinese body</body></html>",
+            "<html><head><meta HTTP-EQUIV='Content-Type' content='text/html; charset=GBK'></head><body>Chinese body</body></html>",
         )
         for (text in documents) {
             val decoded = decode(text.toByteArray(Charset.forName("GBK")), "text/html")
@@ -39,7 +39,7 @@ class WebResponseDecoderTest {
     }
 
     @Test fun statefulHtmlEncodingIsNotRejectedBecauseItUsesEscapeBytes() {
-        val text = "<html><head><meta charset='ISO-2022-JP'></head><body>日本語</body></html>"
+        val text = "<html><head><meta charset='ISO-2022-JP'></head><body>Japanese</body></html>"
         val decoded = decode(text.toByteArray(Charset.forName("ISO-2022-JP")), null)
         assertEquals("text/html", decoded.contentType)
         assertEquals(text, decoded.text)
@@ -47,7 +47,7 @@ class WebResponseDecoderTest {
     }
 
     @Test fun missingContentTypeRecognizesHtmlAfterUtf8OrUtf16Bom() {
-        val text = "<!doctype html><html><body><main>中文网页😀</main></body></html>"
+        val text = "<!doctype html><html><body><main>Chinese page😀</main></body></html>"
         val encodings = listOf(
             "UTF-8" to byteArrayOf(0xef.toByte(), 0xbb.toByte(), 0xbf.toByte()),
             "UTF-16LE" to byteArrayOf(0xff.toByte(), 0xfe.toByte()),
@@ -58,22 +58,22 @@ class WebResponseDecoderTest {
             assertEquals("text/html", decoded.contentType)
             assertEquals(text, decoded.text)
             val page = WebPageContent.extract(decoded.text, decoded.contentType, "https://example.com/page")
-            assertEquals("中文网页😀", page.content)
+            assertEquals("Chinese page😀", page.content)
         }
     }
 
     @Test fun absentMimeDistinguishesHtmlFragmentsFromPlainTextAndExplicitMimeWins() {
-        val html = "  <main>正文</main>"
+        val html = "  <main>body</main>"
         assertEquals("text/html", decode(html.toByteArray(), null).contentType)
-        assertEquals("text/plain", decode("普通文本\n第二行".toByteArray(), null).contentType)
-        assertEquals("text/plain", decode("<binary>文字范例".toByteArray(), null).contentType)
+        assertEquals("text/plain", decode("plain text\nsecond line".toByteArray(), null).contentType)
+        assertEquals("text/plain", decode("<binary>text sample".toByteArray(), null).contentType)
         val plain = decode(html.toByteArray(), "text/plain; charset=utf-8")
         assertEquals("text/plain", plain.contentType)
         assertEquals(html, plain.text)
     }
 
     @Test fun utf8DownloadCutDropsOnlyIncompleteTrailingCharacterWithoutLossyFlag() {
-        val prefix = "已读中文"
+        val prefix = "read Chinese"
         val character = "😀".toByteArray(Charsets.UTF_8)
         for (count in 1..3) {
             val decoded = decode(prefix.toByteArray(Charsets.UTF_8) + character.take(count), "text/plain", truncated = true)
@@ -85,7 +85,7 @@ class WebResponseDecoderTest {
     @Test fun utf16DownloadCutNeverLeaksHalfCodeUnitOrSurrogate() {
         for (encoding in listOf("UTF-16LE", "UTF-16BE")) {
             val charset = Charset.forName(encoding)
-            val prefix = "已读"
+            val prefix = "read"
             val character = "😀".toByteArray(charset)
             for (count in 1..3) {
                 val decoded = decode(prefix.toByteArray(charset) + character.take(count), "text/plain; charset=$encoding", truncated = true)
@@ -97,7 +97,7 @@ class WebResponseDecoderTest {
 
     @Test fun gbkCutAndMalformedCompleteResponseHaveDifferentLossyStatus() {
         val charset = Charset.forName("GBK")
-        val incomplete = "A中".toByteArray(charset).dropLast(1).toByteArray()
+        val incomplete = "AC".toByteArray(charset).dropLast(1).toByteArray()
         val cut = decode(incomplete, "text/plain; charset=GBK", truncated = true)
         assertEquals("A", cut.text)
         assertFalse(cut.lossy)
@@ -136,7 +136,7 @@ class WebResponseDecoderTest {
     }
 
     @Test fun jsonBomIsRemovedButOriginalSpacingIsPreserved() {
-        val text = " {\n  \"message\": \"中文\"\n}\n"
+        val text = " {\n  \"message\": \"Chinese\"\n}\n"
         val decoded = decode(byteArrayOf(0xef.toByte(), 0xbb.toByte(), 0xbf.toByte()) + text.toByteArray(), "application/problem+json")
         assertEquals(text, decoded.text)
         assertEquals("application/problem+json", decoded.contentType)

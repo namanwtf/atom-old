@@ -19,10 +19,10 @@ class ProviderComponentsTest {
     fun providerDraftSaverPreservesUnsavedConfiguration() {
         val draft = ProviderConfigDraft(
             headers = listOf(ProviderHeaderDraft(header = io.github.mangi.eta.data.model.CustomHeader("User-Agent", "test-client"))),
-            name = "临时提供商",
+            name = "temporary provider",
             baseUrl = "https://api.example.com/v1",
             apiKey = "temporary-key",
-            systemPrompt = "临时提示词",
+            systemPrompt = "temporary prompt",
             isEnabled = false,
             endpointMode = "responses",
             hostedWebSearchEnabled = true,
@@ -58,12 +58,12 @@ class ProviderComponentsTest {
         for (profile in ProviderConnectionProfile.entries) {
             val providers = listOf(
                 OpenAiCompatibleProviderSetting(
-                    id = "legacy-built-in", name = "订阅", baseUrl = "https://old.example/v1",
+                    id = "legacy-built-in", name = "subscription", baseUrl = "https://old.example/v1",
                     authMode = profile.authMode, endpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS,
                     hostedWebSearchEnabled = true,
                 ),
                 CustomProviderSetting(
-                    id = "legacy-custom", name = "订阅副本", baseUrl = "https://old.example/v1",
+                    id = "legacy-custom", name = "subscription copy", baseUrl = "https://old.example/v1",
                     authMode = profile.authMode, endpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS,
                     hostedWebSearchEnabled = true,
                 ),
@@ -102,7 +102,7 @@ class ProviderComponentsTest {
     @Test
     fun switchingBackBeforeSavingPreservesCustomApiConfiguration() {
         val provider = CustomProviderSetting(
-            id = "custom-xai", name = "自定义", baseUrl = "https://gateway.example/v1",
+            id = "custom-xai", name = "custom", baseUrl = "https://gateway.example/v1",
             endpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS,
         )
         val original = ProviderConfigDraft.from(provider)
@@ -155,12 +155,12 @@ class ProviderComponentsTest {
     fun customProviderUsesRecognizedBaseUrlAndUnknownSourceFallsBack() {
         val recognized = CustomProviderSetting(
             id = "custom-deepseek",
-            name = "DeepSeek 副本",
+            name = "DeepSeek copy",
             baseUrl = "https://api.deepseek.com/v1",
         )
         val unknown = CustomProviderSetting(
             id = "custom-unknown",
-            name = "自定义",
+            name = "custom",
             baseUrl = "https://api.example.com/v1",
         )
 

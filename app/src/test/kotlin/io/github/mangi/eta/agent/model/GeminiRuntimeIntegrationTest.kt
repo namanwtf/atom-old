@@ -20,7 +20,7 @@ class GeminiRuntimeIntegrationTest {
     private val config = AgentModelClient.ModelConfig(
         providerType = ProviderTypes.GEMINI,
         baseUrl = "https://example.invalid/v1beta", apiKey = "fixture", model = "gemini-3.8-flash",
-        systemPrompt = "固定约束", reasoningEffort = ReasoningEffort.DEFAULT,
+        systemPrompt = "fixed constraint", reasoningEffort = ReasoningEffort.DEFAULT,
         reasoningCapabilities = GeminiModelCapabilities.reasoningCapabilities("gemini-3.8-flash"),
     )
 
@@ -29,7 +29,7 @@ class GeminiRuntimeIntegrationTest {
         val stream = """
             data: {"event_type":"interaction.created","interaction":{"id":"fixture","status":"in_progress","usage":{"total_tokens":125,"total_input_tokens":100,"total_output_tokens":20,"total_thought_tokens":5,"total_cached_tokens":60}}}
 
-            data: {"event_type":"step.start","index":0,"step":{"type":"model_output","content":[{"type":"text","text":"完成"}]}}
+            data: {"event_type":"step.start","index":0,"step":{"type":"model_output","content":[{"type":"text","text":"done"}]}}
 
             data: {"event_type":"step.stop","index":0}
 
@@ -38,7 +38,7 @@ class GeminiRuntimeIntegrationTest {
         """.trimIndent()
         val projector = AgentRunMessageProjector { 1_000L }
         var messages = emptyList<AgentChatMessageUi>()
-        AgentModelClient.complete(config, "测试", AgentModelClient.ToolExecutor { error("不应执行工具") },
+        AgentModelClient.complete(config, "test", AgentModelClient.ToolExecutor { error("must not execute a tool") },
             provider = provider { _, emit ->
                 GeminiInteractionsStream(emit).read(ByteArrayInputStream(stream.toByteArray()), AgentRunController())
             }, onEvent = { messages = projector.applyEvent("usage-run", it, messages) })
@@ -65,20 +65,20 @@ class GeminiRuntimeIntegrationTest {
             if (round++ == 0) {
                 signedCall()
             } else {
-                JSONObject().put("role", "assistant").put("content", "已完成").put("finish_reason", "stop")
+                JSONObject().put("role", "assistant").put("content", "completed").put("finish_reason", "stop")
             }
         }
         val result = AgentModelClient.complete(
-            config, "继续", AgentModelClient.ToolExecutor {
+            config, "continue", AgentModelClient.ToolExecutor {
                 executed += it.id
                 AgentModelClient.ToolResult("""{"ok":false,"code":"FIXTURE_FAILURE"}""")
             },
-            history = listOf(AgentModelClient.ConversationMessage("assistant", "旧回答")),
+            history = listOf(AgentModelClient.ConversationMessage("assistant", "old answer")),
             provider = provider, onTranscript = transcripts::add,
         )
         assertEquals(listOf("call-1"), executed)
         assertTrue(requests.first().getJSONObject(0).getJSONArray("content")
-            .getJSONObject(0).getString("text").contains("历史对话文本记录"))
+            .getJSONObject(0).getString("text").contains("historical conversation text record"))
         val second = requests[1]
         val thought = (0 until second.length()).map(second::getJSONObject)
             .single { it.optString("type") == "thought" }
@@ -94,15 +94,15 @@ class GeminiRuntimeIntegrationTest {
 
     @Test
     fun pendingSignedToolChainPreventsCompactionEvenAfterLocalResultsExist() {
-        val messages = JSONArray().put(AgentConversationCodec.userTextMessage("执行任务"))
+        val messages = JSONArray().put(AgentConversationCodec.userTextMessage("execute the task"))
             .put(signedCall()).put(JSONObject().put("role", "tool")
-                .put("tool_call_id", "call-1").put("content", "已执行"))
+                .put("tool_call_id", "call-1").put("content", "executed"))
         val failure = assertThrows(AgentModelFailure::class.java) {
-            AgentContextCompactor(config, provider { _, _ -> error("不能发送摘要请求") }, AgentRunController())
+            AgentContextCompactor(config, provider { _, _ -> error("must not send a summary request") }, AgentRunController())
                 .compact(messages, 0, emptySet())
         }
         assertEquals("GEMINI_THINKING_CONTEXT_LOCKED", failure.code)
-        messages.put(JSONObject().put("role", "assistant").put("content", "任务完成"))
+        messages.put(JSONObject().put("role", "assistant").put("content", "task complete"))
         assertFalse(SignedToolContext.hasPendingResponse(messages))
     }
 
@@ -113,7 +113,7 @@ class GeminiRuntimeIntegrationTest {
                 val configured = config.copy(model = model, hostedWebSearchEnabled = true,
                     supportsSearchSuggestions = presentation)
                 val expected = model == "gemini-3.8-flash" && presentation
-                AgentModelClient.complete(configured, "查询", AgentModelClient.ToolExecutor { error("不应执行") },
+                AgentModelClient.complete(configured, "query", AgentModelClient.ToolExecutor { error("must not execute") },
                     provider = provider { request, _ ->
                         val names = (0 until request.tools.length()).map {
                             request.tools.getJSONObject(it).getJSONObject("function").getString("name")
@@ -121,8 +121,8 @@ class GeminiRuntimeIntegrationTest {
                         assertEquals(!expected, "web_search" in names)
                         assertTrue("fetch_url" in names)
                         assertTrue("browser_use" in names)
-                        assertEquals(expected, request.messages.toString().contains("托管的 google_search"))
-                        JSONObject().put("content", "完成").put("finish_reason", "stop")
+                        assertEquals(expected, request.messages.toString().contains("hosted google_search"))
+                        JSONObject().put("content", "done").put("finish_reason", "stop")
                     })
             }
         }
@@ -131,10 +131,10 @@ class GeminiRuntimeIntegrationTest {
     @Test
     fun searchSuggestionProviderEventKeepsRoundAndTextBlockIdentity() {
         val events = mutableListOf<AgentEvent>()
-        AgentModelClient.complete(config, "查询", AgentModelClient.ToolExecutor { error("不应执行") },
+        AgentModelClient.complete(config, "query", AgentModelClient.ToolExecutor { error("must not execute") },
             provider = provider { _, emit ->
-                emit(ProviderEvent.SearchSuggestions(7, "<div>搜索建议</div>"))
-                JSONObject().put("content", "完成").put("finish_reason", "stop")
+                emit(ProviderEvent.SearchSuggestions(7, "<div>search suggestion</div>"))
+                JSONObject().put("content", "done").put("finish_reason", "stop")
             }, onEvent = events::add)
         val event = events.filterIsInstance<AgentEvent.SearchSuggestions>().single()
         assertEquals(1, event.round)

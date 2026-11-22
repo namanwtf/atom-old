@@ -33,16 +33,16 @@ class SpeechOssUploadTest {
         val text = upload.withAudio(config, secrets, byteArrayOf(1, 2)) { url ->
             assertTrue(url.startsWith("https://eta-test.oss-cn-beijing.aliyuncs.com/eta-speech/"))
             assertEquals(1, pending().size)
-            "转写结果"
+            "transcript result"
         }
-        assertEquals("转写结果", text)
+        assertEquals("transcript result", text)
         assertEquals(listOf("PUT", "DELETE"), methods)
         assertTrue(pending().isEmpty())
     }
 
     @Test fun failedDeletionSurvivesNewUploaderAndIsRetried() = runBlocking {
         SpeechOssUpload(context) { if (it.method == "DELETE") throw IOException("offline") }
-            .withAudio(config, secrets, byteArrayOf(1, 2)) { "结果" }
+            .withAudio(config, secrets, byteArrayOf(1, 2)) { "result" }
         assertEquals(1, pending().size)
         val deleted = mutableListOf<String>()
         SpeechOssUpload(context) { deleted += it.method }.retryPending(secrets)
@@ -70,7 +70,7 @@ class SpeechOssUploadTest {
         val upload = SpeechOssUpload(context) {}
         upload.withAudio(config, secrets, byteArrayOf(1, 2)) {
             SpeechOssUpload(context) { fail("Must not delete a live upload") }.retryPending(secrets)
-            "完成"
+            "done"
         }
         assertTrue(pending().isEmpty())
     }

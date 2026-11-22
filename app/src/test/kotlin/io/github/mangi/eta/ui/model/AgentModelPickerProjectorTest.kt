@@ -135,9 +135,9 @@ class AgentModelPickerProjectorTest {
                 ),
                 AgentModelProviderGroupUi(
                     providerId = "zhipu",
-                    providerName = "智谱",
+                    providerName = "Zhipu",
                     providerSourceType = ProviderSourceTypes.CUSTOM,
-                    models = listOf(option("glm-5", "zhipu", "智谱", "GLM-5")),
+                    models = listOf(option("glm-5", "zhipu", "Zhipu", "GLM-5")),
                 ),
             ),
         )
@@ -147,7 +147,7 @@ class AgentModelPickerProjectorTest {
             listOf("deepseek-v4.1-flash"),
             state.filterGroups("v4flash").flatMap { it.models }.map { it.id },
         )
-        assertEquals(listOf("glm-5"), state.filterGroups("智谱").flatMap { it.models }.map { it.id })
+        assertEquals(listOf("glm-5"), state.filterGroups("Zhipu").flatMap { it.models }.map { it.id })
         assertEquals(
             listOf("deepseek-r2"),
             state.filterGroups("deepseek r2").flatMap { it.models }.map { it.id },
@@ -227,10 +227,10 @@ class AgentModelPickerProjectorTest {
     @Test
     fun deriveSessionStatsSummary_aggregatesTurnsStepsTimingAndTokens() {
         val messages = listOf(
-            UserMessageUi(id = "u1", content = "你好"),
+            UserMessageUi(id = "u1", content = "hello"),
             AgentMessageUi(
                 id = "a1",
-                content = "第一轮",
+                content = "first round",
                 usage = TokenUsageUi(
                     contextTokens = 1_200,
                     inputTokens = 1_000,
@@ -245,10 +245,10 @@ class AgentModelPickerProjectorTest {
                     decodeTokens = 200,
                 ),
             ),
-            UserMessageUi(id = "u2", content = "查一下"),
+            UserMessageUi(id = "u2", content = "look it up"),
             AgentMessageUi(
                 id = "a2",
-                content = "第二轮",
+                content = "second round",
                 usage = TokenUsageUi(
                     contextTokens = 2_600,
                     inputTokens = 2_000,
@@ -283,8 +283,8 @@ class AgentModelPickerProjectorTest {
         assertEquals(200, stats.reasoningTokens)
         assertEquals(3_600, stats.totalTokens)
         assertEquals("80", formatCacheHitPercent(stats.cachedTokens, stats.promptTokens))
-        assertEquals("2.4秒", formatStatDuration(2_400L))
-        assertEquals("1分5秒", formatStatDuration(65_000L))
+        assertEquals("2.4 sec", formatStatDuration(2_400L))
+        assertEquals("1 min 5 sec", formatStatDuration(65_000L))
         assertEquals("200", formatTokensPerSecond(200.4))
         assertEquals("6.8", formatTokensPerSecond(6.81))
     }
@@ -294,7 +294,7 @@ class AgentModelPickerProjectorTest {
         val subagentSnapshot = io.github.mangi.eta.agent.subagent.SubagentActivitySnapshot(
             subagentId = "sub-1",
             subagentType = "explore",
-            description = "检索文件",
+            description = "search files",
             usage = io.github.mangi.eta.agent.subagent.SubagentUsageSnapshot(
                 inputTokens = 5_000,
                 cachedTokens = 4_000,
@@ -303,10 +303,10 @@ class AgentModelPickerProjectorTest {
             ),
         ).encode()
         val messages = listOf(
-            UserMessageUi(id = "u1", content = "问题1"),
+            UserMessageUi(id = "u1", content = "question 1"),
             AgentMessageUi(
                 id = "a1",
-                content = "回答1",
+                content = "answer 1",
                 usage = TokenUsageUi(
                     contextTokens = 10_200,
                     inputTokens = 10_000,
@@ -320,13 +320,13 @@ class AgentModelPickerProjectorTest {
                 id = "t1",
                 toolName = "subagent",
                 status = ToolActivityStatusUi.Success,
-                argumentsSummary = "explore · 检索文件",
+                argumentsSummary = "explore · search files",
                 command = subagentSnapshot,
             ),
             SystemNoticeMessageUi(
                 id = "c1",
                 code = SystemNoticeCode.ContextCompaction,
-                detail = "上下文已压缩",
+                detail = "context compacted",
                 archiveId = "fold-1",
                 tokensBefore = 80_000,
                 usage = TokenUsageUi(
@@ -337,10 +337,10 @@ class AgentModelPickerProjectorTest {
                     requestKind = io.github.mangi.eta.agent.runtime.AgentTokenUsage.REQUEST_KIND_COMPACTION,
                 ),
             ),
-            UserMessageUi(id = "u2", content = "问题2"),
+            UserMessageUi(id = "u2", content = "question 2"),
             AgentMessageUi(
                 id = "a2",
-                content = "回答2",
+                content = "answer 2",
                 usage = TokenUsageUi(
                     contextTokens = 12_200,
                     inputTokens = 12_000,
@@ -369,7 +369,7 @@ class AgentModelPickerProjectorTest {
         assertEquals(5_000, stats.subagentPromptTokens)
         assertEquals(4_000, stats.subagentCachedTokens)
         assertEquals(300, stats.subagentOutputTokens)
-        // 总用量 = 普通轮次 (22000 + 400) + 压缩 (80500 + 1000) + 子智能体 (5000 + 300)
+        // total usage = ordinary rounds (22000 + 400) + compaction (80500 + 1000) + sub-agent (5000 + 300)
         assertEquals(109_200, stats.totalTokens)
     }
 

@@ -66,7 +66,7 @@ class ImageGenClientsTest {
         assertEquals("16:9", format.getString("aspect_ratio"))
         assertEquals("2K", format.getString("image_size"))
 
-        // 官方 REST 响应：成品在 steps[].model_output.content[] 内，同时混合 thought 思考步骤和文本。
+        // Official REST response: the finished image is inside steps[].model_output.content[], mixed with thought steps and text.
         val restResponseJson = JSONObject()
             .put("id", "int_rest_1")
             .put(
@@ -121,7 +121,7 @@ class ImageGenClientsTest {
         assertEquals("image/png", parsed[0].mimeType)
         assertEquals("image/jpeg", parsed[1].mimeType)
 
-        // 兼容代理 outputs[] 分支同样过滤 thought 图像。
+        // The compatible proxy outputs[] branch likewise filters thought images.
         val proxyOutputsJson = JSONObject()
             .put(
                 "outputs",
@@ -170,7 +170,7 @@ class ImageGenClientsTest {
         )
         assertFalse(legacyVertex.getJSONObject("generationConfig").has("imageConfig"))
 
-        // Vertex Express（无 Project）遇到区域官方地址时规范化为全局主机。
+        // Vertex Express (no Project) normalizes regional official addresses to the global host.
         val expressUrl = ImageGenClient.resolveVertexImageUrl(legacy25Config)
         assertEquals(
             "https://aiplatform.googleapis.com/v1beta1/publishers/google/models/gemini-2.5-flash-image:generateContent",
@@ -268,7 +268,7 @@ class ImageGenClientsTest {
         assertFalse(sfBody.has("batch_size"))
         assertFalse(sfBody.has("size"))
 
-        // FLUX.1-schnell 仅支持 1K 档位且 16:9 必须发送官方枚举 1024x576。
+        // FLUX.1-schnell only supports the 1K tier and for 16:9 must send the official enum 1024x576.
         val schnellConfig = sfConfig.copy(
             model = "black-forest-labs/FLUX.1-schnell",
             defaultResolution = ImageGenResolution.R_2K,
@@ -294,7 +294,7 @@ class ImageGenClientsTest {
         )
         assertEquals("1024x1024", schnellAuto.getString("image_size"))
 
-        // 验证硅基流动 images[].url 响应能正确下载解析。
+        // Verify that the SiliconFlow images[].url response downloads and parses correctly.
         val fakeClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 Response.Builder()
@@ -321,7 +321,7 @@ class ImageGenClientsTest {
         assertTrue("doubao-seedream-5-0-flash-260915" in ids)
         assertTrue("doubao-seedream-5-0-lite-260128" in ids)
 
-        // 未知自定义 Endpoint ID 不被硬降级，允许 4K 直传。
+        // Unknown custom Endpoint IDs are not hard-downgraded; 4K is allowed through.
         val customEpSize = ImageGenSizeMapper.doubaoSize(
             aspectRatio = ImageGenAspectRatio.AUTO,
             resolution = ImageGenResolution.R_4K,
@@ -334,13 +334,13 @@ class ImageGenClientsTest {
     fun credentialsAndBaseUrlStayStrictlyBoundAndEnforceHttps() {
         val beijingBailian = OpenAiCompatibleProviderSetting(
             id = BuiltinProviders.BAILIAN_ID,
-            name = "阿里百炼",
+            name = "Alibaba Bailian",
             baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1",
             sourceType = ProviderSourceTypes.BAILIAN,
             apiKey = "sk-beijing",
             customHeaders = listOf(CustomHeader("X-Tenant", "bj")),
         )
-        // 用户选择新加坡并填写独立新加坡 Key：必须请求新加坡域名，且不携带北京服务商 Header。
+        // User picks Singapore and fills a separate Singapore Key: must request the Singapore domain and not send the Beijing provider Header.
         val standaloneSg = ImageGenSettingsRepository.resolveRuntimeConfigPure(
             settings = ImageGenSettings(
                 enabled = true,
@@ -357,7 +357,7 @@ class ImageGenClientsTest {
         assertEquals("sk-singapore", standaloneSg.apiKey)
         assertTrue(standaloneSg.customHeaders.isEmpty())
 
-        // 关联模式：即使独立字段填了其他 URL，也完整使用关联服务商的地址、Key 和 Header，不跨主机发送 Key。
+        // Associated mode: even if the standalone fields hold another URL, fully use the associated provider's address, Key and Header, never sending the Key across hosts.
         val linkedBj = ImageGenSettingsRepository.resolveRuntimeConfigPure(
             settings = ImageGenSettings(
                 enabled = true,
@@ -375,7 +375,7 @@ class ImageGenClientsTest {
         assertEquals("sk-beijing", linkedBj.apiKey)
         assertEquals(1, linkedBj.customHeaders.size)
 
-        // 公网 HTTP 被拦截，HTTPS 与 localhost HTTP 放行。
+        // Public HTTP is blocked; HTTPS and localhost HTTP are allowed.
         assertNotNull(ImageGenSettingsRepository.validateEndpointUrl("http://api.openai.com/v1"))
         assertNull(ImageGenSettingsRepository.validateEndpointUrl("https://api.openai.com/v1"))
         assertNull(ImageGenSettingsRepository.validateEndpointUrl("http://127.0.0.1:8080/v1"))
@@ -384,7 +384,7 @@ class ImageGenClientsTest {
     @Test
     fun safeHttpErrorRedactsSecretsAndPreservesDashScopeCode() {
         val (code, msg) = ImageGenClient.buildSafeHttpError(
-            label = "千问 Qwen-Image",
+            label = "Qwen Qwen-Image",
             httpCode = 401,
             rawBody = """{"code":"InvalidApiKey","message":"Bearer sk-secret1234567890 echoed prompt secret","request_id":"req-abc-123"}""",
             isDashScope = true,
@@ -402,7 +402,7 @@ class ImageGenClientsTest {
         assertFalse(ImageGenClient.authHttpClient.followSslRedirects)
         assertFalse(ImageGenClient.downloadHttpClient.followSslRedirects)
 
-        // 认证请求遇到 302 重定向直接阻断，防止跨源泄露 x-goog-api-key 或 POST 正文。
+        // Auth requests hitting a 302 redirect are blocked outright, preventing cross-origin leakage of x-goog-api-key or the POST body.
         val redirectClient = OkHttpClient.Builder()
             .followRedirects(false)
             .addInterceptor { chain ->
@@ -429,7 +429,7 @@ class ImageGenClientsTest {
         assertNotNull(err)
         assertEquals("HTTP_302_REDIRECT_BLOCKED", err!!.code)
 
-        // Qwen 纵图编辑在 AUTO + 2K 时保持竖图比例，不再压成 2048*2048 方图。
+        // Qwen portrait edit keeps the portrait ratio under AUTO + 2K, no longer squashing into a 2048*2048 square.
         val qwenPortraitSize = ImageGenSizeMapper.qwenSize(
             aspectRatio = ImageGenAspectRatio.AUTO,
             resolution = ImageGenResolution.R_2K,
@@ -492,10 +492,10 @@ class ImageGenClientsTest {
     @Test
     fun payloadRoundTripAndToolCatalogSchema() {
         val initial = GeneratedImageActivityPayload.initialFromArguments(
-            """{"prompt":"一只柴犬","aspect_ratio":"16:9","count":2,"reference_images":["latest_user_image"]}""",
+            """{"prompt":"a Shiba Inu","aspect_ratio":"16:9","count":2,"reference_images":["latest_user_image"]}""",
         )
         assertNotNull(initial)
-        assertEquals("一只柴犬", initial!!.prompt)
+        assertEquals("a Shiba Inu", initial!!.prompt)
         assertEquals("16:9", initial.aspectRatio)
         assertEquals(2, initial.requestedCount)
         assertEquals(1, initial.referenceCount)

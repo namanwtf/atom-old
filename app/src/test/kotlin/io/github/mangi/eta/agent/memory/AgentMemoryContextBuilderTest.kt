@@ -18,18 +18,18 @@ class AgentMemoryContextBuilderTest {
 
     @Test
     fun injectsOnlyCoreSectionAndBoundedHeadingIndex() {
-        val content = "# 核心记忆\n长期偏好\n## 关系\n家人\n# 详细背景\n不应自动注入"
+        val content = "# Core memory\nlong-term preference\n## relationship\nfamily\n# detailed background\nmust not be auto-injected"
         val context = AgentMemoryContextBuilder.build(snapshot(content), 128_000)
 
-        assertEquals("# 核心记忆\n长期偏好\n## 关系\n家人", context.coreContent)
-        assertFalse(context.coreContent.contains("不应自动注入"))
-        assertEquals("# 核心记忆\n## 关系\n# 详细背景", context.headingIndex)
+        assertEquals("# Core memory\nlong-term preference\n## relationship\nfamily", context.coreContent)
+        assertFalse(context.coreContent.contains("must not be auto-injected"))
+        assertEquals("# Core memory\n## relationship\n# detailed background", context.headingIndex)
         assertFalse(context.coreTruncated)
     }
 
     @Test
     fun oversizedCoreIsTruncatedWithoutDroppingRevision() {
-        val content = "# 核心记忆\n" + "a".repeat(10_000)
+        val content = "# Core memory\n" + "a".repeat(10_000)
         val snapshot = snapshot(content)
         val context = AgentMemoryContextBuilder.build(snapshot, null)
 
@@ -41,12 +41,12 @@ class AgentMemoryContextBuilderTest {
     @Test
     fun detailsWithoutCoreHeadingAreIndexedButNotAutomaticallyInjected() {
         val context = AgentMemoryContextBuilder.build(
-            snapshot("# 项目\n只应按需读取的细节"),
+            snapshot("# item\ndetails that should only be read on demand"),
             256_000,
         )
 
         assertEquals("", context.coreContent)
-        assertEquals("# 项目", context.headingIndex)
+        assertEquals("# item", context.headingIndex)
     }
 
     private fun snapshot(content: String): AgentMemorySnapshot = AgentMemorySnapshot(

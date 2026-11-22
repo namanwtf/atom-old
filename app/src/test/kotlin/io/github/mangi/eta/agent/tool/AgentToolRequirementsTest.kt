@@ -19,7 +19,7 @@ class AgentToolRequirementsTest {
             .also { ImageGenToolCatalog.appendTo(it) }
         val executionOnly = setOf("input_text", "replace_text", "clear_text", "paste_text")
         assertEquals(AgentToolRequirements.toolNames - executionOnly, tools.names())
-        executionOnly.forEach { name -> assertFalse("$name 仅保留执行兼容，不再向模型暴露", name in tools.names()) }
+        executionOnly.forEach { name -> assertFalse("$name kept only for execution compatibility and no longer exposed to the model", name in tools.names()) }
         assertEquals(tools.length(), tools.names().size)
         assertFalse(tools.toString().contains("rootRequirement"))
     }

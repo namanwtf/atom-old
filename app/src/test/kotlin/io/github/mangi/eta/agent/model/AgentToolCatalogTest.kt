@@ -62,7 +62,7 @@ class AgentToolCatalogTest {
         assertEquals("string", properties.getJSONObject("url").getString("type"))
         assertEquals("boolean", properties.getJSONObject("submit").getString("type"))
         assertFalse(properties.getJSONObject("url").getString("description").contains("HTTPS"))
-        assertFalse(function.getString("description").contains("拦截"))
+        assertFalse(function.getString("description").contains("block"))
     }
 
     @Test
@@ -76,9 +76,9 @@ class AgentToolCatalogTest {
 
             assertEquals("string", properties.getJSONObject("observation_id").getString("type"))
             assertTrue("observation_id must be required for $name", "observation_id" in parameters.requiredNames())
-            assertTrue(function.getString("description").contains("同一次"))
+            assertTrue(function.getString("description").contains("the same"))
             assertTrue(function.getString("description").contains("observe_screen"))
-            assertTrue(function.getString("description").contains("重新观察"))
+            assertTrue(function.getString("description").contains("re-observe"))
         }
     }
 
@@ -95,10 +95,10 @@ class AgentToolCatalogTest {
         assertEquals(60, properties.getJSONObject("max_nodes").getInt("default"))
         assertEquals(1, properties.getJSONObject("max_nodes").getInt("minimum"))
         assertEquals(120, properties.getJSONObject("max_nodes").getInt("maximum"))
-        assertTrue(function.getString("description").contains("默认只返回"))
+        assertTrue(function.getString("description").contains("returns only by default"))
         assertTrue(function.getString("description").contains("include_screenshot=true"))
-        assertTrue(function.getString("description").contains("保持 include_ui_tree=true"))
-        assertTrue(function.getString("description").contains("禁止把新截图与旧节点混用"))
+        assertTrue(function.getString("description").contains("stay include_ui_tree=true"))
+        assertTrue(function.getString("description").contains("never mix a new screenshot with old nodes"))
     }
 
     @Test
@@ -116,8 +116,8 @@ class AgentToolCatalogTest {
                 .stringValues()
 
             assertEquals(expectedDirections, directions)
-            assertTrue(function.getString("description").contains("down 显示下方内容"))
-            assertTrue(function.getString("description").contains("up 显示上方内容"))
+            assertTrue(function.getString("description").contains("down show the content below"))
+            assertTrue(function.getString("description").contains("up show the content above"))
         }
     }
 
@@ -126,7 +126,7 @@ class AgentToolCatalogTest {
         val tools = AgentToolCatalog.build(terminalTools = false, browserTools = false)
         val names = (0 until tools.length()).map { tools.getJSONObject(it).getJSONObject("function").getString("name") }
         listOf("input_text", "replace_text", "clear_text", "paste_text").forEach { legacy ->
-            assertFalse("$legacy 不再向模型暴露", legacy in names)
+            assertFalse("$legacy no longer exposed to the model", legacy in names)
         }
 
         val function = tools.function("type_text")

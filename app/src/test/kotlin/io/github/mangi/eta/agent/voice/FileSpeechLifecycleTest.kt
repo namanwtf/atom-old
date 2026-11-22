@@ -92,9 +92,9 @@ class FileSpeechLifecycleTest {
         assertEquals(EtaSpeechPhase.RECOGNIZING, controller.state.value.phase)
         assertTrue(results.isEmpty())
 
-        request.result.complete("打开设置")
+        request.result.complete("open settings")
         idle()
-        assertEquals(listOf("打开设置"), results)
+        assertEquals(listOf("open settings"), results)
         assertFalse(controller.state.value.active)
         assertTrue(captures.single().canceled)
     }
@@ -134,23 +134,23 @@ class FileSpeechLifecycleTest {
         assertTrue(old.canceled)
 
         start()
-        old.progress("旧会话进度")
-        old.result.complete("旧会话结果")
+        old.progress("old session progress")
+        old.result.complete("old session result")
         idle()
         assertEquals(EtaSpeechPhase.LISTENING, controller.state.value.phase)
-        assertNotEquals("旧会话进度", controller.state.value.progress)
+        assertNotEquals("old session progress", controller.state.value.progress)
         assertTrue(results.isEmpty())
 
         controller.finish()
         idle()
         val current = requests.last()
         assertEquals(2, requests.size)
-        current.progress("新会话进度")
+        current.progress("new session progress")
         idle()
-        assertEquals("新会话进度", controller.state.value.progress)
-        current.result.complete("新会话结果")
+        assertEquals("new session progress", controller.state.value.progress)
+        current.result.complete("new session result")
         idle()
-        assertEquals(listOf("新会话结果"), results)
+        assertEquals(listOf("new session result"), results)
         assertFalse(controller.state.value.active)
     }
 

@@ -34,10 +34,10 @@ class ScheduledTaskScheduleCalculatorTest {
 
     @Test
     fun weekdaysScheduleSkipsWeekend() {
-        // 2026-11-20 是周五
+        // 2026-11-20 is a Friday
         val fridayAfter = zdt(2026, 11, 20, 10, 0)
         val schedule = ScheduledTaskSchedule(kind = ScheduledTaskTriggerKind.WEEKDAYS, hour = 8, minute = 30)
-        // 下一个工作日是 2026-11-23 周一
+        // the next business day is Monday 2026-11-23
         assertEquals(zdt(2026, 11, 23, 8, 30), ScheduledTaskScheduleCalculator.computeNextRunAt(schedule, fridayAfter, defaultZone = shanghai))
     }
 
@@ -53,7 +53,7 @@ class ScheduledTaskScheduleCalculatorTest {
         assertNotNull(sunday)
         assertEquals(setOf(0), sunday!!.daysOfWeek)
 
-        // 2026-11-20 周五 17:45 之后，下一个 */15 9-17 * * 1-5 应落到周一 09:00
+        // After Friday 2026-11-20 17:45, the next */15 9-17 * * 1-5 should land on Monday 09:00
         val schedule = ScheduledTaskSchedule(
             kind = ScheduledTaskTriggerKind.CRON,
             cronExpression = "*/15 9-17 * * 1-5",
@@ -93,8 +93,8 @@ class ScheduledTaskScheduleCalculatorTest {
     fun misfirePolicyRespectsWindowAndSkip() {
         val baseTask = ScheduledTask(
             id = "t1",
-            name = "早报",
-            prompt = "整理早报",
+            name = "morning briefing",
+            prompt = "compile the morning briefing",
             misfirePolicy = ScheduledTaskMisfirePolicy.RUN_ONCE_WITHIN_WINDOW,
             misfireWindowMinutes = 120,
         )
@@ -120,7 +120,7 @@ class ScheduledTaskScheduleCalculatorTest {
 
     @Test
     fun taskPolicyIntersectsGlobalPrefsInsteadOfModelConfigDefaults() {
-        // 模拟 RuntimeConfigRepository.buildRuntimeConfig() 返回的默认 ModelConfig（敏感读取/终端默认为 false）
+        // Simulate the default ModelConfig returned by RuntimeConfigRepository.buildRuntimeConfig() (sensitive read / terminal default to false)
         val base = AgentModelClient.ModelConfig(
             baseUrl = "https://example.com/v1",
             apiKey = "test-key",
@@ -129,8 +129,8 @@ class ScheduledTaskScheduleCalculatorTest {
         )
         val task = ScheduledTask(
             id = "briefing",
-            name = "每日晚间简报",
-            prompt = "整理简报",
+            name = "daily evening briefing",
+            prompt = "compile the briefing",
             capabilities = ScheduledTaskCapabilities(
                 browserTools = true,
                 deviceReadTools = true,

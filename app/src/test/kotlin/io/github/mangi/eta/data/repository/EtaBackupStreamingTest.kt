@@ -52,7 +52,7 @@ class EtaBackupStreamingTest {
     fun aBackupAboveTheOld64MiBLimitRoundTripsWithoutCollectingAllMessages() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
         dao.insertConversations(listOf(conversation("large")))
-        val text = "首行😀\n\"\\\t" + "x".repeat(512 * 1024)
+        val text = "first line😀\n\"\\\t" + "x".repeat(512 * 1024)
         repeat(132) { index ->
             dao.insertMessages(listOf(ConversationMessageEntity("message-$index", "large", index, "thinking", text)))
         }
@@ -79,16 +79,16 @@ class EtaBackupStreamingTest {
     @Test
     fun reorderedLegacyFieldsAndUnknownValuesRemainReadable() = runBlocking {
         val bytes = """{
-            "messages":[{"id":"m","conversationId":"c","sortIndex":0,"type":"user","content":"你好😀"}],
-            "unknown":{"nested":[1,true,null,{"text":"忽略"}]},
-            "conversations":[{"id":"c","title":"旧备份","thinkingEnabled":false,"createdAt":1,"updatedAt":2}],
+            "messages":[{"id":"m","conversationId":"c","sortIndex":0,"type":"user","content":"hello😀"}],
+            "unknown":{"nested":[1,true,null,{"text":"ignore"}]},
+            "conversations":[{"id":"c","title":"old backup","thinkingEnabled":false,"createdAt":1,"updatedAt":2}],
             "exportedAt":0,"schemaVersion":1,"format":"eta-backup"
         }""".toByteArray()
 
         val summary = EtaBackupRepository.import(context, ByteArrayInputStream(bytes))
 
         assertEquals(1, summary.conversationCount)
-        assertEquals("你好😀", EtaDatabase.get(context).conversationDao().messages().single().content)
+        assertEquals("hello😀", EtaDatabase.get(context).conversationDao().messages().single().content)
         assertCleanStaging()
     }
 
@@ -121,12 +121,12 @@ class EtaBackupStreamingTest {
     fun malformedOrLateInvalidRecordsNeverReplaceExistingData() = runBlocking {
         val dao = EtaDatabase.get(context).conversationDao()
         dao.insertConversations(listOf(conversation("original")))
-        AgentMemoryRepository.replaceAll("原记忆")
-        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "新记忆",
+        AgentMemoryRepository.replaceAll("original memory")
+        val document = EtaBackupDocument(exportedAt = 0, memoryMd = "new memory",
             conversations = listOf(conversation("new")),
             messages = listOf(
-                ConversationMessageEntity("valid", "new", 0, "user", "有效"),
-                ConversationMessageEntity("orphan", "missing", 1, "user", "无所属会话"),
+                ConversationMessageEntity("valid", "new", 0, "user", "valid"),
+                ConversationMessageEntity("orphan", "missing", 1, "user", "no owning conversation"),
             ),
         )
         val encoded = Json.encodeToString(document)
@@ -139,7 +139,7 @@ class EtaBackupStreamingTest {
             } catch (_: EtaBackupException) { rejected = true }
             assertTrue(rejected)
             assertEquals(listOf("original"), dao.conversationEntities().map { it.id })
-            assertEquals("原记忆", AgentMemoryRepository.snapshot().content)
+            assertEquals("original memory", AgentMemoryRepository.snapshot().content)
             assertCleanStaging()
         }
     }
@@ -148,7 +148,7 @@ class EtaBackupStreamingTest {
     fun cancellingStagingClosesTemporaryFilesAndPreservesTheCallerStream() = runBlocking {
         val job = Job()
         var closed = false
-        val input = object : ByteArrayInputStream("""{"exportedAt":0,"messages":[],"memoryMd":"内容"}""".toByteArray()) {
+        val input = object : ByteArrayInputStream("""{"exportedAt":0,"messages":[],"memoryMd":"content"}""".toByteArray()) {
             override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
                 val count = super.read(buffer, offset, minOf(length, 8))
                 job.cancel()
@@ -226,7 +226,7 @@ class EtaBackupStreamingTest {
         try {
             withContext(job) {
                 EtaBackupJsonStreams.export(context, output) { writer ->
-                    writer.value("memoryMd", String.serializer(), "内容")
+                    writer.value("memoryMd", String.serializer(), "content")
                     job.cancel()
                     EtaBackupSummary(0, 0, 0, 0, 6)
                 }

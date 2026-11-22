@@ -93,7 +93,7 @@ class VertexGenerateContentTest {
                 "function",
                 JSONObject()
                     .put("name", "lookup")
-                    .put("description", "查询")
+                    .put("description", "query")
                     .put(
                         "parameters",
                         JSONObject()
@@ -105,12 +105,12 @@ class VertexGenerateContentTest {
             ),
         )
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "系统提示"))
+            .put(JSONObject().put("role", "system").put("content", "system prompt"))
             .put(
                 JSONObject().put("role", "user").put(
                     "content",
                     JSONArray()
-                        .put(JSONObject().put("type", "text").put("text", "看图"))
+                        .put(JSONObject().put("type", "text").put("text", "view the image"))
                         .put(
                             JSONObject().put("type", "image_url")
                                 .put("image_url", JSONObject().put("url", "data:image/png;base64,AAAA")),
@@ -136,12 +136,12 @@ class VertexGenerateContentTest {
             ),
         )
         val body = VertexGenerateContentRequest.build(cfg, messages, tools)
-        assertEquals("系统提示", body.getJSONObject("systemInstruction").getJSONArray("parts").getJSONObject(0).getString("text"))
+        assertEquals("system prompt", body.getJSONObject("systemInstruction").getJSONArray("parts").getJSONObject(0).getString("text"))
         val contents = body.getJSONArray("contents")
         assertEquals(1, contents.length())
         assertEquals("user", contents.getJSONObject(0).getString("role"))
         val userParts = contents.getJSONObject(0).getJSONArray("parts")
-        assertEquals("看图", userParts.getJSONObject(0).getString("text"))
+        assertEquals("view the image", userParts.getJSONObject(0).getString("text"))
         assertEquals("image/png", userParts.getJSONObject(1).getJSONObject("inlineData").getString("mimeType"))
 
         val gen = body.getJSONObject("generationConfig")
@@ -179,9 +179,9 @@ class VertexGenerateContentTest {
     fun streamPreservesThoughtSignaturesAndReplaysToolLoopWithoutForgingOldHistory() {
         val events = mutableListOf<ProviderEvent>()
         val sse = sseChunk(
-            """{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":"先分析"},{"thought":true,"text":"再调用"}]}}]}""",
+            """{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":"analyze first"},{"thought":true,"text":"then call"}]}}]}""",
         ) + sseChunk(
-            """{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"call-1","name":"lookup","args":{"q":"甲"}},"thoughtSignature":"sig-call-1"}]}}]}""",
+            """{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"call-1","name":"lookup","args":{"q":"A"}},"thoughtSignature":"sig-call-1"}]}}]}""",
         ) + sseChunk(
             """{"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":100,"candidatesTokenCount":20,"thoughtsTokenCount":30,"cachedContentTokenCount":10,"totalTokenCount":150}}""",
         )
@@ -190,7 +190,7 @@ class VertexGenerateContentTest {
 
         assertEquals("tool_calls", assistant.getString("finish_reason"))
         assertEquals("", assistant.getString("content"))
-        assertEquals("先分析再调用", assistant.getString("reasoning_content"))
+        assertEquals("analyze first, then call", assistant.getString("reasoning_content"))
         assertEquals(0, events.filterIsInstance<ProviderEvent.BlockStart>().count { it.kind == AssistantBlockKind.TEXT })
         val usageEvent = events.filterIsInstance<ProviderEvent.Usage>().single()
         assertEquals(AgentTokenUsage(contextTokens = 150, inputTokens = 100, outputTokens = 50, reasoningTokens = 30, cachedTokens = 10), usageEvent.usage)
@@ -202,14 +202,14 @@ class VertexGenerateContentTest {
         assertNotEquals(callId, AgentConversationCodec.parseToolCalls(nextResponse).single().id)
         assertEquals("lookup", calls.single().name)
 
-        // 构建多轮上下文：旧历史（无签名）+ 当前 run 起点 + 带签名 assistant + 工具结果
-        val oldAssistant = JSONObject().put("role", "assistant").put("content", "旧回答")
-        val currentUser = AgentConversationCodec.userTextMessage("查一下").also(GeminiEphemeralState::markRunStart)
+        // Build a multi-turn context: old history (no signature) + current run start + signed assistant + tool results
+        val oldAssistant = JSONObject().put("role", "assistant").put("content", "old answer")
+        val currentUser = AgentConversationCodec.userTextMessage("check").also(GeminiEphemeralState::markRunStart)
         val assistantMsg = AgentConversationCodec.assistantHistoryMessage(assistant, calls)
         val toolResultMsg = JSONObject()
             .put("role", "tool")
             .put("tool_call_id", callId)
-            .put("content", """{"ok":true,"value":"结果"}""")
+            .put("content", """{"ok":true,"value":"result"}""")
         val messages = JSONArray()
             .put(oldAssistant)
             .put(currentUser)
@@ -220,10 +220,10 @@ class VertexGenerateContentTest {
 
         val image = AgentModelClient.ModelImage("data:image/png;base64,AA==", "image/png", 1)
         val contents = VertexContentHistory.contents(messages, mapOf(callId to listOf(image)))
-        // oldAssistant (降级为文本 user) 与 currentUser 合并为同一个 user turn，随后 model，随后 user(functionResponse)
+        // oldAssistant (downgraded to a text user) and currentUser merge into the same user turn, then model, then user(functionResponse)
         assertEquals(3, contents.length())
         assertEquals("user", contents.getJSONObject(0).getString("role"))
-        assertTrue(contents.getJSONObject(0).getJSONArray("parts").getJSONObject(0).getString("text").contains("历史对话文本记录"))
+        assertTrue(contents.getJSONObject(0).getJSONArray("parts").getJSONObject(0).getString("text").contains("historical conversation text record"))
         assertEquals("model", contents.getJSONObject(1).getString("role"))
         val modelParts = contents.getJSONObject(1).getJSONArray("parts")
         val callPart = (0 until modelParts.length()).map(modelParts::getJSONObject).first { it.has("functionCall") }
@@ -232,7 +232,7 @@ class VertexGenerateContentTest {
         val fnResp = contents.getJSONObject(2).getJSONArray("parts").getJSONObject(0).getJSONObject("functionResponse")
         assertEquals("call-1", fnResp.getString("id"))
         assertEquals("lookup", fnResp.getString("name"))
-        assertEquals("结果", fnResp.getJSONObject("response").getString("value"))
+        assertEquals("result", fnResp.getJSONObject("response").getString("value"))
         assertEquals("AA==", fnResp.getJSONArray("parts").getJSONObject(0).getJSONObject("inlineData").getString("data"))
         assertFalse(AgentConversationCodec.encodeTranscriptForStorage(AgentConversationCodec.transcript(messages, 0)).contains("AA=="))
     }
@@ -256,7 +256,7 @@ class VertexGenerateContentTest {
                 val chunk = when (sent.size) {
                     1 -> """{"candidates":[{"content":{"parts":[{"functionCall":{"id":"a","name":"capture_a"},"thoughtSignature":"sig1"},{"functionCall":{"id":"b","name":"capture_b"}}]},"finishReason":"STOP"}]}"""
                     2 -> """{"candidates":[{"content":{"parts":[{"functionCall":{"id":"a","name":"capture_b"},"thoughtSignature":"sig2"}]},"finishReason":"STOP"}]}"""
-                    else -> """{"candidates":[{"content":{"parts":[{"text":"已完成"}]},"finishReason":"STOP"}]}"""
+                    else -> """{"candidates":[{"content":{"parts":[{"text":"completed"}]},"finishReason":"STOP"}]}"""
                 }
                 return ProviderResponse(VertexGenerateContentStream(onEvent).read(sseChunk(chunk).byteInputStream(), runController))
             }
@@ -267,7 +267,7 @@ class VertexGenerateContentTest {
         }
         val result = AgentModelClient.complete(
             config = cfg,
-            prompt = "测试工具截图",
+            prompt = "test tool screenshot",
             toolExecutor = AgentModelClient.ToolExecutor { call ->
                 val data = if (call.name == "capture_a") "AA==" else "AQ=="
                 AgentModelClient.ToolResult("{}", listOf(AgentModelClient.ModelImage("data:image/png;base64,$data", "image/png", 1)))
@@ -287,7 +287,7 @@ class VertexGenerateContentTest {
         assertEquals(listOf("AA==", "AQ=="), firstBatch.map(::imageData))
         assertTrue(responseParts(sent[2], 2).none { it.has("parts") })
         assertEquals("AQ==", imageData(responseParts(sent[2], 4).single()))
-        assertEquals("已完成", result.content)
+        assertEquals("completed", result.content)
         val transcript = AgentConversationCodec.encodeTranscriptForStorage(result.transcript)
         assertFalse(transcript.contains("data:image"))
         assertFalse(transcript.contains("AA==") || transcript.contains("AQ=="))
@@ -296,9 +296,9 @@ class VertexGenerateContentTest {
     @Test
     fun streamRequiresNaturalStopBeforeReturningTextOrToolCalls() {
         val call = sseChunk(
-            """{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"lookup","args":{"q":"值"}},"thoughtSignature":"fixture"}]}}]}""",
+            """{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"lookup","args":{"q":"value"}},"thoughtSignature":"fixture"}]}}]}""",
         )
-        val text = sseChunk("""{"candidates":[{"content":{"role":"model","parts":[{"text":"半截输出"}]}}]}""")
+        val text = sseChunk("""{"candidates":[{"content":{"role":"model","parts":[{"text":"half output"}]}}]}""")
         for ((suffix, error) in listOf(
             "" to "STREAM_INCOMPLETE",
             "data: [DONE]\n\n" to "STREAM_INCOMPLETE",
@@ -343,7 +343,7 @@ class VertexGenerateContentTest {
             assertEquals("AQ.fixture", exchange.requestHeaders.getFirst("x-goog-api-key"))
             if (status == 307) exchange.responseHeaders.add("Location", "http://127.0.0.1:${target.address.port}/other")
             val payload = if (status == 200) {
-                sseChunk("""{"candidates":[{"content":{"parts":[{"text":"已完成"}]},"finishReason":"STOP"}]}""")
+                sseChunk("""{"candidates":[{"content":{"parts":[{"text":"completed"}]},"finishReason":"STOP"}]}""")
             } else {
                 """{"error":{"message":"projects/987654321/locations/asia-southeast1/model missing"}}"""
             }
@@ -356,7 +356,7 @@ class VertexGenerateContentTest {
         try {
             val request = ProviderRequest(
                 config().copy(baseUrl = "http://127.0.0.1:${server.address.port}/v1beta1", vertexProject = ""),
-                JSONArray().put(AgentConversationCodec.userTextMessage("你好")),
+                JSONArray().put(AgentConversationCodec.userTextMessage("hello")),
                 JSONArray(),
             )
             for (httpStatus in listOf(404, 307)) {
@@ -368,7 +368,7 @@ class VertexGenerateContentTest {
             }
             nextStatus.set(200)
             val response = VertexGenerateContentProvider.complete(request, AgentRunController()) {}
-            assertEquals("已完成", response.assistantMessage.getString("content"))
+            assertEquals("completed", response.assistantMessage.getString("content"))
             assertEquals(List(3) { "/v1beta1/publishers/google/models/gemini-4-hydrogen:streamGenerateContent?alt=sse" }, requestedPaths)
         } finally {
             server.stop(0)

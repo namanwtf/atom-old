@@ -36,7 +36,7 @@ class AgentConversationPersistenceTest {
 
     @Test
     fun searchSuggestionsStayInLoadedConversationAndNeverReachMessageStorage() = runBlocking {
-        val message = AgentMessageUi("search-answer", "正文与引用", searchSuggestionsHtml = listOf("<div>短期建议</div>"))
+        val message = AgentMessageUi("search-answer", "body and citations", searchSuggestionsHtml = listOf("<div>short-term suggestion</div>"))
         val conversation = state("search").copy(messages = listOf(message))
         AgentConversationPersistence().save(context, snapshot(mapOf("search" to conversation)))
         val restored = AgentConversationStore.loadAllMessages(context, "search").filterIsInstance<AgentMessageUi>().single()
@@ -53,10 +53,10 @@ class AgentConversationPersistenceTest {
         persistence.save(context, initial)
         installAudit()
         val active = initial.conversationsById.getValue("active")
-        val addition = AgentModelClient.ConversationMessage(role = "user", content = "继续")
+        val addition = AgentModelClient.ConversationMessage(role = "user", content = "continue")
         val next = initial.copy(
             conversationsById = initial.conversationsById + ("active" to active.copy(
-                messages = active.messages + UserMessageUi("new-user", "继续"),
+                messages = active.messages + UserMessageUi("new-user", "continue"),
                 history = active.history + addition, journal = active.journal + addition,
                 appliedRuntimeRunIds = listOf("applied-run"),
             )), updatedAt = initial.updatedAt + ("active" to 9L),
@@ -84,7 +84,7 @@ class AgentConversationPersistenceTest {
         persistence.save(context, initial)
         installAudit()
         val next = initial.copy(selectedConversationId = "other", conversationsById = initial.conversationsById +
-            ("active" to initial.conversationsById.getValue("active").copy(input = "尚未发送的草稿")))
+            ("active" to initial.conversationsById.getValue("active").copy(input = "unsent draft")))
 
         persistence.save(context, next)
 
@@ -99,7 +99,7 @@ class AgentConversationPersistenceTest {
         persistence.save(context, initial)
         installAudit()
         val next = initial.copy(conversationsById = mapOf("active" to initial.conversationsById.getValue("active").copy(
-            history = listOf(AgentModelClient.ConversationMessage(role = "assistant", content = "摘要", contextSummary = true)),
+            history = listOf(AgentModelClient.ConversationMessage(role = "assistant", content = "summary", contextSummary = true)),
         )))
 
         persistence.save(context, next)
@@ -108,7 +108,7 @@ class AgentConversationPersistenceTest {
         assertEquals(0, events("conversation_messages", "active-thinking"))
         val restored = EtaDatabase.get(context).conversationDao().contextCheckpoint("active")!!
         assertEquals(initial.conversationsById.getValue("active").journal, AgentConversationCodec.decodeTranscript(restored.journalJson))
-        assertEquals("摘要", AgentConversationCodec.decodeTranscript(restored.historyJson).single().content)
+        assertEquals("summary", AgentConversationCodec.decodeTranscript(restored.historyJson).single().content)
     }
 
     @Test
@@ -120,10 +120,10 @@ class AgentConversationPersistenceTest {
         sql.execSQL("CREATE TRIGGER reject_test_message BEFORE INSERT ON conversation_messages " +
             "WHEN NEW.id = 'rejected-user' BEGIN SELECT RAISE(ABORT, 'test failure'); END")
         val next = initial.copy(conversationsById = mapOf("active" to initial.conversationsById.getValue("active").copy(
-            messages = initial.conversationsById.getValue("active").messages + UserMessageUi("rejected-user", "新消息"),
-            history = listOf(AgentModelClient.ConversationMessage(role = "user", content = "新历史")),
+            messages = initial.conversationsById.getValue("active").messages + UserMessageUi("rejected-user", "new message"),
+            history = listOf(AgentModelClient.ConversationMessage(role = "user", content = "new history")),
             appliedRuntimeRunIds = listOf("new-run"),
-        )), titles = mapOf("active" to "新标题"), updatedAt = mapOf("active" to 10L))
+        )), titles = mapOf("active" to "new title"), updatedAt = mapOf("active" to 10L))
         var failed = false
         try { persistence.save(context, next) } catch (_: Exception) { failed = true }
         assertTrue(failed)
@@ -136,7 +136,7 @@ class AgentConversationPersistenceTest {
 
         persistence.save(context, next)
 
-        assertEquals("新标题", dao.conversations().single().title)
+        assertEquals("new title", dao.conversations().single().title)
         assertEquals(3, dao.messageCount("active"))
         assertEquals(next.conversationsById.getValue("active").history,
             AgentConversationCodec.decodeTranscript(dao.contextCheckpoint("active")!!.historyJson))
@@ -163,12 +163,12 @@ class AgentConversationPersistenceTest {
 
     @Test
     fun restartAfterSavingAroundAStreamingPlaceholderKeepsEveryMessage() = runBlocking {
-        // 空白流式占位不入库，运行中途保存会在 sort_index 中留下空洞；重启后列表被压紧。
+        // blank streaming placeholders are not persisted; saving mid-run leaves holes in sort_index, and the list is compacted after restart.
         val running = state("active").copy(messages = listOf(
-            UserMessageUi("user", "请求"),
+            UserMessageUi("user", "request"),
             AgentMessageUi(id = "assistant-run", content = "", isStreaming = true, renderMarkdown = false),
-            ThinkingMessageUi("thinking", "思考", false),
-            ThinkingMessageUi("later", "继续思考", false),
+            ThinkingMessageUi("thinking", "thinking", false),
+            ThinkingMessageUi("later", "keep thinking", false),
         ))
         AgentConversationPersistence().save(context, snapshot(mapOf("active" to running)))
 
@@ -176,7 +176,7 @@ class AgentConversationPersistenceTest {
         assertEquals(setOf("active"), loaded.unalignedConversationIds)
         val restored = loaded.conversationsById.getValue("active")
         AgentConversationPersistence(loaded).save(context, loaded.copy(conversationsById = mapOf("active" to
-            restored.copy(messages = restored.messages + AgentMessageUi(id = "answer", content = "最终回答")))))
+            restored.copy(messages = restored.messages + AgentMessageUi(id = "answer", content = "final answer")))))
 
         val reloaded = AgentConversationStore.load(context)
         assertEquals(listOf("user", "thinking", "later", "answer"),
@@ -186,7 +186,7 @@ class AgentConversationPersistenceTest {
 
     @Test
     fun appendingAndDeletingWithinATailWindowNeverRewritesTheUnloadedPrefix() = runBlocking {
-        val messages = (0 until 300).map { UserMessageUi("user-$it", "消息-$it") }
+        val messages = (0 until 300).map { UserMessageUi("user-$it", "message-$it") }
         AgentConversationPersistence().save(context, snapshot(mapOf("active" to state("active").copy(messages = messages))))
         val loaded = AgentConversationStore.load(context)
         val persistence = AgentConversationPersistence(loaded)
@@ -194,7 +194,7 @@ class AgentConversationPersistenceTest {
         assertEquals(172, tail.messageStartIndex)
         installAudit()
 
-        val appended = tail.copy(messages = tail.messages + AgentMessageUi("new-answer", "新回答"))
+        val appended = tail.copy(messages = tail.messages + AgentMessageUi("new-answer", "new answer"))
         persistence.save(context, loaded.copy(conversationsById = mapOf("active" to appended)))
 
         assertEquals(0, events("conversation_messages", "user-0"))
@@ -217,7 +217,7 @@ class AgentConversationPersistenceTest {
         installAudit()
 
         AgentConversationPersistence(loaded).save(context, loaded.copy(
-            titles = loaded.titles + ("dormant" to "新名称"), updatedAt = loaded.updatedAt + ("dormant" to 20L),
+            titles = loaded.titles + ("dormant" to "new name"), updatedAt = loaded.updatedAt + ("dormant" to 20L),
         ))
 
         assertEquals(0, events("conversation_messages", "dormant-thinking"))
@@ -225,12 +225,12 @@ class AgentConversationPersistenceTest {
         val dormant = AgentConversationStore.loadConversation(context, "dormant")!!
         assertEquals(dormantBefore.messages, dormant.messages)
         assertEquals(dormantBefore.history, dormant.history)
-        assertEquals("新名称", EtaDatabase.get(context).conversationDao().conversation("dormant")!!.title)
+        assertEquals("new name", EtaDatabase.get(context).conversationDao().conversation("dormant")!!.title)
     }
 
     @Test
     fun adoptingAnEarlierPageDoesNotRewriteItsUnchangedRows() = runBlocking {
-        val original = state("active").copy(messages = (0 until 200).map { UserMessageUi("user-$it", "消息-$it") })
+        val original = state("active").copy(messages = (0 until 200).map { UserMessageUi("user-$it", "message-$it") })
         AgentConversationPersistence().save(context, snapshot(mapOf("active" to original)))
         val loaded = AgentConversationStore.load(context)
         val persistence = AgentConversationPersistence(loaded)
@@ -250,22 +250,22 @@ class AgentConversationPersistenceTest {
     @Test
     fun offscreenRoleplayRevisionsUpdateStoredRowsWithoutLoadingTheirMessageWindow() = runBlocking {
         val messages = (0 until 300).map { index ->
-            if (index % 2 == 0) UserMessageUi("message-$index", "正文-$index")
-            else AgentMessageUi("message-$index", "正文-$index")
+            if (index % 2 == 0) UserMessageUi("message-$index", "body-$index")
+            else AgentMessageUi("message-$index", "body-$index")
         }
         val original = state("active").copy(
             messages = messages,
-            roleplay = RoleplayBinding("character", "{}", "旅人"),
+            roleplay = RoleplayBinding("character", "{}", "traveler"),
             roleplayMessages = RoleplayMessageState(links = messages.associate { it.id to RoleplayMessageLink(it.id) }),
         )
         AgentConversationPersistence().save(context, snapshot(mapOf("active" to original)))
         val loaded = AgentConversationStore.load(context)
         val tail = loaded.conversationsById.getValue("active")
         assertEquals(172, tail.messageStartIndex)
-        val editedContent = "修订".repeat(10_000)
+        val editedContent = "revision".repeat(10_000)
         val revised = tail.copy(roleplayMessages = tail.roleplayMessages.copy(revisions = mapOf(
-            "message-0" to RoleplayReplyRevision("正文-0", listOf("正文-0", editedContent), 1),
-            "message-1" to RoleplayReplyRevision("正文-1", listOf("正文-1", "新回答"), 1),
+            "message-0" to RoleplayReplyRevision("body-0", listOf("body-0", editedContent), 1),
+            "message-1" to RoleplayReplyRevision("body-1", listOf("body-1", "new answer"), 1),
         )))
 
         AgentConversationPersistence(loaded).save(context, loaded.copy(conversationsById = mapOf("active" to revised)))
@@ -273,17 +273,17 @@ class AgentConversationPersistenceTest {
         val allMessages = AgentConversationStore.loadAllMessages(context, "active")
         assertEquals(300, allMessages.size)
         assertEquals(UserMessageUi("message-0", editedContent, isEdited = true), allMessages[0])
-        assertEquals(AgentMessageUi("message-1", "新回答"), allMessages[1])
+        assertEquals(AgentMessageUi("message-1", "new answer"), allMessages[1])
         assertEquals(messages.drop(2), allMessages.drop(2))
-        assertEquals(setOf("active"), AgentConversationStore.searchConversationIds(context, "新回答"))
+        assertEquals(setOf("active"), AgentConversationStore.searchConversationIds(context, "new answer"))
     }
 
     @Test
     fun aNewOffscreenRevisionWithAMissingTargetRollsBackWithoutRejectingOldMetadata() = runBlocking {
         val original = state("active").copy(
-            roleplay = RoleplayBinding("character", "{}", "旅人"),
+            roleplay = RoleplayBinding("character", "{}", "traveler"),
             roleplayMessages = RoleplayMessageState(revisions = mapOf(
-                "legacy-missing" to RoleplayReplyRevision("旧正文", listOf("旧正文"), 0),
+                "legacy-missing" to RoleplayReplyRevision("old body", listOf("old body"), 0),
             )),
         )
         AgentConversationPersistence().save(context, snapshot(mapOf("active" to original)))
@@ -291,10 +291,10 @@ class AgentConversationPersistenceTest {
         val persistence = AgentConversationPersistence(loaded)
         val current = loaded.conversationsById.getValue("active")
         val revised = current.copy(roleplayMessages = current.roleplayMessages.copy(revisions =
-            current.roleplayMessages.revisions + ("missing-target" to RoleplayReplyRevision("原文", listOf("原文", "修改"), 1))))
+            current.roleplayMessages.revisions + ("missing-target" to RoleplayReplyRevision("original text", listOf("original text", "modify"), 1))))
         var failed = false
         try {
-            persistence.save(context, loaded.copy(conversationsById = mapOf("active" to revised), titles = mapOf("active" to "不应提交")))
+            persistence.save(context, loaded.copy(conversationsById = mapOf("active" to revised), titles = mapOf("active" to "must not commit")))
         } catch (_: IllegalStateException) {
             failed = true
         }
@@ -304,16 +304,16 @@ class AgentConversationPersistenceTest {
         assertEquals(current.roleplayMessages, restored.roleplayMessages)
         assertEquals("active", EtaDatabase.get(context).conversationDao().conversation("active")!!.title)
 
-        persistence.save(context, loaded.copy(titles = mapOf("active" to "合法改名")))
-        assertEquals("合法改名", EtaDatabase.get(context).conversationDao().conversation("active")!!.title)
+        persistence.save(context, loaded.copy(titles = mapOf("active" to "legal rename")))
+        assertEquals("legal rename", EtaDatabase.get(context).conversationDao().conversation("active")!!.title)
         assertEquals(current.roleplayMessages, AgentConversationStore.loadConversation(context, "active")!!.roleplayMessages)
     }
 
     private fun state(id: String): AgentChatHomeUiState {
-        val history = listOf(AgentModelClient.ConversationMessage(role = "assistant", content = "历史".repeat(12_000)))
+        val history = listOf(AgentModelClient.ConversationMessage(role = "assistant", content = "history".repeat(12_000)))
         return AgentChatHomeUiState(
-            messages = listOf(UserMessageUi("$id-user", "请求"),
-                ThinkingMessageUi("$id-thinking", "思考".repeat(12_000), false)),
+            messages = listOf(UserMessageUi("$id-user", "request"),
+                ThinkingMessageUi("$id-thinking", "thinking".repeat(12_000), false)),
             history = history, journal = history, input = "", isStreaming = false, thinkingEnabled = false,
         )
     }

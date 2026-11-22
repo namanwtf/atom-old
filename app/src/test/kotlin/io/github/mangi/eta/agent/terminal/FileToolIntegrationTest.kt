@@ -12,7 +12,7 @@ import org.junit.Test
 class FileToolIntegrationTest {
     @Test fun explicitUserFilesKeepUtf8PaginationAndRejectStaleEditsWithRootAvailable() {
         val directory = File(TerminalRuntime.userWorkspacePath, "file-contract-${System.nanoTime()}").apply { mkdirs() }
-        val file = File(directory, "中文 '$' config.txt").apply { writeText("甲乙丙丁\n".repeat(6000)) }
+        val file = File(directory, "Chinese '$' config.txt").apply { writeText("ABCD\n".repeat(6000)) }
         val controller = RootShellTerminalController(NoopLogger, rootAvailable = { true })
         try {
             val first = JSONObject(controller.fileTool("read_file", JSONObject().put("path", file.path).put("identity", "user")
@@ -25,12 +25,12 @@ class FileToolIntegrationTest {
                 .put("offset_bytes", first.getLong("next_offset_bytes"))
                 .put("expected_revision", first.getString("revision"))))
             assertTrue(second.toString(), second.getBoolean("ok"))
-            file.appendText("外部更新")
+            file.appendText("external update")
             val stale = JSONObject(controller.fileTool("edit_file", JSONObject().put("path", file.path).put("identity", "user")
-                .put("old_text", "甲").put("new_text", "己")
+                .put("old_text", "A").put("new_text", "F")
                 .put("replace_all", true).put("expected_revision", first.getString("revision"))))
             assertEquals("FILE_CHANGED", stale.getString("code"))
-            assertTrue(file.readText().startsWith("甲"))
+            assertTrue(file.readText().startsWith("A"))
         } finally { controller.close(); directory.deleteRecursively() }
     }
 
@@ -51,8 +51,8 @@ class FileToolIntegrationTest {
     @Test fun fileAndCommandDefaultsUseTheSameWorkspace() {
         for (rootGranted in listOf(false)) {
             val directory = File(TerminalRuntime.userWorkspacePath, "file-tool-${UUID.randomUUID()}")
-            val path = "${directory.name}/内存管理 手册.md"
-            val content = "# 内存管理\n" + "中文正文与 shell 字符：${'$'}()、`、'、\"。\n".repeat(300)
+            val path = "${directory.name}/memory management manual.md"
+            val content = "# memory management\n" + "Chinese body with shell characters:${'$'}(),`,',\".\n".repeat(300)
             val controller = RootShellTerminalController(NoopLogger, rootAvailable = { rootGranted })
             try {
                 val written = JSONObject(controller.fileTool("write_file", JSONObject()

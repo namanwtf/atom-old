@@ -18,27 +18,27 @@ class StaticMarkdownDocumentCacheTest {
     @Test
     fun smallDocumentsRespectTheEntryBudgetAndLeastRecentlyUsedOrder() {
         val cache = cache()
-        val first = cache.parse("第一条", style)
-        cache.parse("第二条", style)
-        cache.parse("第三条", style)
-        cache.parse("第四条", style)
-        assertSame(first, cache.get("第一条", style))
+        val first = cache.parse("first item", style)
+        cache.parse("second item", style)
+        cache.parse("third item", style)
+        cache.parse("fourth item", style)
+        assertSame(first, cache.get("first item", style))
 
-        cache.parse("第五条", style)
+        cache.parse("fifth item", style)
 
-        assertSame(first, cache.get("第一条", style))
-        assertNull(cache.get("第二条", style))
-        assertNotNull(cache.get("第三条", style))
-        assertNotNull(cache.get("第四条", style))
-        assertNotNull(cache.get("第五条", style))
+        assertSame(first, cache.get("first item", style))
+        assertNull(cache.get("second item", style))
+        assertNotNull(cache.get("third item", style))
+        assertNotNull(cache.get("fourth item", style))
+        assertNotNull(cache.get("fifth item", style))
     }
 
     @Test
     fun totalSourceCharactersEvictBeforeTheEntryLimitIsReached() {
         val cache = cache()
-        val first = "甲".repeat(40)
-        val second = "乙".repeat(40)
-        val third = "丙".repeat(40)
+        val first = "A".repeat(40)
+        val second = "B".repeat(40)
+        val third = "C".repeat(40)
         cache.parse(first, style)
         val retained = cache.parse(second, style)
 
@@ -52,28 +52,28 @@ class StaticMarkdownDocumentCacheTest {
     @Test
     fun oversizedStaticDocumentIsParsedWithoutDisplacingSmallerDocuments() {
         val cache = cache()
-        val small = cache.parse("保留的短回复", style)
-        val oversized = "长".repeat(61)
+        val small = cache.parse("retained short reply", style)
+        val oversized = "x".repeat(61)
 
         val rendered = cache.parse(oversized, style)
 
         assertEquals(oversized, (rendered.blocks.single() as MarkdownParagraph).text.text)
         assertNull(cache.get(oversized, style))
-        assertSame(small, cache.get("保留的短回复", style))
+        assertSame(small, cache.get("retained short reply", style))
     }
 
     @Test
     fun streamingHandoffUsesTheSameSingleDocumentAdmissionLimit() {
         val cache = cache()
-        val small = cache.parse("流式交接前的小文档", style)
-        val oversized = StreamingGfmParserSession().parse("大".repeat(61), isComplete = true)
+        val small = cache.parse("small document before streaming handoff", style)
+        val oversized = StreamingGfmParserSession().parse("x".repeat(61), isComplete = true)
 
         cache.put(oversized)
 
         assertNull(cache.get(oversized.originalSource, style))
-        assertSame(small, cache.get("流式交接前的小文档", style))
+        assertSame(small, cache.get("small document before streaming handoff", style))
 
-        val accepted = StreamingGfmParserSession().parse("界".repeat(60), isComplete = true)
+        val accepted = StreamingGfmParserSession().parse("x".repeat(60), isComplete = true)
         cache.put(accepted)
         assertSame(accepted.document, cache.get(accepted.originalSource, style))
     }

@@ -30,13 +30,13 @@ class CharacterRepositoryTest {
 
     @Test
     fun largeCardsPersonaAndConversationBindingsUseChunkedStorage() = runBlocking {
-        val description = "山与海😀".repeat(30_000)
-        val profile = CharacterRepository.create(CharacterCardCodec.create("角色").withEdits(description = description))
-        CharacterRepository.savePersona(UserPersona("旅人", description))
+        val description = "mountains and sea😀".repeat(30_000)
+        val profile = CharacterRepository.create(CharacterCardCodec.create("character").withEdits(description = description))
+        CharacterRepository.savePersona(UserPersona("traveler", description))
         assertEquals(description, CharacterRepository.get(profile.id)?.card?.description)
         assertEquals(description, CharacterRepository.binding(profile.id).userDescription)
         val dao = EtaDatabase.get(context).conversationDao()
-        val row = ConversationEntity("session", "角色会话", false, roleplayJson = description,
+        val row = ConversationEntity("session", "character session", false, roleplayJson = description,
             revisionsJson = description, createdAt = 1, updatedAt = 2)
         dao.insertConversations(listOf(row))
         assertEquals(description, dao.roleplayJson(row.id))
@@ -52,35 +52,35 @@ class CharacterRepositoryTest {
         CharacterRepository.delete(profile.id)
         assertEquals(null, CharacterRepository.get(profile.id))
         assertEquals(listOf(copy.id), CharacterRepository.list().map { it.id })
-        // 删除角色后已有会话及其角色快照仍然保留。
+        // After deleting the character, the existing session and its character snapshot are still retained.
         assertEquals(description, dao.roleplayJson(row.id))
     }
 
     @Test
     fun defaultCharacterSeedsOnlyIntoEmptyLibraryAndNeverResurrects() = runBlocking {
         CharacterRepository.ensureDefaultCharacter()
-        assertEquals(listOf("小满"), CharacterRepository.list().map { it.card.name })
+        assertEquals(listOf("Xiaoman"), CharacterRepository.list().map { it.card.name })
         CharacterRepository.ensureDefaultCharacter()
         assertEquals(1, CharacterRepository.list().size)
         CharacterRepository.delete(CharacterRepository.list().single().id)
         CharacterRepository.ensureDefaultCharacter()
         assertEquals(emptyList<String>(), CharacterRepository.list().map { it.id })
-        // 用户主动恢复时不受播种标记限制。
+        // Manual restoration by the user is not limited by the seeding flag.
         CharacterRepository.createDefaultCharacter()
-        assertEquals(listOf("小满"), CharacterRepository.list().map { it.card.name })
+        assertEquals(listOf("Xiaoman"), CharacterRepository.list().map { it.card.name })
     }
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun invalidAvatarDoesNotPartiallySaveEditedCard() = runBlocking {
-        val profile = CharacterRepository.create(CharacterCardCodec.create("原角色"))
+        val profile = CharacterRepository.create(CharacterCardCodec.create("original character"))
         var failed = false
         try {
-            CharacterRepository.save(profile.copy(card = profile.card.withEdits(name = "修改后")), "不是图片".toByteArray())
+            CharacterRepository.save(profile.copy(card = profile.card.withEdits(name = "modified")), "not an image".toByteArray())
         } catch (_: IllegalArgumentException) {
             failed = true
         }
         assertTrue(failed)
-        assertEquals("原角色", CharacterRepository.get(profile.id)?.card?.name)
+        assertEquals("original character", CharacterRepository.get(profile.id)?.card?.name)
     }
 }

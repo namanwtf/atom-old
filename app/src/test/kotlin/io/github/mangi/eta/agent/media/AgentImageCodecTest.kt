@@ -38,13 +38,13 @@ class AgentImageCodecTest {
         val bitmap = patternedBitmap(width = 1_200, height = 2_400)
         try {
             val image = AgentImageCodec.fromScreenBitmap(bitmap, source = "screen")
-            val width = image.width ?: error("缺少图片宽度")
-            val height = image.height ?: error("缺少图片高度")
+            val width = image.width ?: error("missing image width")
+            val height = image.height ?: error("missing image height")
             val decoded = BitmapFactory.decodeByteArray(
                 image.reference.decodeDataUrl(),
                 0,
                 image.bytes,
-            ) ?: error("无法解码模型截图")
+            ) ?: error("cannot decode the model screenshot")
 
             assertEquals("image/png", image.mimeType)
             assertTrue(image.reference.startsWith("data:image/png;base64,"))
@@ -66,8 +66,8 @@ class AgentImageCodecTest {
                 bitmap,
                 source = "screen_context",
             )
-            val width = image.width ?: error("缺少图片宽度")
-            val height = image.height ?: error("缺少图片高度")
+            val width = image.width ?: error("missing image width")
+            val height = image.height ?: error("missing image height")
 
             assertEquals("image/png", image.mimeType)
             assertTrue(image.reference.startsWith("data:image/png;base64,"))
@@ -75,7 +75,7 @@ class AgentImageCodecTest {
             assertEquals(bitmap.width, width)
             assertEquals(bitmap.height, height)
             val bytes = image.reference.decodeDataUrl()
-            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("截图无法解码")
+            val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: error("screenshot cannot be decoded")
             try { assertTrue(bitmap.sameAs(decoded)) } finally { decoded.recycle() }
         } finally {
             bitmap.recycle()
@@ -96,7 +96,7 @@ class AgentImageCodecTest {
             assertEquals("image/png", image.mimeType)
             assertTrue(image.preserveOriginal)
             val decoded = BitmapFactory.decodeByteArray(encoded, 0, encoded.size)
-                ?: error("无法解码模型截图")
+                ?: error("cannot decode the model screenshot")
 
             assertEquals(bitmap.width, image.width)
             assertEquals(bitmap.height, image.height)
@@ -121,15 +121,15 @@ class AgentImageCodecTest {
             source = "user_attach",
             mimeHint = "image/jpeg",
         )
-        val width = image.width ?: error("缺少图片宽度")
-        val height = image.height ?: error("缺少图片高度")
+        val width = image.width ?: error("missing image width")
+        val height = image.height ?: error("missing image height")
 
         assertEquals("image/jpeg", image.mimeType)
         assertEquals(2_400, width)
         assertEquals(1_600, height)
         val encoded = image.reference.decodeDataUrl()
         assertEquals(encoded.size, image.bytes)
-        val decoded = BitmapFactory.decodeByteArray(encoded, 0, encoded.size) ?: error("附件无法解码")
+        val decoded = BitmapFactory.decodeByteArray(encoded, 0, encoded.size) ?: error("attachment cannot be decoded")
         try {
             assertEquals(2_400, decoded.width)
             assertEquals(1_600, decoded.height)
@@ -172,9 +172,9 @@ class AgentImageCodecTest {
 
         try {
             val image = AgentImageCodec.fromToolFile(sourceFile, "tool_read_image")
-                ?: error("无法压缩文件工具图片")
-            val width = image.width ?: error("缺少图片宽度")
-            val height = image.height ?: error("缺少图片高度")
+                ?: error("cannot compress the file tool image")
+            val width = image.width ?: error("missing image width")
+            val height = image.height ?: error("missing image height")
 
             assertEquals("image/jpeg", image.mimeType)
             assertEquals(3_200, width)
@@ -200,9 +200,9 @@ class AgentImageCodecTest {
                 context = context,
                 value = sourceFile.absolutePath,
                 source = "user_attach",
-            ) ?: error("无法读取测试图片")
+            ) ?: error("cannot read the test image")
             val preview = AgentImageCodec.previewFromReference(context, source)
-                ?: error("无法生成测试预览")
+                ?: error("cannot generate a test preview")
 
             assertEquals(sourceFile.absolutePath, source.reference)
             assertEquals("image/jpeg", preview.mimeType)
@@ -228,11 +228,11 @@ class AgentImageCodecTest {
             context = context,
             value = sourceFile.absolutePath,
             source = "user_attach",
-        ) ?: error("无法读取测试图片")
+        ) ?: error("cannot read the test image")
         assertTrue(sourceFile.delete())
 
         val preview = AgentImageCodec.previewFromReference(context, attachment)
-            ?: error("无法从已读取的附件生成预览")
+            ?: error("cannot generate a preview from the already-read attachment")
 
         assertEquals("image/jpeg", preview.mimeType)
         assertTrue(maxOf(preview.width!!, preview.height!!) <= CHAT_PREVIEW_MAX_LONG_EDGE)
@@ -261,7 +261,7 @@ class AgentImageCodecTest {
                 context = context,
                 value = uri.toString(),
                 source = "user_attach",
-            ) ?: error("无法通过 typed asset 读取测试图片")
+            ) ?: error("cannot read typed asset read the test image")
 
             assertEquals("image/jpeg", image.mimeType)
             assertEquals(873, image.width)

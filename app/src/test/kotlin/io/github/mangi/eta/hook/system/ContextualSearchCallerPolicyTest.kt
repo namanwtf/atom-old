@@ -19,7 +19,7 @@ class ContextualSearchCallerPolicyTest {
     private val context get() = RuntimeEnvironment.getApplication()
 
     @Test
-    fun `允许系统桌面与小爱调用导航搜索`() {
+    fun `allows system launcher and Xiaoai to invoke navigation search`() {
         for (name in ModuleConfig.XIAOMI_LAUNCHER_PACKAGES + ModuleConfig.XIAOAI_PACKAGE) {
             install(name, ApplicationInfo.FLAG_SYSTEM)
             assertTrue(allowed(name))
@@ -27,7 +27,7 @@ class ContextualSearchCallerPolicyTest {
     }
 
     @Test
-    fun `系统应用更新仍可用但开关关闭立即撤销权限`() {
+    fun `updated system app still works but disabling the switch immediately revokes permission`() {
         install(ModuleConfig.XIAOAI_PACKAGE, ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)
         assertTrue(allowed(ModuleConfig.XIAOAI_PACKAGE))
         assertFalse(ContextualSearchCallerPolicy.allowsHyperOsCaller(
@@ -38,7 +38,7 @@ class ContextualSearchCallerPolicyTest {
     }
 
     @Test
-    fun `同名普通安装包和其他系统包不能获得权限`() {
+    fun `same-name ordinary installs and other system packages cannot gain permission`() {
         for (name in ModuleConfig.XIAOMI_LAUNCHER_PACKAGES + ModuleConfig.XIAOAI_PACKAGE) {
             install(name, 0)
             assertFalse(allowed(name))
@@ -48,13 +48,13 @@ class ContextualSearchCallerPolicyTest {
     }
 
     @Test
-    fun `包不存在或调用方列表为空时拒绝`() {
+    fun `rejects when the package is missing or the caller list is empty`() {
         assertFalse(allowed(ModuleConfig.XIAOAI_PACKAGE))
         assertFalse(ContextualSearchCallerPolicy.allowsHyperOsCaller(context, emptyArray(), true))
     }
 
     @Test
-    fun `共享UID仍要求其中存在可信系统包`() {
+    fun `a shared UID still requires a trusted system package among them`() {
         install(ModuleConfig.XIAOAI_PACKAGE, ApplicationInfo.FLAG_SYSTEM)
         assertTrue(ContextualSearchCallerPolicy.allowsHyperOsCaller(
             context,

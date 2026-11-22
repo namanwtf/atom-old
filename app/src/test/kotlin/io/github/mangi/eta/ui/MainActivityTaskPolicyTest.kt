@@ -12,7 +12,7 @@ import org.robolectric.RuntimeEnvironment
 class MainActivityTaskPolicyTest {
     @Suppress("DEPRECATION")
     @Test
-    fun `主入口复用唯一任务实例`() {
+    fun `the main entry reuses the single task instance`() {
         val context = RuntimeEnvironment.getApplication()
         val activityInfo = context.packageManager.getActivityInfo(
             ComponentName(context, MainActivity::class.java),

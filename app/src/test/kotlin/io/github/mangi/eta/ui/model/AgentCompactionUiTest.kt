@@ -7,19 +7,19 @@ import org.junit.Test
 class AgentCompactionUiTest {
     @Test
     fun manualActionRequiresIdleCompletedHistory() {
-        val empty = AgentChatUiState(emptyList(), input = "草稿", isStreaming = false, thinkingEnabled = false)
+        val empty = AgentChatUiState(emptyList(), input = "draft", isStreaming = false, thinkingEnabled = false)
         assertFalse(empty.canCompactContext)
-        val ready = empty.copy(history = listOf(AgentModelClient.ConversationMessage("assistant", "已完成")))
+        val ready = empty.copy(history = listOf(AgentModelClient.ConversationMessage("assistant", "completed")))
         assertTrue(ready.canCompactContext)
         assertFalse(ready.copy(isStreaming = true).canCompactContext)
-        assertFalse(empty.copy(history = listOf(AgentModelClient.ConversationMessage("assistant", "仅摘要", contextSummary = true))).canCompactContext)
+        assertFalse(empty.copy(history = listOf(AgentModelClient.ConversationMessage("assistant", "summary only", contextSummary = true))).canCompactContext)
     }
 
     @Test
     fun compactionInvalidatesPreviousUsageUntilNextModelResponse() {
-        val response = AgentMessageUi("answer", "答案", usage = TokenUsageUi(contextTokens = 30_000))
+        val response = AgentMessageUi("answer", "answer", usage = TokenUsageUi(contextTokens = 30_000))
         val compaction = SystemNoticeMessageUi("compact", SystemNoticeCode.ContextCompaction,
-            "已压缩", contextTokens = 3_000)
+            "compacted", contextTokens = 3_000)
         val usage = latestContextUsage(listOf(response, compaction), null)
         assertNull(usage.contextTokens)
         val next = latestContextUsage(listOf(response, compaction, response.copy(id = "next", usage = TokenUsageUi(contextTokens = 4_000))), null)

@@ -43,44 +43,44 @@ class SpeechTranscriptRefinerTest {
         .put("role", "assistant").put("content", text).put("finish_reason", finish))
 
     @Test fun correctedTextIsReturnedFromToolFreeRequest() = runBlocking {
-        val result = refiner { reply("用 Python 解析 JSON") }.refine("用配森解析杰森")
-        assertEquals("用 Python 解析 JSON", result)
+        val result = refiner { reply("parse JSON with Python") }.refine("parsse JSON with Pythan")
+        assertEquals("parse JSON with Python", result)
         val request = requests.single()
         assertEquals(ProviderRequestPurpose.TRANSCRIPT_REFINE, request.purpose)
         assertEquals(0, request.effectiveTools.length())
-        // 识别文字只作为用户数据进入请求，系统提示不拼接用户内容。
+        // Recognized text enters the request only as user data; the system prompt never concatenates user content.
         assertEquals(SpeechTranscriptRefiner.SYSTEM_PROMPT, request.messages.getJSONObject(0).getString("content"))
-        assertTrue(request.messages.getJSONObject(1).toString().contains("用配森解析杰森"))
+        assertTrue(request.messages.getJSONObject(1).toString().contains("parse JSON with Python"))
     }
 
     @Test fun suspiciousOrIncompleteOutputKeepsOriginal() = runBlocking {
-        val original = "帮我打开设置"
-        assertEquals(original, refiner { reply("好的，我已经帮你把这句话整理成了更通顺的表达：请帮我打开系统设置页面") }.refine(original))
+        val original = "open settings for me"
+        assertEquals(original, refiner { reply("Okay, I've already rephrased this sentence into a smoother expression for you: please open the system settings page for me") }.refine(original))
         assertEquals(original, refiner { reply("") }.refine(original))
-        assertEquals(original, refiner { reply("帮我打开设置", finish = "length") }.runCatching { refine(original) }.getOrDefault(original))
+        assertEquals(original, refiner { reply("open settings for me", finish = "length") }.runCatching { refine(original) }.getOrDefault(original))
     }
 
     @Test fun lengthLimitsSkipModelCall() = runBlocking {
-        assertEquals("嗯", refiner { error("不应请求模型") }.refine("嗯"))
-        val long = "很长".repeat(1_001)
-        assertEquals(long, refiner { error("不应请求模型") }.refine(long))
+        assertEquals("um", refiner { error("must not request the model") }.refine("um"))
+        val long = "very long".repeat(1_001)
+        assertEquals(long, refiner { error("must not request the model") }.refine(long))
     }
 
     @Test fun missingChatModelIsConfigurationFailure() = runBlocking {
-        val failure = runCatching { refiner(config = null) { reply("x") }.refine("测试文本") }.exceptionOrNull()
+        val failure = runCatching { refiner(config = null) { reply("x") }.refine("test text") }.exceptionOrNull()
         assertEquals(SpeechErrorCode.CONFIGURATION, (failure as SpeechFailure).code)
     }
 
     @Test fun reasoningUsesLowestSelectableEffort() = runBlocking {
         refiner(config(ModelReasoningCapabilities(
             supportedEfforts = listOf(ReasoningEffort.LOW, ReasoningEffort.HIGH), canDisable = true,
-        ))) { reply("测试文本") }.refine("测试文本")
+        ))) { reply("test text") }.refine("test text")
         refiner(config(ModelReasoningCapabilities(
             supportedEfforts = listOf(ReasoningEffort.LOW, ReasoningEffort.HIGH), mandatory = true,
-        ))) { reply("测试文本") }.refine("测试文本")
+        ))) { reply("test text") }.refine("test text")
         assertEquals(listOf(ReasoningEffort.OFF, ReasoningEffort.LOW), requests.map { it.config.reasoningEffort })
-        // 未声明推理能力的模型保留用户配置，不发送它可能不支持的参数。
-        refiner { reply("测试文本") }.refine("测试文本")
+        // Models without declared reasoning capability keep the user config and don't send parameters they may not support.
+        refiner { reply("test text") }.refine("test text")
         assertEquals(ReasoningEffort.HIGH, requests.last().config.reasoningEffort)
     }
 
@@ -92,8 +92,8 @@ class SpeechTranscriptRefinerTest {
                     val released = CountDownLatch(1)
                     controller.register { cancelled.countDown(); released.countDown() }
                     released.await(30, TimeUnit.SECONDS)
-                    reply("迟到")
-                }.refine("测试文本")
+                    reply("late")
+                }.refine("test text")
             }
         }.exceptionOrNull()
         assertTrue(failure is TimeoutCancellationException)

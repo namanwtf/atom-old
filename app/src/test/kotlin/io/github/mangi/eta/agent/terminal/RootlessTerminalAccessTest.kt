@@ -54,15 +54,15 @@ class RootlessTerminalAccessTest {
 
     @Test fun fileToolsWriteAndReadAccessiblePathsOutsideWorkspace() {
         val controller = RootShellTerminalController(NoopLogger, rootAvailable = { false })
-        val target = File(temporary.root, "notes/内存管理.md")
+        val target = File(temporary.root, "notes/memory management.md")
         try {
             val write = JSONObject(controller.fileTool("write_file", JSONObject()
-                .put("path", target.path).put("content", "# 内存管理\n正文")
+                .put("path", target.path).put("content", "# memory management\nbody")
                 .put("environment", "ANDROID").put("identity", "USER").put("unused", true)))
             assertTrue(write.toString(), write.getBoolean("ok"))
-            assertEquals("# 内存管理\n正文", target.readText())
+            assertEquals("# memory management\nbody", target.readText())
             val read = JSONObject(controller.fileTool("read_file", JSONObject()
-                .put("cwd", temporary.root.path).put("path", "notes/内存管理.md")))
+                .put("cwd", temporary.root.path).put("path", "notes/memory management.md")))
             assertTrue(read.toString(), read.getBoolean("ok"))
             assertEquals(target.readText(), read.getString("content"))
         } finally { controller.closeAll() }

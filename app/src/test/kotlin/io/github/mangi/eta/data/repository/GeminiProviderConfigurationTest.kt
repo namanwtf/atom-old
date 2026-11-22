@@ -61,7 +61,7 @@ class GeminiProviderConfigurationTest {
     @Test
     fun customNativeProxyRoundTripsCopiesAndProjectsWithoutAnOpenAiEndpoint() = runBlocking {
         val source = GeminiProviderSetting(
-            id = "native-gemini", name = "原生代理", baseUrl = "https://proxy.example/v1beta", apiKey = "fixture-key",
+            id = "native-gemini", name = "native proxy", baseUrl = "https://proxy.example/v1beta", apiKey = "fixture-key",
             hostedWebSearchEnabled = true,
             customHeaders = listOf(CustomHeader("x-fixture", "value")),
             customBody = listOf(CustomBody("generation_config.temperature", JsonPrimitive(0.4))),
@@ -89,7 +89,7 @@ class GeminiProviderConfigurationTest {
     fun unknownManualModelUsesDefaultWithoutInventingThinkingCapabilities() {
         val config = RuntimeConfigRepository.buildRuntimeConfig(
             GeminiProviderSetting(id = "manual-gemini", name = "Gemini"),
-            Model(id = "manual-model", modelId = "gemini-future", displayName = "手动模型"),
+            Model(id = "manual-model", modelId = "gemini-future", displayName = "manual model"),
         )
         assertEquals(ReasoningEffort.DEFAULT, config.reasoningEffort)
         assertEquals(ReasoningEffort.DEFAULT, config.effectiveReasoningEffort)
@@ -104,7 +104,7 @@ class GeminiProviderConfigurationTest {
         val manual = ModelReasoningCapabilities(supportedEfforts = listOf(ReasoningEffort.LOW, ReasoningEffort.HIGH),
             defaultEnabled = true, mandatory = true)
         val provider = GeminiProviderSetting(id = "manual-config", name = "Gemini", models = listOf(
-            Model(id = "future", modelId = "gemini-future", displayName = "未来模型",
+            Model(id = "future", modelId = "gemini-future", displayName = "future model",
                 reasoningOverride = true, reasoningCapabilitiesOverride = manual),
         ))
         ProviderRepository.addProvider(provider)
@@ -119,7 +119,7 @@ class GeminiProviderConfigurationTest {
 
     @Test
     fun neonAndHydrogenUpgradePreservesExistingModelsAndDoesNotRestoreDeletedPresets() = runBlocking {
-        val neon = Model(id = "existing-neon", modelId = "gemini-4-neon", displayName = "我的 Neon",
+        val neon = Model(id = "existing-neon", modelId = "gemini-4-neon", displayName = "my Neon",
             contextWindowOverride = 200_000)
         val provider = requireNotNull(BuiltinProviders.providerById(BuiltinProviders.GEMINI_ID))
             .withModels(listOf(neon))
@@ -135,9 +135,9 @@ class GeminiProviderConfigurationTest {
     @Test
     fun builtinMergeAppendsGeminiAndPreservesTheSelectedCompatibleConnection() = runBlocking {
         val source = CustomProviderSetting(
-            id = "existing-gemini-compatible", name = "原有兼容连接",
+            id = "existing-gemini-compatible", name = "existing compatible connection",
             baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai", apiKey = "fixture-key",
-            models = listOf(Model(id = "existing-model", modelId = "gemini-3.8-flash", displayName = "原模型")),
+            models = listOf(Model(id = "existing-model", modelId = "gemini-3.8-flash", displayName = "original model")),
         )
         ProviderRepository.addProvider(source)
         SettingsDataStore.setSelection(source.id, source.models.single().id)
@@ -158,7 +158,7 @@ class GeminiProviderConfigurationTest {
     fun configurationDraftRetainsNativeProtocolAndSearchToggle() {
         val source = GeminiProviderSetting(id = "native", name = "Gemini")
         val draft = ProviderConfigDraft.from(source).copy(
-            name = "修改后的名称", baseUrl = "https://proxy.example/v1beta", apiKey = "fixture-key",
+            name = "modified name", baseUrl = "https://proxy.example/v1beta", apiKey = "fixture-key",
             hostedWebSearchEnabled = true,
         )
         val updated = draft.toProvider(source)
@@ -229,7 +229,7 @@ class GeminiProviderConfigurationTest {
 
     @Test
     fun backupUsesNewVersionAndRestoresTheNativeType() = runBlocking {
-        val source = GeminiProviderSetting(id = "backup-gemini", name = "备份 Gemini", hostedWebSearchEnabled = true)
+        val source = GeminiProviderSetting(id = "backup-gemini", name = "backup Gemini", hostedWebSearchEnabled = true)
         ProviderRepository.addProvider(source)
         val output = ByteArrayOutputStream()
         EtaBackupRepository.export(context, output)

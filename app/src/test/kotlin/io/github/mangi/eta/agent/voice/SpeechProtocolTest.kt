@@ -15,17 +15,17 @@ class SpeechProtocolTest {
         fun event(id: String, suffix: String, text: String, stash: String = "") = JSONObject()
             .put("type", "conversation.item.input_audio_transcription.$suffix")
             .put("item_id", id).put("text", text).put("stash", stash).put("transcript", text)
-        assertEquals("北京的", transcript.accept(event("a", "text", "", "北京的")))
-        assertEquals("北京天气", transcript.accept(event("a", "text", "北京", "天气")))
-        assertEquals("北京天气。", transcript.accept(event("a", "completed", "北京天气。")))
-        assertEquals("北京天气。", transcript.accept(event("a", "text", "旧草稿")))
-        transcript.accept(event("b", "completed", "请查一下。"))
-        transcript.accept(event("c", "text", "未确认的内容"))
-        assertEquals("北京天气。请查一下。", transcript.result())
+        assertEquals("Beijing's", transcript.accept(event("a", "text", "", "Beijing's")))
+        assertEquals("Beijing weather", transcript.accept(event("a", "text", "Beijing", "weather")))
+        assertEquals("Beijing weather.", transcript.accept(event("a", "completed", "Beijing weather.")))
+        assertEquals("Beijing weather.", transcript.accept(event("a", "text", "old draft")))
+        transcript.accept(event("b", "completed", "Please look it up."))
+        transcript.accept(event("c", "text", "unconfirmed content"))
+        assertEquals("Beijing weather. Please look it up.", transcript.result())
     }
 
     @Test fun doubaoFramesHandleCompressionHeaderExtensionsAndFinalSequence() {
-        val json = """{"result":{"text":"你好"}}""".toByteArray()
+        val json = """{"result":{"text":"hello"}}""".toByteArray()
         for (gzip in listOf(false, true)) {
             val payload = if (gzip) ByteArrayOutputStream().apply { GZIPOutputStream(this).use { it.write(json) } }.toByteArray() else json
             val frame = ByteBuffer.allocate(16 + payload.size)
@@ -33,7 +33,7 @@ class SpeechProtocolTest {
                 .putInt(0).putInt(-2).putInt(payload.size).put(payload).array()
             val result = DoubaoAsrCodec.decode(frame)
             assertTrue(result.final)
-            assertEquals("你好", result.body.getJSONObject("result").getString("text"))
+            assertEquals("hello", result.body.getJSONObject("result").getString("text"))
             assertThrows(SpeechFailure::class.java) { DoubaoAsrCodec.decode(frame.copyOf(frame.size - 1)) }
         }
     }
@@ -85,7 +85,7 @@ class SpeechProtocolTest {
     }
 
     @Test fun fileTranscriptReadsChannelText() {
-        assertEquals("完整转写", fileTranscript(JSONObject("""{"transcripts":[{"channel_id":0,"text":"完整转写","sentences":[]}]}""")))
+        assertEquals("complete transcript", fileTranscript(JSONObject("""{"transcripts":[{"channel_id":0,"text":"complete transcript","sentences":[]}]}""")))
     }
 
     @Test fun wavHeaderDescribesRecordedPcm() {

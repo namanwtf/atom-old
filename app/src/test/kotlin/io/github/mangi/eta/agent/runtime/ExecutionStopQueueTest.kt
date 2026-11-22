@@ -19,7 +19,7 @@ class ExecutionStopQueueTest {
         try {
             queue.submit(listOf(
                 { stopped += "first" },
-                { throw IllegalStateException("单个回收失败") },
+                { throw IllegalStateException("a single collection failure") },
                 { stopped += "second" },
             ))
             queue.close(listOf({ stopped += "destroy" }))

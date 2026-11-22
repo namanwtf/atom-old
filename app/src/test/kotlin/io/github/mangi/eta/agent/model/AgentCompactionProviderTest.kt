@@ -58,7 +58,7 @@ class AgentCompactionProviderTest {
                     } else {
                         OpenAiEndpointMode.CHAT_COMPLETIONS
                     },
-                    systemPrompt = "总结规则",
+                    systemPrompt = "summary rule",
                     hostedWebSearchEnabled = provider === OpenAiResponsesProvider,
                     extraBodyJson = """{"tools":[{"type":"web_search"}],"input":"BAD_INPUT","temperature":0.2}""",
                     customBody = listOf(
@@ -69,7 +69,7 @@ class AgentCompactionProviderTest {
                 val tools = AgentToolCatalog.build(terminalTools = false, browserTools = false)
                 val request = ProviderRequest(
                     config = config,
-                    messages = JSONArray().put(AgentConversationCodec.userTextMessage("总结以下历史")),
+                    messages = JSONArray().put(AgentConversationCodec.userTextMessage("summarize the following history")),
                     tools = tools,
                     purpose = ProviderRequestPurpose.COMPACTION,
                 )
@@ -87,7 +87,7 @@ class AgentCompactionProviderTest {
                         assertEquals(0.2, body.getDouble("temperature"), 0.0001)
                     }
                     AnthropicMessagesProvider -> {
-                        // Anthropic 保留原始 tool_choice 以复用 messages 缓存，并屏蔽受保护协议字段覆盖。
+                        // Anthropic keeps the original tool_choice to reuse the messages cache and shields protected protocol fields from being overwritten.
                         assertFalse(body.has("tool_choice"))
                     }
                     GeminiInteractionsProvider -> {
@@ -97,7 +97,7 @@ class AgentCompactionProviderTest {
                 }
                 assertFalse(body.toString().contains("BAD_INPUT"))
                 assertFalse(body.toString().contains("BAD_MESSAGES"))
-                assertTrue(body.toString().contains("总结以下历史"))
+                assertTrue(body.toString().contains("summarize the following history"))
             } finally {
                 server.stop(0)
             }
@@ -122,12 +122,12 @@ class AgentCompactionProviderTest {
         server.start()
         try {
             listOf("user", "assistant", "system").forEach { role ->
-                val card = CharacterCardCodec.decodeJson("""{"name":"林舟","extensions":{"depth_prompt":{
-                    "prompt":"深度设定","depth":1,"role":"$role"}}}""")
-                val context = RoleplayRunContext("fixture", card, "用户", "", contextWindow = 128_000)
+                val card = CharacterCardCodec.decodeJson("""{"name":"Lin Zhou","extensions":{"depth_prompt":{
+                    "prompt":"depth setting","depth":1,"role":"$role"}}}""")
+                val context = RoleplayRunContext("fixture", card, "user", "", contextWindow = 128_000)
                 val source = JSONArray().put(context.personaMessage())
-                    .put(AgentConversationCodec.userTextMessage("第一句").put("_eta_message_id", "first"))
-                    .put(JSONObject().put("role", "assistant").put("content", "第二句"))
+                    .put(AgentConversationCodec.userTextMessage("first sentence").put("_eta_message_id", "first"))
+                    .put(JSONObject().put("role", "assistant").put("content", "second sentence"))
                 val config = AgentModelClient.ModelConfig(
                     baseUrl = "http://127.0.0.1:${server.address.port}", apiKey = "fixture",
                     model = "fixture", systemPrompt = "",
@@ -137,10 +137,10 @@ class AgentCompactionProviderTest {
                 }
                 val body = captured.get()
                 assertFalse(body.toString().contains("_eta_message_id"))
-                if (role == "system") assertTrue(body.getJSONArray("system").getJSONObject(0).getString("text").contains("深度设定")) else {
+                if (role == "system") assertTrue(body.getJSONArray("system").getJSONObject(0).getString("text").contains("depth setting")) else {
                     val text = body.getJSONArray("messages").toString()
-                    assertTrue(text.indexOf("第一句") < text.indexOf("深度设定"))
-                    assertTrue(text.indexOf("深度设定") < text.indexOf("第二句"))
+                    assertTrue(text.indexOf("first sentence") < text.indexOf("depth setting"))
+                    assertTrue(text.indexOf("depth setting") < text.indexOf("second sentence"))
                 }
             }
         } finally {
@@ -163,12 +163,12 @@ class AgentCompactionProviderTest {
                 val config = AgentModelClient.ModelConfig(
                     baseUrl = "http://127.0.0.1:${server.address.port}", apiKey = "fixture",
                     model = "fixture", openAiEndpointMode = if (provider === OpenAiResponsesProvider) OpenAiEndpointMode.RESPONSES
-                        else OpenAiEndpointMode.CHAT_COMPLETIONS, systemPrompt = "总结规则", hostedWebSearchEnabled = true,
+                        else OpenAiEndpointMode.CHAT_COMPLETIONS, systemPrompt = "summary rule", hostedWebSearchEnabled = true,
                     extraBodyJson = """{"tools":[{"type":"web_search"}],"input":"BAD_INPUT"}""",
                     customBody = listOf(CustomBody("messages", JsonPrimitive("BAD_MESSAGES"))),
                 )
                 val request = ProviderRequest(config,
-                    JSONArray().put(AgentConversationCodec.userTextMessage("总结以下历史")),
+                    JSONArray().put(AgentConversationCodec.userTextMessage("summarize the following history")),
                     AgentToolCatalog.build(terminalTools = false, browserTools = false), purpose = purpose)
                 assertThrows(AgentModelFailure::class.java) {
                     provider.complete(request, AgentRunController())
@@ -179,7 +179,7 @@ class AgentCompactionProviderTest {
                 assertFalse(body.has("tool_choice"))
                 assertFalse(body.toString().contains("BAD_INPUT"))
                 assertFalse(body.toString().contains("BAD_MESSAGES"))
-                assertTrue(body.toString().contains("总结以下历史"))
+                assertTrue(body.toString().contains("summarize the following history"))
             } finally {
                 server.stop(0)
             }

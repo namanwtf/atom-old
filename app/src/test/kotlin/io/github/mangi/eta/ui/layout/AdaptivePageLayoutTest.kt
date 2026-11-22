@@ -23,7 +23,7 @@ class AdaptivePageLayoutTest {
         val maxCornerPx = with(density) { 26.dp.roundToPx() }
         val minTotalPx = with(density) { 12.dp.roundToPx() }
 
-        // 203px 圆角 * 0.42 ≈ 85px（约 24.3dp），扣除已有 10dp（35px）后额外补充 50px。
+        // 203px corner radius * 0.42 ≈ 85px (about 24.3dp); after deducting the existing 10dp (35px), an extra 50px is added.
         val extraPx = computeFloatingBottomExtraInsetPx(
             baseBottomInsetPx = 0,
             bottomCornerRadiusPx = 203,
@@ -42,7 +42,7 @@ class AdaptivePageLayoutTest {
         val maxCornerPx = with(density) { 26.dp.roundToPx() }
         val minTotalPx = with(density) { 12.dp.roundToPx() }
 
-        // 15dp 小白条（53px）+ 10dp = 88px > 圆角目标 85px，直接沿用导航栏高度而不叠加。
+        // 15dp small bar (53px) + 10dp = 88px > the 85px corner target, so the navigation bar height is reused directly without stacking.
         val gestureExtraPx = computeFloatingBottomExtraInsetPx(
             baseBottomInsetPx = 53,
             bottomCornerRadiusPx = 203,
@@ -52,7 +52,7 @@ class AdaptivePageLayoutTest {
         )
         assertEquals(53, gestureExtraPx)
 
-        // 三键导航（48dp = 168px）完全维持原始导航栏避让高度。
+        // three-button navigation (48dp = 168px) keeps the original navigation bar avoidance height unchanged.
         val threeButtonExtraPx = computeFloatingBottomExtraInsetPx(
             baseBottomInsetPx = 168,
             bottomCornerRadiusPx = 203,

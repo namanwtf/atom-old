@@ -13,7 +13,7 @@ class RemoteModelCatalogTest {
     fun catalogMatchesConnectionChangesButIgnoresPresentationEdits() {
         val source = provider()
         val catalog = RemoteModelCatalog(emptyList(), source, null)
-        assertTrue(catalog.matches(source.copy(name = "新名称", sortOrder = 7, systemPrompt = "新提示词")))
+        assertTrue(catalog.matches(source.copy(name = "new name", sortOrder = 7, systemPrompt = "new prompt")))
         assertTrue(catalog.matches(source.copy(baseUrl = source.baseUrl + "/")))
         listOf(
             source.copy(id = "other"),

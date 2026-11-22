@@ -50,9 +50,9 @@ class ProviderRepositoryTest {
     @Test
     fun oauthProviderRoundTripAndCopyKeepProfileWithoutLegacyKey() = runBlocking {
         val added = ProviderRepository.addProvider(OpenAiCompatibleProviderSetting(
-            id = "oauth-source", name = "订阅", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-source", name = "subscription", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT, apiKey = "fixture-must-not-be-stored",
-            models = listOf(Model(id = "oauth-model", modelId = "fixture-model", displayName = "测试")),
+            models = listOf(Model(id = "oauth-model", modelId = "fixture-model", displayName = "test")),
         ))
 
         val stored = requireNotNull(ProviderRepository.providerById(added.id))
@@ -69,9 +69,9 @@ class ProviderRepositoryTest {
     @Test
     fun oauthRuntimeLookupUsesLocalConfigurationAndLeavesAuthenticationToTransport() = runBlocking {
         val provider = OpenAiCompatibleProviderSetting(
-            id = "oauth-local", name = "订阅", baseUrl = "https://api.openai.com/v1",
+            id = "oauth-local", name = "subscription", baseUrl = "https://api.openai.com/v1",
             authMode = ProviderAuthModes.OPENAI_CHATGPT,
-            models = listOf(Model(id = "local-model", modelId = "fixture-model", displayName = "测试")),
+            models = listOf(Model(id = "local-model", modelId = "fixture-model", displayName = "test")),
         )
         ProviderRepository.addProvider(provider)
         val config = requireNotNull(RuntimeConfigRepository.oauthRuntimeConfigFor(
@@ -90,21 +90,21 @@ class ProviderRepositoryTest {
     @Test
     fun signedOutAccountKeepsItsSelectionAndConversationBinding() = runBlocking {
         val unconfigured = OpenAiCompatibleProviderSetting(
-            id = "unconfigured", name = "未配置", baseUrl = "https://example.invalid/v1",
-            models = listOf(Model(id = "unconfigured-model", modelId = "unconfigured-model", displayName = "未配置模型")),
+            id = "unconfigured", name = "unconfigured", baseUrl = "https://example.invalid/v1",
+            models = listOf(Model(id = "unconfigured-model", modelId = "unconfigured-model", displayName = "unconfigured model")),
         )
         val ready = unconfigured.copy(
-            id = "ready", name = "可用", apiKey = "fixture-key",
-            models = listOf(Model(id = "ready-model", modelId = "ready-model", displayName = "可用模型")),
+            id = "ready", name = "available", apiKey = "fixture-key",
+            models = listOf(Model(id = "ready-model", modelId = "ready-model", displayName = "available model")),
         )
         val account = unconfigured.copy(
-            id = "signed-out", name = "已退出", authMode = ProviderAuthModes.OPENAI_CHATGPT,
-            models = listOf(Model(id = "account-model", modelId = "account-model", displayName = "账号模型")),
+            id = "signed-out", name = "signed out", authMode = ProviderAuthModes.OPENAI_CHATGPT,
+            models = listOf(Model(id = "account-model", modelId = "account-model", displayName = "account model")),
         )
         listOf(unconfigured, ready, account).forEach { ProviderRepository.addProvider(it) }
         SettingsDataStore.setSelection(account.id, account.models.single().id)
         EtaDatabase.get(context).conversationDao().insertConversations(listOf(
-            ConversationEntity(id = "bound-chat", title = "原会话", thinkingEnabled = false,
+            ConversationEntity(id = "bound-chat", title = "original conversation", thinkingEnabled = false,
                 modelId = account.models.single().id, createdAt = 1, updatedAt = 1),
         ))
 
@@ -123,16 +123,16 @@ class ProviderRepositoryTest {
     @Test
     fun explicitlySelectingASignedOutAccountModelUsesThatConnection() = runBlocking {
         val fallback = OpenAiCompatibleProviderSetting(
-            id = "first-api", name = "第一个 API", baseUrl = "https://example.invalid/v1", apiKey = "fixture-first-key",
-            models = listOf(Model(id = "first-api-model", modelId = "first", displayName = "第一个模型")),
+            id = "first-api", name = "first API", baseUrl = "https://example.invalid/v1", apiKey = "fixture-first-key",
+            models = listOf(Model(id = "first-api-model", modelId = "first", displayName = "first model")),
         )
         val selected = fallback.copy(
-            id = "selected-api", name = "已选 API", apiKey = "fixture-selected-key",
-            models = listOf(Model(id = "selected-api-model", modelId = "selected", displayName = "已选模型")),
+            id = "selected-api", name = "selected API", apiKey = "fixture-selected-key",
+            models = listOf(Model(id = "selected-api-model", modelId = "selected", displayName = "selected model")),
         )
         val account = fallback.copy(
-            id = "unavailable-account", name = "未登录账号", authMode = ProviderAuthModes.OPENAI_CHATGPT, apiKey = "",
-            models = listOf(Model(id = "account-selection-model", modelId = "account-model", displayName = "账号模型",
+            id = "unavailable-account", name = "signed-out account", authMode = ProviderAuthModes.OPENAI_CHATGPT, apiKey = "",
+            models = listOf(Model(id = "account-selection-model", modelId = "account-model", displayName = "account model",
                 source = ModelSource.CATALOG)),
         )
         listOf(fallback, selected, account).forEach { ProviderRepository.addProvider(it) }
@@ -157,7 +157,7 @@ class ProviderRepositoryTest {
         ProviderRepository.updateProvider(provider.copy(authMode = ProviderAuthModes.OPENAI_CHATGPT))
         ProviderRepository.ensureBuiltInsMerged()
         assertTrue(requireNotNull(ProviderRepository.providerById(provider.id)).models.isEmpty())
-        ProviderRepository.updateProvider(provider.copy(authMode = ProviderAuthModes.OPENAI_CHATGPT, name = "重命名"))
+        ProviderRepository.updateProvider(provider.copy(authMode = ProviderAuthModes.OPENAI_CHATGPT, name = "renamed"))
         assertTrue(requireNotNull(ProviderRepository.providerById(provider.id)).models.isEmpty())
     }
 
@@ -165,7 +165,7 @@ class ProviderRepositoryTest {
     fun existingOfficialModelWithoutWindowRemainsUnsetForEveryRead() = runBlocking {
         ProviderRepository.ensureBuiltInsMerged()
         val id = BuiltinProviders.DEEPSEEK_ID
-        val stored = Model(id = "manual-flash", modelId = "deepseek-flash", displayName = "我的模型", isEnabled = false)
+        val stored = Model(id = "manual-flash", modelId = "deepseek-flash", displayName = "my model", isEnabled = false)
         ProviderRepository.replaceModels(id, listOf(stored))
         val expected = stored
         assertEquals(expected, ProviderRepository.providerById(id)!!.models.single())
@@ -179,7 +179,7 @@ class ProviderRepositoryTest {
     fun onlyUserConfiguredWindowReachesRuntimeAndChat() = runBlocking {
         ProviderRepository.ensureBuiltInsMerged()
         val id = BuiltinProviders.DEEPSEEK_ID
-        val model = Model(id = "manual-flash", modelId = "deepseek-flash", displayName = "我的模型")
+        val model = Model(id = "manual-flash", modelId = "deepseek-flash", displayName = "my model")
         val cases = listOf(
             model to null,
             model.copy(contextWindow = 128_000) to null,
@@ -363,10 +363,10 @@ class ProviderRepositoryTest {
 
     @Test
     fun windowUpgradeUsesRemoteMetadataAndDoesNotInventCodexLimitsOrModifyManualModels() = runBlocking {
-        val remote = Model(id = "remote-window", modelId = "gpt-6.1-sol", displayName = "远端", source = ModelSource.REMOTE,
+        val remote = Model(id = "remote-window", modelId = "gpt-6.1-sol", displayName = "remote", source = ModelSource.REMOTE,
             contextWindow = 272_000)
-        val unknown = Model(id = "unknown-window", modelId = "gpt-6-astra", displayName = "未标注", source = ModelSource.REMOTE)
-        val manual = Model(id = "manual-window", modelId = "gpt-6-luna", displayName = "手动")
+        val unknown = Model(id = "unknown-window", modelId = "gpt-6-astra", displayName = "unlabeled", source = ModelSource.REMOTE)
+        val manual = Model(id = "manual-window", modelId = "gpt-6-luna", displayName = "manual")
         val provider = OpenAiCompatibleProviderSetting(id = "codex-window", name = "Codex", baseUrl = "https://chatgpt.com/backend-api/codex",
             authMode = ProviderAuthModes.OPENAI_CHATGPT, models = listOf(remote, unknown, manual))
         ProviderRepository.addProvider(provider)
@@ -384,9 +384,9 @@ class ProviderRepositoryTest {
         val original = ProviderRepository.providerById(BuiltinProviders.OPENAI_ID) as OpenAiCompatibleProviderSetting
         for (mode in listOf(ProviderAuthModes.API_KEY, ProviderAuthModes.OPENAI_CHATGPT)) {
             ProviderRepository.updateProvider(original.copy(authMode = mode))
-            val remote = Model(id = "remote-sol", modelId = "gpt-6.1-sol", displayName = "远端 Sol", source = ModelSource.REMOTE)
-            val manual = Model(id = "manual", modelId = "custom-model", displayName = "用户模型")
-            val obsolete = Model(id = "old-preset", modelId = "gpt-5.5", displayName = "旧预设", source = ModelSource.CATALOG)
+            val remote = Model(id = "remote-sol", modelId = "gpt-6.1-sol", displayName = "remote Sol", source = ModelSource.REMOTE)
+            val manual = Model(id = "manual", modelId = "custom-model", displayName = "user model")
+            val obsolete = Model(id = "old-preset", modelId = "gpt-5.5", displayName = "old preset", source = ModelSource.CATALOG)
             ProviderRepository.replaceModels(original.id, listOf(remote, manual, obsolete))
             SettingsDataStore.setSelection(original.id, remote.id)
             SettingsDataStore.setOfficialModelCatalogRevision(1)
@@ -404,8 +404,8 @@ class ProviderRepositoryTest {
         ProviderRepository.ensureBuiltInsMerged()
         val provider = ProviderRepository.providerById(BuiltinProviders.OPENAI_ID)!!
         val luna = provider.models.first { it.modelId == "gpt-6-luna" }.copy(isEnabled = false)
-        val obsolete = Model(id = "old-sol", modelId = "gpt-6-sol", displayName = "旧 Sol", source = ModelSource.CATALOG)
-        val manual = Model(id = "manual-sol", modelId = "custom-model", displayName = "自定义")
+        val obsolete = Model(id = "old-sol", modelId = "gpt-6-sol", displayName = "old Sol", source = ModelSource.CATALOG)
+        val manual = Model(id = "manual-sol", modelId = "custom-model", displayName = "custom")
         ProviderRepository.replaceModels(provider.id, listOf(luna, obsolete, manual))
         SettingsDataStore.setOfficialModelCatalogRevision(1)
         ProviderRepository.ensureBuiltInsMerged()
@@ -445,7 +445,7 @@ class ProviderRepositoryTest {
             val provider = ProviderRepository.providerById(providerId)!!
             val changed = provider.models.map { model ->
                 if (model.modelId !in legacy) model else model.copy(
-                    displayName = "自定义 ${model.displayName}",
+                    displayName = "custom ${model.displayName}",
                     reasoningCapabilities = legacy.getValue(model.modelId),
                     reasoningCapabilitiesOverride = override,
                     sortOrder = model.sortOrder + 20,

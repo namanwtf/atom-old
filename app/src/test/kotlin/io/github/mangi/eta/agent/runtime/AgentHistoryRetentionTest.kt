@@ -29,12 +29,12 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-// 数据库由用例管理，避免 EtaApp 的后台预热与关闭、重开数据库竞争。
+// The database is managed by the test case, avoiding races with EtaApp's background warm-up and close/reopen.
 @Config(sdk = [36], application = Application::class)
 class AgentHistoryRetentionTest {
     private lateinit var context: Context
     private val config = AgentModelClient.ModelConfig(
-        baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "规则",
+        baseUrl = "https://example.invalid", apiKey = "fixture", model = "fixture", systemPrompt = "rule",
         reasoningEffort = io.github.mangi.eta.data.model.ReasoningEffort.OFF,
     )
 
@@ -50,13 +50,13 @@ class AgentHistoryRetentionTest {
     }
 
     @Test fun fullHistoryAndLargeMessageSurviveDatabaseReopen() {
-        val text = "中英文😀".repeat(420_000)
+        val text = "Chinese and English😀".repeat(420_000)
         val journal = listOf(AgentModelClient.ConversationMessage("user", text),
-            AgentModelClient.ConversationMessage("assistant", "已完成全部步骤"))
-        val summary = AgentModelClient.ConversationMessage("assistant", "摘要", contextSummary = true, compactedUserTurns = 1)
+            AgentModelClient.ConversationMessage("assistant", "all steps completed"))
+        val summary = AgentModelClient.ConversationMessage("assistant", "summary", contextSummary = true, compactedUserTurns = 1)
         val state = AgentChatUiState(messages = listOf(UserMessageUi("u", text)), history = listOf(summary),
             journal = journal, input = "", isStreaming = false, thinkingEnabled = false, appliedRuntimeRunIds = listOf("run"))
-        runBlocking { AgentConversationStore.save(context, "c", mapOf("c" to state), mapOf("c" to "历史"), mapOf("c" to 1L)) }
+        runBlocking { AgentConversationStore.save(context, "c", mapOf("c" to state), mapOf("c" to "history"), mapOf("c" to 1L)) }
         val db = EtaDatabase.get(context).openHelper.readableDatabase
         db.query("SELECT MAX(length(content)) FROM agent_text_chunks").use {
             assertTrue(it.moveToFirst())
@@ -68,8 +68,8 @@ class AgentHistoryRetentionTest {
         assertEquals(listOf(summary), restored.history)
         assertEquals(text, (restored.messages.single() as UserMessageUi).content)
         assertEquals(listOf("run"), restored.appliedRuntimeRunIds)
-        // 重复保存、缩短正文、删除会话都清理对应分块。
-        runBlocking { AgentConversationStore.save(context, "c", mapOf("c" to restored), mapOf("c" to "历史"), mapOf("c" to 2L)) }
+        // Re-saving, shortening the body, and deleting a conversation all clean up the corresponding chunks.
+        runBlocking { AgentConversationStore.save(context, "c", mapOf("c" to restored), mapOf("c" to "history"), mapOf("c" to 2L)) }
         assertEquals(journal, AgentConversationStore.load(context).conversationsById.getValue("c").journal)
         runBlocking { AgentConversationStore.save(context, null, emptyMap(), emptyMap(), emptyMap()) }
         EtaDatabase.get(context).openHelper.readableDatabase.query("SELECT COUNT(*) FROM agent_text_chunks").use {
@@ -78,14 +78,14 @@ class AgentHistoryRetentionTest {
     }
 
     @Test fun largeTranscriptAndSnapshotSurviveOutboxAndArchiveAndCheckpoint() {
-        val transcript = listOf(AgentModelClient.ConversationMessage("assistant", "普通工具结果😀".repeat(300_000)))
+        val transcript = listOf(AgentModelClient.ConversationMessage("assistant", "ordinary tool result😀".repeat(300_000)))
         val snapshot = AgentContextSnapshot(operationId = "large-run", messages = transcript)
-        val request = AgentRuntimeWire.RunRequest("large-run", "请求", config, emptyList(),
+        val request = AgentRuntimeWire.RunRequest("large-run", "request", config, emptyList(),
             handoff = AgentRuntimeWire.EntryHandoff("large-run", AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE, "c"))
         AgentRunCheckpointStore.start(context, request)
         AgentRunCheckpointStore.saveTranscript(context, request.runId, transcript)
         AgentRunCheckpointStore.saveContext(context, request.runId, snapshot)
-        val result = AgentRuntimeWire.RunResult(request.runId, true, "完成", transcript = transcript, contextSnapshot = snapshot)
+        val result = AgentRuntimeWire.RunResult(request.runId, true, "done", transcript = transcript, contextSnapshot = snapshot)
         val completed = AgentRuntimeWire.CompletedRun(request.handoff!!, result, 1L)
         AgentRuntimeResultStore.add(context, completed)
         AgentRunArchiveStore.add(context, AgentRunArchiveStore.ArchivedRun(completed.handoff, emptyList(), result, 1L))
@@ -108,9 +108,9 @@ class AgentHistoryRetentionTest {
     }
 
     @Test fun missingChunkFailsInsteadOfReturningEmptyHistory() {
-        val transcript = listOf(AgentModelClient.ConversationMessage("assistant", "事实".repeat(80_000)))
+        val transcript = listOf(AgentModelClient.ConversationMessage("assistant", "fact".repeat(80_000)))
         val run = AgentRuntimeWire.CompletedRun(AgentRuntimeWire.EntryHandoff("broken", "test", "c"),
-            AgentRuntimeWire.RunResult("broken", true, "完成", transcript = transcript), System.currentTimeMillis())
+            AgentRuntimeWire.RunResult("broken", true, "done", transcript = transcript), System.currentTimeMillis())
         AgentRuntimeResultStore.add(context, run)
         EtaDatabase.get(context).openHelper.writableDatabase.execSQL("DELETE FROM agent_text_chunks WHERE chunk_index = 1")
         assertThrows(IllegalStateException::class.java) { AgentRuntimeResultStore.list(context) }
@@ -118,7 +118,7 @@ class AgentHistoryRetentionTest {
     }
 
     @Test fun largeRequestsAndResultsUseDescriptorsAndPreserveSummaryMetadata() {
-        val text = "完整历史😀".repeat(100_000)
+        val text = "complete history😀".repeat(100_000)
         val history = listOf(AgentModelClient.ConversationMessage("assistant", text,
             contextSummary = true, compactedUserTurns = 50, summaryThroughUserTurn = 51))
         val request = AgentRuntimeWire.RunRequest("wire-large", text, config.copy(systemPrompt = text), emptyList(), history)
@@ -138,14 +138,14 @@ class AgentHistoryRetentionTest {
     }
 
     @Test fun localMessengerOwnsIndependentDescriptorUntilReceiverConsumesIt() {
-        val text = "跨线程完整正文😀".repeat(20_000)
+        val text = "cross-thread full body😀".repeat(20_000)
         var received: Bundle? = null
         val receiver = Messenger(object : Handler(Looper.getMainLooper()) {
             override fun handleMessage(msg: Message) { received = msg.data }
         })
         val bundle = Bundle()
-        // Robolectric 的 dup 重新打开路径；此 fixture 保留目录项以验证独立描述符所有权。
-        // 取消目录链接后的读取与文件清理由上面的完整请求往返测试覆盖。
+        // Robolectric's dup reopen path; this fixture keeps the directory entry to verify independent descriptor ownership.
+        // Reading and file cleanup after unlinking the directory are covered by the complete request round-trip test above.
         val file = File(context.cacheDir, "local-descriptor-fixture")
         file.writeText(text)
         try {

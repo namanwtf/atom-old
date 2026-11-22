@@ -92,7 +92,7 @@ class AccessibilityWindowObservationTest {
     @Test
     fun pasteTimeoutDoesNotRestoreClipboardBeforeStartedActionReturns() = withService { service ->
         val clipboard = service.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("original", "原内容"))
+        clipboard.setPrimaryClip(ClipData.newPlainText("original", "original content"))
         val started = CountDownLatch(1)
         val release = CountDownLatch(1)
         val root = AccessibilityNodeInfo().apply {
@@ -117,12 +117,12 @@ class AccessibilityWindowObservationTest {
         val caller = Executors.newSingleThreadExecutor()
         val verifier = Executors.newSingleThreadExecutor()
         try {
-            val result = caller.submit<AgentAccessibilityService.NodeActionResult> { service.pasteText("新内容") }
+            val result = caller.submit<AgentAccessibilityService.NodeActionResult> { service.pasteText("new content") }
             val checked = verifier.submit {
                 try {
                     assertTrue(started.await(3, TimeUnit.SECONDS))
                     assertEquals("ACTION_OUTCOME_UNKNOWN", result.get(5, TimeUnit.SECONDS).code)
-                    assertEquals("新内容", clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+                    assertEquals("new content", clipboard.primaryClip?.getItemAt(0)?.text?.toString())
                 } finally {
                     release.countDown()
                 }
@@ -133,7 +133,7 @@ class AccessibilityWindowObservationTest {
                 Thread.sleep(1L)
             }
             checked.get(2, TimeUnit.SECONDS)
-            assertEquals("原内容", clipboard.primaryClip?.getItemAt(0)?.text?.toString())
+            assertEquals("original content", clipboard.primaryClip?.getItemAt(0)?.text?.toString())
         } finally {
             release.countDown()
             caller.shutdownNow()

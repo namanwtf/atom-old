@@ -22,7 +22,7 @@ class GeminiToolSchemaTest {
                 providerType = ProviderTypes.GEMINI, systemPrompt = "",
                 reasoningEffort = ReasoningEffort.DEFAULT,
             ),
-            JSONArray().put(AgentConversationCodec.userTextMessage("测试")), catalog,
+            JSONArray().put(AgentConversationCodec.userTextMessage("test")), catalog,
         )
         val projected = request.getJSONArray("tools").getJSONObject(1).getJSONObject("parameters")
         assertEquals(original, catalog.toString())
@@ -46,8 +46,8 @@ class GeminiToolSchemaTest {
             """{"url":"https://example.test","max_chars":999}""" to false,
         )
         for ((json, expected) in cases) {
-            assertEquals("原始合同：$json", expected, acceptsWebSchema(source, JSONObject(json)))
-            assertEquals("投影合同：$json", expected, acceptsWebSchema(projected, JSONObject(json)))
+            assertEquals("original contract:$json", expected, acceptsWebSchema(source, JSONObject(json)))
+            assertEquals("projected contract:$json", expected, acceptsWebSchema(projected, JSONObject(json)))
         }
     }
 
@@ -146,10 +146,10 @@ class GeminiToolSchemaTest {
             val source = JSONObject("""{"properties":{"value":{"type":"string"}},"oneOf":[{"required":["value"]}]}""")
             val metadata = if (keyword == "\$recursiveAnchor") true else "fixture"
             source.getJSONObject("properties").getJSONObject("value").put(keyword, metadata)
-            assertEquals("引用属性必须保持原位置：$keyword", source.asJson(), GeminiToolSchema.project(source).asJson())
+            assertEquals("reference properties must stay in place:$keyword", source.asJson(), GeminiToolSchema.project(source).asJson())
             source.getJSONObject("properties").getJSONObject("value").remove(keyword)
             source.getJSONArray("oneOf").getJSONObject(0).put(keyword, metadata)
-            assertEquals("不跨资源作用域继承：$keyword", source.asJson(), GeminiToolSchema.project(source).asJson())
+            assertEquals("not inherited across resource scopes:$keyword", source.asJson(), GeminiToolSchema.project(source).asJson())
         }
         val nestedAnchor = JSONObject("""{
             "properties":{"value":{"properties":{"child":{"${'$'}anchor":"nested","type":"string"}}}},
@@ -177,17 +177,17 @@ class GeminiToolSchemaTest {
 
     private fun JSONObject.asJson() = Json.parseToJsonElement(toString())
 
-    /** 独立解释网页工具使用的 JSON Schema 子集；遇到新关键字时显式扩展测试，避免静默忽略约束。 */
+    /** Independently interpret the JSON Schema subset used by the web tools; when a new keyword appears, explicitly extend the test to avoid silently ignoring constraints. */
     private fun acceptsWebSchema(schema: JSONObject, value: Any): Boolean {
         val supported = setOf("type", "properties", "required", "additionalProperties", "oneOf",
             "minLength", "maxLength", "minimum", "maximum", "description", "default")
-        for (keyword in schema.keys()) require(keyword in supported) { "未覆盖的测试关键字：$keyword" }
+        for (keyword in schema.keys()) require(keyword in supported) { "uncovered test keyword:$keyword" }
         val typeMatches = when (schema.optString("type")) {
             "" -> true
             "object" -> value is JSONObject
             "string" -> value is String
             "integer" -> value is Number && value.toDouble() % 1.0 == 0.0
-            else -> error("未覆盖的测试类型")
+            else -> error("uncovered test type")
         }
         if (!typeMatches) return false
         if (value is String) {

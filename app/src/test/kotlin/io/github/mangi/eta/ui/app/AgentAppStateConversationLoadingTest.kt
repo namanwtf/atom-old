@@ -164,7 +164,7 @@ class AgentAppStateConversationLoadingTest {
     @Test
     fun failedPageKeepsTheCurrentWindowAndCanBeRetried() {
         val original = conversation("first", count = 300)
-        val longMessage = UserMessageUi("first-100", "历史正文".repeat(6_000))
+        val longMessage = UserMessageUi("first-100", "history body".repeat(6_000))
         seed("first" to original.copy(messages = original.messages.map { if (it.id == longMessage.id) longMessage else it }))
         val state = AgentAppState(context, scope)
         EtaDatabase.get(context).openHelper.writableDatabase.execSQL(
@@ -243,20 +243,20 @@ class AgentAppStateConversationLoadingTest {
         state.stopCurrentRun()
         assertTrue(runs.isStopRequested("run-a"))
         assertFalse(runs.isStopRequested("run-b"))
-        state.completeRunForTest("run-b", "乙任务结果")
+        state.completeRunForTest("run-b", "task B result")
         awaitCondition { runs.observedRunIds == setOf("run-a") }
 
         assertEquals("first", state.conversationPaneState.selectedConversationId)
         assertTrue(state.homeState.isStreaming)
-        assertFalse(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "乙任务结果" })
+        assertFalse(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "task B result" })
         assertEquals(setOf("run-a"), runs.observedRunIds)
 
-        state.completeRunForTest("run-a", "甲任务结果")
+        state.completeRunForTest("run-a", "task A result")
         awaitCondition { !state.homeState.isStreaming }
         state.selectConversation("second")
         awaitLoaded(state, "second")
-        assertTrue(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "乙任务结果" })
-        assertFalse(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "甲任务结果" })
+        assertTrue(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "task B result" })
+        assertFalse(state.homeState.messages.filterIsInstance<AgentMessageUi>().any { it.content == "task A result" })
     }
 
     @Test
@@ -274,13 +274,13 @@ class AgentAppStateConversationLoadingTest {
         assertTrue(runs.isStopRequested("run-a"))
         assertFalse(runs.isStopRequested("run-b"))
 
-        state.completeRunForTest("run-a", "已保存的结果")
+        state.completeRunForTest("run-a", "saved result")
         awaitCondition { state.conversationPaneState.conversations.none { it.id == "first" } }
         assertEquals(setOf("run-b"), runs.observedRunIds)
         assertTrue(state.homeState.isStreaming)
-        state.completeRunForTest("run-a", "迟到的结果")
+        state.completeRunForTest("run-a", "late result")
         assertFalse(state.conversationPaneState.conversations.any { it.id == "first" })
-        state.completeRunForTest("run-b", "另一个任务结果")
+        state.completeRunForTest("run-b", "another task result")
     }
 
     @Test
@@ -292,24 +292,24 @@ class AgentAppStateConversationLoadingTest {
         state.selectConversation("second")
         awaitLoaded(state, "second")
         state.registerRunForTest("run-b", "second")
-        state.sendCurrentMessage("后台后续消息")
+        state.sendCurrentMessage("background follow-up message")
         state.selectConversation("first")
         awaitLoaded(state, "first")
 
-        state.completeRunForTest("run-b", "后台已完成的回复")
+        state.completeRunForTest("run-b", "background-completed reply")
         awaitCondition {
             runBlocking { AgentConversationStore.loadConversation(context, "second") }
-                ?.journal?.any { it.role == "user" && it.content == "后台后续消息" } == true
+                ?.journal?.any { it.role == "user" && it.content == "background follow-up message" } == true
         }
         val saved = requireNotNull(runBlocking { AgentConversationStore.loadConversation(context, "second") })
-        val answerIndex = saved.journal.indexOfFirst { it.content == "后台已完成的回复" }
-        val followupIndex = saved.journal.indexOfFirst { it.content == "后台后续消息" }
+        val answerIndex = saved.journal.indexOfFirst { it.content == "background-completed reply" }
+        val followupIndex = saved.journal.indexOfFirst { it.content == "background follow-up message" }
         assertTrue(answerIndex >= 0 && answerIndex < followupIndex)
         assertEquals("first", state.conversationPaneState.selectedConversationId)
         assertTrue(state.homeState.isStreaming)
         assertEquals("run-a", runs.activeRunId("first"))
         awaitCondition { runs.observedRunIds == setOf("run-a") }
-        state.completeRunForTest("run-a", "前台任务完成")
+        state.completeRunForTest("run-a", "foreground task completed")
     }
 
     @Test
@@ -320,20 +320,20 @@ class AgentAppStateConversationLoadingTest {
     @Test
     @Config(qualifiers = "b+zh+Hans")
     fun simplifiedChineseBranchPreservesDraftAndUniqueTitles() {
-        assertBranchPreservesDraftAndUniqueTitles("source · 分支")
+        assertBranchPreservesDraftAndUniqueTitles("source · branch")
     }
 
     @Test
     @Config(qualifiers = "b+zh+Hant")
     fun traditionalChineseBranchPreservesDraftAndUniqueTitles() {
-        assertBranchPreservesDraftAndUniqueTitles("source · 分支")
+        assertBranchPreservesDraftAndUniqueTitles("source · branch")
     }
 
     private fun assertBranchPreservesDraftAndUniqueTitles(expectedTitle: String) {
         seed("source" to branchSource())
         val state = AgentAppState(context, scope)
-        state.branchConversation("source", "assistant-source-1-0", "未发送的草稿")
-        state.branchConversation("source", "assistant-source-1-0", "重复点击")
+        state.branchConversation("source", "assistant-source-1-0", "unsent draft")
+        state.branchConversation("source", "assistant-source-1-0", "duplicate tap")
         awaitCondition { state.conversationPaneState.conversations.size == 2 && !state.isBranchingCurrentConversation }
         val firstBranch = state.conversationPaneState.conversations.single { it.id != "source" }
         awaitLoaded(state, firstBranch.id)
@@ -345,7 +345,7 @@ class AgentAppStateConversationLoadingTest {
 
         state.selectConversation("source")
         awaitLoaded(state, "source")
-        assertEquals("未发送的草稿", state.homeState.input)
+        assertEquals("unsent draft", state.homeState.input)
         assertEquals(6, state.homeState.messages.size)
         state.branchConversation("source", "assistant-source-0-0", state.homeState.input)
         awaitCondition { state.conversationPaneState.conversations.size == 3 && !state.isBranchingCurrentConversation }
@@ -361,7 +361,7 @@ class AgentAppStateConversationLoadingTest {
         val state = AgentAppState(context, scope)
         val gate = CompletableDeferred<Unit>()
         AgentAppState::class.java.getDeclaredField("persistenceJob").apply { isAccessible = true }.set(state, gate)
-        state.branchConversation("source", "assistant-source-1-0", "草稿")
+        state.branchConversation("source", "assistant-source-1-0", "draft")
         assertTrue(state.isBranchingCurrentConversation)
         state.selectConversation("other")
         gate.complete(Unit)
@@ -380,15 +380,15 @@ class AgentAppStateConversationLoadingTest {
         seed("source" to branchSource())
         val state = AgentAppState(context, scope)
         state.beginMessageEdit("user-source-0")
-        state.branchConversation("source", "assistant-source-1-0", "不应提交")
+        state.branchConversation("source", "assistant-source-1-0", "must not commit")
         assertFalse(state.isBranchingCurrentConversation)
         assertEquals(1, state.conversationPaneState.conversations.size)
         state.cancelMessageEdit()
         state.registerRunForTest("running", "source")
-        state.branchConversation("source", "assistant-source-1-0", "不应提交")
+        state.branchConversation("source", "assistant-source-1-0", "must not commit")
         assertFalse(state.isBranchingCurrentConversation)
         assertEquals(1, state.conversationPaneState.conversations.size)
-        state.completeRunForTest("running", "完成")
+        state.completeRunForTest("running", "done")
         awaitCondition { !state.homeState.isStreaming }
     }
 
@@ -399,24 +399,24 @@ class AgentAppStateConversationLoadingTest {
         database.openHelper.writableDatabase.execSQL("CREATE TRIGGER reject_new_conversation BEFORE INSERT ON conversations " +
             "WHEN NEW.id != 'source' BEGIN SELECT RAISE(ABORT, 'branch_test_failure'); END")
         val state = AgentAppState(context, scope)
-        state.branchConversation("source", "assistant-source-1-0", "保留草稿")
+        state.branchConversation("source", "assistant-source-1-0", "keep draft")
         awaitCondition { !state.isBranchingCurrentConversation }
         assertEquals("source", state.conversationPaneState.selectedConversationId)
-        assertEquals("保留草稿", state.homeState.input)
+        assertEquals("keep draft", state.homeState.input)
         assertEquals(1, state.conversationPaneState.conversations.size)
         assertEquals(1, runBlocking { database.conversationDao().conversationIdentities().size })
         database.openHelper.writableDatabase.execSQL("DROP TRIGGER reject_new_conversation")
-        state.branchConversation("source", "assistant-source-1-0", "保留草稿")
+        state.branchConversation("source", "assistant-source-1-0", "keep draft")
         awaitCondition { state.conversationPaneState.conversations.size == 2 }
     }
 
     private fun branchSource(): AgentChatHomeUiState {
         val journal = (0 until 3).flatMap { index -> listOf(
-            AgentModelClient.ConversationMessage("user", "问题 $index", messageId = "user-source-$index"),
-            AgentModelClient.ConversationMessage("assistant", "回答 $index", messageId = "assistant-source-$index")) }
+            AgentModelClient.ConversationMessage("user", "question $index", messageId = "user-source-$index"),
+            AgentModelClient.ConversationMessage("assistant", "answer $index", messageId = "assistant-source-$index")) }
         return AgentChatHomeUiState(
-            messages = (0 until 3).flatMap { index -> listOf(UserMessageUi("user-source-$index", "问题 $index"),
-                AgentMessageUi("assistant-source-$index-0", "回答 $index")) },
+            messages = (0 until 3).flatMap { index -> listOf(UserMessageUi("user-source-$index", "question $index"),
+                AgentMessageUi("assistant-source-$index-0", "answer $index")) },
             history = journal, journal = journal, input = "", isStreaming = false, thinkingEnabled = false,
         )
     }
@@ -474,6 +474,6 @@ class AgentAppStateConversationLoadingTest {
             ShadowLooper.idleMainLooper(10, TimeUnit.MILLISECONDS)
             Thread.sleep(1)
         }
-        assertTrue("异步会话操作未在限定时间内完成", condition())
+        assertTrue("asynchronous conversation operation did not complete within the time limit", condition())
     }
 }

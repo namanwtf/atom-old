@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""更新 APK 内的 models.dev 离线模型目录。"""
+"""Update the models.dev offline model catalog bundled in the APK."""
 
 import gzip
 import hashlib
@@ -30,26 +30,26 @@ def download_catalog() -> bytes:
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         if response.geturl() != CATALOG_URL:
-            raise ValueError("模型目录跳转到了非预期地址")
+            raise ValueError("model catalog redirected to an unexpected URL")
         if response.headers.get_content_type() != "application/json":
-            raise ValueError("模型目录不是 JSON 响应")
+            raise ValueError("model catalog is not a JSON response")
         declared_size = response.headers.get("Content-Length")
         if declared_size is not None and int(declared_size) > MAX_CATALOG_BYTES:
-            raise ValueError("模型目录超过大小限制")
+            raise ValueError("model catalog exceeds the size limit")
         data = response.read(MAX_CATALOG_BYTES + 1)
 
     if len(data) > MAX_CATALOG_BYTES:
-        raise ValueError("模型目录超过大小限制")
+        raise ValueError("model catalog exceeds the size limit")
     catalog = json.loads(data.decode("utf-8"))
     if not isinstance(catalog, dict) or not catalog:
-        raise ValueError("模型目录顶层结构无效")
+        raise ValueError("model catalog top-level structure is invalid")
     if not all(
         isinstance(provider_id, str)
         and isinstance(provider, dict)
         and isinstance(provider.get("models"), dict)
         for provider_id, provider in catalog.items()
     ):
-        raise ValueError("模型目录提供商结构无效")
+        raise ValueError("model catalog provider structure is invalid")
     return data
 
 
@@ -65,7 +65,7 @@ def main() -> None:
     compressed = gzip_snapshot(data)
     SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
     if SNAPSHOT.exists() and SNAPSHOT.read_bytes() == compressed:
-        print(f"目录未变化：{SNAPSHOT} ({len(compressed)} 字节)")
+        print(f"catalog unchanged: {SNAPSHOT} ({len(compressed)} bytes)")
         return
 
     temporary_path = None
@@ -82,7 +82,7 @@ def main() -> None:
             temporary_path.unlink(missing_ok=True)
 
     digest = hashlib.sha256(data).hexdigest()
-    print(f"已更新 {SNAPSHOT}：原始 {len(data)} 字节，gzip {len(compressed)} 字节，SHA-256 {digest}")
+    print(f"updated {SNAPSHOT}: raw {len(data)} bytes, gzip {len(compressed)} bytes, SHA-256 {digest}")
 
 
 if __name__ == "__main__":

@@ -40,8 +40,8 @@ class ConversationBranchBoundaryTest {
     fun stableIdsIncludeAllBlocksAndToolsButExcludeLaterTurns() {
         val rows = outline("user" to "u1", "tool" to "tool", "assistant" to "assistant-r-2-0",
             "assistant" to "assistant-r-2-1", "user" to "u2", "assistant" to "a2")
-        val journal = listOf(user("u1"), call(), result(), assistant("assistant-r-2", "第一块\n\n第二块"),
-            user("u2"), assistant("a2", "后续内容"))
+        val journal = listOf(user("u1"), call(), result(), assistant("assistant-r-2", "first block\n\nsecond block"),
+            user("u2"), assistant("a2", "later content"))
         assertEquals(journal.take(4), ConversationBranchBoundary.resolve(rows, journal, emptyRole, "assistant-r-2-1"))
         assertThrows(ConversationBranchUnavailable::class.java) {
             ConversationBranchBoundary.resolve(rows, journal, emptyRole, "assistant-r-2-0")
@@ -63,7 +63,7 @@ class ConversationBranchBoundaryTest {
             listOf(user("u"), call(), assistant("a")),
             listOf(user("u"), call(), result(), result(), assistant("a")),
             listOf(user("u"), assistant("a"), call(), result()),
-            listOf(user("u"), call().copy(messageId = "a", content = "仍在调用工具")),
+            listOf(user("u"), call().copy(messageId = "a", content = "still calling tools")),
         )) assertThrows(ConversationBranchUnavailable::class.java) {
             ConversationBranchBoundary.resolve(rows, journal, emptyRole, "a")
         }
@@ -87,7 +87,7 @@ class ConversationBranchBoundaryTest {
     @Test
     fun oldSummaryCannotLeakTurnsPastTheCut() {
         val rows = outline("user" to "u1", "assistant" to "a1", "user" to "u2", "assistant" to "a2")
-        val summary = ConversationMessage("assistant", "未来内容", contextSummary = true,
+        val summary = ConversationMessage("assistant", "future content", contextSummary = true,
             compactedUserTurns = 1, summaryThroughUserTurn = 2)
         assertThrows(ConversationBranchUnavailable::class.java) {
             ConversationBranchBoundary.resolve(rows, listOf(summary, user("u2"), assistant("a2")), emptyRole, "a1")
@@ -117,8 +117,8 @@ class ConversationBranchBoundaryTest {
     private fun outline(vararg entries: Pair<String, String>) = entries.mapIndexed { index, (type, id) ->
         ConversationBranchMessage(id, index, type, true)
     }
-    private fun user(id: String) = ConversationMessage("user", "相同问题", messageId = id)
-    private fun assistant(id: String, content: String = "相同回答") = ConversationMessage("assistant", content, messageId = id)
+    private fun user(id: String) = ConversationMessage("user", "same question", messageId = id)
+    private fun assistant(id: String, content: String = "same answer") = ConversationMessage("assistant", content, messageId = id)
     private fun call() = ConversationMessage("assistant", toolCallsJson = """[{"id":"tool-1","type":"function","function":{"name":"observe_screen","arguments":"{}"}}]""")
-    private fun result() = ConversationMessage("tool", "完成", toolCallId = "tool-1")
+    private fun result() = ConversationMessage("tool", "done", toolCallId = "tool-1")
 }

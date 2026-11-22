@@ -6,9 +6,9 @@ import org.junit.Test
 class SpeechTextTest {
     @Test fun spokenTextSkipsCodeAndKeepsLinkLabelAndInlineIdentifiers() {
         val text = SpeechText.readable("""
-            # 操作说明
+            # instructions
 
-            请查看 **设置** 与 [帮助](https://example.invalid)，参数是 `user_name`。
+            see **settings** and [help](https://example.invalid), the parameter is `user_name`.
 
             ```kotlin
             secretCommand()
@@ -16,22 +16,22 @@ class SpeechTextTest {
 
                 anotherSecretCommand()
 
-            完成。
+            Done.
         """.trimIndent())
-        assertTrue(text.contains("操作说明"))
-        assertTrue(text.contains("设置"))
-        assertTrue(text.contains("帮助"))
+        assertTrue(text.contains("instructions"))
+        assertTrue(text.contains("settings"))
+        assertTrue(text.contains("help"))
         assertTrue(text.contains("user_name"))
-        assertFalse(text.contains("请查看正文"))
+        assertFalse(text.contains("see the body"))
         assertFalse(text.contains("https://"))
         assertFalse(text.contains("secretCommand"))
         assertFalse(text.contains("anotherSecretCommand"))
         assertFalse(text.contains("**"))
-        assertTrue(text.endsWith("完成。"))
+        assertTrue(text.endsWith("Done."))
     }
 
     @Test fun sentenceChunkingPreservesContentAndSurrogatePairs() {
-        val text = "第一句话。第二句话。" + "你好😀".repeat(30)
+        val text = "First sentence. Second sentence." + "hello😀".repeat(30)
         val chunks = SpeechText.chunks(text, 17)
         assertEquals(text, chunks.joinToString(""))
         assertTrue(chunks.all { it.length <= 17 && !it.last().isHighSurrogate() && !it.first().isLowSurrogate() })
@@ -45,44 +45,44 @@ class SpeechTextTest {
 
     @Test fun tablesAreOmittedWithoutAnnouncementsAndPreserveSurroundingParagraphs() {
         val table = """
-            | 产品 | 价格 | 条件 |
+            | product | price | condition |
             | --- | ---: | --- |
-            | 产品甲 | 108元 | 仅授权后可用 |
-            | 产品乙 | 209元 | 不支持离线 |
+            | Product A | ¥108 | available only after authorization |
+            | Product B | ¥209 | no offline support |
         """.trimIndent()
-        val text = SpeechText.readable("先看结论。\n\n$table\n\n继续操作。")
+        val text = SpeechText.readable("Conclusion first.\n\n$table\n\nContinue.")
 
-        assertTrue(Regex("先看结论。\\n+继续操作。").matches(text))
+        assertTrue(Regex("Conclusion first.\\n+Continue.").matches(text))
     }
 
     @Test fun tableOnlyAnswersHaveNoSpeechRegardlessOfCellContent() {
         for (table in listOf(
             """
-                | 产品 | 价格 |
+                | product | price |
                 | --- | ---: |
-                | 产品甲 | 108元 |
-                | 产品乙 | 209元 |
+                | Product A | ¥108 |
+                | Product B | ¥209 |
             """.trimIndent(),
             """
-                | 项目 | | 备注 |
+                | item | | note |
                 | --- | --- | --- |
-                | A | | 正常 |
+                | A | | normal |
                 | B |
-                | C | 3 | 保留 | 额外单元格 |
+                | C | 3 | keep | extra cell |
             """.trimIndent(),
             """
-                | 方案 | 耗时 | 内存 |
+                | approach | duration | memory |
                 | --- | --- | --- |
-                | [**A**](https://example.invalid/a) | 1.5 秒 | 200 MB |
-                | `B` | 2 秒 | 100 MB |
+                | [**A**](https://example.invalid/a) | 1.5 sec | 200 MB |
+                | `B` | 2 sec | 100 MB |
             """.trimIndent(),
-            "| 项目 | 数量 |\n| --- | --- |",
+            "| item | quantity |\n| --- | --- |",
             """
-                | 类型 | 内容 |
+                | type | content |
                 | --- | --- |
-                | 图片 | ![示意图](https://example.invalid/diagram.png) |
-                | 嵌入图片 | <img src="https://example.invalid/diagram.png"> |
-                | 裸网址 | https://example.invalid/download |
+                | image | ![diagram](https://example.invalid/diagram.png) |
+                | embedded image | <img src="https://example.invalid/diagram.png"> |
+                | bare URL | https://example.invalid/download |
             """.trimIndent(),
         )) {
             assertEquals(table, "", SpeechText.readable(table))
@@ -97,7 +97,7 @@ class SpeechTextTest {
             "<https://example.invalid/help>",
             "[https://example.invalid/help](https://example.invalid/help)",
             "[www.example.invalid/help](https://example.invalid/help)",
-            "https://例子.测试/文档/安装?语言=中文",
+            "https://example.test/document/install?language=Chinese",
             "[https://example.invalid/help][target]\n\n[target]: https://example.invalid/help",
         )) {
             assertEquals(markdown, "", SpeechText.readable(markdown))
@@ -112,26 +112,26 @@ class SpeechTextTest {
 
     @Test fun imagesAndHtmlBlocksAreSkippedWithoutNoticesOrLostParagraphBoundaries() {
         for (content in listOf(
-            "![示意图文字](https://example.invalid/diagram.png)",
-            "<div>HTML块内的内容</div>",
-            "<img src=\"https://example.invalid/diagram.png\" alt=\"图片说明\">",
+            "![diagram alt text](https://example.invalid/diagram.png)",
+            "<div>HTMLcontent inside the block</div>",
+            "<img src=\"https://example.invalid/diagram.png\" alt=\"image description\">",
         )) {
             assertEquals(content, "", SpeechText.readable(content))
-            val text = SpeechText.readable("前面的说明。\n\n$content\n\n后面的说明。")
-            assertTrue(content, Regex("前面的说明。\\n+后面的说明。").matches(text))
+            val text = SpeechText.readable("the preceding note.\n\n$content\n\nthe following note.")
+            assertTrue(content, Regex("the preceding note.\\n+the following note.").matches(text))
         }
     }
 
     @Test fun descriptiveLinkLabelsSurviveInlineAndReferenceLinks() {
         val text = SpeechText.readable("""
-            请查看 [帮助中心](https://example.invalid/help)、[安装说明][install]、
-            [疑难解答]，然后打开 [**高级设置**](https://example.invalid/settings)。
+            see [Help Center](https://example.invalid/help),[installation instructions][install],
+            [Troubleshooting], then open [**advanced settings**](https://example.invalid/settings).
 
             [install]: https://example.invalid/install
-            [疑难解答]: https://example.invalid/faq
+            [Troubleshooting]: https://example.invalid/faq
         """.trimIndent())
 
-        for (label in listOf("帮助中心", "安装说明", "疑难解答", "高级设置")) {
+        for (label in listOf("Help Center", "installation instructions", "Troubleshooting", "advanced settings")) {
             assertTrue(label, text.contains(label))
         }
         assertFalse(text.contains("example.invalid"))
@@ -141,16 +141,16 @@ class SpeechTextTest {
 
     @Test fun urlsDoNotConsumeChinesePunctuationOrFollowingInstructions() {
         for ((markdown, continuation) in listOf(
-            "打开 https://example.invalid/a?x=1，接下来检查权限。" to "，接下来检查权限。",
-            "打开 https://example.invalid/help,然后检查权限。" to ",然后检查权限。",
-            "打开 https://example.invalid/help;然后检查权限。" to ";然后检查权限。",
-            "下载 http://example.invalid/pkg。完成后重启。" to "。完成后重启。",
-            "访问 www.example.invalid/help，随后返回。" to "，随后返回。",
-            "地址：https://example.invalid/help，继续下一步。" to "，继续下一步。",
-            "查看 <https://example.invalid/help>。然后返回。" to "。然后返回。",
+            "open https://example.invalid/a?x=1, then check permissions." to ", then check permissions.",
+            "open https://example.invalid/help,then check permissions." to ",then check permissions.",
+            "open https://example.invalid/help;then check permissions." to ";then check permissions.",
+            "download http://example.invalid/pkg. Restart when done." to ". Restart when done.",
+            "visit www.example.invalid/help, then return." to ", then return.",
+            "Address: https://example.invalid/help, continue to the next step." to ", continue to the next step.",
+            "view <https://example.invalid/help>. Then return." to ". Then return.",
         )) {
             val text = SpeechText.readable(markdown)
-            assertFalse(markdown, text.contains("链接见正文"))
+            assertFalse(markdown, text.contains("see body for link"))
             assertTrue(markdown, text.endsWith(continuation))
             assertFalse(markdown, text.contains("example.invalid"))
             assertFalse(markdown, text.contains("<"))
@@ -163,7 +163,7 @@ class SpeechTextTest {
             "alpha<https://example.invalid/help>beta",
             "alpha[https://example.invalid/help](https://example.invalid/help)beta",
             "alpha[](https://example.invalid/help)beta",
-            "alpha![图片说明](https://example.invalid/diagram.png)beta",
+            "alpha![image description](https://example.invalid/diagram.png)beta",
         )) {
             val text = SpeechText.readable(markdown)
             assertTrue(markdown, Regex("alpha\\s+beta").matches(text))
@@ -172,34 +172,34 @@ class SpeechTextTest {
 
     @Test fun skippedLinksPreserveParagraphAndListBoundaries() {
         val text = SpeechText.readable("""
-            第一段正文
+            the first paragraph
 
             https://example.invalid/help
 
-            第二段正文
+            the second paragraph
 
-            - 保留第一项
+            - keep the first item
             - <https://example.invalid/download>
-            - 保留第二项
+            - keep the second item
         """.trimIndent())
 
-        assertInOrder(text, "第一段正文", "第二段正文", "保留第一项", "保留第二项")
-        assertTrue(Regex("第一段正文\\n+").containsMatchIn(text))
-        assertTrue(Regex("\\n第二段正文\\n").containsMatchIn(text))
+        assertInOrder(text, "the first paragraph", "the second paragraph", "keep the first item", "keep the second item")
+        assertTrue(Regex("the first paragraph\\n+").containsMatchIn(text))
+        assertTrue(Regex("\\nthe second paragraph\\n").containsMatchIn(text))
         assertFalse(text.contains("example.invalid"))
-        assertFalse(text.contains("链接见正文"))
+        assertFalse(text.contains("see body for link"))
     }
 
     @Test fun orderedListsKeepTheirStartAndRenderedSequence() {
         val text = SpeechText.readable("""
-            3. 先备份
-            3. 再更新
-            3. 最后检查
+            3. back up first
+            3. then update
+            3. final check
         """.trimIndent())
 
         var offset = 0
-        for ((number, item) in listOf(3 to "先备份", 4 to "再更新", 5 to "最后检查")) {
-            val marker = Regex("(?<!\\d)$number(?!\\d)\\s*(?:项|步)?\\s*[:：、.)]?\\s*${Regex.escape(item)}")
+        for ((number, item) in listOf(3 to "back up first", 4 to "then update", 5 to "final check")) {
+            val marker = Regex("(?<!\\d)$number(?!\\d)\\s*(?:item|step)?\\s*[::,.)]?\\s*${Regex.escape(item)}")
             val match = marker.find(text, startIndex = offset)
             assertNotNull("Expected item $number before '$item' in '$text'", match)
             offset = match!!.range.last + 1
@@ -208,13 +208,13 @@ class SpeechTextTest {
 
     @Test fun taskListsKeepCompletedAndIncompleteStates() {
         val text = SpeechText.readable("""
-            - [x] 完成备份
-            - [ ] 尚未更新
-            - [X] 已核对
-            - 不要更改权限
+            - [x] backup completed
+            - [ ] not yet updated
+            - [X] verified
+            - don't change permissions
         """.trimIndent())
 
-        assertInOrder(text, "已完成：完成备份", "未完成：尚未更新", "已完成：已核对", "不要更改权限")
+        assertInOrder(text, "Done: backup completed", "Not done: not yet updated", "Done: verified", "don't change permissions")
         assertFalse(text.contains("[x]"))
         assertFalse(text.contains("[ ]"))
         assertFalse(text.contains("[X]"))
@@ -222,17 +222,17 @@ class SpeechTextTest {
 
     @Test fun numbersUnitsEnglishAndShortInlineIdentifiersRemainReadable() {
         val text = SpeechText.readable(
-            "版本 v1.2.3，温度 -3.5°C，金额 1,234.50 元，长度 10 mm，进度 42%；" +
-                "OpenAI API 参数 `user_name`，文件 `config.json`。",
+            "version v1.2.3, temperature -3.5°C, amount 1,234.50 yuan, length 10 mm, progress 42%;" +
+                "OpenAI API parameter `user_name`, file `config.json`.",
         )
 
-        for (content in listOf("v1.2.3", "-3.5°C", "1,234.50 元", "10 mm", "42%", "OpenAI API", "user_name", "config.json")) {
+        for (content in listOf("v1.2.3", "-3.5°C", "¥1,234.50", "10 mm", "42%", "OpenAI API", "user_name", "config.json")) {
             assertTrue(content, text.contains(content))
         }
     }
 
     private fun assertInOrder(text: String, vararg expected: String) {
-        fun compact(value: String) = value.replace(Regex("\\s+"), "").replace(':', '：')
+        fun compact(value: String) = value.replace(Regex("\\s+"), "").replace(':', ':')
         val actual = compact(text)
         var offset = 0
         for (part in expected) {

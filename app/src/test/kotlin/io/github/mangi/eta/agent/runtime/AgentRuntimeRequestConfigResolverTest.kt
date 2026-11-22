@@ -142,16 +142,16 @@ class AgentRuntimeRequestConfigResolverTest {
         config: AgentModelClient.ModelConfig,
     ): AgentRuntimeWire.RunRequest = AgentRuntimeWire.RunRequest(
         runId = "run-1",
-        prompt = "测试",
+        prompt = "test",
         config = config,
         images = emptyList(),
         handoff = AgentRuntimeWire.EntryHandoff(
             id = "handoff-1",
             source = source,
             payload = AgentExternalArchivePayload(
-                userText = "测试",
+                userText = "test",
                 conversationKey = "conversation-1",
-                title = "测试",
+                title = "test",
             ).toJson(),
         ),
     )

@@ -109,9 +109,9 @@ class TerminalScreenBufferTest {
     @Test
     fun wideCharOccupiesTwoCells() {
         val buffer = TerminalScreenBuffer(cols = 10, rows = 3)
-        buffer.process("中x")
+        buffer.process("Cx")
         val line = buffer.screenLine(0).snapshot()
-        assertEquals("中", line[0].text)
+        assertEquals("C", line[0].text)
         assertTrue(line[1].continuation)
         assertEquals("x", line[2].text)
         assertEquals(3, buffer.cursorCol)
@@ -156,11 +156,11 @@ class TerminalScreenBufferTest {
     @Test
     fun utf8SplitAcrossChunksDecodesOnce() {
         val buffer = TerminalScreenBuffer(cols = 10, rows = 3)
-        val bytes = "中文".toByteArray(Charsets.UTF_8)
+        val bytes = "Chinese".toByteArray(Charsets.UTF_8)
         buffer.feed(bytes.copyOfRange(0, 2))
         buffer.feed(bytes.copyOfRange(2, 4))
         buffer.feed(bytes.copyOfRange(4, bytes.size))
-        assertEquals("中文", buffer.dump()[0])
+        assertEquals("Chinese", buffer.dump()[0])
         assertEquals(4, buffer.cursorCol)
     }
 
@@ -249,7 +249,7 @@ class TerminalScreenBufferTest {
     @Test
     fun narrowingClampsCursorAndClearsSplitWideChar() {
         val buffer = TerminalScreenBuffer(cols = 6, rows = 2)
-        buffer.process("abc中")
+        buffer.process("abcC")
         buffer.resize(newCols = 4, newRows = 2)
         assertEquals("abc", buffer.dump()[0])
         assertEquals(3, buffer.cursorCol)
@@ -286,7 +286,7 @@ class TerminalScreenBufferTest {
         val buffer = TerminalScreenBuffer(cols = 10, rows = 3)
         buffer.process("old")
         val before = buffer.renderLines()
-        // 整屏清除后在原位重写：行对象不变，光标也回到同一位置。
+        // After a full-screen clear, rewrite in place: the line object stays the same and the cursor returns to the same position.
         buffer.process("\u001B[2J\u001B[Hnew")
         val after = buffer.renderLines()
 

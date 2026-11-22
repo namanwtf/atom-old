@@ -23,16 +23,16 @@ class WebHttpTransportTest {
     @Test fun redirectsResolveRelativeUrlsWithoutSharingCookies() {
         WebFixtureServer { path ->
             if (path == "/start") WebFixtureResponse(302, headers = mapOf("Location" to "/article", "Set-Cookie" to "secret=hidden"))
-            else WebFixtureResponse(body = "正文".toByteArray())
+            else WebFixtureResponse(body = "body".toByteArray())
         }.use { server ->
             val base = OkHttpClient.Builder().cookieJar(object : CookieJar {
                 override fun loadForRequest(url: HttpUrl) = listOf(Cookie.Builder().name("private").value("hidden").domain(url.host).build())
-                override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = error("不能修改共享 Cookie")
+                override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) = error("cannot modify the shared Cookie")
             }).build()
             WebHttpTransport(base).use { transport ->
                 val response = transport.get(server.url("/start"))
                 assertEquals(server.url("/article"), response.finalUrl)
-                assertEquals("正文", response.bytes.toString(Charsets.UTF_8))
+                assertEquals("body", response.bytes.toString(Charsets.UTF_8))
                 assertEquals(2, server.requests.size)
                 assertTrue(server.requests.none { it.contains("Cookie:", true) })
             }

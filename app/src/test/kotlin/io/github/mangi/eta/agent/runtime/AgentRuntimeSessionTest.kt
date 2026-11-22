@@ -15,7 +15,7 @@ class AgentRuntimeSessionTest {
     fun searchSuggestionsSurviveActiveReplayButStopAtCancellationAndBudget() {
         val delivered = mutableListOf<AgentEvent>()
         val session = AgentRuntimeSession("search", eventSink = delivered::add)
-        val event = AgentEvent.SearchSuggestions(1, 0, "<div>搜索建议</div>")
+        val event = AgentEvent.SearchSuggestions(1, 0, "<div>search suggestion</div>")
         assertTrue(session.emit(event))
         assertFalse(session.emit(event))
         repeat(SearchSuggestionsPayload.MAX_FRAGMENTS - 1) { index ->
@@ -26,16 +26,16 @@ class AgentRuntimeSessionTest {
         val replay = mutableListOf<AgentEvent>()
         assertTrue(session.attach(replay::add, {}))
         assertEquals(delivered, replay)
-        assertTrue(session.cancel("已停止"))
+        assertTrue(session.cancel("stopped"))
         assertFalse(session.emit(event.copy(round = 2)))
-        assertFalse(session.attach({ error("取消后不能回放 HTML") }, {}))
+        assertFalse(session.attach({ error("HTML cannot be replayed after cancellation") }, {}))
     }
 
     @Test
     fun compactionDoesNotAcceptPendingTaskInstructions() {
         val session = AgentRuntimeSession("compact", operation = AgentRuntimeWire.OP_COMPACT)
-        assertFalse(session.steer("继续执行设备操作"))
-        assertEquals(null, session.steer("继续执行设备操作") { error("不应登记补充事件") })
+        assertFalse(session.steer("continue with device operations"))
+        assertEquals(null, session.steer("continue with device operations") { error("must not register a supplement event") })
         assertFalse(session.controller.hasPendingSteering)
     }
 
@@ -45,11 +45,11 @@ class AgentRuntimeSessionTest {
         val session = AgentRuntimeSession("run", resultSink = delivered::add)
         val snapshot = io.github.mangi.eta.agent.model.AgentContextSnapshot(operationId = "run", messages = emptyList())
         session.updateContext(snapshot)
-        assertTrue(session.cancel("已停止"))
+        assertTrue(session.cancel("stopped"))
         session.updateContext(snapshot.copy(coveredUserTurns = 2))
         assertEquals(snapshot, delivered.single().contextSnapshot)
         assertEquals(snapshot, session.contextSnapshot)
-        assertFalse(session.complete(AgentRuntimeWire.RunResult("run", true, "不应送达")))
+        assertFalse(session.complete(AgentRuntimeWire.RunResult("run", true, "must not be delivered")))
     }
 
     @Test
@@ -78,7 +78,7 @@ class AgentRuntimeSessionTest {
             producerStarted.countDown()
             session.emit(AgentEvent.RoundStarted(round = 2, messageCount = 2))
             session.complete(
-                AgentRuntimeWire.RunResult(runId = "run-boundary", ok = true, content = "完成")
+                AgentRuntimeWire.RunResult(runId = "run-boundary", ok = true, content = "done")
             )
         }.apply { isDaemon = true }
 
@@ -120,7 +120,7 @@ class AgentRuntimeSessionTest {
         val deliveries = mutableListOf<String>()
         val session = AgentRuntimeSession(runId = "run-terminal")
         session.complete(
-            AgentRuntimeWire.RunResult(runId = "run-terminal", ok = true, content = "完成")
+            AgentRuntimeWire.RunResult(runId = "run-terminal", ok = true, content = "done")
         )
 
         assertFalse(
@@ -149,7 +149,7 @@ class AgentRuntimeSessionTest {
             kind = AgentEvent.AssistantBlockKind.TEXT,
             index = 0,
             deltaChars = 2,
-            delta = "你好",
+            delta = "hello",
         )
         val privateToolDelta = AgentEvent.AssistantBlockDelta(
             round = 1,
@@ -168,7 +168,7 @@ class AgentRuntimeSessionTest {
             round = 1,
             toolCallId = "call-1",
             name = "run_command",
-            resultSummary = "完成",
+            resultSummary = "done",
             imageCount = 0,
             imageBytes = 0,
             success = true,
@@ -177,7 +177,7 @@ class AgentRuntimeSessionTest {
         val result = AgentRuntimeWire.RunResult(
             runId = "run-attach",
             ok = true,
-            content = "完成",
+            content = "done",
         )
         session.complete(result)
 

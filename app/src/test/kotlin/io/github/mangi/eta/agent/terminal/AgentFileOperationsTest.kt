@@ -33,7 +33,7 @@ class AgentFileOperationsTest {
     }
 
     @Test fun chineseAndSupplementaryCharactersSurviveByteBoundaries() {
-        val original = "a".repeat(15_999) + "汉😀字"
+        val original = "a".repeat(15_999) + "H😀chars"
         val file = temporary.newFile("utf8.txt").apply { writeText(original) }
         val first = JSONObject(operations().readFile(file.name))
         assertEquals(15_999, first.getInt("bytes_read"))
@@ -43,7 +43,7 @@ class AgentFileOperationsTest {
     }
 
     @Test fun invalidUtf8AndBinaryFilesHaveExplicitFailures() {
-        val text = temporary.newFile("utf8.txt").apply { writeText("中文") }
+        val text = temporary.newFile("utf8.txt").apply { writeText("Chinese") }
         assertEquals("NOT_UTF8_TEXT", JSONObject(operations().readFile(text.name, offsetBytes = 1)).getString("code"))
         val binary = temporary.newFile("binary.dat").apply { writeBytes(byteArrayOf(65, 0, 66)) }
         assertEquals("BINARY_FILE", JSONObject(operations().readFile(binary.name)).getString("code"))
@@ -61,15 +61,15 @@ class AgentFileOperationsTest {
     }
 
     @Test fun lineRangeAndLargeSingleLineReturnRecoverableOffsets() {
-        val file = temporary.newFile("lines.txt").apply { writeText("一\n二\n" + "长".repeat(8_000) + "\n四") }
+        val file = temporary.newFile("lines.txt").apply { writeText("one\ntwo\n" + "x".repeat(8_000) + "\nfour") }
         val second = JSONObject(operations().readFile(file.name, startLine = 2, maxLines = 1))
-        assertEquals("二\n", second.getString("content"))
+        assertEquals("two\n", second.getString("content"))
         assertEquals(3, second.getInt("next_line"))
         val longLine = JSONObject(operations().readFile(file.name, startLine = 3))
         assertTrue(longLine.getBoolean("line_truncated"))
         assertEquals(3, longLine.getInt("next_line"))
         val remainder = JSONObject(operations().readFile(file.name, offsetBytes = longLine.getLong("next_offset_bytes")))
-        assertEquals("长".repeat(8_000) + "\n四", longLine.getString("content") + remainder.getString("content"))
+        assertEquals("x".repeat(8_000) + "\nfour", longLine.getString("content") + remainder.getString("content"))
     }
 
     @Test fun directoryPagesEnumerateEveryEntryAndRejectChangedDirectory() {
@@ -95,7 +95,7 @@ class AgentFileOperationsTest {
     @Test fun deepDirectoryResumesAfterOutputBudgetWithoutLosingOrRepeatingNames() {
         var directory = temporary.root
         repeat(5) { level -> directory = File(directory, "directory-$level-" + "x".repeat(70)).apply { mkdir() } }
-        val expected = (0 until 90).map { "文件-" + "x".repeat(80) + "-$it.txt" }.toSet()
+        val expected = (0 until 90).map { "file-" + "x".repeat(80) + "-$it.txt" }.toSet()
         expected.forEach { File(directory, it).writeText("") }
         val operations = operations()
         var offset = 0
@@ -127,11 +127,11 @@ class AgentFileOperationsTest {
         assertEquals("MATCH_NOT_FOUND", JSONObject(operations.editFile(file.name, "missing", "x")).getString("code"))
         assertEquals("AMBIGUOUS_MATCH", JSONObject(operations.editFile(file.name, "one", "x")).getString("code"))
         assertEquals("one one", file.readText())
-        val result = JSONObject(operations.editFile(file.name, "one", "二", replaceAll = true))
+        val result = JSONObject(operations.editFile(file.name, "one", "two", replaceAll = true))
         assertTrue(result.toString(), result.getBoolean("ok"))
         assertTrue(result.getBoolean("atomic"))
         assertEquals(2, result.getInt("replacements"))
-        assertEquals("二 二", file.readText())
+        assertEquals("two two", file.readText())
     }
 
     @Test fun staleRevisionAndOldContentDigestPreventOverwrite() {
@@ -178,7 +178,7 @@ class AgentFileOperationsTest {
     }
 
     @Test fun editAndLimitCheckSurviveDecoderThatBuffersIncompleteTailBytes() {
-        val original = "a".repeat(15_999) + "中文结尾"
+        val original = "a".repeat(15_999) + "Chinese ending"
         val file = temporary.newFile("icu_boundary.txt").apply { writeText(original) }
         val backend = LocalFileToolBackend(temporary.root)
         val reader = FileToolTextReader(backend) { IcuBufferingUtf8Decoder() }
@@ -195,13 +195,13 @@ class AgentFileOperationsTest {
         assertEquals("READ_LIMIT_TOO_SMALL", tiny.code)
 
         val operations = AgentFileOperations(backend, reader)
-        val editResult = JSONObject(operations.editFile(file.name, "中文结尾", "已替换"))
+        val editResult = JSONObject(operations.editFile(file.name, "Chinese ending", "replaced"))
         assertTrue(editResult.toString(), editResult.getBoolean("ok"))
         assertEquals(1, editResult.getInt("replacements"))
-        assertEquals("a".repeat(15_999) + "已替换", file.readText())
+        assertEquals("a".repeat(15_999) + "replaced", file.readText())
     }
 
-    /** 模拟 Android ICU 解码器在非 EOF 块尾把半个 UTF-8 字符吞入内部缓冲的行为。 */
+    /** Simulate the Android ICU decoder swallowing half a UTF-8 character into its internal buffer at a non-EOF chunk boundary. */
     private class IcuBufferingUtf8Decoder : CharsetDecoder(Charsets.UTF_8, 1f, 1f) {
         private val delegate = Charsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)

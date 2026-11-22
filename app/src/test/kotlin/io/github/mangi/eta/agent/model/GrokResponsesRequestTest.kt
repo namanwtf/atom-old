@@ -49,7 +49,7 @@ class GrokResponsesRequestTest {
         assertFalse(body.getBoolean("store"))
         assertFalse(body.has("previous_response_id"))
         assertEquals("fixture", body.getJSONObject("metadata").getString("source"))
-        assertEquals("测试请求", body.getJSONArray("input").getJSONObject(0).getString("content"))
+        assertEquals("test request", body.getJSONArray("input").getJSONObject(0).getString("content"))
         assertEquals(
             listOf("web_search_call.action.sources", "reasoning.encrypted_content"),
             body.getJSONArray("include").strings(),
@@ -125,8 +125,8 @@ class GrokResponsesRequestTest {
                 assertFalse(purpose.name, body.has("tools"))
                 assertFalse(purpose.name, body.has("tool_choice"))
             }
-            assertEquals("系统约束", body.getString("instructions"))
-            assertEquals("测试请求", body.getJSONArray("input").getJSONObject(0).getString("content"))
+            assertEquals("system constraint", body.getString("instructions"))
+            assertEquals("test request", body.getJSONArray("input").getJSONObject(0).getString("content"))
             assertTrue(body.getJSONArray("include").strings().contains("reasoning.encrypted_content"))
         }
     }
@@ -148,7 +148,7 @@ class GrokResponsesRequestTest {
         assertEquals("fetch_url", calls.single().name)
         val history = AgentConversationCodec.assistantHistoryMessage(assistant, calls)
         val result = AgentConversationCodec.toolResultMessage(
-            calls.single(), AgentModelClient.ToolResult("网页正文 fixture"),
+            calls.single(), AgentModelClient.ToolResult("web page body fixture"),
         )
         val messages = userMessages().put(history).put(result)
         val input = OpenAiResponsesProvider.buildHttpRequest(
@@ -162,7 +162,7 @@ class GrokResponsesRequestTest {
         assertJsonEquals(output.getJSONObject(0), input.getJSONObject(1))
         assertJsonEquals(output.getJSONObject(1), input.getJSONObject(2))
         assertEquals("call_fixture", input.getJSONObject(3).getString("call_id"))
-        assertEquals("网页正文 fixture", input.getJSONObject(3).getString("output"))
+        assertEquals("web page body fixture", input.getJSONObject(3).getString("output"))
         val stored = AgentConversationCodec.encodeTranscriptForStorage(
             messages.objects().map(AgentConversationCodec::durableMessage),
         )
@@ -172,7 +172,7 @@ class GrokResponsesRequestTest {
         val restoredCall = JSONArray(restored[1].toolCallsJson).getJSONObject(0)
         assertEquals("fetch_url", restoredCall.getJSONObject("function").getString("name"))
         assertEquals("call_fixture", restored[2].toolCallId)
-        assertEquals("网页正文 fixture", restored[2].content)
+        assertEquals("web page body fixture", restored[2].content)
         assertEquals(
             "opaque-grok-fixture",
             ResponsesEphemeralState.outputItems(history)!!.getJSONObject(0).getString("encrypted_content"),
@@ -236,7 +236,7 @@ class GrokResponsesRequestTest {
         baseUrl = "https://api.x.ai/v1",
         apiKey = "unused-api-key-fixture",
         model = "grok-fixture",
-        systemPrompt = "系统约束",
+        systemPrompt = "system constraint",
         authMode = ProviderAuthModes.XAI_GROK,
         openAiEndpointMode = OpenAiEndpointMode.CHAT_COMPLETIONS,
     )
@@ -253,7 +253,7 @@ class GrokResponsesRequestTest {
         capabilities = AgentToolCapabilities(rootAvailable = true, lsposedAvailable = true),
     )
 
-    private fun userMessages(): JSONArray = JSONArray().put(AgentConversationCodec.userTextMessage("测试请求"))
+    private fun userMessages(): JSONArray = JSONArray().put(AgentConversationCodec.userTextMessage("test request"))
 
     private fun Request.jsonBody(): JSONObject {
         val buffer = Buffer()

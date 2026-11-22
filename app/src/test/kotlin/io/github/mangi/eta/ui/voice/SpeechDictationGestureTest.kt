@@ -85,7 +85,7 @@ class SpeechDictationGestureTest {
         assertFalse(harness.controller.state.value.holdToTalk)
         assertEquals(EtaSpeechPhase.LISTENING, harness.controller.state.value.phase)
 
-        // 再轻点一次按钮完成两步听写
+        // tap the button once more to complete the two-step dictation
         val finishCenter = harness.micBounds(R.string.speech_dictation_finish).center
         val finishDownTime = SystemClock.uptimeMillis()
         harness.dispatchTouch(MotionEvent.ACTION_DOWN, finishDownTime, finishCenter.x, finishCenter.y)
@@ -94,10 +94,10 @@ class SpeechDictationGestureTest {
         harness.advance(4)
 
         assertTrue(session.finished)
-        session.complete("草稿文字")
+        session.complete("draft text")
         harness.advance(6)
 
-        assertEquals(listOf("草稿文字"), harness.tapResults)
+        assertEquals(listOf("draft text"), harness.tapResults)
         assertTrue(harness.holdResults.isEmpty())
     }
 
@@ -119,10 +119,10 @@ class SpeechDictationGestureTest {
 
         assertTrue(session.finished)
         assertEquals(EtaSpeechPhase.RECOGNIZING, harness.controller.state.value.phase)
-        session.complete("按住直接发送")
+        session.complete("hold to send directly")
         harness.advance(6)
 
-        assertEquals(listOf("按住直接发送"), harness.holdResults)
+        assertEquals(listOf("hold to send directly"), harness.holdResults)
         assertTrue(harness.tapResults.isEmpty())
         assertFalse(harness.controller.state.value.active)
     }
@@ -136,7 +136,7 @@ class SpeechDictationGestureTest {
         val session = harness.sessions.last()
         assertTrue(harness.controller.state.value.holdToTalk)
 
-        // 向上滑动 80dp（超过 36dp 取消阈值）进入取消区
+        // swipe up 80dp (past the 36dp cancel threshold) to enter the cancel zone
         val cancelY = center.y - harness.dp(80f)
         harness.dispatchTouch(MotionEvent.ACTION_MOVE, downTime, center.x, cancelY)
         harness.advance(6)
@@ -175,10 +175,10 @@ class SpeechDictationGestureTest {
 
         assertTrue(session.finished)
         assertFalse(session.canceled)
-        session.complete("滑回后再发送")
+        session.complete("slide back and then send")
         harness.advance(6)
 
-        assertEquals(listOf("滑回后再发送"), harness.holdResults)
+        assertEquals(listOf("slide back and then send"), harness.holdResults)
     }
 
     private fun withHarness(block: (Harness) -> Unit) {
@@ -286,7 +286,7 @@ class SpeechDictationGestureTest {
 
         fun micBounds(descRes: Int = R.string.speech_dictation) =
             requireNotNull(findByDescription(activity.getString(descRes))) {
-                "未找到描述为 ${activity.getString(descRes)} 的麦克风节点"
+                "no microphone node found with description ${activity.getString(descRes)}"
             }.boundsInRoot
 
         fun hasText(text: String): Boolean {
@@ -309,7 +309,7 @@ class SpeechDictationGestureTest {
             return find(root().semanticsOwner.unmergedRootSemanticsNode)
         }
 
-        private fun root(): ViewRootForTest = findRoot(activity.window.decorView) ?: error("未找到 Compose Root")
+        private fun root(): ViewRootForTest = findRoot(activity.window.decorView) ?: error("Compose Root not found")
 
         private fun findRoot(view: View): ViewRootForTest? {
             if (view is ViewRootForTest) return view

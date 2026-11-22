@@ -24,14 +24,14 @@ class CharacterMemoryRepositoryTest {
     fun storyMemoryIsScopedAndCannotTouchRealMemoryOrOtherCharacters() {
         val context = context()
         val real = AgentMemoryStore(context.filesDir)
-        real.replaceAll("现实偏好")
-        CharacterMemoryRepository.replaceAll(context, "character-a", "甲的剧情")
-        CharacterMemoryRepository.replaceAll(context, "character-b", "乙的剧情")
-        assertEquals("甲的剧情", CharacterMemoryRepository.snapshot(context, "character-a").content)
-        assertEquals("乙的剧情", CharacterMemoryRepository.snapshot(context, "character-b").content)
-        assertEquals("现实偏好", real.snapshot().content)
+        real.replaceAll("real-world preference")
+        CharacterMemoryRepository.replaceAll(context, "character-a", "A's story")
+        CharacterMemoryRepository.replaceAll(context, "character-b", "B's story")
+        assertEquals("A's story", CharacterMemoryRepository.snapshot(context, "character-a").content)
+        assertEquals("B's story", CharacterMemoryRepository.snapshot(context, "character-b").content)
+        assertEquals("real-world preference", real.snapshot().content)
         assertThrows(IllegalArgumentException::class.java) {
-            CharacterMemoryRepository.replaceAll(context, "../", "不能越界")
+            CharacterMemoryRepository.replaceAll(context, "../", "cannot escape bounds")
         }
     }
 
@@ -39,12 +39,12 @@ class CharacterMemoryRepositoryTest {
     fun editorRevisionConflictPreservesConcurrentStoryWrite() {
         val context = context()
         val empty = CharacterMemoryRepository.snapshot(context, "character-a")
-        val saved = CharacterMemoryRepository.replaceAllIfRevision(context, "character-a", empty.revision, "初始剧情")
+        val saved = CharacterMemoryRepository.replaceAllIfRevision(context, "character-a", empty.revision, "initial story")
         assertTrue(saved is AgentMemoryWriteResult.Success)
-        CharacterMemoryRepository.replaceAll(context, "character-a", "运行中更新")
-        val conflict = CharacterMemoryRepository.replaceAllIfRevision(context, "character-a", empty.revision, "过时草稿")
+        CharacterMemoryRepository.replaceAll(context, "character-a", "in-progress update")
+        val conflict = CharacterMemoryRepository.replaceAllIfRevision(context, "character-a", empty.revision, "stale draft")
         assertTrue(conflict is AgentMemoryWriteResult.Conflict)
-        assertEquals("运行中更新", CharacterMemoryRepository.snapshot(context, "character-a").content)
+        assertEquals("in-progress update", CharacterMemoryRepository.snapshot(context, "character-a").content)
     }
 
     @Test

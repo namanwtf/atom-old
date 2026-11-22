@@ -18,7 +18,7 @@ class RemoteModelFetcherTest {
         var skipped = 0
         val models = RemoteModelFetcher.parseGrokModels(
             """{"data":[
-              {"id":"display-key","model":"actual-model","name":"显示名称","context_window":131072,
+              {"id":"display-key","model":"actual-model","name":"display name","context_window":131072,
                "baseUrl":"https://untrusted.example","apiKey":"secret","extraHeaders":{"Authorization":"secret"}},
               {"modelId":"second-model","api_backend":"responses"},
               {"_meta":{"model":"meta-model","contextWindow":256000}},
@@ -29,7 +29,7 @@ class RemoteModelFetcherTest {
             ]}"""
         ) { skipped = it }
         assertEquals(listOf("actual-model", "second-model", "meta-model"), models.map { it.modelId })
-        assertEquals("显示名称", models.first().displayName)
+        assertEquals("display name", models.first().displayName)
         assertEquals(256000, models.last().contextWindow)
         assertEquals(2, skipped)
         assertTrue(models.all { it.customHeaders.isEmpty() && it.customBody.isEmpty() })
@@ -49,7 +49,7 @@ class RemoteModelFetcherTest {
             val error = assertThrows(IllegalArgumentException::class.java) {
                 RemoteModelFetcher.parseGrokModels("""{"data":[{"id":"model","apiBackend":"$backend"}]}""")
             }
-            assertTrue(error.message.orEmpty().contains("当前订阅连接"))
+            assertTrue(error.message.orEmpty().contains("current subscription connection"))
         }
         assertTrue(RemoteModelFetcher.parseGrokModels("""{"data":[]}""").isEmpty())
         assertTrue(RemoteModelFetcher.parseGrokModels("""{"data":[{"id":"hidden","hidden":true}]}""").isEmpty())
@@ -94,17 +94,17 @@ class RemoteModelFetcherTest {
     @Test
     fun codexCatalogUsesRemoteVisibilityCapabilitiesAndPriorityWithoutPresetEnrichment() {
         val models = RemoteModelFetcher.parseCodexModels("""{"models":[
-          {"slug":"gpt-6-astra","display_name":"远端 Astra","visibility":"list","priority":20,
+          {"slug":"gpt-6-astra","display_name":"remote Astra","visibility":"list","priority":20,
            "input_modalities":["text"],"context_window":128000,
            "supported_reasoning_levels":[{"effort":"none"},{"effort":"low"}],"default_reasoning_level":"none"},
-          {"slug":"gpt-6.1-sol","display_name":"远端 Sol","visibility":"list","priority":1,
+          {"slug":"gpt-6.1-sol","display_name":"remote Sol","visibility":"list","priority":1,
            "max_context_window":200000,"supported_in_api":false,
            "supported_reasoning_levels":[{"effort":"high"},{"effort":"future-effort"}],"default_reasoning_level":"high"},
           {"slug":"hidden","visibility":"hide"},
           {"slug":"unlisted","visibility":"none"}
         ]}""")
         assertEquals(listOf("gpt-6.1-sol", "gpt-6-astra"), models.map { it.modelId })
-        assertEquals(listOf("远端 Sol", "远端 Astra"), models.map { it.displayName })
+        assertEquals(listOf("remote Sol", "remote Astra"), models.map { it.displayName })
         assertEquals(200000, models.first().contextWindow)
         assertEquals(128000, models.last().contextWindow)
         assertFalse(models.last().supportsVision)
