@@ -23,17 +23,17 @@ java {
 }
 
 // CI passes the commit hash for non-release builds, appended as +<sha> per SemVer build metadata without affecting version ordering; local and release builds do not pass it
-val buildMetadata = providers.gradleProperty("eta.buildMetadata").orNull?.takeIf { it.isNotBlank() }
+val buildMetadata = providers.gradleProperty("atom.buildMetadata").orNull?.takeIf { it.isNotBlank() }
 require(buildMetadata == null || buildMetadata.matches(Regex("[0-9A-Za-z.-]+"))) {
-    "eta.buildMetadata must contain only letters, digits, dots, and hyphens"
+    "atom.buildMetadata must contain only letters, digits, dots, and hyphens"
 }
 val buildMetadataSuffix = buildMetadata?.let { "+$it" }.orEmpty()
 
-// Fork update channel: override with -Peta.updateRepo=owner/repo (defaults to upstream)
-val updateRepo = providers.gradleProperty("eta.updateRepo").getOrElse("Mangi-11/Eta")
+// Fork update channel: override with -Patom.updateRepo=owner/repo (defaults to upstream)
+val updateRepo = providers.gradleProperty("atom.updateRepo").getOrElse("namanwtf/atom")
 
 android {
-    namespace = "io.github.mangi.eta"
+    namespace = "io.github.namanwtf.atom"
     compileSdk {
         version = release(37) {
             minorApiLevel = 2

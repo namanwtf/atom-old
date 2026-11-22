@@ -1,0 +1,25 @@
+package io.github.namanwtf.atom.agent.accessibility
+
+import java.util.concurrent.atomic.AtomicReference
+
+/** Prevents a UI action that has not yet started from executing late after the synchronous bridge returns on timeout. */
+internal class MainThreadCallGate {
+    enum class State {
+        PENDING,
+        RUNNING,
+        FINISHED,
+        CANCELLED,
+    }
+
+    private val state = AtomicReference(State.PENDING)
+
+    fun tryStart(): Boolean = state.compareAndSet(State.PENDING, State.RUNNING)
+
+    fun finish() {
+        state.compareAndSet(State.RUNNING, State.FINISHED)
+    }
+
+    fun cancelIfPending(): Boolean = state.compareAndSet(State.PENDING, State.CANCELLED)
+
+    fun currentState(): State = state.get()
+}

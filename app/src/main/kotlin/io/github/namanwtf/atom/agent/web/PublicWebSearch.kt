@@ -1,0 +1,155 @@
+package io.github.namanwtf.atom.agent.web
+
+import java.util.Locale
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+
+internal data class SearchResult(
+    val title: String,
+    val url: String,
+    val snippet: String,
+    val summary: String? = null,
+    val siteName: String? = null,
+    val date: String? = null,
+    val authority: Int? = null,
+    val rerankScore: Double? = null,
+)
+
+internal data class SearchPage(
+    val provider: String,
+    val searchUrl: String,
+    val results: List<SearchResult>,
+    val limited: Boolean,
+    val scope: String = "first_page",
+    val limitReasons: List<String> = emptyList(),
+    val skippedResults: Int = 0,
+)
+
+internal class WebSearchException(val code: String, message: String) : IllegalArgumentException(message)
+
+/** The public search page is only a link-discovery source; page challenges and parse failures must not be disguised as zero results. */
+internal object PublicWebSearch {
+    const val PROVIDER = "duckduckgo_html"
+    const val MAX_QUERY_CHARS = 2_000
+    const val MAX_URL_CHARS = 8_192
+    const val MAX_HTML_CHARS = 512_000
+    private const val MAX_TITLE_CHARS = 512
+    private const val MAX_SNIPPET_CHARS = 1_200
+    private const val MAX_RESULT_CHARS = 24_000
+    private const val MAX_RESULT_BLOCKS = 100
+    private const val SEARCH_ENDPOINT = "https://html.duckduckgo.com/html/"
+
+    fun searchUrl(query: String, maxResults: Int = 5): String {
+        validateLimit(maxResults)
+        if (query.isBlank() || query.length > MAX_QUERY_CHARS || '\u0000' in query ||
+            !Charsets.UTF_8.newEncoder().canEncode(query)
+        ) fail("INVALID_ARGUMENT", "query must be valid text of 1 to 2000 characters")
+        val url = requireNotNull(SEARCH_ENDPOINT.toHttpUrlOrNull()).newBuilder()
+            .addQueryParameter("q", query.trim()).build().toString()
+        if (url.length > MAX_URL_CHARS) fail("INVALID_ARGUMENT", "The URL after query encoding exceeds the length limit; shorten the query")
+        return url
+    }
+
+    fun parse(
+        html: String,
+        finalUrl: String,
+        maxResults: Int = 5,
+        ensureActive: () -> Unit = {},
+    ): SearchPage {
+        validateLimit(maxResults)
+        ensureActive()
+        if (html.length > MAX_HTML_CHARS) fail("SEARCH_RESPONSE_TOO_LARGE", "Search page exceeds the parsing size limit")
+        val base = httpUrl(finalUrl)?.takeIf { isSearchHost(it.host) }
+            ?: fail("SEARCH_PARSE_FAILED", "The search response did not come from the expected search site")
+        val document = Jsoup.parse(html, base.toString())
+        ensureActive()
+        if (document.selectFirst("#challenge-form, .anomaly-modal__modal, .anomaly-modal__puzzle") != null ||
+            document.select("form[action]").any { form ->
+                base.resolve(form.attr("action"))?.encodedPath == "/anomaly.js"
+            }
+        ) fail("SEARCH_CHALLENGE", "The search site requires human verification; handle it in the browser or retry later")
+        if (rateLimited(document)) fail("SEARCH_RATE_LIMITED", "The search site is temporarily rate-limiting requests; retry later")
+
+        val blocks = document.select("#links .web-result, .results > .result")
+            .filterNot { it.hasClass("result--ad") || it.hasClass("result--no-result") }
+        val reasons = linkedSetOf<String>()
+        if (blocks.size > MAX_RESULT_BLOCKS) reasons += "scan_limit"
+        val results = mutableListOf<SearchResult>()
+        val seen = hashSetOf<String>()
+        var skipped = 0
+        var chars = 0
+        for (block in blocks.take(MAX_RESULT_BLOCKS)) {
+            ensureActive()
+            val anchor = block.selectFirst("a.result__a[href]") ?: block.selectFirst("h2 a[href]")
+            val url = anchor?.attr("href")?.let { resultUrl(it, base) }
+            val rawTitle = anchor?.text().orEmpty().trim()
+            if (url == null || rawTitle.isBlank()) {
+                skipped++
+                reasons += "invalid_result"
+                continue
+            }
+            if (!seen.add(url)) continue
+            if (results.size >= maxResults) {
+                reasons += "result_limit"
+                continue
+            }
+            val rawSnippet = block.selectFirst(".result__snippet")?.text().orEmpty().trim()
+            val title = takeCompleteCharacters(rawTitle, MAX_TITLE_CHARS)
+            val snippet = takeCompleteCharacters(rawSnippet, MAX_SNIPPET_CHARS)
+            if (title.length != rawTitle.length || snippet.length != rawSnippet.length) reasons += "text_limit"
+            val cost = title.length + snippet.length + url.length
+            if (chars + cost > MAX_RESULT_CHARS) {
+                reasons += "output_limit"
+                continue
+            }
+            results += SearchResult(title, url, snippet)
+            chars += cost
+        }
+        if (results.isEmpty()) {
+            val emptyNotice = document.selectFirst(".no-results")
+            if (blocks.isNotEmpty() || emptyNotice == null || emptyNotice.text().isBlank()) {
+                fail("SEARCH_PARSE_FAILED", "No search results or explicit no-results notice was recognized; the page structure may have changed")
+            }
+        }
+        ensureActive()
+        return SearchPage(PROVIDER, base.toString(), results, reasons.isNotEmpty(),
+            limitReasons = reasons.toList(), skippedResults = skipped)
+    }
+
+    private fun resultUrl(href: String, base: HttpUrl): String? {
+        if (href.isBlank() || href.length > MAX_URL_CHARS || href.any { it == '\r' || it == '\n' || it == '\u0000' }) return null
+        val resolved = base.resolve(href) ?: return null
+        val url = if (isSearchHost(resolved.host) && resolved.encodedPath.trimEnd('/') == "/l") {
+            val target = resolved.queryParameter("uddg") ?: return null
+            httpUrl(target) ?: return null
+        } else resolved
+        if (isSearchHost(url.host) && url.encodedPath.trimEnd('/') in setOf("/l", "/y.js", "/anomaly.js")) return null
+        if (url.username.isNotEmpty() || url.password.isNotEmpty()) return null
+        return url.toString().takeIf { it.length <= MAX_URL_CHARS }
+    }
+
+    private fun httpUrl(value: String): HttpUrl? {
+        if (value.length > MAX_URL_CHARS || value.any { it == '\r' || it == '\n' || it == '\u0000' }) return null
+        return value.toHttpUrlOrNull()
+    }
+
+    private fun isSearchHost(host: String): Boolean =
+        host == "duckduckgo.com" || host.endsWith(".duckduckgo.com")
+
+    private fun rateLimited(document: Document): Boolean {
+        val headings = listOf(document.title()) + document.select("h1, .error-title, #error-title").map { it.text() }
+        return headings.any { text ->
+            val normalized = text.trim().lowercase(Locale.ROOT)
+            normalized == "too many requests" || normalized == "429 too many requests" ||
+                normalized == "rate limit exceeded" || normalized == "rate limited"
+        }
+    }
+
+    private fun validateLimit(maxResults: Int) {
+        if (maxResults !in 1..10) fail("INVALID_ARGUMENT", "max_results must be between 1 and 10")
+    }
+
+    private fun fail(code: String, message: String): Nothing = throw WebSearchException(code, message)
+}

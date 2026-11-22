@@ -1,0 +1,81 @@
+package io.github.namanwtf.atom.agent.model
+
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** ID repairs on the Chat request copy never write back to persistent history; only complete, unambiguous tool exchanges are accepted. */
+internal object ChatToolCallHistory {
+    fun referencedIds(messages: JSONArray): Set<String> = buildSet {
+        for (index in 0 until messages.length()) {
+            val message = messages.optJSONObject(index) ?: continue
+            when (message.optString("role")) {
+                "assistant" -> {
+                    val calls = message.optJSONArray("tool_calls") ?: continue
+                    for (callIndex in 0 until calls.length()) {
+                        calls.optJSONObject(callIndex)?.nonBlankString("id")?.let(::add)
+                    }
+                }
+                "tool" -> message.nonBlankString("tool_call_id")?.let(::add)
+            }
+        }
+    }
+
+    fun repairCompleteBatches(messages: JSONArray) {
+        val reservedIds = referencedIds(messages).toMutableSet()
+        val seenCallIds = mutableSetOf<String>()
+        for (index in 0 until messages.length()) {
+            val message = messages.optJSONObject(index) ?: continue
+            if (message.optString("role") != "assistant") continue
+            val calls = message.optJSONArray("tool_calls") ?: continue
+            val pairs = completeBatch(messages, index, calls)
+            pairs?.forEachIndexed { callIndex, pair ->
+                if (pair.id in seenCallIds) {
+                    val base = "call_atom_history_${index}_$callIndex"
+                    var replacement = base
+                    var suffix = 1
+                    while (!reservedIds.add(replacement)) replacement = "${base}_${suffix++}"
+                    pair.call.put("id", replacement)
+                    pair.result.put("tool_call_id", replacement)
+                }
+            }
+            // Ambiguous batches stay as-is; their existing IDs still cannot be reused by later repairable batches.
+            for (callIndex in 0 until calls.length()) {
+                calls.optJSONObject(callIndex)?.nonBlankString("id")?.let(seenCallIds::add)
+            }
+        }
+    }
+
+    private fun completeBatch(
+        messages: JSONArray,
+        assistantIndex: Int,
+        calls: JSONArray,
+    ): List<CallResultPair>? {
+        if (calls.length() == 0) return null
+        val callsById = linkedMapOf<String, JSONObject>()
+        for (index in 0 until calls.length()) {
+            val call = calls.optJSONObject(index) ?: return null
+            val id = call.nonBlankString("id") ?: return null
+            if (callsById.put(id, call) != null) return null
+        }
+        val resultsById = mutableMapOf<String, JSONObject>()
+        var index = assistantIndex + 1
+        while (index < messages.length()) {
+            val result = messages.optJSONObject(index) ?: break
+            if (result.optString("role") != "tool") break
+            val id = result.nonBlankString("tool_call_id") ?: return null
+            if (id !in callsById || resultsById.put(id, result) != null) return null
+            index++
+        }
+        if (callsById.keys != resultsById.keys) return null
+        return callsById.map { (id, call) -> CallResultPair(id, call, resultsById.getValue(id)) }
+    }
+
+    private fun JSONObject.nonBlankString(key: String): String? =
+        (opt(key) as? String)?.takeIf { it.isNotBlank() }
+
+    private data class CallResultPair(
+        val id: String,
+        val call: JSONObject,
+        val result: JSONObject,
+    )
+}

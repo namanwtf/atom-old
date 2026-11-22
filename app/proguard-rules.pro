@@ -26,7 +26,7 @@
 # release shrinking.
 -dontwarn io.github.libxposed.annotation.**
 -adaptresourcefilecontents META-INF/xposed/java_init.list
--keep,allowoptimization,allowobfuscation class io.github.mangi.eta.ModuleMain {
+-keep,allowoptimization,allowobfuscation class io.github.namanwtf.atom.ModuleMain {
     public <init>();
 }
 
@@ -44,18 +44,18 @@
 # ── Release logging policy ────────────────────────────────────────────────────────
 # Remove only Android VERBOSE/DEBUG calls in Eta's own code; INFO/WARN/ERROR must
 # be kept. Third-party dependencies decide their own logging policy.
--maximumremovedandroidloglevel 3 class io.github.mangi.eta.** { *; }
+-maximumremovedandroidloglevel 3 class io.github.namanwtf.atom.** { *; }
 
 # XposedModule.log is not android.util.Log, so R8 cannot recognize it via the rule above.
 # The debug supplier is a pure observation API; do not perform any business side
 # effects inside the supplier.
--assumenosideeffects interface io.github.mangi.eta.core.AgentLogger {
+-assumenosideeffects interface io.github.namanwtf.atom.core.AgentLogger {
     public abstract void debug(kotlin.jvm.functions.Function0);
 }
--assumenosideeffects class io.github.mangi.eta.core.AndroidAgentLogger {
+-assumenosideeffects class io.github.namanwtf.atom.core.AndroidAgentLogger {
     public void debug(kotlin.jvm.functions.Function0);
 }
--assumenosideeffects class io.github.mangi.eta.core.ModuleLogger {
+-assumenosideeffects class io.github.namanwtf.atom.core.ModuleLogger {
     public void debug(kotlin.jvm.functions.Function0);
 }
 
@@ -71,9 +71,9 @@
 -keepattributes SourceFile,LineNumberTable
 
 # app_process launches the controlled first-party app and virtual-display operation entry points via fixed class names.
--keep class io.github.mangi.eta.agent.phone.PhoneCommandMain {
+-keep class io.github.namanwtf.atom.agent.phone.PhoneCommandMain {
     public static void main(java.lang.String[]);
 }
--keep class io.github.mangi.eta.agent.virtualdisplay.VirtualDisplayCommandMain {
+-keep class io.github.namanwtf.atom.agent.virtualdisplay.VirtualDisplayCommandMain {
     public static void main(java.lang.String[]);
 }

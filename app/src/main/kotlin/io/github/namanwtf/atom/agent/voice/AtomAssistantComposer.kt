@@ -1,0 +1,636 @@
+package io.github.namanwtf.atom.agent.voice
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.github.namanwtf.atom.R
+import io.github.namanwtf.atom.ui.components.coui.couiPressMotion
+import io.github.namanwtf.atom.ui.components.coui.rememberCouiPressMotion
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.basic.Text
+
+private val ComposerModeEasing = CubicBezierEasing(0.20f, 0f, 0f, 1f)
+
+@Composable
+internal fun AssistantComposer(
+    state: AtomVoiceUiState,
+    input: TextFieldState,
+    speech: AtomSpeechState,
+    speechLevel: () -> Float,
+    recognitionEnabled: Boolean,
+    inputFocusRequestKey: Int,
+    onInputFocus: () -> Unit,
+    onMicrophone: (holdToTalk: Boolean) -> Unit,
+    onCancelSpeech: () -> Unit,
+    onFinishSpeech: () -> Unit,
+    onOpenSpeechSettings: () -> Unit,
+    onKeyboard: () -> Unit,
+    keyboardVisible: Boolean,
+    colors: AtomVoicePanelColors,
+    onInputEdited: () -> Unit,
+    onSubmit: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Keep the input bar during hold-to-talk: switching layouts would remove the currently-pressed button and the release event would be lost.
+    val voiceMode = recognitionEnabled && speech.active && !speech.holdToTalk && state.messages.isEmpty()
+
+    Column(modifier = modifier) {
+        if (recognitionEnabled) AtomSpeechFeedback(speech, colors, onOpenSpeechSettings)
+        AnimatedContent(
+            targetState = voiceMode,
+            transitionSpec = {
+                val enter = fadeIn(tween(200, easing = ComposerModeEasing)) +
+                    scaleIn(tween(220, easing = ComposerModeEasing), initialScale = 0.96f)
+                val exit = fadeOut(tween(130, easing = FastOutSlowInEasing)) +
+                    scaleOut(tween(140, easing = FastOutSlowInEasing), targetScale = 0.96f)
+                enter togetherWith exit using SizeTransform(
+                    clip = false,
+                    sizeAnimationSpec = { _, _ -> spring(dampingRatio = 0.92f, stiffness = 500f) },
+                )
+            },
+            contentAlignment = Alignment.BottomCenter,
+            label = "assistant_input_mode",
+        ) { isVoiceMode ->
+            if (isVoiceMode) {
+                AssistantVoiceEntry(
+                    speech = speech,
+                    speechLevel = speechLevel,
+                    input = input,
+                    colors = colors,
+                    onKeyboard = onKeyboard,
+                    onFinishSpeech = onFinishSpeech,
+                )
+            } else {
+                AssistantInputBar(
+                    state = state,
+                    input = input,
+                    speech = speech,
+                    speechLevel = speechLevel,
+                    recognitionEnabled = recognitionEnabled,
+                    inputFocusRequestKey = inputFocusRequestKey,
+                    onInputFocus = onInputFocus,
+                    keyboardVisible = keyboardVisible,
+                    onMicrophone = onMicrophone,
+                    onCancelSpeech = onCancelSpeech,
+                    onFinishSpeech = onFinishSpeech,
+                    colors = colors,
+                    onInputEdited = onInputEdited,
+                    onSubmit = onSubmit,
+                    onStop = onStop,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssistantInputBar(
+    state: AtomVoiceUiState,
+    input: TextFieldState,
+    speech: AtomSpeechState,
+    speechLevel: () -> Float,
+    recognitionEnabled: Boolean,
+    inputFocusRequestKey: Int,
+    onInputFocus: () -> Unit,
+    keyboardVisible: Boolean,
+    onMicrophone: (holdToTalk: Boolean) -> Unit,
+    onCancelSpeech: () -> Unit,
+    onFinishSpeech: () -> Unit,
+    colors: AtomVoicePanelColors,
+    onInputEdited: () -> Unit,
+    onSubmit: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (!speech.active && speech.hasFeedback) {
+        LaunchedEffect(input) {
+            val previous = input.text.toString()
+            snapshotFlow { input.text.toString() }.first { it != previous }
+            onInputEdited()
+        }
+    }
+    val canSubmit = input.text.isNotBlank() && state.phase != AtomVoicePhase.PROCESSING
+    val focusRequester = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val windowInfo = LocalWindowInfo.current
+    val inputEnabled = state.phase != AtomVoicePhase.PROCESSING && !speech.active
+    LaunchedEffect(inputFocusRequestKey, inputEnabled) {
+        if (inputFocusRequestKey < 0 || !inputEnabled) return@LaunchedEffect
+        // Connect the IME only after the input bar is mounted and the overlay has focus, so requests don't land on a not-yet-existing input field during an animated switch.
+        withFrameNanos { }
+        snapshotFlow { windowInfo.isWindowFocused }.first { it }
+        focusRequester.requestFocus()
+        withFrameNanos { }
+        keyboard?.show()
+    }
+    var textFocused by remember { mutableStateOf(false) }
+    val inputHighlighted = textFocused || keyboardVisible || speech.holdToTalk
+    val inputBackground by animateColorAsState(
+        targetValue = if (inputHighlighted) colors.focusedInput else colors.input,
+        animationSpec = tween(190, easing = LinearOutSlowInEasing),
+        label = "assistant_input_background",
+    )
+    val highlightProgress by animateFloatAsState(
+        targetValue = if (inputHighlighted) 1f else 0f,
+        animationSpec = tween(210, easing = FastOutSlowInEasing),
+        label = "assistant_input_highlight",
+    )
+    val contentColor = colors.inputPrimary
+    val hintColor = if (speech.holdToTalk) colors.accent else colors.inputTertiary
+    val glyphKind = when {
+        speech.active && !speech.holdToTalk -> AssistantGlyphKind.Stop
+        state.phase == AtomVoicePhase.PROCESSING -> AssistantGlyphKind.Stop
+        speech.holdToTalk -> AssistantGlyphKind.Voice
+        canSubmit || !recognitionEnabled -> AssistantGlyphKind.Send
+        else -> AssistantGlyphKind.Voice
+    }
+    val trailingDescription = when {
+        speech.active -> R.string.voice_finish_speech
+        state.phase == AtomVoicePhase.PROCESSING -> R.string.action_stop
+        canSubmit || !recognitionEnabled -> R.string.voice_send
+        else -> R.string.voice_tap_to_speak
+    }
+    val trailingAction = when {
+        speech.active -> onFinishSpeech
+        state.phase == AtomVoicePhase.PROCESSING -> onStop
+        canSubmit || !recognitionEnabled -> onSubmit
+        else -> { { onMicrophone(false) } }
+    }
+    val trailingEnabled = speech.phase != AtomSpeechPhase.RECOGNIZING &&
+        (recognitionEnabled || canSubmit || state.phase == AtomVoicePhase.PROCESSING)
+    val trailingContainerColor by animateColorAsState(
+        targetValue = when {
+            speech.holdToTalk -> colors.accent
+            speech.active || state.phase == AtomVoicePhase.PROCESSING -> colors.inputPrimary
+            canSubmit -> colors.accent
+            else -> colors.controlSurface
+        },
+        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        label = "assistant_trailing_bg",
+    )
+    val trailingIconTint by animateColorAsState(
+        targetValue = when {
+            speech.holdToTalk || canSubmit -> colors.onAccent
+            speech.active || state.phase == AtomVoicePhase.PROCESSING ->
+                if (colors.dark) Color(0xFF17191E) else Color.White
+            !trailingEnabled -> colors.inputTertiary.copy(alpha = 0.42f)
+            else -> colors.inputPrimary
+        },
+        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        label = "assistant_trailing_tint",
+    )
+
+    Row(
+        modifier = modifier
+            .heightIn(min = 50.dp)
+            .couiAssistantCapsule(
+                surfaceColor = inputBackground,
+                strokeColor = colors.chipStroke,
+                dark = colors.dark,
+                elevation = AssistantCapsuleElevation.Composer,
+                highlightProgress = highlightProgress,
+                highlightColor = colors.accent.copy(alpha = if (colors.dark) 0.44f else 0.30f),
+                interactive = true,
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            )
+            .padding(start = 18.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicTextField(
+            state = input,
+            lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp, top = 9.dp, bottom = 9.dp)
+                .onFocusChanged {
+                    if (it.isFocused && !textFocused) onInputFocus()
+                    textFocused = it.isFocused
+                }
+                .focusRequester(focusRequester),
+            enabled = inputEnabled,
+            textStyle = TextStyle(
+                color = contentColor,
+                fontSize = 15.5.sp,
+                lineHeight = 22.sp,
+            ),
+            cursorBrush = SolidColor(colors.accent),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            onKeyboardAction = { if (canSubmit) onSubmit() },
+            decorator = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (input.text.isEmpty()) {
+                        Text(
+                            text = stringResource(
+                                if (speech.holdToTalk) R.string.voice_release_to_send else R.string.voice_input_hint,
+                            ),
+                            color = hintColor,
+                            fontSize = 15.5.sp,
+                            lineHeight = 22.sp,
+                            fontWeight = if (speech.holdToTalk) FontWeight.Medium else FontWeight.Normal,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        AssistantTrailingButton(
+            glyphKind = glyphKind,
+            contentDescription = stringResource(trailingDescription),
+            containerColor = trailingContainerColor,
+            iconTint = trailingIconTint,
+            accentColor = colors.accent,
+            holdingSpeech = speech.holdToTalk,
+            speechLevel = speechLevel,
+            enabled = trailingEnabled,
+            holdToTalkAvailable = recognitionEnabled && !speech.active && !canSubmit && state.phase != AtomVoicePhase.PROCESSING,
+            onClick = trailingAction,
+            onHoldStart = { onMicrophone(true) },
+            onHoldEnd = onFinishSpeech,
+            onHoldCancel = onCancelSpeech,
+        )
+    }
+}
+
+/**
+ * The tail button of the input bar. Long-press while idle enters hold-to-talk: release to send, and moving the finger off the button cancels;
+ * once a long-press triggers, no click is dispatched, so releasing doesn't start a new recording based on the stale state.
+ */
+@Composable
+private fun AssistantTrailingButton(
+    glyphKind: AssistantGlyphKind,
+    contentDescription: String,
+    containerColor: Color,
+    iconTint: Color,
+    accentColor: Color,
+    holdingSpeech: Boolean,
+    speechLevel: () -> Float,
+    enabled: Boolean,
+    holdToTalkAvailable: Boolean,
+    onClick: () -> Unit,
+    onHoldStart: () -> Unit,
+    onHoldEnd: () -> Unit,
+    onHoldCancel: () -> Unit,
+) {
+    val haptics = LocalHapticFeedback.current
+    val press = rememberCouiPressMotion()
+    val currentClick by rememberUpdatedState(onClick)
+    val currentHoldAvailable by rememberUpdatedState(holdToTalkAvailable)
+    val currentHoldStart by rememberUpdatedState(onHoldStart)
+    val currentHoldEnd by rememberUpdatedState(onHoldEnd)
+    val currentHoldCancel by rememberUpdatedState(onHoldCancel)
+
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .graphicsLayer {
+                val scale = press.scale.value * if (holdingSpeech) 1.06f else 1f
+                scaleX = scale
+                scaleY = scale
+            }
+            .drawBehind {
+                if (holdingSpeech) {
+                    val pulse = speechLevel().coerceIn(0f, 1f)
+                    drawCircle(
+                        color = accentColor.copy(alpha = 0.22f + 0.22f * pulse),
+                        radius = size.minDimension * (0.56f + 0.16f * pulse),
+                    )
+                }
+            }
+            .clip(CircleShape)
+            .background(containerColor, CircleShape)
+            // Gesture detection produces no accessibility action; screen-reader users only need click semantics, and hold-to-talk relies on touch duration, which is unsuitable for screen readers.
+            .semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+                role = Role.Button
+                if (!enabled) disabled()
+                onClick {
+                    if (enabled) currentClick()
+                    enabled
+                }
+            }
+            .pointerInput(enabled, press) {
+                if (!enabled) return@pointerInput
+                var holding = false
+                detectTapGestures(
+                    onPress = {
+                        press.press(size)
+                        val released = tryAwaitRelease()
+                        press.release()
+                        if (holding) {
+                            holding = false
+                            if (released) currentHoldEnd() else currentHoldCancel()
+                        }
+                    },
+                    onLongPress = {
+                        if (currentHoldAvailable) {
+                            holding = true
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            currentHoldStart()
+                        }
+                    },
+                    onTap = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        currentClick()
+                    },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        AnimatedContent(
+            targetState = glyphKind,
+            transitionSpec = {
+                (fadeIn(tween(140)) + scaleIn(tween(170, easing = ComposerModeEasing), initialScale = 0.72f))
+                    .togetherWith(
+                        fadeOut(tween(90)) + scaleOut(tween(110), targetScale = 0.72f),
+                    )
+            },
+            label = "assistant_trailing_glyph",
+        ) { targetGlyph ->
+            AssistantActionGlyph(
+                kind = targetGlyph,
+                tint = iconTint,
+                modifier = Modifier.size(if (targetGlyph == AssistantGlyphKind.Stop) 18.dp else 19.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The voice listening state uses a "left adaptive compact status pill + right two independent circular floating buttons" layout:
+ * while idle-listening, the middle view is left open for the colorful waveform to stretch, and when live text is recognized the pill grows naturally to the right with the content.
+ */
+@Composable
+private fun AssistantVoiceEntry(
+    speech: AtomSpeechState,
+    speechLevel: () -> Float,
+    input: TextFieldState,
+    colors: AtomVoicePanelColors,
+    onKeyboard: () -> Unit,
+    onFinishSpeech: () -> Unit,
+) {
+    val pillProgress = remember { Animatable(0f) }
+    val keyboardProgress = remember { Animatable(0f) }
+    val stopProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        launch {
+            pillProgress.animateTo(1f, tween(220, easing = ComposerModeEasing))
+        }
+        launch {
+            delay(55)
+            keyboardProgress.animateTo(1f, tween(210, easing = ComposerModeEasing))
+        }
+        launch {
+            delay(100)
+            stopProgress.animateTo(1f, tween(220, easing = ComposerModeEasing))
+        }
+    }
+
+    val hasTranscript = input.text.isNotBlank()
+    val statusLabel = stringResource(
+        if (speech.phase == AtomSpeechPhase.RECOGNIZING) {
+            R.string.voice_recognizing
+        } else {
+            R.string.voice_listening
+        },
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 12.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Row(
+                modifier = Modifier
+                    .heightIn(min = 44.dp)
+                    .graphicsLayer {
+                        val p = pillProgress.value
+                        alpha = p
+                        val s = 0.92f + 0.08f * p
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .animateContentSize(
+                        animationSpec = spring(dampingRatio = 0.92f, stiffness = 480f),
+                    )
+                    .couiAssistantCapsule(
+                        surfaceColor = colors.chipBackground,
+                        strokeColor = colors.chipStroke,
+                        dark = colors.dark,
+                        elevation = AssistantCapsuleElevation.Chip,
+                        interactive = false,
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {},
+                    )
+                    .padding(start = 13.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AssistantVoiceOrb(
+                    phase = speech.phase,
+                    level = speechLevel,
+                    modifier = Modifier.size(22.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                if (hasTranscript) {
+                    Text(
+                        text = input.text.toString(),
+                        fontSize = 14.5.sp,
+                        lineHeight = 20.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = colors.inputPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } else {
+                    AnimatedContent(
+                        targetState = statusLabel,
+                        transitionSpec = {
+                            (fadeIn(tween(180)) + slideInVertically(tween(180)) { it / 3 })
+                                .togetherWith(fadeOut(tween(120)) + slideOutVertically(tween(120)) { -it / 3 })
+                        },
+                        label = "assistant_voice_status_label",
+                    ) { text ->
+                        Text(
+                            text = text,
+                            fontSize = 14.5.sp,
+                            lineHeight = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = colors.inputPrimary.copy(alpha = 0.88f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+        }
+        AssistantFloatingRoundButton(
+            glyphKind = AssistantGlyphKind.Keyboard,
+            contentDescription = stringResource(R.string.voice_use_keyboard),
+            surfaceColor = colors.chipBackground,
+            strokeColor = colors.chipStroke,
+            iconTint = colors.inputPrimary,
+            dark = colors.dark,
+            progress = keyboardProgress.value,
+            enabled = keyboardProgress.value >= 0.4f,
+            onClick = onKeyboard,
+        )
+        Spacer(Modifier.width(10.dp))
+        AssistantFloatingRoundButton(
+            glyphKind = AssistantGlyphKind.Stop,
+            contentDescription = stringResource(R.string.voice_finish_speech),
+            surfaceColor = colors.accent,
+            strokeColor = Color.Transparent,
+            iconTint = colors.onAccent,
+            dark = colors.dark,
+            progress = stopProgress.value,
+            enabled = stopProgress.value >= 0.4f && speech.phase != AtomSpeechPhase.RECOGNIZING,
+            onClick = onFinishSpeech,
+        )
+    }
+}
+
+@Composable
+private fun AssistantFloatingRoundButton(
+    glyphKind: AssistantGlyphKind,
+    contentDescription: String,
+    surfaceColor: Color,
+    strokeColor: Color,
+    iconTint: Color,
+    dark: Boolean,
+    progress: Float,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val haptics = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val press = rememberCouiPressMotion()
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .graphicsLayer {
+                val entryScale = 0.84f + progress * 0.16f
+                val totalScale = entryScale * press.scale.value
+                alpha = progress
+                scaleX = totalScale
+                scaleY = totalScale
+            }
+            .couiPressMotion(press, enabled = enabled)
+            .couiAssistantCapsule(
+                surfaceColor = surfaceColor,
+                strokeColor = strokeColor,
+                dark = dark,
+                elevation = AssistantCapsuleElevation.Chip,
+                interactive = enabled,
+                interactionSource = interactionSource,
+            )
+            .semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+                role = Role.Button
+                if (!enabled) disabled()
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        AssistantActionGlyph(
+            kind = glyphKind,
+            tint = if (enabled) iconTint else iconTint.copy(alpha = 0.42f),
+            modifier = Modifier.size(if (glyphKind == AssistantGlyphKind.Stop) 19.dp else 20.dp),
+        )
+    }
+}

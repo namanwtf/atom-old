@@ -104,7 +104,7 @@
   <string name="backup_err_checkpoint_missing_conversation">A context checkpoint in the backup references a missing conversation</string>
   <string name="backup_err_duplicate_checkpoint">Backup contains duplicate context checkpoints</string>
   <string name="backup_err_invalid_records_or_characters">Backup contains invalid records or character data</string>
-  <string name="backup_err_not_eta_backup">This is not an Atom backup file</string>
+  <string name="backup_err_not_atom_backup">This is not an Atom backup file</string>
   <string name="backup_err_unsupported_version">Unsupported Atom backup version: %1$d</string>
   <string name="backup_err_invalid_catalog_revision">Invalid model catalog version in backup</string>
   <string name="backup_err_invalid_provider_id">Backup contains duplicate or invalid provider IDs</string>

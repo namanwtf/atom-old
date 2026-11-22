@@ -1,0 +1,436 @@
+package io.github.namanwtf.atom.agent.terminal
+
+import android.content.Context
+import android.os.Build
+import io.github.namanwtf.atom.R
+import io.github.namanwtf.atom.core.AndroidAgentLogger
+import java.io.File
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+
+internal enum class DebianEnvironmentState {
+    NOT_INSTALLED,
+    BASE_READY,
+    READY,
+}
+
+internal data class DebianEnvironmentStatus(
+    val state: DebianEnvironmentState,
+    val version: String? = null,
+)
+
+internal data class DebianAptMirror(
+    val id: String,
+    val archiveBaseUrl: String,
+    val securityBaseUrl: String,
+)
+
+internal enum class DebianInstallStage {
+    CHECKING,
+    DOWNLOADING,
+    EXTRACTING,
+    INSTALLING_TOOLS,
+    COMPLETE,
+}
+
+internal data class DebianInstallProgress(
+    val stage: DebianInstallStage,
+    val downloadedBytes: Long = 0,
+    val totalBytes: Long = 0,
+)
+
+internal sealed interface DebianInstallResult {
+    data object AlreadyReady : DebianInstallResult
+    data class BaseInstalled(val version: String) : DebianInstallResult
+    data class ToolsInstalled(val version: String) : DebianInstallResult
+    data object BaseNotInstalled : DebianInstallResult
+    data class UnsupportedAbi(val abi: String) : DebianInstallResult
+    data object RootUnavailable : DebianInstallResult
+    data object BusyBoxUnavailable : DebianInstallResult
+    data object EnvironmentUnavailable : DebianInstallResult
+    data class Failed(val stage: DebianInstallStage, val code: String? = null, val message: String? = null) : DebianInstallResult
+}
+
+/** Downloads a fixed-version Debian glibc rootfs; the Android kernel, mounts, and sessions are still reused by Atom. */
+internal class DebianEnvironmentInstaller(
+    private val context: Context,
+    httpClient: OkHttpClient = VerifiedArtifactDownloader.defaultHttpClient(),
+) {
+    private val artifactDownloader = VerifiedArtifactDownloader(httpClient)
+
+    fun status(): DebianEnvironmentStatus {
+        val rootfs = rootfsDir()
+        val version = readInstalledVersion(rootfs)
+        val state = when {
+            commonToolsReady(rootfs) -> DebianEnvironmentState.READY
+            baseRootfsReady(rootfs) -> DebianEnvironmentState.BASE_READY
+            else -> DebianEnvironmentState.NOT_INSTALLED
+        }
+        return DebianEnvironmentStatus(state, version)
+    }
+
+    suspend fun installBase(
+        onProgress: suspend (DebianInstallProgress) -> Unit = {},
+    ): DebianInstallResult {
+        installMutex.lock()
+        return try {
+            installBaseLocked(onProgress)
+        } finally {
+            installMutex.unlock()
+        }
+    }
+
+    suspend fun installTools(
+        onProgress: suspend (DebianInstallProgress) -> Unit = {},
+    ): DebianInstallResult {
+        installMutex.lock()
+        return try {
+            installToolsLocked(onProgress)
+        } finally {
+            installMutex.unlock()
+        }
+    }
+
+    private suspend fun installBaseLocked(
+        onProgress: suspend (DebianInstallProgress) -> Unit,
+    ): DebianInstallResult = withContext(Dispatchers.IO) {
+        val rootfs = rootfsDir()
+        if (baseRootfsReady(rootfs)) {
+            return@withContext DebianInstallResult.AlreadyReady
+        }
+        io.github.namanwtf.atom.data.repository.LinuxEnvironmentSettingsRepository.selectBackend(
+            LinuxDistribution.DEBIAN, LinuxEnvironmentPaths.backendOf(rootfs.absolutePath),
+        )
+        val artifact = artifactForAbis(Build.SUPPORTED_ABIS.toList())
+            ?: return@withContext DebianInstallResult.UnsupportedAbi(
+                Build.SUPPORTED_ABIS.firstOrNull().orEmpty().ifBlank { "unknown" },
+            )
+
+        onProgress(DebianInstallProgress(DebianInstallStage.CHECKING))
+        preflightFailure()?.let { return@withContext it }
+
+        val archive = File(context.cacheDir, artifact.fileName + ".download")
+        try {
+            onProgress(DebianInstallProgress(DebianInstallStage.DOWNLOADING))
+            val downloaded = artifactDownloader.download(artifact, archive) { downloadedBytes, totalBytes ->
+                onProgress(DebianInstallProgress(DebianInstallStage.DOWNLOADING, downloadedBytes, totalBytes))
+            }
+            if (!downloaded) return@withContext DebianInstallResult.Failed(DebianInstallStage.DOWNLOADING)
+            coroutineContext.ensureActive()
+            onProgress(DebianInstallProgress(DebianInstallStage.EXTRACTING))
+            if (!installRootfs(artifact, archive, rootfs)) {
+                return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING)
+            }
+        } catch (failure: RootlessInstallFailure) {
+            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, failure.code, failure.message)
+        } catch (_: java.io.IOException) {
+            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INSTALL_IO_FAILED", "Installation files cannot be read or written; check internal storage space and retry")
+        } catch (_: IllegalArgumentException) {
+            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INVALID_ARCHIVE", "Environment archive is invalid or contains unsafe paths; re-download and retry")
+        } finally {
+            archive.delete()
+        }
+
+        onProgress(DebianInstallProgress(DebianInstallStage.COMPLETE))
+        DebianInstallResult.BaseInstalled(artifact.version)
+    }
+
+    private suspend fun installToolsLocked(
+        onProgress: suspend (DebianInstallProgress) -> Unit,
+    ): DebianInstallResult = withContext(Dispatchers.IO) {
+        val rootfs = rootfsDir()
+        if (!baseRootfsReady(rootfs)) return@withContext DebianInstallResult.BaseNotInstalled
+        if (commonToolsReady(rootfs)) return@withContext DebianInstallResult.AlreadyReady
+        onProgress(DebianInstallProgress(DebianInstallStage.CHECKING))
+        preflightFailure()?.let { return@withContext it }
+        onProgress(DebianInstallProgress(DebianInstallStage.INSTALLING_TOOLS))
+        val result = installCommonTools(rootfs)
+        if (result.exitCode != 0) {
+            val (code, messageRes) = when (result.exitCode) {
+                APT_REPAIR_FAILED_EXIT_CODE -> "APT_REPAIR_FAILED" to R.string.linux_debian_repair_failed
+                -2 -> "INSTALL_TIMEOUT" to R.string.linux_debian_install_timeout
+                else -> "APT_INSTALL_FAILED" to R.string.linux_debian_install_failed
+            }
+            return@withContext DebianInstallResult.Failed(
+                DebianInstallStage.INSTALLING_TOOLS, code, context.getString(messageRes),
+            )
+        }
+        onProgress(DebianInstallProgress(DebianInstallStage.COMPLETE))
+        DebianInstallResult.ToolsInstalled(readInstalledVersion(rootfs) ?: DEBIAN_VERSION)
+    }
+
+    private suspend fun preflightFailure(): DebianInstallResult? = when (runPreflight().exitCode) {
+        0 -> null
+        PREFLIGHT_ROOT_UNAVAILABLE -> DebianInstallResult.RootUnavailable
+        PREFLIGHT_BUSYBOX_UNAVAILABLE, PREFLIGHT_BUSYBOX_INCOMPLETE ->
+            DebianInstallResult.BusyBoxUnavailable
+        PREFLIGHT_ENVIRONMENT_UNAVAILABLE -> DebianInstallResult.EnvironmentUnavailable
+        else -> DebianInstallResult.Failed(DebianInstallStage.CHECKING)
+    }
+
+    private suspend fun runPreflight(): InstallerCommandResult {
+        if (LinuxEnvironmentPaths.backendOf(rootfsDir().absolutePath) == LinuxExecutionBackend.PROOT) {
+            return InstallerCommandResult(if (ProotCommandBuilder.available()) 0 else PREFLIGHT_ENVIRONMENT_UNAVAILABLE, "")
+        }
+        if (!TerminalRuntime.rootAvailable) return InstallerCommandResult(PREFLIGHT_ROOT_UNAVAILABLE, "")
+        val requiredApplets = listOf(
+            "ash", "chroot", "grep", "gzip", "mount", "sha256sum", "tar", "unshare", "xz",
+        ).joinToString(" ")
+        val command = """
+            if [ "${'$'}(id -u)" != 0 ]; then exit $PREFLIGHT_ROOT_UNAVAILABLE; fi
+            ${AndroidBusyBox.discoveryScript()}
+            if [ -z "${'$'}atom_busybox" ]; then exit $PREFLIGHT_BUSYBOX_UNAVAILABLE; fi
+            for atom_applet in $requiredApplets; do
+              "${'$'}atom_busybox" --list | "${'$'}atom_busybox" grep -qx "${'$'}atom_applet" || exit $PREFLIGHT_BUSYBOX_INCOMPLETE
+            done
+            "${'$'}atom_busybox" unshare -m --propagation private \
+              "${'$'}atom_busybox" chroot / /system/bin/sh -c ':' || exit $PREFLIGHT_ENVIRONMENT_UNAVAILABLE
+        """.trimIndent()
+        return InstallerShellRunner.run(command, 15, TerminalEnvironment.ANDROID)
+    }
+
+    private suspend fun installRootfs(artifact: VerifiedArtifact, archive: File, rootfs: File): Boolean {
+        if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
+            return RootlessLinuxInstaller.installBase(artifact, archive, rootfs, LinuxDistribution.DEBIAN)
+        }
+        val parent = rootfs.parentFile ?: return false
+        val temporaryRootfs = File(parent, "rootfs.installing")
+        val markerBody = "version=${artifact.version}\\ndistribution=debian\\nsha256=${artifact.sha256}\\n"
+        val command = """
+            ${AndroidBusyBox.discoveryScript()}
+            [ -n "${'$'}atom_busybox" ] || exit 127
+            atom_archive=${shellQuote(archive.absolutePath)}
+            atom_parent=${shellQuote(parent.absolutePath)}
+            atom_rootfs=${shellQuote(rootfs.absolutePath)}
+            atom_temporary=${shellQuote(temporaryRootfs.absolutePath)}
+            atom_actual_sha=${'$'}("${'$'}atom_busybox" sha256sum "${'$'}atom_archive" | "${'$'}atom_busybox" awk '{print ${'$'}1}')
+            [ "${'$'}atom_actual_sha" = ${shellQuote(artifact.sha256)} ] || exit 65
+            "${'$'}atom_busybox" mkdir -p "${'$'}atom_parent" || exit 66
+            "${'$'}atom_busybox" rm -rf "${'$'}atom_temporary"
+            "${'$'}atom_busybox" mkdir -p "${'$'}atom_temporary" || exit 66
+            "${'$'}atom_busybox" tar -xJf "${'$'}atom_archive" -C "${'$'}atom_temporary" --strip-components=1 || exit 67
+            "${'$'}atom_busybox" mkdir -p \
+              "${'$'}atom_temporary/proc" \
+              "${'$'}atom_temporary/sys" \
+              "${'$'}atom_temporary/dev" \
+              "${'$'}atom_temporary/workspace" \
+              "${'$'}atom_temporary/storage/emulated/0" \
+              "${'$'}atom_temporary/data/local/tmp" \
+              "${'$'}atom_temporary/tmp"
+            "${'$'}atom_busybox" chmod 1777 "${'$'}atom_temporary/tmp"
+            "${'$'}atom_busybox" rm -f "${'$'}atom_temporary/sdcard"
+            "${'$'}atom_busybox" ln -s /storage/emulated/0 "${'$'}atom_temporary/sdcard"
+            cat > "${'$'}atom_temporary/etc/resolv.conf" <<'ATOM_RESOLV_EOF'
+            nameserver 223.5.5.5
+            nameserver 119.29.29.29
+            nameserver 1.1.1.1
+            ATOM_RESOLV_EOF
+            "${'$'}atom_busybox" mkdir -p "${'$'}atom_temporary/etc/apt/apt.conf.d" "${'$'}atom_temporary/usr/local/bin"
+            cat > "${'$'}atom_temporary/etc/apt/apt.conf.d/99atom-network" <<'ATOM_APT_CONFIG_EOF'
+            Acquire::Retries "2";
+            Acquire::http::Pipeline-Depth "0";
+            Acquire::https::Pipeline-Depth "0";
+            ATOM_APT_CONFIG_EOF
+            printf '%s\n' \
+              ${shellQuote("deb ${APT_MIRRORS.first().archiveBaseUrl} trixie main")} \
+              ${shellQuote("deb ${APT_MIRRORS.first().archiveBaseUrl} trixie-updates main")} \
+              ${shellQuote("deb ${APT_MIRRORS.first().securityBaseUrl} trixie-security main")} > "${'$'}atom_temporary/etc/apt/sources.list"
+            printf '%s\n' ${aptMirrorScriptLines()} > "${'$'}atom_temporary/usr/local/bin/atom-apt" || exit 67
+            "${'$'}atom_busybox" chmod 0755 "${'$'}atom_temporary/usr/local/bin/atom-apt"
+            printf ${shellQuote(markerBody)} > "${'$'}atom_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
+            "${'$'}atom_busybox" chmod 0644 "${'$'}atom_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
+            "${'$'}atom_busybox" rm -rf "${'$'}atom_rootfs"
+            "${'$'}atom_busybox" mv "${'$'}atom_temporary" "${'$'}atom_rootfs" || exit 69
+        """.trimIndent()
+        val result = InstallerShellRunner.run(command, 180, TerminalEnvironment.ANDROID)
+        AndroidAgentLogger.info(
+            "Debian environment action=extract outcome=${if (result.exitCode == 0) "succeeded" else "failed"} " +
+                "exitCode=${result.exitCode} outputChars=${result.output.length}",
+        )
+        return result.exitCode == 0
+    }
+
+    private suspend fun installCommonTools(rootfs: File): InstallerCommandResult {
+        val packages = AGENT_PACKAGES.joinToString(" ")
+        val command = """
+            export DEBIAN_FRONTEND=noninteractive
+            mkdir -p /usr/local/bin
+            printf '%s\n' ${aptMirrorScriptLines()} > /usr/local/bin/atom-apt || exit 70
+            chmod 0755 /usr/local/bin/atom-apt || exit 70
+            /usr/local/bin/atom-apt install $packages || exit ${'$'}?
+            if command -v fdfind >/dev/null 2>&1; then ln -sf /usr/bin/fdfind /usr/local/bin/fd; fi
+            cat > /${COMMON_TOOLS_MARKER} <<'ATOM_TOOLSET_EOF'
+            debian=$DEBIAN_VERSION
+            toolset=$TOOLSET_REVISION
+            profiles=agent
+            ATOM_TOOLSET_EOF
+            chmod 0644 /${COMMON_TOOLS_MARKER}
+        """.trimIndent()
+        val result = InstallerShellRunner.run(
+            command,
+            COMMON_TOOLS_TIMEOUT_SECONDS,
+            TerminalEnvironment.DEBIAN,
+            rootfs.absolutePath,
+        )
+        AndroidAgentLogger.info(
+            "Debian environment action=install_tools outcome=${if (result.exitCode == 0) "succeeded" else "failed"} " +
+                "exitCode=${result.exitCode} outputChars=${result.output.length}",
+        )
+        return result
+    }
+
+    private fun rootfsDir(): File = LinuxEnvironmentPaths.rootfsDir(context, LinuxDistribution.DEBIAN)
+
+    private fun commonToolsReady(rootfs: File): Boolean {
+        val marker = File(rootfs, COMMON_TOOLS_MARKER)
+        if (!baseRootfsReady(rootfs) || !marker.isFile) return false
+        return runCatching {
+            marker.useLines { lines -> lines.any { it.trim() == "toolset=$TOOLSET_REVISION" } }
+        }.getOrDefault(false)
+    }
+
+    private fun readInstalledVersion(rootfs: File): String? = runCatching {
+        File(rootfs, LinuxEnvironmentPaths.READY_MARKER).readLines()
+            .firstOrNull { it.startsWith("version=") }
+            ?.substringAfter('=')?.trim()
+            ?.takeIf { it.matches(Regex("[0-9]+")) }
+    }.getOrNull()
+
+    companion object {
+        private const val DEBIAN_VERSION = "13"
+        private const val COMMON_TOOLS_MARKER = ".atom-common-tools-ready"
+        private const val TOOLSET_REVISION = 1
+        private const val COMMON_TOOLS_TIMEOUT_SECONDS = 900L
+        internal const val APT_REPAIR_FAILED_EXIT_CODE = 72
+        private const val PREFLIGHT_ROOT_UNAVAILABLE = 40
+        private const val PREFLIGHT_BUSYBOX_UNAVAILABLE = 41
+        private const val PREFLIGHT_BUSYBOX_INCOMPLETE = 42
+        private const val PREFLIGHT_ENVIRONMENT_UNAVAILABLE = 43
+        private val installMutex = Mutex()
+
+        internal fun baseRootfsReady(rootfs: File): Boolean =
+            LinuxEnvironmentPaths.rootfsReady(rootfs.absolutePath)
+
+        internal val AGENT_PACKAGES = listOf(
+            "bash", "ca-certificates", "coreutils", "curl", "diffutils", "file", "findutils",
+            "gawk", "git", "grep", "gzip", "jq", "less", "openssl", "openssh-client",
+            "patch", "procps", "ripgrep", "rsync", "sed", "sqlite3", "tar", "unzip", "util-linux", "wget",
+            "xz-utils", "zip", "zstd", "fd-find",
+        )
+
+        /** On real devices keep only one domestic mirror plus the official source, so slow mirrors don't serialize and drag out the install. */
+        internal val APT_MIRRORS = listOf(
+            DebianAptMirror(
+                id = "tuna",
+                archiveBaseUrl = "https://deb.debian.org/debian",
+                securityBaseUrl = "https://security.debian.org/debian-security",
+            ),
+            DebianAptMirror(
+                id = "official",
+                archiveBaseUrl = "https://deb.debian.org/debian",
+                securityBaseUrl = "https://security.debian.org/debian-security",
+            ),
+        )
+
+        /** Tries mirrors one by one and writes the successful one back to sources.list, which later apt operations reuse. */
+        internal fun aptMirrorScript(): String = "#!/bin/sh\n${aptMirrorScriptBody()}"
+
+        private fun aptMirrorScriptLines(): String =
+            aptMirrorScript().trimEnd().lineSequence().joinToString(" ", transform = ::shellQuote)
+
+        private fun aptMirrorScriptBody(): String {
+            val mirrorCases = APT_MIRRORS.joinToString("\n") { mirror ->
+                "${mirror.id}) atom_apt_archive=${shellQuote(mirror.archiveBaseUrl)}; " +
+                    "atom_apt_security=${shellQuote(mirror.securityBaseUrl)} ;;"
+            }
+            return """
+                set -u
+                export LC_ALL=C DEBIAN_FRONTEND=noninteractive
+                atom_apt() {
+                  apt-get -o Acquire::Retries=2 -o Acquire::http::Pipeline-Depth=0 "${'$'}@"
+                }
+                atom_apt_write_sources() {
+                  case "${'$'}1" in
+                    $mirrorCases
+                    *) return 64 ;;
+                  esac
+                  printf '%s\n' "deb ${'$'}atom_apt_archive trixie main" "deb ${'$'}atom_apt_archive trixie-updates main" "deb ${'$'}atom_apt_security trixie-security main" > /etc/apt/sources.list
+                }
+                atom_apt_healthy() {
+                  atom_audit=${'$'}(dpkg --audit) || return 1
+                  if [ -n "${'$'}atom_audit" ]; then
+                    printf '%s\n' "${'$'}atom_audit" >&2
+                    return 1
+                  fi
+                  atom_apt check
+                }
+                atom_apt_repair() {
+                  atom_apt_healthy && return 0
+                  # Configuration may be blocked by missing dependencies; after APT repairs it, it must be configured and verified again.
+                  if dpkg --configure -a && atom_apt_healthy; then return 0; fi
+                  atom_apt --fix-broken --no-remove install -y --no-install-recommends || return 1
+                  dpkg --configure -a && atom_apt_healthy
+                }
+                case "${'$'}{1:-}" in
+                  install) atom_action=install; shift; [ "${'$'}#" -gt 0 ] || exit 64 ;;
+                  update) atom_action=update ;;
+                  *) echo 'usage: atom-apt install PACKAGE... | update' >&2; exit 64 ;;
+                esac
+                for atom_apt_mirror in ${APT_MIRRORS.joinToString(" ") { it.id }}; do
+                  atom_apt_write_sources "${'$'}atom_apt_mirror" || exit 65
+                  atom_apt --error-on=any update || continue
+                  [ "${'$'}atom_action" != update ] || exit 0
+                  atom_apt_repair || exit $APT_REPAIR_FAILED_EXIT_CODE
+                  if atom_apt install -y --no-install-recommends "${'$'}@"; then
+                    atom_apt_healthy || exit $APT_REPAIR_FAILED_EXIT_CODE
+                    exit 0
+                  fi
+                  atom_apt_healthy || exit $APT_REPAIR_FAILED_EXIT_CODE
+                done
+                exit 1
+            """.trimIndent()
+        }
+
+        internal fun artifactForAbis(abis: List<String>): VerifiedArtifact? =
+            abis.firstNotNullOfOrNull { abi ->
+                when (abi) {
+                    "arm64-v8a" -> debianArtifact(
+                        id = "debian-trixie-aarch64-pd-v4.29.0",
+                        fileName = "debian-trixie-aarch64-pd-v4.29.0.tar.xz",
+                        sha256 = "3834a11cbc6496935760bdc20cca7e2c25724d0cd8f5e4926da8fd5ca1857918",
+                        sizeBytes = 35_409_704L,
+                    )
+                    "x86_64" -> debianArtifact(
+                        id = "debian-trixie-x86_64-pd-v4.29.0",
+                        fileName = "debian-trixie-x86_64-pd-v4.29.0.tar.xz",
+                        sha256 = "4b8f33b80a10d734ff935e5934588572f860c0c38a68bf91db59af0580370716",
+                        sizeBytes = 36_728_936L,
+                    )
+                    else -> null
+                }
+            }
+
+        private fun debianArtifact(
+            id: String,
+            fileName: String,
+            sha256: String,
+            sizeBytes: Long,
+        ): VerifiedArtifact {
+            val officialUrl = "https://github.com/termux/proot-distro/releases/download/v4.29.0/$fileName"
+            return VerifiedArtifact(
+                id = id,
+                version = DEBIAN_VERSION,
+                fileName = fileName,
+                url = officialUrl,
+                sha256 = sha256,
+                sizeBytes = sizeBytes,
+                preferredUrls = listOf(officialUrl),
+            )
+        }
+
+    }
+}

@@ -1,0 +1,19 @@
+package io.github.namanwtf.atom.hook.hyperos
+
+import android.content.Intent
+
+internal object HyperOsScreenSearchRequest {
+    private val navigationSources = setOf(
+        "long_press_fullscreen_gesture_line",
+        "long_press_home_key",
+        "two_gesture_long_press",
+    )
+
+    fun matches(intent: Intent?): Boolean {
+        if (intent?.action != Intent.ACTION_ASSIST) return false
+        // The source string may also be used for ordinary assistant requests, so we must confirm both the screen-recognition feature and the navbar long-press type.
+        return intent.getStringExtra("voice_assist_function_key") == "start_screen_recognition" &&
+            intent.getStringExtra("triggerType") == "NavLongPress" &&
+            intent.getStringExtra("voice_assist_start_from_key") in navigationSources
+    }
+}

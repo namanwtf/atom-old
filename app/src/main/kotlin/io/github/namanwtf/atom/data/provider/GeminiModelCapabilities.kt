@@ -1,0 +1,78 @@
+package io.github.namanwtf.atom.data.provider
+
+import io.github.namanwtf.atom.data.model.ModelReasoningCapabilities
+import io.github.namanwtf.atom.data.model.Model
+import io.github.namanwtf.atom.data.model.ReasoningEffort
+
+/** Native capabilities are enabled only for explicitly confirmed models; tool mixing must not be inferred from the generateContent catalog capabilities. */
+internal object GeminiModelCapabilities {
+    private data class Capabilities(
+        val reasoning: ModelReasoningCapabilities,
+        val hostedSearch: Boolean,
+    )
+
+    private val lowToHigh = listOf(ReasoningEffort.LOW, ReasoningEffort.MEDIUM, ReasoningEffort.HIGH)
+    private val lowToXHigh = lowToHigh + ReasoningEffort.XHIGH
+    private val minimalToHigh = listOf(ReasoningEffort.MINIMAL) + lowToHigh
+    private val gemini4ModelId = Regex("gemini-4-[a-z0-9][a-z0-9.-]*")
+    val configurableEfforts: List<ReasoningEffort> = minimalToHigh + ReasoningEffort.XHIGH
+    private val knownModels = mapOf(
+        "gemini-4-neon" to capabilities(lowToXHigh, ReasoningEffort.HIGH, hostedSearch = true),
+        "gemini-4-hydrogen" to capabilities(lowToXHigh, ReasoningEffort.HIGH, hostedSearch = true),
+        "gemini-4-carbon" to capabilities(lowToHigh, ReasoningEffort.MEDIUM, hostedSearch = true),
+        "gemini-4-argon" to capabilities(lowToHigh, ReasoningEffort.MEDIUM, hostedSearch = true),
+        "gemini-3.8-flash" to capabilities(lowToHigh, ReasoningEffort.MEDIUM, hostedSearch = true),
+        "gemini-3.6-flash" to capabilities(minimalToHigh, ReasoningEffort.MEDIUM, hostedSearch = true),
+        "gemini-3.5-flash-lite" to capabilities(minimalToHigh, ReasoningEffort.MINIMAL, hostedSearch = true),
+        "gemini-3.1-pro-preview" to capabilities(lowToHigh, ReasoningEffort.HIGH, hostedSearch = true),
+        "gemini-3-flash-preview" to capabilities(minimalToHigh, ReasoningEffort.HIGH, hostedSearch = true),
+        "gemini-3-pro-preview" to capabilities(
+            listOf(ReasoningEffort.LOW, ReasoningEffort.HIGH), ReasoningEffort.HIGH, hostedSearch = true,
+        ),
+    )
+
+    fun reasoningCapabilities(modelId: String): ModelReasoningCapabilities? = knownModels[normalize(modelId)]?.reasoning
+
+    fun resolveReasoning(model: Model): ModelReasoningCapabilities = when (model.reasoningOverride) {
+        false -> ModelReasoningCapabilities()
+        true -> model.reasoningCapabilitiesOverride ?: ModelReasoningCapabilities()
+        null -> if (model.reasoning == false) ModelReasoningCapabilities() else {
+            model.reasoningCapabilities ?: requestReasoningCapabilities(model.modelId)
+        }
+    }
+
+    fun resolveVertexReasoning(model: Model): ModelReasoningCapabilities {
+        val documented = requestReasoningCapabilities(model.modelId)
+        val allowed = when (model.reasoningOverride) {
+            false -> emptyList()
+            true -> documented.supportedEfforts.filter { it in model.reasoningCapabilitiesOverride?.supportedEfforts.orEmpty() }
+            null -> return documented
+        }
+        return documented.copy(supportedEfforts = allowed, defaultEffort = documented.defaultEffort?.takeIf { it in allowed })
+    }
+
+    // Unknown models use only server-side defaults; do not infer from this whether reasoning is supported or required.
+    fun requestReasoningCapabilities(modelId: String): ModelReasoningCapabilities =
+        reasoningCapabilities(modelId) ?: ModelReasoningCapabilities()
+
+    fun supportsHostedSearch(modelId: String): Boolean = knownModels[normalize(modelId)]?.hostedSearch == true
+
+    fun isGemini4(modelId: String): Boolean = gemini4ModelId.matches(normalize(modelId))
+
+    fun normalize(modelId: String): String = modelId.trim().lowercase()
+        .removePrefix("publishers/google/models/").removePrefix("models/")
+
+    private fun capabilities(
+        efforts: List<ReasoningEffort>,
+        default: ReasoningEffort,
+        hostedSearch: Boolean = false,
+    ) = Capabilities(
+        reasoning = ModelReasoningCapabilities(
+            supportedEfforts = efforts,
+            defaultEffort = default,
+            defaultEnabled = true,
+            mandatory = true,
+        ),
+        hostedSearch = hostedSearch,
+    )
+}

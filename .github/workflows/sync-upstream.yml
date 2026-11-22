@@ -23,7 +23,7 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name  "eta-en bot"
+          git config user.name  "atom bot"
           git config user.email "bot@users.noreply.github.com"
 
       - name: Fetch upstream

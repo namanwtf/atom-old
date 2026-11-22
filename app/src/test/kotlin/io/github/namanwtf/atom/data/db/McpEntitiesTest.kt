@@ -1,0 +1,32 @@
+package io.github.namanwtf.atom.data.db
+
+import io.github.namanwtf.atom.data.model.McpAuthorizationType
+import io.github.namanwtf.atom.data.model.McpProtocolMode
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class McpEntitiesTest {
+    @Test
+    fun legacyUnavailableReasonIsIgnoredWhenLoadingCachedTools() {
+        val entity = McpServerEntity(
+            id = "server",
+            name = "Server",
+            url = "https://example.com/mcp",
+            enabled = true,
+            protocolMode = McpProtocolMode.AUTO,
+            authorizationType = McpAuthorizationType.NONE,
+            toolsJson = """[{"name":"create_task","inputSchemaJson":"{\"type\":\"object\",\"anyOf\":[]}","unavailableReason":"schema keyword anyOf is not yet supported"}]""",
+            enabledToolNamesJson = """["create_task"]""",
+            createdAt = 1L,
+            sortOrder = 0,
+            lastRefreshedAt = null,
+            lastProtocolVersion = null,
+            toolsExpireAt = null,
+        )
+
+        val server = entity.toDomain()
+
+        assertEquals(listOf("create_task"), server.tools.map { it.name })
+        assertEquals(listOf("create_task"), server.activeTools.map { it.name })
+    }
+}

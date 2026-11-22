@@ -1,0 +1,71 @@
+package io.github.namanwtf.atom.agent.model
+
+import io.github.namanwtf.atom.agent.runtime.AgentRunController
+import io.github.namanwtf.atom.agent.auth.CodexOAuth
+import io.github.namanwtf.atom.data.provider.ProviderConnectionProfile
+import io.github.namanwtf.atom.data.repository.ProviderCredentialRepository
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+
+/** Credentials are resolved only right before the request is sent; 401 recovery stops at the response headers and never replays an already-started model stream. */
+internal object AuthorizedProviderHttp {
+    fun <T> execute(
+        client: OkHttpClient,
+        providerId: String,
+        authMode: String,
+        request: Request,
+        controller: AgentRunController,
+        accessToken: (String, String, AgentRunController, String?) -> String =
+            { id, mode, run, rejected -> ProviderCredentialRepository.accessToken(id, mode, run, rejected) },
+        consume: (Response) -> T,
+    ): T {
+        val profile = ProviderConnectionProfile.forAuthMode(authMode)
+        profile?.requireRequestTarget(request.url)
+        val httpClient = if (profile == null) client else client.newBuilder()
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .retryOnConnectionFailure(false)
+            .build()
+        var rejectedToken: String? = null
+        var refreshed = false
+        while (true) {
+            controller.throwIfCancelled()
+            val token = profile?.let { accessToken(providerId, authMode, controller, rejectedToken) }
+            val authorized = if (token == null) request else request.newBuilder()
+                .header("Authorization", "Bearer $token")
+                .apply {
+                    if (profile == ProviderConnectionProfile.OPENAI_CODEX) {
+                        header("ChatGPT-Account-Id", CodexOAuth.accountId(token))
+                    }
+                }
+                .build()
+            val call = httpClient.newCall(authorized)
+            val binding = controller.register(call::cancel)
+            try {
+                controller.throwIfCancelled()
+                call.execute().use { response ->
+                    controller.throwIfCancelled()
+                    if (profile != null && response.code == 401 && !refreshed) {
+                        rejectedToken = token
+                        refreshed = true
+                    } else {
+                        if (profile != null && response.code == 401) {
+                            val failure = AgentModelFailure.http(response.code, response.peekBody(16_384).string())
+                            if (failure.code != "HTTP_401") throw failure
+                            throw AgentModelFailure(
+                                "OAUTH_UNAUTHORIZED", false, "Subscription sign-in expired; please sign in to the provider account again.",
+                            )
+                        }
+                        return consume(response)
+                    }
+                }
+            } catch (failure: Throwable) {
+                controller.throwIfCancelled()
+                throw failure
+            } finally {
+                binding.close()
+            }
+        }
+    }
+}

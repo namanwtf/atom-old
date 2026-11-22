@@ -1,0 +1,202 @@
+package io.github.namanwtf.atom.ui.screens.tools
+
+import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import io.github.namanwtf.atom.R
+import io.github.namanwtf.atom.agent.web.ConfigurableWebBackends
+import io.github.namanwtf.atom.agent.web.WebHttpTransport
+import io.github.namanwtf.atom.core.AppStrings
+import io.github.namanwtf.atom.data.model.WebToolBackend
+import io.github.namanwtf.atom.data.model.WebToolsCredentials
+import io.github.namanwtf.atom.data.model.WebToolsSettings
+import io.github.namanwtf.atom.data.repository.WebToolsCredentialsUnavailable
+import io.github.namanwtf.atom.data.repository.WebToolsSettingsRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+
+internal class WebToolsValidationFailure(val userMessage: String) : IllegalArgumentException(userMessage)
+
+internal class WebToolsSettingsStore(
+    private val context: Context,
+    private val scope: CoroutineScope,
+) {
+    var settings by mutableStateOf(WebToolsSettings())
+        private set
+    var credentials by mutableStateOf(WebToolsCredentials())
+        private set
+    var hasProviderDeepSeekKey by mutableStateOf(false)
+        private set
+    var loaded by mutableStateOf(false)
+        private set
+    var saving by mutableStateOf(false)
+        private set
+    var message by mutableStateOf<String?>(null)
+        private set
+    var messageIsError by mutableStateOf(false)
+        private set
+
+    init {
+        scope.launch {
+            try {
+                settings = WebToolsSettingsRepository.settings()
+                hasProviderDeepSeekKey = WebToolsSettingsRepository.deepSeekProviderCredentials() != null
+                try {
+                    credentials = WebToolsSettingsRepository.credentials(context)
+                } catch (_: WebToolsCredentialsUnavailable) {
+                    message = context.getString(R.string.web_tools_credentials_lost)
+                    messageIsError = true
+                }
+                loaded = true
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                message = context.getString(R.string.web_tools_load_failed)
+                messageIsError = true
+            }
+        }
+    }
+
+    fun edit(value: WebToolsSettings) {
+        settings = value
+        message = null
+    }
+
+    fun editCredentials(value: WebToolsCredentials) {
+        credentials = value
+        message = null
+    }
+
+    fun save() {
+        if (!loaded || saving) return
+        val config = settings
+        val secrets = credentials
+        saving = true
+        scope.launch {
+            try {
+                val latestProviderDeepSeek = WebToolsSettingsRepository.deepSeekProviderCredentials() != null
+                hasProviderDeepSeekKey = latestProviderDeepSeek
+                validateWebToolsSettings(config, secrets, latestProviderDeepSeek)
+                WebToolsSettingsRepository.saveCredentials(context, secrets)
+                WebToolsSettingsRepository.save(config)
+                message = context.getString(
+                    if (settings === config && credentials === secrets) {
+                        R.string.speech_saved
+                    } else {
+                        R.string.speech_saved_with_pending
+                    },
+                )
+                messageIsError = false
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                val reason = (error as? WebToolsValidationFailure)?.userMessage
+                    ?: context.getString(R.string.speech_save_retry)
+                message = context.getString(R.string.speech_save_failed, reason)
+                messageIsError = true
+            } finally {
+                saving = false
+            }
+        }
+    }
+}
+
+internal fun validateWebToolsSettings(
+    settings: WebToolsSettings,
+    credentials: WebToolsCredentials,
+    hasProviderDeepSeekKey: Boolean,
+) {
+    val usesDeepSeek = settings.searchBackend == WebToolBackend.DEEPSEEK ||
+        settings.fetchBackend == WebToolBackend.DEEPSEEK
+    if (usesDeepSeek) {
+        if (credentials.deepSeekApiKey.isBlank() && !hasProviderDeepSeekKey) {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_deepseek_key_required,
+                    "Please enter the DeepSeek API Key, or configure DeepSeek in model providers first",
+                ),
+            )
+        }
+        runCatching {
+            ConfigurableWebBackends.deepSeekEndpoint(settings.deepSeek.baseUrl, "search")
+        }.getOrElse {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_deepseek_url_invalid,
+                    "DeepSeek Base URL must be a valid HTTP(S) address",
+                ),
+            )
+        }
+    }
+    if (settings.searchBackend == WebToolBackend.CUSTOM) {
+        val rawUrl = settings.customSearch.url.trim()
+        if (rawUrl.isEmpty()) {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_custom_search_url_required,
+                    "Please enter the custom search endpoint address",
+                ),
+            )
+        }
+        val probeUrl = rawUrl
+            .replace("{{query}}", "atom")
+            .replace("{{raw_query}}", "atom")
+            .replace("{{count}}", "5")
+        runCatching { WebHttpTransport.validateUrl(probeUrl) }.getOrElse {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_custom_search_url_invalid,
+                    "Custom search endpoint must be a valid HTTP(S) address",
+                ),
+            )
+        }
+        runCatching {
+            ConfigurableWebBackends.parseCustomHeaders(
+                settings.customSearch.headersText,
+                credentials.customSearchApiKey,
+            )
+        }.getOrElse {
+            throw WebToolsValidationFailure(
+                it.message ?: AppStrings.get(
+                    R.string.ui_misc_web_custom_search_headers_invalid,
+                    "Custom search request header format is invalid",
+                ),
+            )
+        }
+    }
+    if (settings.fetchBackend == WebToolBackend.CUSTOM) {
+        val rawUrl = settings.customFetch.url.trim()
+        if (rawUrl.isEmpty()) {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_custom_fetch_url_required,
+                    "Please enter the custom fetch endpoint address",
+                ),
+            )
+        }
+        val probeUrl = rawUrl
+            .replace("{{url}}", "https%3A%2F%2Fexample.com")
+            .replace("{{raw_url}}", "https://example.com")
+        runCatching { WebHttpTransport.validateUrl(probeUrl) }.getOrElse {
+            throw WebToolsValidationFailure(
+                AppStrings.get(
+                    R.string.ui_misc_web_custom_fetch_url_invalid,
+                    "Custom fetch endpoint must be a valid HTTP(S) address",
+                ),
+            )
+        }
+        runCatching {
+            ConfigurableWebBackends.parseCustomHeaders(
+                settings.customFetch.headersText,
+                credentials.customFetchApiKey,
+            )
+        }.getOrElse {
+            throw WebToolsValidationFailure(
+                it.message ?: AppStrings.get(
+                    R.string.ui_misc_web_custom_fetch_headers_invalid,
+                    "Custom fetch request header format is invalid",
+                ),
+            )
+        }
+    }
+}

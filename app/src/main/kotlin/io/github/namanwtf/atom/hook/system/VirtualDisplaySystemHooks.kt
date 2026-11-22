@@ -1,0 +1,242 @@
+package io.github.namanwtf.atom.hook.system
+
+import android.hardware.display.VirtualDisplayConfig
+import android.os.Binder
+import android.view.Display
+import io.github.libxposed.api.XposedModule
+import io.github.namanwtf.atom.agent.virtualdisplay.CanvasRoutingPolicy
+import io.github.namanwtf.atom.config.Prefs
+import io.github.namanwtf.atom.core.HookInstallation
+import io.github.namanwtf.atom.core.HookRegistrar
+import io.github.namanwtf.atom.core.HookSupport
+import io.github.namanwtf.atom.core.ModuleConfig
+import io.github.namanwtf.atom.core.ModuleLogger
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * In system_server, grant Atom's own background virtual display SYSTEM_UID ownership, the trusted display flags,
+ * the hidden soft-keyboard policy (DISPLAY_IME_POLICY_HIDE), and cross-app Activity launch allowance.
+ *
+ * Strictly restrict the caller package name and virtual display name (AtomAgentVirtualDisplay) without opening permissions to other apps.
+ */
+internal object VirtualDisplaySystemHooks {
+
+    private const val DMS_CLASS = "com.android.server.display.DisplayManagerService"
+    private const val DMS_BINDER_CLASS = "com.android.server.display.DisplayManagerService\$BinderService"
+    private const val ATMS_CLASS = "com.android.server.wm.ActivityTaskManagerService"
+    private const val ATS_CLASS = "com.android.server.wm.ActivityTaskSupervisor"
+
+    private val activeAtomDisplayCreation = ThreadLocal.withInitial { false }
+    private val activeAtomDisplayIds = ConcurrentHashMap.newKeySet<Int>()
+
+    fun install(
+        module: XposedModule,
+        rootLogger: ModuleLogger,
+        classLoader: ClassLoader,
+    ): HookInstallation {
+        val hooks = HookRegistrar(module, rootLogger, "VirtualDisplay")
+        return hooks.install {
+            installDisplayManagerHooks(module, hooks, classLoader)
+            installCrossAppLaunchHooks(hooks, classLoader)
+            installTaskMoveHooks(hooks, classLoader)
+        }
+    }
+
+    private fun installDisplayManagerHooks(module: XposedModule, hooks: HookRegistrar, classLoader: ClassLoader) {
+        val dmsClass = HookSupport.findClassOrNull(classLoader, DMS_CLASS)
+        val binderClass = HookSupport.findClassOrNull(classLoader, DMS_BINDER_CLASS)
+        val createMethod = binderClass?.let { clazz ->
+            HookSupport.findDeclaredMethods(clazz, makeAccessible = true) { method ->
+                method.name == "createVirtualDisplay" &&
+                    method.parameterCount >= 4 &&
+                    method.parameterTypes[0] == VirtualDisplayConfig::class.java &&
+                    method.parameterTypes[3] == String::class.java
+            }.firstOrNull()
+        }
+        if (dmsClass == null || binderClass == null || createMethod == null) {
+            hooks.missing(
+                id = "system.virtual-display-create",
+                description = "DisplayManagerService.createVirtualDisplay",
+                detail = "DisplayManagerService\$BinderService.createVirtualDisplay not found",
+            )
+            return
+        }
+        val releaseMethod = HookSupport.findDeclaredMethods(binderClass, makeAccessible = true) { method ->
+            method.name == "releaseVirtualDisplay" && method.parameterCount == 1 &&
+                method.parameterTypes[0] == createMethod.parameterTypes[1]
+        }.firstOrNull()
+        if (releaseMethod == null) {
+            hooks.missing(
+                id = "system.virtual-display-release",
+                description = "DisplayManagerService.releaseVirtualDisplay",
+                detail = "virtual display creation failure recovery entry not found",
+            )
+            return
+        }
+        val releaseInvoker = module.getInvoker(releaseMethod)
+
+        hooks.intercept(
+            id = "system.virtual-display-create",
+            executable = createMethod,
+            description = "DisplayManagerService\$BinderService.createVirtualDisplay",
+        ) { chain ->
+            if (!Prefs.isEnabled(Prefs.Keys.AGENT_VIRTUAL_DISPLAY_ENABLED)) {
+                return@intercept chain.proceed()
+            }
+            val args = chain.args.toMutableList()
+            val config = args.getOrNull(0) as? VirtualDisplayConfig
+            val packageName = args.getOrNull(3) as? String
+            val isAtom = (packageName == ModuleConfig.ATOM_PACKAGE || packageName == "android") &&
+                config != null &&
+                config.name == CanvasRoutingPolicy.VIRTUAL_DISPLAY_NAME
+            if (!isAtom) {
+                return@intercept chain.proceed()
+            }
+            val upgraded = upgradeVirtualDisplayConfig(config) ?: config
+            args[0] = upgraded
+            args[3] = "android"
+            activeAtomDisplayCreation.set(true)
+            val identityToken = Binder.clearCallingIdentity()
+            try {
+                val result = chain.proceed(args.toTypedArray())
+                if (result is Int && CanvasRoutingPolicy.isVirtualDisplay(result)) {
+                    val imeResult = applyDisplayImePolicyHide(result)
+                    if (!imeResult.ok) {
+                        try {
+                            releaseInvoker.invoke(chain.thisObject, args[1])
+                        } catch (exception: Exception) {
+                            hooks.logger.warn("Virtual display cleanup failed: type=${exception.javaClass.simpleName}")
+                        }
+                        hooks.logger.warn(
+                            "Virtual display rejected: code=DISPLAY_IME_ISOLATION_UNAVAILABLE " +
+                                "reason=${imeResult.reason} actualPolicy=${imeResult.actualPolicy} " +
+                                "errorType=${imeResult.errorType}",
+                        )
+                        return@intercept Display.INVALID_DISPLAY
+                    }
+                    activeAtomDisplayIds.add(result)
+                }
+                result
+            } finally {
+                Binder.restoreCallingIdentity(identityToken)
+                activeAtomDisplayCreation.set(false)
+            }
+        }
+
+        val checkPermMethod = HookSupport.findDeclaredMethods(dmsClass, makeAccessible = true) { method ->
+            method.name == "checkCallingPermission" &&
+                method.parameterCount == 2 &&
+                method.parameterTypes[0] == String::class.java &&
+                method.parameterTypes[1] == String::class.java &&
+                method.returnType == Boolean::class.javaPrimitiveType
+        }.firstOrNull()
+
+        if (checkPermMethod != null) {
+            hooks.intercept(
+                id = "system.virtual-display-permission",
+                executable = checkPermMethod,
+                description = "DisplayManagerService.checkCallingPermission",
+            ) { chain ->
+                if (activeAtomDisplayCreation.get() == true) {
+                    true
+                } else {
+                    chain.proceed()
+                }
+            }
+        }
+    }
+
+    /**
+     * Allow cross-app Activity launches inside the virtual display (App A -> App B), avoiding crashes from ActivityTaskSupervisor blocking across UIDs.
+     */
+    private fun installCrossAppLaunchHooks(hooks: HookRegistrar, classLoader: ClassLoader) {
+        val atsClass = HookSupport.findClassOrNull(classLoader, ATS_CLASS) ?: return
+        val canPlaceMethods = HookSupport.findDeclaredMethods(atsClass, makeAccessible = true) { method ->
+            method.name == "canPlaceEntityOnDisplay" &&
+                method.parameterCount >= 3 &&
+                method.parameterTypes[0] == Int::class.javaPrimitiveType &&
+                method.returnType == Boolean::class.javaPrimitiveType
+        }
+        canPlaceMethods.forEachIndexed { index, method ->
+            hooks.intercept(
+                id = if (index == 0) "system.virtual-display-can-place" else "system.virtual-display-can-place-$index",
+                executable = method,
+                description = "ActivityTaskSupervisor.canPlaceEntityOnDisplay#$index",
+            ) { chain ->
+                val displayId = chain.args.getOrNull(0) as? Int ?: Display.DEFAULT_DISPLAY
+                if (displayId in activeAtomDisplayIds) {
+                    true
+                } else {
+                    chain.proceed()
+                }
+            }
+        }
+    }
+
+    private fun applyDisplayImePolicyHide(displayId: Int): CanvasRoutingPolicy.ImePolicyCheckResult {
+        return try {
+            val wmgClass = Class.forName("android.view.WindowManagerGlobal")
+            val wms = wmgClass.getMethod("getWindowManagerService").invoke(null)
+            CanvasRoutingPolicy.applyDisplayImePolicyHide(wms = wms, displayId = displayId)
+        } catch (exception: Exception) {
+            val cause = (exception as? java.lang.reflect.InvocationTargetException)?.cause ?: exception
+            CanvasRoutingPolicy.ImePolicyCheckResult(
+                ok = false,
+                reason = "WMS_LOOKUP_EXCEPTION",
+                errorType = cause.javaClass.simpleName,
+            )
+        }
+    }
+
+    @android.annotation.SuppressLint("WrongConstant")
+    private fun upgradeVirtualDisplayConfig(config: VirtualDisplayConfig): VirtualDisplayConfig? {
+        if (config.name != CanvasRoutingPolicy.VIRTUAL_DISPLAY_NAME) return null
+        return runCatching {
+            VirtualDisplayConfig.Builder(
+                config.name,
+                config.width,
+                config.height,
+                config.densityDpi,
+            ).apply {
+                config.surface?.let(::setSurface)
+                setFlags(config.flags or CanvasRoutingPolicy.TRUSTED_INTERACTIVE_FLAGS)
+                if (config.requestedRefreshRate > 0f) {
+                    setRequestedRefreshRate(config.requestedRefreshRate)
+                }
+            }.build()
+        }.getOrDefault(config)
+    }
+
+    private fun installTaskMoveHooks(hooks: HookRegistrar, classLoader: ClassLoader) {
+        val atmsClass = HookSupport.findClassOrNull(classLoader, ATMS_CLASS) ?: return
+        val moveMethod = HookSupport.findMethod(
+            atmsClass,
+            "moveRootTaskToDisplay",
+            Int::class.javaPrimitiveType!!,
+            Int::class.javaPrimitiveType!!,
+        ) ?: return
+
+        hooks.intercept(
+            id = "system.virtual-display-move-task",
+            executable = moveMethod,
+            description = "ActivityTaskManagerService.moveRootTaskToDisplay",
+        ) { chain ->
+            val target = chain.thisObject
+            val context = SystemServerContextResolver.resolve(target)
+            val callingUid = Binder.getCallingUid()
+            val isAtomCaller = context != null && runCatching {
+                context.packageManager.getPackagesForUid(callingUid)
+                    ?.any { it == ModuleConfig.ATOM_PACKAGE } == true
+            }.getOrDefault(false)
+            if (!isAtomCaller) {
+                return@intercept chain.proceed()
+            }
+            val token = Binder.clearCallingIdentity()
+            try {
+                chain.proceed()
+            } finally {
+                Binder.restoreCallingIdentity(token)
+            }
+        }
+    }
+}

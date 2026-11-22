@@ -1,0 +1,86 @@
+package io.github.namanwtf.atom.data.repository
+
+import io.github.namanwtf.atom.agent.roleplay.CharacterCardCodec
+import io.github.namanwtf.atom.agent.roleplay.UserPersona
+import io.github.namanwtf.atom.data.db.ConversationEntity
+import io.github.namanwtf.atom.data.db.AtomDatabase
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class CharacterRepositoryTest {
+    private val context = RuntimeEnvironment.getApplication()
+
+    @Before
+    fun setUp() {
+        AtomDatabase.closeForTests()
+        context.deleteDatabase("eta.db")
+        context.getSharedPreferences("atom_roleplay", 0).edit().clear().commit()
+        CharacterRepository.initialize(context)
+    }
+
+    @Test
+    fun largeCardsPersonaAndConversationBindingsUseChunkedStorage() = runBlocking {
+        val description = "mountains and sea😀".repeat(30_000)
+        val profile = CharacterRepository.create(CharacterCardCodec.create("character").withEdits(description = description))
+        CharacterRepository.savePersona(UserPersona("traveler", description))
+        assertEquals(description, CharacterRepository.get(profile.id)?.card?.description)
+        assertEquals(description, CharacterRepository.binding(profile.id).userDescription)
+        val dao = AtomDatabase.get(context).conversationDao()
+        val row = ConversationEntity("session", "character session", false, roleplayJson = description,
+            revisionsJson = description, createdAt = 1, updatedAt = 2)
+        dao.insertConversations(listOf(row))
+        assertEquals(description, dao.roleplayJson(row.id))
+        assertEquals(description, dao.conversationEntities().single().revisionsJson)
+        AtomDatabase.get(context).openHelper.readableDatabase.query(
+            "SELECT card_json FROM roleplay_characters WHERE id = ?", arrayOf(profile.id),
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertTrue(cursor.getString(0).startsWith("@eta:chunks:v1:"))
+        }
+        val copy = CharacterRepository.duplicate(profile.id)
+        assertEquals(description, copy.card.description)
+        CharacterRepository.delete(profile.id)
+        assertEquals(null, CharacterRepository.get(profile.id))
+        assertEquals(listOf(copy.id), CharacterRepository.list().map { it.id })
+        // After deleting the character, the existing session and its character snapshot are still retained.
+        assertEquals(description, dao.roleplayJson(row.id))
+    }
+
+    @Test
+    fun defaultCharacterSeedsOnlyIntoEmptyLibraryAndNeverResurrects() = runBlocking {
+        CharacterRepository.ensureDefaultCharacter()
+        assertEquals(listOf("Xiaoman"), CharacterRepository.list().map { it.card.name })
+        CharacterRepository.ensureDefaultCharacter()
+        assertEquals(1, CharacterRepository.list().size)
+        CharacterRepository.delete(CharacterRepository.list().single().id)
+        CharacterRepository.ensureDefaultCharacter()
+        assertEquals(emptyList<String>(), CharacterRepository.list().map { it.id })
+        // Manual restoration by the user is not limited by the seeding flag.
+        CharacterRepository.createDefaultCharacter()
+        assertEquals(listOf("Xiaoman"), CharacterRepository.list().map { it.card.name })
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun invalidAvatarDoesNotPartiallySaveEditedCard() = runBlocking {
+        val profile = CharacterRepository.create(CharacterCardCodec.create("original character"))
+        var failed = false
+        try {
+            CharacterRepository.save(profile.copy(card = profile.card.withEdits(name = "modified")), "not an image".toByteArray())
+        } catch (_: IllegalArgumentException) {
+            failed = true
+        }
+        assertTrue(failed)
+        assertEquals("original character", CharacterRepository.get(profile.id)?.card?.name)
+    }
+}

@@ -1,0 +1,115 @@
+package io.github.namanwtf.atom.ui.screens.home
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import io.github.namanwtf.atom.ui.components.AgentChatBody
+import io.github.namanwtf.atom.ui.components.AgentConversationLoadState
+import io.github.namanwtf.atom.ui.components.LocalRoleplayChat
+import io.github.namanwtf.atom.ui.components.LocalAgentBrowserSession
+import io.github.namanwtf.atom.agent.browser.BrowserSessionRegistry
+import io.github.namanwtf.atom.ui.components.chatConversationCompositionKey
+import io.github.namanwtf.atom.ui.model.AgentChatHomeUiState
+import io.github.namanwtf.atom.ui.model.ConversationHistoryLoadState
+import io.github.namanwtf.atom.ui.model.AgentHomeAction
+import io.github.namanwtf.atom.ui.model.AgentModelPickerUiState
+import io.github.namanwtf.atom.ui.model.roleplayChatUi
+
+/**
+ * AgentChatHome: the first screen is the main chat stage.
+ *
+ * Top entries are uniformly provided by [io.github.namanwtf.atom.ui.app.AgentAppShell];
+ * this Screen only handles the message stream, Run trace, tool summary, and bottom input box.
+ */
+@Composable
+internal fun AgentHomeScreen(
+    state: AgentChatHomeUiState,
+    modelPickerState: AgentModelPickerUiState,
+    conversationKey: String?,
+    onAction: (AgentHomeAction) -> Unit,
+    isLoadingConversation: Boolean = false,
+    conversationLoadFailed: Boolean = false,
+    historyLoadState: ConversationHistoryLoadState = ConversationHistoryLoadState.Idle,
+    isDrawerOpen: Boolean = false,
+    isBranching: Boolean = false,
+    topInset: Dp = 0.dp,
+    modifier: Modifier = Modifier,
+) {
+    // Keep the full branch inside the key, so an early return doesn't leave compiler markers that can't be converted to DEX.
+    key(chatConversationCompositionKey(conversationKey)) {
+        if (!state.isConversationLoaded) {
+            AgentConversationLoadState(
+                isLoading = isLoadingConversation,
+                failed = conversationLoadFailed,
+                onRetry = { onAction(AgentHomeAction.RetryConversationLoad) },
+                modifier = modifier,
+            )
+        } else {
+            val browser = remember(conversationKey) {
+                BrowserSessionRegistry.get(conversationKey ?: BrowserSessionRegistry.MANUAL_SESSION_KEY)
+            }
+            CompositionLocalProvider(
+                LocalRoleplayChat provides state.roleplayChatUi(),
+                LocalAgentBrowserSession provides browser,
+            ) {
+                AgentChatBody(
+                    messages = state.messages,
+                    modelPickerState = modelPickerState,
+                    topInset = topInset,
+                    isCompacting = state.isCompacting,
+                    isBranching = isBranching,
+                    input = state.input,
+                    isStreaming = state.isStreaming,
+                    reasoningEffort = state.reasoningEffort,
+                    availableReasoningEfforts = state.availableReasoningEfforts,
+                    pendingImages = state.pendingImages,
+                    pendingFileReferences = state.pendingFileReferences,
+                    queuedMessages = state.queuedMessages,
+                    inputSyncVersion = state.inputSyncVersion,
+                    focusInputOnSync = state.focusInputOnSync,
+                    messageEdit = state.messageEdit,
+                    onReasoningEffortChange = { onAction(AgentHomeAction.ReasoningEffortChanged(it)) },
+                    onCompactContext = { onAction(AgentHomeAction.CompactContext) },
+                    canCompactContext = state.canCompactContext,
+                    onModelSelected = { onAction(AgentHomeAction.ModelSelected(it)) },
+                    onSubmit = { text -> onAction(AgentHomeAction.SubmitMessage(text)) },
+                    onInterruptAndSubmit = { text -> onAction(AgentHomeAction.InterruptAndSubmitMessage(text)) },
+                    onSteerQueuedMessage = { id -> onAction(AgentHomeAction.SteerQueuedMessage(id)) },
+                    onRecallQueuedMessage = { id, draft -> onAction(AgentHomeAction.RecallQueuedMessage(id, draft)) },
+                    onRemoveQueuedMessage = { id -> onAction(AgentHomeAction.RemoveQueuedMessage(id)) },
+                    onStop = { onAction(AgentHomeAction.StopRun) },
+                    onAttachImage = { uri -> onAction(AgentHomeAction.ImageAttached(uri)) },
+                    onRemoveImage = { id -> onAction(AgentHomeAction.RemoveImage(id)) },
+                    onAttachFiles = { uris -> onAction(AgentHomeAction.FilesAttached(uris)) },
+                    onAttachFolder = { uri -> onAction(AgentHomeAction.FolderAttached(uri)) },
+                    onAttachFilePath = { path -> onAction(AgentHomeAction.FilePathAttached(path)) },
+                    onRemoveFileReference = { id -> onAction(AgentHomeAction.RemoveFileReference(id)) },
+                    onEditMessage = { id -> onAction(AgentHomeAction.EditMessage(id)) },
+                    onCancelMessageEdit = { onAction(AgentHomeAction.CancelMessageEdit) },
+                    onDeleteMessage = { id -> onAction(AgentHomeAction.DeleteMessage(id)) },
+                    onRegenerateMessage = { id -> onAction(AgentHomeAction.RegenerateMessage(id)) },
+                    onBranchMessage = { id ->
+                        conversationKey?.let { onAction(AgentHomeAction.BranchConversation(it, id)) }
+                    },
+                    onSelectReplyCandidate = { id, index -> onAction(AgentHomeAction.SelectReplyCandidate(id, index)) },
+                    onSuggestionClick = { prompt ->
+                        onAction(AgentHomeAction.SubmitMessage(prompt))
+                    },
+                    onRunTraceClick = { onAction(AgentHomeAction.ExpandRunTrace) },
+                    onOpenBrowser = { onAction(AgentHomeAction.OpenBrowser) },
+                    hasEarlierMessages = state.hasEarlierMessages,
+                    messageStartIndex = state.messageStartIndex,
+                    historyLoadState = historyLoadState,
+                    onLoadEarlierMessages = { onAction(AgentHomeAction.LoadEarlierMessages) },
+                    onHistoryViewportChanged = { onAction(AgentHomeAction.HistoryViewportChanged(it)) },
+                    isDrawerOpen = isDrawerOpen,
+                    modifier = modifier,
+                )
+            }
+        }
+    }
+}

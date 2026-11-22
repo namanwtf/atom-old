@@ -1,0 +1,59 @@
+package io.github.namanwtf.atom.ui.screens.browser
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.lifecycleScope
+import io.github.namanwtf.atom.agent.browser.BrowserSessionRegistry
+import io.github.namanwtf.atom.data.repository.AppearanceSettingsRepository
+import io.github.namanwtf.atom.ui.app.AgentAppTheme
+import kotlinx.coroutines.launch
+
+/** The WebView stays in a fixed window; entry/exit animations are composed by the system window, so whole-page draw clipping doesn't interfere with page rendering. */
+class AgentBrowserActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val sessionKey = intent.getStringExtra(EXTRA_SESSION_KEY)?.takeIf { it.isNotBlank() }
+        if (sessionKey == null) {
+            finish()
+            return
+        }
+        enableEdgeToEdge()
+        val session = BrowserSessionRegistry.get(sessionKey)
+        lifecycleScope.launch {
+            val initialAppearance = AppearanceSettingsRepository.settings()
+            setContent {
+                val appearance by AppearanceSettingsRepository.settingsFlow().collectAsState(initialAppearance)
+                AgentAppTheme(
+                    appearance = appearance,
+                    provideGlassHost = true,
+                    onResolvedDarkModeChange = { isDark ->
+                        val style = if (isDark) {
+                            SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                        } else {
+                            SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                        }
+                        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                    },
+                ) {
+                    AgentBrowserScreen(session = session, onBack = ::finish)
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val EXTRA_SESSION_KEY = "io.github.namanwtf.atom.extra.BROWSER_SESSION_KEY"
+
+        fun createIntent(context: Context, sessionKey: String): Intent {
+            require(sessionKey.isNotBlank())
+            return Intent(context, AgentBrowserActivity::class.java).putExtra(EXTRA_SESSION_KEY, sessionKey)
+        }
+    }
+}

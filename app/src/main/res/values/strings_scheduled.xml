@@ -5,7 +5,7 @@
     <string name="scheduled_empty_hint">Scheduled tasks run silently in the background and only notify you when there is something worth your attention. You can also tell Atom directly in chat, e.g. \"Summarize today\'s important notifications every night at 10 PM.\"</string>
     <string name="scheduled_section_all_tasks">All tasks · %1$d/%2$d enabled</string>
     <string name="scheduled_unnamed_task">Untitled task</string>
-    <string name="scheduled_meta_next_run">Next %1$s</string>
+    <string name="scheduled_matom_next_run">Next %1$s</string>
     <string name="scheduled_status_running_background">Running in background…</string>
     <string name="scheduled_status_awaiting_first_run">Waiting for first run</string>
     <string name="scheduled_status_paused">Paused</string>
