@@ -90,6 +90,7 @@ import io.github.mangi.eta.ui.components.coui.couiButtonFeedback
 import io.github.mangi.eta.ui.components.coui.rememberCouiPageBackdrop
 import io.github.mangi.eta.ui.model.branchMessageOutline
 import io.github.mangi.eta.ui.app.AgentConversationRevisionReducer
+import io.github.mangi.eta.ui.app.LocalPureBlack
 import io.github.mangi.eta.ui.app.LocalUiStyle
 import io.github.mangi.eta.ui.layout.rememberFloatingBottomBarInsets
 import io.github.mangi.eta.ui.markdown.StreamingMarkdownStateCache
@@ -382,7 +383,7 @@ private fun AgentChatScaffold(
 ) {
     val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
     val chatBackdrop = if (isCoui) null else rememberGlassBackdrop()
-    val couiChatBackdrop = if (isCoui) rememberCouiPageBackdrop(CouiTheme.colorScheme.backgroundWithCard) else null
+    val couiChatBackdrop = if (isCoui) rememberCouiPageBackdrop(if (LocalPureBlack.current) Color.Black else CouiTheme.colorScheme.backgroundWithCard) else null
     val couiCapture = if (couiChatBackdrop == null) Modifier else Modifier.layerBackdrop(couiChatBackdrop)
 
     Scaffold(

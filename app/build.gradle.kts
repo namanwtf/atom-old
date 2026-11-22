@@ -42,7 +42,7 @@ android {
     ndkVersion = libs.versions.ndk.get()
 
     defaultConfig {
-        applicationId = "io.github.mangi.eta"
+        applicationId = "io.github.namanwtf.atom"
         minSdk = 34
         targetSdk = 37
         // versionCode rule: yyyyMMdd + a two-digit sequence number for the day (starting at 01), incremented manually together with versionName on release.

@@ -8,6 +8,7 @@ import top.yukonga.miuix.kmp.blur.Backdrop
 
 internal val LocalAppearanceSettings = staticCompositionLocalOf { AppearanceSettings() }
 internal val LocalUiStyle = staticCompositionLocalOf { AppearanceUiStyle.Default }
+internal val LocalPureBlack = staticCompositionLocalOf { false }
 internal val LocalGlassSceneBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 internal val LocalGlassPageBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 internal val LocalEtaTopLayer = staticCompositionLocalOf<EtaTopLayerState?> { null }

@@ -90,5 +90,5 @@ internal object AppUpdateChecker {
 
     private val LATEST_RELEASE_URL =
         "https://api.github.com/repos/" + BuildConfig.UPDATE_REPO + "/releases/latest"
-    private const val USER_AGENT = "Eta-Update-Checker"
+    private const val USER_AGENT = "Atom-Update-Checker"
 }

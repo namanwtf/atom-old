@@ -155,6 +155,7 @@ fun AgentAppTheme(
                 LocalContentColor provides themedMiuixColors.onBackground,
                 LocalAppearanceSettings provides appearance,
                 LocalUiStyle provides appearance.uiStyle,
+                LocalPureBlack provides pureBlack,
             ) {
                 if (appearance.uiStyle == AppearanceUiStyle.COUI) {
                     // Use the colors overload to avoid pulling in COUI ThemeController's static references to material-color-utilities 5.0
@@ -178,7 +179,7 @@ fun AgentAppTheme(
                                     if (provideGlassHost) {
                                         // Record the page background at the main-window root, so popups from the AgentAppRoot layer also get COUI 17 material blur;
                                         // each secondary page's own CouiBackdropContent overrides it with the current page's local background.
-                                        val rootBackdrop = rememberCouiPageBackdrop(couiNative.backgroundWithCard)
+                                        val rootBackdrop = rememberCouiPageBackdrop(if (pureBlack) Color.Black else couiNative.backgroundWithCard)
                                         CouiBackdropContent(rootBackdrop) { scopedContent() }
                                     } else {
                                         scopedContent()

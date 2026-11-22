@@ -99,7 +99,7 @@ internal object AgentRuntimeWire {
     /** service -> client: return whether the steering was accepted by the current active run and the assigned supplement sequence number. */
     const val MSG_STEER_RESPONSE = 19
 
-    private const val MODULE_PACKAGE = "io.github.mangi.eta"
+    private const val MODULE_PACKAGE = "io.github.namanwtf.atom"
     private const val SERVICE_CLASS = "io.github.mangi.eta.agent.runtime.AgentRuntimeService"
 
     private const val KEY_TYPE = "type"

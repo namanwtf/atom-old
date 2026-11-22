@@ -1,11 +1,11 @@
 package io.github.mangi.eta.core
 
 internal object ModuleConfig {
-    const val TAG = "Eta"
+    const val TAG = "Atom"
     const val HOT_PATH_LOG_WINDOW_MS = 60_000L
 
     const val GOOGLE_PACKAGE = "com.google.android.googlequicksearchbox"
-    const val ETA_PACKAGE = "io.github.mangi.eta"
+    const val ETA_PACKAGE = "io.github.namanwtf.atom"
     const val COLOROS_MEMORY_PACKAGE = "com.oplus.aimemory"
     const val XIAOAI_PACKAGE = "com.miui.voiceassist"
     const val XIAOMI_LAUNCHER_PACKAGE = "com.miui.home"
