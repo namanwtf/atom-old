@@ -1046,7 +1046,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private fun syncActiveRunOverlayVisibility(run: RuntimeRunRegistry.Run?) {
         if (AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
                 handoffSource = run?.request?.handoff?.source,
-                etaUiInForeground = MainActivity.isInForeground,
+                atomUiInForeground = MainActivity.isInForeground,
                 virtualDisplayActive = virtualDisplayState.value.active,
             )
         ) {
@@ -1061,7 +1061,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         val run = displayedRun ?: return
         val suppress = AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
             handoffSource = run.request.handoff?.source,
-            etaUiInForeground = MainActivity.isInForeground,
+            atomUiInForeground = MainActivity.isInForeground,
             virtualDisplayActive = virtualDisplayState.value.active,
         )
         if (resultCardView != null) {
@@ -1714,7 +1714,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         if (AgentOverlayVisibilityPolicy.shouldShowResultCard(
                 hasExecutedForegroundTool = run?.hasExecutedForegroundTool == true,
                 handoffSource = run?.request?.handoff?.source,
-                etaUiInForeground = MainActivity.isInForeground,
+                atomUiInForeground = MainActivity.isInForeground,
             )
         ) {
             // Remove the capsule and edge light and show the half-screen result card instead; without interaction, the card itself delays its exit and calls back to close

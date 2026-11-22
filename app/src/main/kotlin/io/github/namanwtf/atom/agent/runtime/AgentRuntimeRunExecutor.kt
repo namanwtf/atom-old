@@ -101,7 +101,7 @@ internal class AgentRuntimeRunExecutor(
             entrySurfaceGuard = EntrySurfaceGuard.from(
                 handoff = request.handoff,
                 logger = AndroidAgentLogger,
-                etaVoiceSurfaceDismissal = {
+                atomVoiceSurfaceDismissal = {
                     AtomAssistantOverlayService.dismissForForegroundOperation(appContext)
                 },
             )

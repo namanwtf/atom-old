@@ -35,15 +35,15 @@ internal object AgentOverlayVisibilityPolicy {
      */
     internal fun shouldSuppressOverlayInAtomUi(
         handoffSource: String?,
-        etaUiInForeground: Boolean,
+        atomUiInForeground: Boolean,
         virtualDisplayActive: Boolean = false,
     ): Boolean = !virtualDisplayActive &&
-        etaUiInForeground &&
+        atomUiInForeground &&
         handoffSource == AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE
 
     internal fun shouldShowResultCard(
         hasExecutedForegroundTool: Boolean,
         handoffSource: String?,
-        etaUiInForeground: Boolean,
-    ): Boolean = hasExecutedForegroundTool && !shouldSuppressOverlayInAtomUi(handoffSource, etaUiInForeground, virtualDisplayActive = false)
+        atomUiInForeground: Boolean,
+    ): Boolean = hasExecutedForegroundTool && !shouldSuppressOverlayInAtomUi(handoffSource, atomUiInForeground, virtualDisplayActive = false)
 }

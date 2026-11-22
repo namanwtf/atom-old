@@ -71,9 +71,9 @@ internal class PinnedLinuxToolInstaller(
 
     private suspend fun activateRootless(tool: ManagedLinuxTool, artifact: VerifiedArtifact, archive: File, rootfs: File): Boolean {
         val name = tool.name.lowercase()
-        val versions = File(rootfs, "opt/eta/$name")
+        val versions = File(rootfs, "opt/atom/$name")
         val target = File(versions, artifact.version)
-        val staging = File(rootfs, "opt/eta/$name.installing")
+        val staging = File(rootfs, "opt/atom/$name.installing")
         try {
             if (staging.exists() && !staging.deleteRecursively()) return false
             RootlessLinuxInstaller.extract(archive, staging, xz = tool == ManagedLinuxTool.NODE, stripComponents = 1)
@@ -88,7 +88,7 @@ internal class PinnedLinuxToolInstaller(
                 ManagedLinuxTool.NODE -> listOf("node", "npm", "npx").forEach { command ->
                     val link = File(localBin, command).toPath()
                     java.nio.file.Files.deleteIfExists(link)
-                    java.nio.file.Files.createSymbolicLink(link, java.nio.file.Paths.get("../../../opt/eta/node/${artifact.version}/bin/$command"))
+                    java.nio.file.Files.createSymbolicLink(link, java.nio.file.Paths.get("../../../opt/atom/node/${artifact.version}/bin/$command"))
                 }
             }
             return true
@@ -102,8 +102,8 @@ internal class PinnedLinuxToolInstaller(
         archive: File,
         rootfs: File,
     ): String {
-        val target = File(rootfs, "opt/eta/uv/${artifact.version}")
-        val staging = File(rootfs, "opt/eta/uv.installing")
+        val target = File(rootfs, "opt/atom/uv/${artifact.version}")
+        val staging = File(rootfs, "opt/atom/uv.installing")
         val versionsRoot = target.parentFile!!
         val uvWrapper = uvWrapper(artifact.version, "uv")
         val uvxWrapper = uvWrapper(artifact.version, "uvx")
@@ -131,12 +131,12 @@ internal class PinnedLinuxToolInstaller(
 
     private fun uvWrapper(version: String, command: String): String = """
         #!/bin/sh
-        export UV_PYTHON_INSTALL_DIR=/opt/eta/python
+        export UV_PYTHON_INSTALL_DIR=/opt/atom/python
         export UV_PYTHON_BIN_DIR=/usr/local/bin
         export UV_PYTHON_INSTALL_BIN=1
-        export UV_TOOL_DIR=/opt/eta/uv-tools
+        export UV_TOOL_DIR=/opt/atom/uv-tools
         export UV_TOOL_BIN_DIR=/usr/local/bin
-        exec /opt/eta/uv/$version/$command "${'$'}@"
+        exec /opt/atom/uv/$version/$command "${'$'}@"
     """.trimIndent() + "\n"
 
     private fun nodeActivationCommand(
@@ -144,8 +144,8 @@ internal class PinnedLinuxToolInstaller(
         archive: File,
         rootfs: File,
     ): String {
-        val target = File(rootfs, "opt/eta/node/${artifact.version}")
-        val staging = File(rootfs, "opt/eta/node.installing")
+        val target = File(rootfs, "opt/atom/node/${artifact.version}")
+        val staging = File(rootfs, "opt/atom/node.installing")
         val versionsRoot = target.parentFile!!
         val localBin = File(rootfs, "usr/local/bin")
         return """
@@ -161,9 +161,9 @@ internal class PinnedLinuxToolInstaller(
             "${'$'}atom_busybox" rm -rf ${shellQuote(versionsRoot.absolutePath)}
             "${'$'}atom_busybox" mkdir -p ${shellQuote(versionsRoot.absolutePath)} || exit 66
             "${'$'}atom_busybox" mv "${'$'}atom_staging" "${'$'}atom_target" || exit 69
-            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/node")} ${shellQuote(File(localBin, "node").absolutePath)} || exit 71
-            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npm")} ${shellQuote(File(localBin, "npm").absolutePath)} || exit 71
-            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npx")} ${shellQuote(File(localBin, "npx").absolutePath)} || exit 71
+            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/atom/node/${artifact.version}/bin/node")} ${shellQuote(File(localBin, "node").absolutePath)} || exit 71
+            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/atom/node/${artifact.version}/bin/npm")} ${shellQuote(File(localBin, "npm").absolutePath)} || exit 71
+            "${'$'}atom_busybox" ln -sfn ${shellQuote("/opt/atom/node/${artifact.version}/bin/npx")} ${shellQuote(File(localBin, "npx").absolutePath)} || exit 71
         """.trimIndent()
     }
 }

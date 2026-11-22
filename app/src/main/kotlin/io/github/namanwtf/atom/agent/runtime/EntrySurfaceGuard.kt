@@ -119,14 +119,14 @@ internal class EntrySurfaceGuard private constructor(
         fun from(
             handoff: AgentRuntimeWire.EntryHandoff?,
             logger: AgentLogger,
-            etaVoiceSurfaceDismissal: (() -> Boolean)? = null,
+            atomVoiceSurfaceDismissal: (() -> Boolean)? = null,
         ): EntrySurfaceGuard? {
             if (handoff?.dismissEntrySurfaceOnForegroundOperation != true) return null
             val packageName = when (handoff.source) {
                 AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE -> ATOM_PACKAGE_NAME
                 else -> null
             }
-            val ownedSurfaceDismissal = etaVoiceSurfaceDismissal.takeIf {
+            val ownedSurfaceDismissal = atomVoiceSurfaceDismissal.takeIf {
                 handoff.source == AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE
             }
             return EntrySurfaceGuard(packageName, logger, ownedSurfaceDismissal)

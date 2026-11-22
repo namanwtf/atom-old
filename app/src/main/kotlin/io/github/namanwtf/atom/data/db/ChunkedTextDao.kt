@@ -69,6 +69,6 @@ internal interface ChunkedTextDao {
 
     companion object {
         private const val CHUNK_CHARS = 16_384
-        const val REFERENCE_PREFIX = "@eta:chunks:v1:"
+        const val REFERENCE_PREFIX = "@atom:chunks:v1:"
     }
 }

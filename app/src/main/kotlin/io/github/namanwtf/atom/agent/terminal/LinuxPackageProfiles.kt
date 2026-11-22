@@ -56,13 +56,13 @@ internal object LinuxPackageProfiles {
             LinuxDistribution.ALPINE to LinuxPackageSpec(
                 managedTool = ManagedLinuxTool.UV,
                 setupScript = """
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
+                    UV_PYTHON_INSTALL_DIR=/opt/atom/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
                 """.trimIndent(),
             ),
             LinuxDistribution.DEBIAN to LinuxPackageSpec(
                 managedTool = ManagedLinuxTool.UV,
                 setupScript = """
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
+                    UV_PYTHON_INSTALL_DIR=/opt/atom/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
                 """.trimIndent(),
             ),
         ),

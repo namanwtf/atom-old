@@ -49,7 +49,7 @@ internal abstract class AtomDatabase : RoomDatabase() {
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     AtomDatabase::class.java,
-                    "eta.db",
+                    "atom.db",
                 )
                     .addMigrations(
                         MIGRATION_6_7,

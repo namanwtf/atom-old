@@ -136,7 +136,7 @@ internal class HookRegistrar(
         hooker: (XposedInterface.Chain) -> Any?
     ): XposedInterface.HookHandle? {
         require(STABLE_ID.matches(id)) { "Hook id format is invalid: $id" }
-        val fullId = "eta.$id"
+        val fullId = "atom.$id"
         val registrationKey = RegistrationKey(executable, fullId)
         if (!registrationKeys.add(registrationKey)) {
             val detail = "Duplicate Hook registration: $description ($fullId)"
