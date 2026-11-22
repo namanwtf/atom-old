@@ -47,7 +47,7 @@ import kotlin.math.roundToInt
 
 /** Window side for the radial menu: Buddy's 344dp box. */
 internal const val ATOM_MENU_SIZE_DP = 344f
-private const val RADIUS_DP = 100f
+private const val RADIUS_DP = 112f
 private const val ITEM_W_DP = 72f
 private const val ITEM_H_DP = 92f
 private const val ICON_DP = 52f

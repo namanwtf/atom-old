@@ -229,13 +229,16 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = (centerX - size / 2).coerceIn(0, (metrics.bounds.width() - size).coerceAtLeast(0))
-            y = (centerY - size / 2).coerceIn(0, (metrics.bounds.height() - size).coerceAtLeast(0))
+            // Centred on the bubble even when that hangs past the screen edge:
+            // the arc must radiate from the bubble, not from a clamped box.
+            x = centerX - size / 2
+            y = centerY - size / 2
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
