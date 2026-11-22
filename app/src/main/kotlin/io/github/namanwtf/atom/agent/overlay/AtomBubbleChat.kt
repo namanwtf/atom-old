@@ -114,7 +114,7 @@ internal fun AtomBubbleChat(
     }
 }
 
-private val OverlayPanelBackground = Color(0xF20C0C12)
+private val OverlayPanelBackground = Color(0xFF0C0C12)
 private val Accent = Color(0xFF2F6BFF)
 private val Surface = Color(0xFF17171F)
 private val Muted = Color(0xFF9AA0AE)

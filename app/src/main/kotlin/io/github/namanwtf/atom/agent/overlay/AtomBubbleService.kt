@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +67,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
+    private val bubbleReset = mutableStateOf(0)
 
     override fun onCreate() {
         super.onCreate()
@@ -113,7 +115,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 val appearance by AppearanceSettingsRepository.settingsFlow()
                     .collectAsState(initial = AppearanceSettings())
                 AgentAppTheme(appearance = appearance, systemOverlay = true) {
-                    var expanded by remember { mutableStateOf(false) }
+                    var expanded by remember(bubbleReset.value) { mutableStateOf(false) }
                     AgentOverlayBubble(
                         state = AgentOverlayState.Initial,
                         expanded = expanded,
@@ -230,13 +232,14 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val geometry = orbGeometry ?: wm.atomOrbGeometry(this, resources.displayMetrics.density)
         val metrics = wm.currentWindowMetrics
         val density = resources.displayMetrics.density
-        val margin = (12 * density).toInt()
+        val margin = (16 * density).toInt()
+        val panelCap = (320 * density).toInt()
         val screenWidth = metrics.bounds.width()
         val screenHeight = metrics.bounds.height()
-        val chatWidth = minOf(screenWidth - margin * 2, (380 * density).toInt())
+        val chatWidth = minOf(screenWidth - margin * 2, panelCap)
         val chatHeight = minOf(
-            (480 * density).toInt(),
-            (screenHeight * 0.55f).toInt(),
+            (460 * density).toInt(),
+            (screenHeight * 0.48f).toInt(),
         )
         val lp = WindowManager.LayoutParams(
             chatWidth,
@@ -257,12 +260,18 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         windowManager = wm
         chatView = view
         chatParams = lp
+        // The panel is the focused surface: hide the orb and close its arc so
+        // the two never fight for the same corner of the screen.
+        bubbleView?.visibility = View.GONE
+        if (bubbleParams != null) setBubbleExpanded(false)
+        bubbleReset.value++
     }
 
     private fun hideChat() {
         chatView?.let { view -> runCatching { windowManager?.removeView(view) } }
         chatView = null
         chatParams = null
+        bubbleView?.visibility = View.VISIBLE
     }
 
     private fun sendChat(text: String) {

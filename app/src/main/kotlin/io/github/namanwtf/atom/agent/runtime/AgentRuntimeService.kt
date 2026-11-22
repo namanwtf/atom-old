@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
@@ -1279,7 +1280,14 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         capsuleView = capsule
         capsuleParams = capsuleLp
 
-        showBubble(wm)
+        // One orb only: when the persistent floating bubble is enabled, the
+        // bubble service already owns the corner and a second window would
+        // stack two orbs on top of each other.
+        lifecycleScope.launch {
+            val persistentBubble = runCatching { AppearanceSettingsRepository.settings().floatingBubbleEnabled }
+                .getOrDefault(false)
+            if (!persistentBubble) showBubble(wm)
+        }
     }
 
     /**
