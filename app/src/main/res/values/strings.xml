@@ -1181,7 +1181,7 @@
   <string name="context_compaction">Context compaction</string>
   <string name="context_compact_action">Compact context</string>
   <string name="settings_auto_compaction">Automatic context compaction</string>
-  <string name="voice_audio_permission">Allow microphone access in Atom's app permissions, then wake it again; tap the mic to open settings</string>
+  <string name="voice_audio_permission">Allow microphone access in Atom\'s app permissions, then wake it again; tap the mic to open settings</string>
   <string name="voice_use_keyboard">Switch to keyboard input</string>
   <string name="voice_finish_speech">Finish recording and send</string>
   <string name="voice_recognizing">Recognizing...</string>
@@ -1320,7 +1320,7 @@
   <string name="tool_web_search">Web search</string>
   <string name="tool_web_search_description">Search public web pages when no Provider-hosted search is used, returning titles, links, and snippets. Switch between built-in, DeepSeek, or a custom endpoint in the web tool service.</string>
   <string name="tool_fetch_url">Read web page</string>
-  <string name="tool_fetch_url_description">Read a web page's body and page through it, using built-in static fetching, DeepSeek, or a custom endpoint, falling back to local static fetching on failure.</string>
+  <string name="tool_fetch_url_description">Read a web page\'s body and page through it, using built-in static fetching, DeepSeek, or a custom endpoint, falling back to local static fetching on failure.</string>
   <string name="chat_edit_character_reply">Edit character reply</string>
   <string name="chat_previous_candidate">Previous candidate reply</string>
   <string name="chat_next_candidate">Next candidate reply</string>
@@ -1390,7 +1390,7 @@
   <string name="speech_gemini_voice_note">Voices work for Chinese and other supported languages. For reading style you can enter "natural, gentle, slightly slower"; leave blank to use the default. You can also enter a voice ID already on your account.</string>
   <string name="speech_minimax_voice_note">Defaults to a Mandarin voice; you can also enter a system or custom voice ID already on your account.</string>
   <string name="speech_preview_text">Preview text (up to 500 characters)</string>
-  <string name="speech_preview_default_text">Hi, I'm Atom. You have a meeting at 3:30 PM today, expected to last about 45 minutes. We can also chat about Android and AI.</string>
+  <string name="speech_preview_default_text">Hi, I\'m Atom. You have a meeting at 3:30 PM today, expected to last about 45 minutes. We can also chat about Android and AI.</string>
   <string name="speech_voice_gemini_kore">Kore</string>
   <string name="speech_voice_gemini_puck">Puck</string>
   <string name="speech_voice_gemini_charon">Charon</string>
@@ -1417,7 +1417,7 @@
   <string name="speech_voice_minimax_news">News anchor voice</string>
   <string name="speech_recognition_enabled">Enable speech recognition</string>
   <string name="speech_recognition_disabled">Disabled</string>
-  <string name="speech_recognition_disabled_note">After saving, hide the microphone entry in chat and the assistant overlay. Global wake-up will open text input and the keyboard after the entrance animation, so you can use the input method's built-in voice input. Existing service settings are kept.</string>
+  <string name="speech_recognition_disabled_note">After saving, hide the microphone entry in chat and the assistant overlay. Global wake-up will open text input and the keyboard after the entrance animation, so you can use the input method\'s built-in voice input. Existing service settings are kept.</string>
   <string name="web_tools_settings_title">Web search and reading</string>
   <string name="web_tools_configure_action">Configure service</string>
   <string name="image_gen_settings_title">AI image generation</string>
@@ -1432,9 +1432,9 @@
   <string name="web_tools_backend_deepseek">DeepSeek</string>
   <string name="web_tools_backend_custom">Custom endpoint</string>
   <string name="web_tools_overview_builtin_note">The built-in option works out of the box with no setup. Switching to DeepSeek or a custom endpoint gives better retrieval quality and Markdown body extraction.</string>
-  <string name="web_tools_overview_remote_note">When remote page reading fails, it automatically falls back to local static fetching. Paging the same page reuses the current run's cache instead of re-requesting.</string>
-  <string name="web_tools_deepseek_linked_note">Automatically linked to the DeepSeek model provider's API Key; you can enter a separate key here to override.</string>
-  <string name="web_tools_deepseek_note">Calls the DeepSeek /v1/tools/search and /v1/tools/fetch endpoints. If left blank, it tries to reuse the DeepSeek model provider's key.</string>
+  <string name="web_tools_overview_remote_note">When remote page reading fails, it automatically falls back to local static fetching. Paging the same page reuses the current run\'s cache instead of re-requesting.</string>
+  <string name="web_tools_deepseek_linked_note">Automatically linked to the DeepSeek model provider\'s API Key; you can enter a separate key here to override.</string>
+  <string name="web_tools_deepseek_note">Calls the DeepSeek /v1/tools/search and /v1/tools/fetch endpoints. If left blank, it tries to reuse the DeepSeek model provider\'s key.</string>
   <string name="web_tools_group_custom_search">Custom search</string>
   <string name="web_tools_group_custom_fetch">Custom reading</string>
   <string name="web_tools_http_method">HTTP method</string>

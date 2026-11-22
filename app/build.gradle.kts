@@ -150,7 +150,7 @@ androidComponents {
     onVariants { variant ->
         // The filename uses only versionName; both the build type marker and CI build metadata are carried by versionNameSuffix
         variant.outputs.forEach { output ->
-            output.outputFileName.set(output.versionName.map { "Eta-v$it.apk" })
+            output.outputFileName.set(output.versionName.map { "Atom-v$it.apk" })
         }
     }
 }
