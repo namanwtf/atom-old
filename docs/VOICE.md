@@ -1,96 +1,96 @@
-# 语音识别与播报
+# Speech Recognition and Synthesis
 
-Eta 的「设置 → 语音」分别配置语音识别（ASR）与语音播报（TTS）。语音识别由 Eta 自行录音并调用用户配置的在线 API，不依赖设备预装识别引擎，也不需要 Root。默认选择千问实时识别，需填写对应凭据后使用；播报与助手自动播报默认关闭。
+Atom's "Settings → Voice" separately configures speech recognition (ASR) and speech synthesis (TTS). Recognition is performed by Atom recording audio itself and calling the user-configured online API; it does not depend on a preinstalled recognition engine and does not require Root. The default is Qwen real-time recognition, which requires filling in the corresponding credentials; synthesis and assistant auto-speech are off by default.
 
-在「语音识别」页关闭「启用语音识别」并保存，即可停用 Eta 内置语音输入。聊天和助手浮窗隐藏麦克风入口，不再启动录音或请求语音接口；原有服务、凭据和识别参数会保留，重新开启后继续使用。输入法自己的语音输入及 Eta 的语音播报不受此开关影响。
+Turning off "Enable speech recognition" on the "Speech recognition" page and saving disables Atom's built-in voice input. The chat and assistant overlay hide the microphone entry and no longer start recording or call voice APIs; the existing services, credentials, and recognition parameters are kept and resume after re-enabling. The IME's own voice input and Atom's speech synthesis are unaffected by this switch.
 
-## 使用方式
+## Usage
 
-- **聊天听写**：轻点输入框麦克风开始录音，再次点击或点「完成」后把最终文字插入当前选区，可编辑后发送（预览文字不会覆盖已有草稿）；长按麦克风进入按住说话，松手后直接转写并发送，上滑或移出取消区松手即取消。
-- **助手浮窗**：识别结果直接发起提问。千问实时与豆包流式由云端判断停顿后自动发送，停顿时长可选 1、1.5、2（默认）或 3 秒，也可关闭；千问短音频、文件转写与 MIMO 需点击完成。长按麦克风进入按住说话，期间停顿不会发送，松手发送，手指移出按钮取消。回答下方提供朗读按钮。
-- **文字唤醒**：关闭语音识别后，全局唤醒先播放入场光效，再让文字输入栏淡入并轻微上移，显现完成后才聚焦并请求键盘，可直接使用输入法语音输入。空输入时显示不可点击的发送按钮；输入法收起后也不会重新启动识别。各阶段通过动画完成回调衔接，键盘升降期间由布局阶段的 Insets 保持输入栏与键盘同步。用户提前点击输入框会接管输入，关闭浮窗会取消后续自动聚焦；键盘自身的动画速度由系统和输入法决定。
-- **智能纠错**：开启后，识别结果在交付前用当前对话模型做一次不带工具的保守校对，只修正同音字和被识别成中文谐音的英文术语，不改写正确内容。纠错最多等待 8 秒；未配置对话模型、请求失败、超时或输出长度异常时直接使用原始识别结果。聊天听写与浮窗都生效，会增加少量延迟和模型费用。
-- **回答播报**：聊天回答可手动朗读；朗读期间退到后台或锁屏会继续播放，通知栏显示「Eta 正在朗读」并可停止，离开聊天页才结束。在聊天页「更多」菜单中开启自动朗读后，每轮回答正常结束时自动朗读这一轮的最终回答；停止或失败的回合、切换会话与打开历史都不会补读，关闭开关会停止正在进行的朗读。开启「助手自动播报回答」后，仅播报浮窗中语音提问的成功最终回答，不朗读思考、工具日志或代码块原文。
-- **取消与退出**：点击取消、开始新的录音、隐藏或关闭所属页面会终止音频任务；耳机断开、熄屏或播放失去音频焦点也会停止。因 GUI 操作隐藏浮窗后完成的任务只保留文字，不补播，不自动继续监听。
+- **Chat dictation**: Tap the input box's microphone to start recording, then tap again or tap "Done" to insert the final text at the current cursor, which can be edited before sending (the preview text does not overwrite an existing draft); long-press the microphone to enter hold-to-talk, and release to transcribe and send directly, or swipe up / move out of the cancel zone and release to cancel.
+- **Assistant overlay**: The recognition result directly initiates a question. Qwen real-time and Doubao streaming decide the pause on the cloud and send automatically, with a pause duration selectable as 1, 1.5, 2 (default), or 3 seconds, or off; Qwen short audio, file transcription, and MIMO require tapping "Done". Long-press the microphone to enter hold-to-talk; pauses during that period do not send, releasing sends, and moving the finger off the button cancels. A read-aloud button is provided below the answer.
+- **Text wake-up**: When speech recognition is off, global wake-up first plays the entry light effect, then lets the text input bar fade in and slide up slightly; only after it appears does it focus and request the keyboard, so you can directly use the IME's voice input. An empty input shows a non-clickable send button; the keyboard does not restart recognition after being dismissed. Each stage is chained via animation-completion callbacks, and during keyboard show/hide the layout-phase Insets keep the input bar in sync with the keyboard. Tapping the input box early takes over input, and closing the overlay cancels the subsequent auto-focus; the keyboard's own animation speed is decided by the system and IME.
+- **Smart correction**: When enabled, the recognition result is given one conservative, tool-free proofread by the current conversation model before delivery, fixing only homophones and English terms misrecognized as Chinese homophones, without rewriting correct content. Correction waits at most 8 seconds; when no conversation model is configured, the request fails, times out, or the output length is abnormal, the original recognition result is used directly. It applies to both chat dictation and the overlay, adding a small delay and model cost.
+- **Answer read-aloud**: Chat answers can be read aloud manually; playback continues when you go to the background or lock the screen, the notification shade shows "Atom is reading aloud" and can be stopped, and it ends only when you leave the chat page. After enabling auto read-aloud in the chat page's "More" menu, the final answer of each turn is read automatically when the turn ends normally; stopped or failed turns, switching conversations, and opening history do not catch up on reading, and turning off the switch stops the read-aloud in progress. With "Auto-speak assistant answers" enabled, only the successful final answers of voice questions in the overlay are spoken, not thinking, tool logs, or code-block text.
+- **Cancel and exit**: Tapping cancel, starting a new recording, or hiding/closing the owning page terminates the audio task; headphone disconnection, screen-off, or losing audio focus during playback also stops it. Tasks that complete after the overlay is hidden by a GUI operation keep only text—no catch-up speech and no automatic continued listening.
 
-播报按原有顺序保留正文、标题、列表文字与段落，有序列表保留编号，任务清单保留完成状态。Markdown 表格、代码块、图片、HTML 块及 `http://`、`https://`、`www.` 开头的网址直接略过，不插入查看正文的语音提示。链接保留描述性标题，标题本身为网址时也略过。数字、单位、英文和短行内标识保留原文，由所选语音服务处理发音。
+Read-aloud keeps body text, headings, list items, and paragraphs in their original order, ordered lists keep their numbers, and task lists keep their completion state. Markdown tables, code blocks, images, HTML blocks, and URLs starting with `http://`, `https://`, or `www.` are skipped directly, without inserting a "view the text" voice prompt. Links keep their descriptive titles, and are skipped when the title itself is a URL. Numbers, units, English, and short inline identifiers keep their original text, with pronunciation handled by the selected voice service.
 
-聊天手动与自动朗读、助手播报、设置页试听共用这套处理，Miuix 与 COUI 行为一致；屏幕显示和复制的内容仍保留完整 Markdown。
+Chat manual and auto read-aloud, assistant speech, and the settings-page preview share this processing, with identical behavior in Miuix and COUI; what is displayed on screen and copied retains the full Markdown.
 
-聊天页「更多」菜单提供「开启自动朗读」或「关闭自动朗读」，通过扬声器与静音图标辅助区分当前状态；未配置播报服务时隐藏该菜单项。
+The chat page's "More" menu provides "Enable auto read-aloud" or "Disable auto read-aloud", using speaker and mute icons to help distinguish the current state; the menu item is hidden when no synthesis service is configured.
 
-助手浮窗在实际录音、播放期间分别声明麦克风、媒体播放前台服务，并显示可停止的通知；结束音频操作即撤下通知。它不延长浮窗隐藏后的音频任务，也不提供后台持续监听或播放。
+The assistant overlay declares microphone and media-playback foreground services respectively during actual recording and playback, and shows a stoppable notification; the notification is removed when the audio operation ends. It does not extend audio tasks after the overlay is hidden, nor provide background continuous listening or playback.
 
-浮窗回复面板的背景延伸到系统导航区域，输入栏与按钮在背景内部避让导航栏和键盘，两者重叠时只取较大的遮挡范围。横向导航栏与屏幕挖孔也由内容层避让。系统手势指示条仍由系统绘制，显示与隐藏遵循系统设置，不在浮窗中绘制替代指示条。
+The overlay reply panel's background extends into the system navigation area; the input bar and buttons avoid the navigation bar and keyboard within the background, and when the two overlap only the larger occlusion is taken. The horizontal navigation bar and screen cutout are also avoided by the content layer. The system gesture indicator bar is still drawn by the system, shown and hidden per system settings, without drawing a replacement indicator in the overlay.
 
-单次录音最多 60 秒。实时接口可显示识别预览，短音频与文件转写在录音完成后返回文字。切换服务不会自动复制凭据或替换已保存的其他服务配置；失败不会自动回退到另一家供应商。
+A single recording is at most 60 seconds. The real-time interface can show a recognition preview; short audio and file transcription return text after recording completes. Switching services does not automatically copy credentials or replace other saved service configurations; failure does not automatically fall back to another vendor.
 
-## 服务配置
+## Service Configuration
 
-| 服务 | 模型与模式 | 配置 |
+| Service | Model and mode | Configuration |
 | --- | --- | --- |
-| 千问实时 ASR | `qwen3-asr-flash-realtime` | 百炼地域、API Key |
-| 千问短音频 ASR | `qwen3-asr-flash` | 百炼地域、API Key |
-| 千问文件转写 | `qwen3-asr-flash-filetrans` | 百炼地域、API Key、自有 OSS |
-| 豆包流式 ASR | 流式识别 2.0 | API Key；默认资源 ID `volc.seedasr.sauc.duration` |
-| MIMO ASR | 专用语音识别，录音结束后转写 | MiMo API Key；识别语言可选自动、中文、英文 |
-| 千问 TTS | `qwen3-tts-flash-realtime`，不可用时回落 `qwen3-tts-flash` | 百炼地域、独立播报 API Key、音色；默认 Cherry |
-| 豆包 TTS | 语音合成 2.0，双向流式，不可用时回落单向流式 | 独立播报 API Key、音色；默认 VV，资源 ID `seed-tts-2.0` |
-| Gemini TTS | Interactions 语音合成，分段流式 | Google AI Studio API Key、语音模型、音色；可选朗读风格 |
-| MiniMax TTS | HTTP 语音合成，分段流式 | MiniMax API Key、语音模型、音色与语速 |
-| MIMO TTS | 预置音色语音合成，分段流式 | 独立播报 API Key、音色；可选朗读风格 |
+| Qwen real-time ASR | `qwen3-asr-flash-realtime` | Bailian region, API key |
+| Qwen short-audio ASR | `qwen3-asr-flash` | Bailian region, API key |
+| Qwen file transcription | `qwen3-asr-flash-filetrans` | Bailian region, API key, own OSS |
+| Doubao streaming ASR | Streaming recognition 2.0 | API key; default resource ID `volc.seedasr.sauc.duration` |
+| MIMO ASR | Dedicated speech recognition, transcribes after recording | MiMo API key; recognition language selectable as Auto, Chinese, English |
+| Qwen TTS | `qwen3-tts-flash-realtime`, falls back to `qwen3-tts-flash` when unavailable | Bailian region, separate speech API key, voice; default Cherry |
+| Doubao TTS | Speech synthesis 2.0, bidirectional streaming, falls back to unidirectional streaming when unavailable | Separate speech API key, voice; default VV, resource ID `seed-tts-2.0` |
+| Gemini TTS | Interactions speech synthesis, segmented streaming | Google AI Studio API key, voice model, voice; optional read-aloud style |
+| MiniMax TTS | HTTP speech synthesis, segmented streaming | MiniMax API key, voice model, voice and speed |
+| MIMO TTS | Preset-voice speech synthesis, segmented streaming | Separate speech API key, voice; optional read-aloud style |
 
-千问可选择北京或新加坡，API Key 必须匹配所选地域。高级设置可填写服务根地址，包括业务空间专属域名；不要附加 `/api/v1` 或 `/compatible-mode/v1`。模型与协议绑定，不使用聊天模型列表推断语音能力。千问识别语言留空表示自动识别；指定语言时使用服务支持的语言代码。
+Qwen can select Beijing or Singapore; the API key must match the selected region. Advanced settings can fill in a service root URL, including business-space-specific domains; do not append `/api/v1` or `/compatible-mode/v1`. The model and protocol are bound; the chat model list is not used to infer voice capabilities. Leaving the Qwen recognition language empty means automatic recognition; when a language is specified, use a language code supported by the service.
 
-MIMO 使用独立保存的识别 API Key、接口基础地址与识别语言，切换服务时保留配置，不自动使用对话模型的凭据。默认连接小米按量计费 API，基础地址以 `/v1` 结尾；使用 Token Plan 或兼容网关时，需填写与凭据匹配的基础地址，不附加 `/chat/completions`。专用识别模型绑定在 `agent/voice/MimoSpeechRecognition.kt`，不使用通用音频理解模型代替转写。录音结束后直接上传 WAV，无需 OSS；单次最多 60 秒，不提供边录边识别预览或停顿自动发送。聊天轻点听写与设置页识别测试点击完成结束；聊天与助手浮窗按住说话时松手结束并发送。
+MIMO uses separately saved recognition API keys, the interface base URL, and the recognition language; configuration is kept when switching services, and conversation-model credentials are not automatically used. By default it connects to Xiaomi's metered API, with the base URL ending in `/v1`; when using a Token Plan or a compatible gateway, fill in a base URL that matches the credentials, without appending `/chat/completions`. The dedicated recognition model is bound in `agent/voice/MimoSpeechRecognition.kt`; a general audio-understanding model is not used as a substitute for transcription. After recording it uploads WAV directly without OSS; a single recording is at most 60 seconds, with no record-as-you-go preview or automatic pause-send. Chat tap-to-dictate and the settings-page recognition test end on tapping "Done"; hold-to-talk in chat and the assistant overlay ends and sends on release.
 
-播报页提供各服务的常用音色，按名称选择，列表标注声音特点、男女声或方言。千问预设适配当前播报模型，豆包预设适配语音合成 2.0；Gemini 预设可朗读中文及其支持的其他语言，MiniMax 预设为普通话。已保存的音色 ID 会自动匹配名称，未匹配的 ID 保留在「自定义音色」中。试听文本可编辑，最多 500 字，使用当前草稿，不会自动保存。
+The speech page offers common voices for each service, selected by name, with the list noting voice characteristics, gender, or dialect. Qwen presets fit the current synthesis model, Doubao presets fit speech synthesis 2.0; Gemini presets can read Chinese and other supported languages, and MiniMax presets are Mandarin. A saved voice ID is automatically matched to a name, and unmatched IDs are kept under "Custom voice". The preview text is editable, up to 500 characters, uses the current draft, and is not auto-saved.
 
-Gemini 与 MiniMax 的模型选项及默认值以 `data/model/SpeechSettings.kt` 为准，各服务分别保存地址、凭据、模型和音色，切换后仍保留原配置。Gemini 的朗读风格与正文分开提交，可填写“自然、温和，语速稍慢”，留空使用默认风格；MiniMax 可调整 0.5～2 倍语速，并启用基础数字文本规范化。
+Model options and defaults for Gemini and MiniMax are authoritative from `data/model/SpeechSettings.kt`; each service saves its URL, credentials, model, and voice separately, and the original configuration is kept after switching. Gemini's read-aloud style is submitted separately from the body text, and can be filled in with e.g. "natural, gentle, slightly slower"; leaving it empty uses the default style. MiniMax can adjust speed 0.5–2x and enable basic numeric text normalization.
 
-Gemini 使用 Google AI Studio 的原生语音接口，需要账号、地区与模型权限支持；它负责朗读已有回答，不创建 Live 对话会话，请求关闭服务端交互存储。MiniMax 默认连接中国站，海外账号需改为对应站点。自定义地址填写服务根地址，可包含网关前缀，但必须支持所选服务的原生协议；聊天模型兼容地址不能直接作为语音地址。
+Gemini uses Google AI Studio's native voice interface, requiring account, region, and model-permission support; it reads existing answers without creating a Live conversation session, and requests server-side interaction storage be turned off. MiniMax connects to the China site by default; overseas accounts must switch to the corresponding site. A custom address fills in the service root URL, which may include a gateway prefix, but must support the selected service's native protocol; a chat-model-compatible address cannot be used directly as a voice address.
 
-MIMO 播报使用预置音色模型，模型绑定在 `agent/voice/MimoSpeechSynthesis.kt`。播报凭据、地址、音色和风格与识别配置分开保存。默认音色由服务集群决定，也可选择冰糖、茉莉、苏打、白桦或 Mia、Chloe、Milo、Dean；手动填写时须使用该模型认可的预置音色 ID，Eta 不创建或克隆音色。可用自然语言指定语气、情绪、语速或方言，风格最多填写 500 字，与朗读正文分开提交。基础地址填写规则与 MiMo 识别相同，需包含 `/v1`；设置页试听、聊天手动和自动朗读、助手自动播报均复用该配置。
+MIMO speech uses a preset-voice model, bound in `agent/voice/MimoSpeechSynthesis.kt`. Speech credentials, address, voice, and style are saved separately from the recognition configuration. The default voice is decided by the service cluster; you can also choose Bingtang, Moli, Suda, Baihua, or Mia, Chloe, Milo, Dean. When filling manually you must use a preset voice ID accepted by that model; Atom does not create or clone voices. You can specify tone, emotion, speed, or dialect in natural language, with the style up to 500 characters and submitted separately from the read-aloud text. The base-URL rule is the same as MiMo recognition, requiring `/v1`; the settings-page preview, chat manual and auto read-aloud, and assistant auto-speech all reuse this configuration.
 
-豆包高级设置可修改资源 ID、服务根地址，或启用旧版 App ID＋Access Token 鉴权。旧版配置的 Access Token 填在对应的凭据输入框。自定义音色应填写所选模型支持的音色 ID，不会在 Eta 内创建或复刻音色。
+Doubao advanced settings can change the resource ID and service root URL, or enable legacy App ID + Access Token authentication. The legacy configuration's Access Token is filled into the corresponding credentials field. A custom voice should fill in a voice ID supported by the selected model; voices are not created or cloned inside Atom.
 
-表单需点击「保存」。识别测试与音色试听使用当前草稿调用正式链路，不自动保存，也不自动开始。测试和试听可能产生对应服务费用。
+The form requires tapping "Save". The recognition test and voice preview call the production path using the current draft, without auto-saving or auto-starting. Testing and preview may incur fees from the corresponding service.
 
-## 文件转写与 OSS
+## File Transcription and OSS
 
-文件转写使用自有 OSS 私有对象，不使用百炼临时上传服务。录音存储页填写地域、标准地域 Endpoint、Bucket、目录前缀及专用 RAM 用户的 AccessKey。凭据应具备该目录下的 `PutObject`、`GetObject`、`DeleteObject` 权限，并允许将对象 ACL 设置为 private。
+File transcription uses your own OSS private objects, not Bailian's temporary upload service. The recording storage page fills in the region, the standard region endpoint, bucket, directory prefix, and the AccessKey of a dedicated RAM user. The credentials should have `PutObject`, `GetObject`, and `DeleteObject` permissions under that directory, and allow setting object ACLs to private.
 
-Eta 上传 WAV 后生成有效期 15 分钟的读取签名 URL，向百炼提交异步任务，每 1.5 秒查询一次，整个上传与转写流程最多等待 5 分钟。结果 JSON 下载不携带百炼认证头。
+After uploading the WAV, Atom generates a read-signed URL valid for 15 minutes, submits an async task to Bailian, polls every 1.5 seconds, and waits at most 5 minutes for the whole upload-and-transcribe flow. The result JSON download carries no Bailian authentication header.
 
-上传前先记录待清理对象；成功、失败及取消后尝试删除。删除失败保留记录，下次主进程启动时有界重试。上传结果不确定时，即使立即删除成功仍保留一次恢复清理记录，以处理取消与远端上传完成的竞争。恢复清理不删除当前进程仍在使用的录音。
+Before uploading it first records objects pending cleanup; deletion is attempted after success, failure, and cancellation. A failed deletion keeps the record and retries with bounds at the next main-process start. When the upload result is uncertain, even a successful immediate delete still keeps one recovery-cleanup record, to handle the race between cancellation and a completed remote upload. Recovery cleanup does not delete recordings still in use by the current process.
 
-建议为录音目录设置一天过期的 OSS 生命周期规则，处理设备不再启动、应用卸载或原凭据失效的情况。更换 OSS AccessKey 后，旧 Key 对应的待清理对象不会用新身份删除，需要在 OSS 控制台清理或由生命周期规则回收。取消本地等待不代表撤销已经提交的云端任务或费用。
+It is recommended to set a one-day-expiry OSS lifecycle rule for the recording directory, to handle the device no longer starting, app uninstall, or expired credentials. After changing the OSS AccessKey, pending-cleanup objects belonging to the old key are not deleted with the new identity; they must be cleaned in the OSS console or reclaimed by the lifecycle rule. Cancelling the local wait does not revoke a cloud task or fee that has already been submitted.
 
-## 实现边界
+## Implementation Boundaries
 
-- `SpeechInputController` 统一管理 start、finish、cancel 和一次性结果交付。独立进程 `EtaRecognitionService` 仅保留 Android 数字助理角色所需的系统兼容桥接，不向其他应用开放云端凭据。
-- `SpeechRecorder` 采集 16 kHz、单声道 PCM16。录音只暂存在内存中，文件接口封装 WAV；实时发送队列和响应解析均有限额，背压失败明确返回，不静默丢帧。
-- 千问实时协议通过 `text + stash` 替换当前 item 预览，以 completed 为最终文字，等待 session.finished 后结束。自动发送的停顿时长同时作为千问 `silence_duration_ms` 与豆包 `end_window_size`，由服务端判定说完。不自动发送时沿用 800 ms 断句，只影响预览分段。豆包使用专用二进制 codec，支持 Gzip、头扩展和最终包标记，不能套用 JSON WebSocket。
-- MiMo 通过 Chat Completions 接口提交单条 `input_audio` Data URL，使用非流式文本响应；只提交音频和所选语言，不附带聊天历史、Prompt 或工具。官方限制 Base64 编码后不超过 10 MB，Eta 的录音上限满足该限制。只交付正常完成且非空的转写，截断、内容过滤和畸形响应均返回失败；取消会终止 HTTP 请求，不交付旧结果。
-- `SpeechPlaybackController` 负责合成与播放，`SpeechAudioLease` 协调本进程录音、播放和音频焦点。TTS 正文使用 GFM AST 提取可读文字，按句分块，使用 24 kHz PCM16 顺序播放。千问与豆包优先把整篇放进一个流式合成会话（千问实时 WebSocket 的 server_commit 模式，或豆包双向流式的单个 session）；豆包使用 `DoubaoTtsCodec` 处理带事件号与会话 ID 的二进制帧。这两家的流式会话在出声前失败时回落到同服务的逐段请求；出声后再失败直接报错，不从头重读。
-- Gemini、MiniMax 与 MiMo 直接使用逐段 HTTP 流式合成，不尝试 WebSocket，也不自动重试或切换服务。合成最多领先播放两段，段首段尾各做 5 ms 淡入淡出；分段边界可能产生语调差异。Gemini 解码音频增量并检查最终交互状态，MiniMax 解码十六进制音频并跳过末包聚合音频，避免重复播放。MiMo 将正文放在 `assistant` 消息、可选风格放在 `user` 消息，逐块解码 `delta.audio.data` 的 Base64 PCM；收到正常完成状态且音频非空才确认合成成功。解析器限制事件与音频大小，提前 EOF、空音频、业务错误和非成功终态都返回失败；停止会取消当前 HTTP 调用和后续预取。
-- 合成解码层识别裸 PCM 与流式 WAV，校验 WAV 格式并剥离容器头，不把头信息作为音频播放；文件头和采样可以跨响应片段。流式 WAV 长度字段可能是占位值，仅成功收到终止事件才把音频视为完整。`SpeechPcmOutput` 先填充播放缓冲区再启动音轨；不足一个缓冲区的短音频在合成结束后按实际帧数启动。
-- `SpeechTranscriptRefiner` 通过 `RuntimeConfigRepository` 读取当前对话模型，复用 Provider 层发出独立的 `TRANSCRIPT_REFINE` 请求：不带工具、托管搜索与自定义请求体，可关闭思考时关闭，否则使用最低档。识别文字只作为用户消息，取消或超时会取消底层 HTTP 调用。
-- `SpeechSettingsRepository` 隔离持久化；普通配置进入现有 DataStore，凭据用 Android Keystore 的 AES-GCM 加密后保存。凭据不进入 RemotePreferences、会话、日志或数据导出；语音配置目前也不纳入手动备份。不可解密的凭据会要求重新填写，不静默当作空配置。
-- 设置页、聊天与浮窗复用相同控制器；网络与音频循环不进入 Composable、Hook 或 Agent loop，Runtime IPC 与归档格式保持兼容。
+- `SpeechInputController` uniformly manages start, finish, cancel, and one-shot result delivery. The separate-process `EtaRecognitionService` only keeps the system-compatibility bridge required by the Android digital-assistant role and does not expose cloud credentials to other apps.
+- `SpeechRecorder` captures 16 kHz mono PCM16. Recordings are held only in memory, with the file interface wrapping WAV; the real-time send queue and response parsing are both bounded, and backpressure failures return explicitly rather than silently dropping frames.
+- The Qwen real-time protocol replaces the current item preview via `text + stash`, treats `completed` as the final text, and ends after `session.finished`. The auto-send pause duration serves as both Qwen's `silence_duration_ms` and Doubao's `end_window_size`, with the server deciding when speech is done. When not auto-sending, it keeps the 800 ms sentence segmentation, affecting only the preview segmentation. Doubao uses a dedicated binary codec supporting Gzip, header extension, and a final-packet marker, and cannot be applied to a JSON WebSocket.
+- MiMo submits a single `input_audio` Data URL through the Chat Completions interface, using a non-streaming text response; it submits only the audio and the selected language, with no chat history, prompt, or tools. The official limit is no more than 10 MB after Base64 encoding, which Atom's recording cap satisfies. Only a normally completed and non-empty transcription is delivered; truncation, content filtering, and malformed responses return failure. Cancellation terminates the HTTP request without delivering an old result.
+- `SpeechPlaybackController` handles synthesis and playback, and `SpeechAudioLease` coordinates in-process recording, playback, and audio focus. TTS body text is extracted with a GFM AST into readable text, chunked by sentence, and played sequentially at 24 kHz PCM16. Qwen and Doubao prefer putting the whole text into one streaming synthesis session (Qwen real-time WebSocket's server_commit mode, or a single session of Doubao's bidirectional streaming); Doubao uses `DoubaoTtsCodec` to handle binary frames with event numbers and session IDs. These two vendors' streaming sessions fall back to per-segment requests of the same service when they fail before producing sound; failing after sound starts reports an error directly rather than re-reading from the beginning.
+- Gemini, MiniMax, and MiMo use per-segment HTTP streaming synthesis directly, without trying WebSocket, and without auto-retry or service switching. Synthesis leads playback by at most two segments, with 5 ms fade-in/out at each segment's start and end; segment boundaries may produce intonation differences. Gemini decodes audio increments and checks the final interaction state; MiniMax decodes hex audio and skips the last-package aggregated audio to avoid duplicate playback. MiMo places the body text in an `assistant` message and the optional style in a `user` message, decoding `delta.audio.data`'s Base64 PCM chunk by chunk; synthesis is confirmed successful only when a normal completion status is received and the audio is non-empty. The parser limits event and audio sizes, and early EOF, empty audio, business errors, and non-success terminal states all return failure; stopping cancels the current HTTP call and subsequent prefetch.
+- The synthesis decoding layer recognizes raw PCM and streaming WAV, validates the WAV format, and strips the container header without playing header information as audio; the file header and sampling may span response fragments. A streaming WAV's length field may be a placeholder; the audio is treated as complete only when a termination event is successfully received. `SpeechPcmOutput` fills the playback buffer before starting the audio track; short audio under one buffer starts with the actual frame count after synthesis ends.
+- `SpeechTranscriptRefiner` reads the current conversation model through `RuntimeConfigRepository` and issues a standalone `TRANSCRIPT_REFINE` request through the Provider layer: no tools, no managed search, and no custom request body, with thinking off when it can be turned off and the lowest tier otherwise. The recognized text is used only as a user message; cancellation or timeout cancels the underlying HTTP call.
+- `SpeechSettingsRepository` isolates persistence; ordinary configuration goes into the existing DataStore, and credentials are encrypted with AES-GCM in the Android Keystore before saving. Credentials do not enter RemotePreferences, sessions, logs, or data exports; voice configuration is also not currently included in manual backup. Undecryptable credentials require re-entry rather than being silently treated as empty.
+- The settings page, chat, and overlay reuse the same controllers; network and audio loops do not enter Composables, hooks, or the Agent loop, and Runtime IPC and archive formats stay compatible.
 
-## 官方资料
+## Official References
 
-- [Compose Insets 布局时序](https://developer.android.com/develop/ui/compose/system/insets-ui)、[Android 输入法动画](https://developer.android.com/develop/ui/views/layout/sw-keyboard)
-- [Material 动效系统](https://m3.material.io/styles/motion/overview/how-it-works)
-- [千问 ASR HTTP API：短音频与异步文件转写](https://help.aliyun.com/zh/model-studio/qwen-asr-api-reference)
-- [千问实时 ASR 客户端事件](https://help.aliyun.com/zh/model-studio/qwen-asr-realtime-client-events)、[服务端事件](https://help.aliyun.com/zh/model-studio/qwen-asr-realtime-server-events)
-- [豆包流式 ASR 协议](https://www.volcengine.com/docs/6561/1354869)
-- [MiMo 语音识别指南](https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/Speech-Recognition)、[API 参考](https://mimo.mi.com/docs/zh-CN/api/audio/Speech-Recognition)、[鉴权与接口地址](https://mimo.mi.com/docs/zh-CN/quick-start/summary/first-api-call)
-- [千问 TTS API](https://help.aliyun.com/zh/model-studio/qwen-tts-api)、[音频播放示例](https://help.aliyun.com/zh/model-studio/non-realtime-tts-user-guide)
-- [千问音色列表](https://help.aliyun.com/zh/model-studio/qwen-tts-voice-list)、[豆包音色列表](https://docs.volcengine.com/docs/DoubaoVoice/Tonelist-1?lang=zh)
-- [豆包单向流式 TTS HTTP](https://docs.volcengine.com/docs/DoubaoVoice/unidirectional-streaming-text-to-speech-http?lang=zh)
-- [Gemini 语音合成与音色](https://ai.google.dev/gemini-api/docs/speech-generation)、[Interactions 流式事件](https://ai.google.dev/gemini-api/docs/streaming)
-- [MiniMax 同步语音合成](https://platform.minimax.cn/docs/api-reference/speech-t2a-http)、[系统音色](https://platform.minimax.cn/docs/faq/system-voice-id)
-- [MiMo 语音合成与预置音色](https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/speech-synthesis-v2.5)、[TTS API 参考](https://mimo.mi.com/docs/zh-CN/api/audio/tts-post)
-- [OSS V4 请求头签名](https://help.aliyun.com/zh/oss/developer-reference/recommend-to-use-signature-version-4)、[URL 签名](https://help.aliyun.com/zh/oss/developer-reference/add-signatures-to-urls)
+- [Compose Insets layout timing](https://developer.android.com/develop/ui/compose/system/insets-ui), [Android IME animation](https://developer.android.com/develop/ui/views/layout/sw-keyboard)
+- [Material motion system](https://m3.material.io/styles/motion/overview/how-it-works)
+- [Qwen ASR HTTP API: short audio and async file transcription](https://help.aliyun.com/zh/model-studio/qwen-asr-api-reference)
+- [Qwen real-time ASR client events](https://help.aliyun.com/zh/model-studio/qwen-asr-realtime-client-events), [server events](https://help.aliyun.com/zh/model-studio/qwen-asr-realtime-server-events)
+- [Doubao streaming ASR protocol](https://www.volcengine.com/docs/6561/1354869)
+- [MiMo speech recognition guide](https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/Speech-Recognition), [API reference](https://mimo.mi.com/docs/zh-CN/api/audio/Speech-Recognition), [auth and endpoint](https://mimo.mi.com/docs/zh-CN/quick-start/summary/first-api-call)
+- [Qwen TTS API](https://help.aliyun.com/zh/model-studio/qwen-tts-api), [audio playback example](https://help.aliyun.com/zh/model-studio/non-realtime-tts-user-guide)
+- [Qwen voice list](https://help.aliyun.com/zh/model-studio/qwen-tts-voice-list), [Doubao voice list](https://docs.volcengine.com/docs/DoubaoVoice/Tonelist-1?lang=zh)
+- [Doubao unidirectional streaming TTS HTTP](https://docs.volcengine.com/docs/DoubaoVoice/unidirectional-streaming-text-to-speech-http?lang=zh)
+- [Gemini speech generation and voices](https://ai.google.dev/gemini-api/docs/speech-generation), [Interactions streaming events](https://ai.google.dev/gemini-api/docs/streaming)
+- [MiniMax synchronous speech synthesis](https://platform.minimax.cn/docs/api-reference/speech-t2a-http), [system voices](https://platform.minimax.cn/docs/faq/system-voice-id)
+- [MiMo speech synthesis and preset voices](https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/speech-synthesis-v2.5), [TTS API reference](https://mimo.mi.com/docs/zh-CN/api/audio/tts-post)
+- [OSS V4 request-header signing](https://help.aliyun.com/zh/oss/developer-reference/recommend-to-use-signature-version-4), [URL signing](https://help.aliyun.com/zh/oss/developer-reference/add-signatures-to-urls)

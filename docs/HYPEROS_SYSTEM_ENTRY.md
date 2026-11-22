@@ -1,84 +1,84 @@
-# HyperOS 系统入口适配
+# HyperOS System Entry Integration
 
-Eta 将 HyperOS 系统快捷动作和桌面导航手势分别放在 `hook/hyperos/`，通过 `ModuleMain` 和 `SystemServerHooks` 分发。本文描述源码适配，不代表已完成 HyperOS 真机验证。
+Atom places HyperOS system shortcut actions and launcher navigation gestures under `hook/hyperos/` respectively, dispatched through `ModuleMain` and `SystemServerHooks`. This document describes the source-level integration and does not imply completed on-device verification on HyperOS.
 
-## 电源键
+## Power Button
 
-- 进程：`system_server`，对应模块作用域 `system`。
-- 类：`com.miui.server.input.util.ShortCutActionsUtils`。
-- 拦截：返回 `boolean` 的 `triggerFunction(String, String, Bundle, boolean)` 与末尾增加 `String` 的五参数重载；安装时检查签名以及 `mContext` 的类型。
-- 触发条件：第一个参数为 `launch_voice_assistant`，第二个参数为 `long_press_power_key` 或 `imperceptible_press_power_key`。后者是部分系统版本的短时长或预触发电源键助手路径。
-- 执行：读取现有电源键目标。系统默认助手直接放行；Gemini / Eta 通过 `AssistantManager.showAssistantSession` 请求当前用户的数字助理会话。只有调用返回成功才返回 `true` 消费快捷动作并记录去重时间窗，失败调用原方法；同一次按压在去重窗内再次派发的 `imperceptible_press_power_key` / `long_press_power_key`（或四/五参数重载）直接返回 `true` 消费，避免重复拉起会话或回落到系统默认助手。对于超过系统侧去重窗的长按松手重复唤醒，Eta 浮窗会话在初始空闲展示窗口内也会合并重复展示，避免重播入场光效并保留初次截取的屏幕上下文。
+- Process: `system_server`, corresponding to the `system` module scope.
+- Class: `com.miui.server.input.util.ShortCutActionsUtils`.
+- Hooks: the `boolean`-returning `triggerFunction(String, String, Bundle, boolean)` and the five-parameter overload with an extra trailing `String`; at install time it checks the signature and the type of `mContext`.
+- Trigger condition: the first argument is `launch_voice_assistant` and the second is `long_press_power_key` or `imperceptible_press_power_key`. The latter is the short-duration or pre-trigger power-key assistant path on some system versions.
+- Execution: reads the current power-key target. The system default assistant is passed through directly; Gemini / Atom request the current user's digital-assistant session via `AssistantManager.showAssistantSession`. It returns `true` to consume the shortcut action and record a dedup window only when the call succeeds; on failure it calls the original method. When the same press re-dispatches `imperceptible_press_power_key` / `long_press_power_key` (or the four/five-parameter overload) within the dedup window, it directly returns `true` to consume it, avoiding launching the session repeatedly or falling back to the system default assistant. For repeated long-press release wakes beyond the system-side dedup window, Atom's floating-window session also merges duplicate presentations within its initial idle presentation window, avoiding replaying the entry light effect and preserving the initially captured screen context.
 
-该入口在系统识别完按键动作后接管，不重写按键计时或触摸事件，也不修改系统电源键设置。关机菜单、SOS、双击相机、智能家居和非电源键助手动作不符合匹配条件，保持系统逻辑。当前用户需已启用电源键助手快捷方式，并将目标设为默认数字助理；沿用 Eta 的“自动设置默认助理”开关与已有恢复机制。HyperOS 路径没有普通 Activity 兜底，避免把会话失败误判为助理已唤起。
+This entry takes over after the system has recognized the key action; it does not rewrite key timing or touch events, nor modify system power-button settings. Power menu, SOS, double-press camera, smart home, and non-power-key assistant actions do not match the conditions and keep system logic. The current user must have enabled the power-key assistant shortcut and set the target as the default digital assistant; it reuses Atom's "Set default assistant automatically" switch and existing recovery mechanism. The HyperOS path has no plain Activity fallback, to avoid mistaking a session failure for the assistant having already been woken.
 
-系统私有分发签名已有源码使用证据，助手功能名也与小爱读取的系统设置一致；尚无当前目标 ROM 的 framework / services APK，不能据此断言所有 HyperOS 版本的调用链、字段和按住松手时序相同。未知类、字段和签名通过安装报告诊断，不按模糊方法名拦截。
+The system private dispatch signature has source-usage evidence, and the assistant function name matches the system setting that XiaoAI reads; without the framework / services APK of the current target ROM, we cannot assert that the call chains, fields, and press-and-release timing are the same across all HyperOS versions. Unknown classes, fields, and signatures are diagnosed through install reports rather than being hooked by fuzzy method names.
 
-## 底部手势横条
+## Bottom Gesture Handle
 
-进程为 `com.miui.home` 或 `com.mi.android.globallauncher` 的主进程，需勾选实际安装的桌面作用域。`ModuleMain` 仅保留这些主进程，且只在首包就绪时安装，不注入桌面子进程的业务 Hook。
+The process is the main process of `com.miui.home` or `com.mi.android.globallauncher`; the launcher scope that is actually installed must be selected. `ModuleMain` only keeps these main processes and installs only when the first package is ready, without injecting business hooks into launcher subprocesses.
 
-以下目标按顺序尝试，成功注册一个后停止尝试后续入口：
+The following targets are tried in order; once one is registered successfully, it stops trying the remaining entries:
 
-| 顺序 | 系统类与方法 | 上下文来源 |
+| Order | System class and method | Context source |
 | --- | --- | --- |
 | 1 | `com.miui.home.recents.gesture.NavStubGestureEventManager.handleLongPressEvent()` | `com.miui.home.launcher.Application.getInstance()` |
-| 2 | `com.miui.home.recents.cts.CircleToSearchHelper.invokeOmni(Context, int, int)` | 第一个参数 |
-| 3 | `com.miui.home.recents.cts.NavBarEventHelper.onLongPress(MotionEvent)` | 实例 `mContext` |
-| 4 | `com.miui.home.recents.NavStubView.onTouchEvent(MotionEvent)` | View 自身 Context |
+| 2 | `com.miui.home.recents.cts.CircleToSearchHelper.invokeOmni(Context, int, int)` | first argument |
+| 3 | `com.miui.home.recents.cts.NavBarEventHelper.onLongPress(MotionEvent)` | instance `mContext` |
+| 4 | `com.miui.home.recents.NavStubView.onTouchEvent(MotionEvent)` | the View's own Context |
 
-前三种入口复用桌面自己的长按识别，仅替换搜索分发。关闭“手势条长按触发一圈即搜”、上下文缺失、Google 入口缺失或服务调用失败时，执行原方法。`invokeOmni` 仅接受 `void` / `boolean` 返回类型，成功返回对应的空值 / `true`。导航搜索统一使用 entry point `1`，其他厂商原有调用保持原 entry point。
+The first three entries reuse the launcher's own long-press recognition and only replace the search dispatch. When "Gesture-handle long-press triggers Circle to Search" is off, context is missing, the Google entry is missing, or the service call fails, the original method runs. `invokeOmni` only accepts `void` / `boolean` return types and returns the corresponding empty value / `true` on success. Navigation search uniformly uses entry point `1`; other vendor calls keep their original entry point.
 
-旧版触摸检测只在前三种入口均未安装，且 `NavStubView` 不存在 `mCheckLongPress` 时启用。已存在原生检测但回调未知的桌面不会叠加第二套检测。
+The legacy touch detection is enabled only when none of the first three entries are installed and `NavStubView` has no `mCheckLongPress`. Launchers that already have native detection with unknown callbacks do not get a second layer of detection.
 
-- 每个 View 独立管理手势和延迟任务；使用系统长按超时与触摸滑动阈值。
-- 滑动超过阈值、多指、抬手、取消、视图移除均取消任务；延迟执行前重新读取开关。
-- 触发成功后，下一个事件转换为 `ACTION_CANCEL` 结束原生手势；搜索失败保留原事件。
-- 仅在旧版手势等待长按期间抑制 `startRecentsAnimationPre()`。移动超过阈值后放行，未全局禁用最近任务预启动。
-- 延迟任务使用视图弱引用，不持有 Hook Chain，不增加线程或轮询。
+- Each View manages its gesture and delayed task independently; it uses the system long-press timeout and touch-slide threshold.
+- Sliding past the threshold, multi-touch, lifting the finger, cancellation, and view removal all cancel the task; the switch is re-read before delayed execution.
+- After a successful trigger, the next event is converted to `ACTION_CANCEL` to end the native gesture; a failed search keeps the original event.
+- `startRecentsAnimationPre()` is suppressed only while the legacy gesture is waiting for a long press. Movement past the threshold releases it; recents pre-launch is not globally disabled.
+- Delayed tasks use a weak reference to the view, do not hold the Hook Chain, and add no threads or polling.
 
-## HyperOS 4 导航识屏服务入口
+## HyperOS 4 Navigation Screen-Search Service Entry
 
-Android 17 / HyperOS 4 的横条长按可直接交给超级小爱识屏，绕过上述桌面回调。Eta 在 `com.miui.voiceassist` 包的进程中仅安装结构明确的 `HyperOsScreenSearchHooks`，拦截 `com.xiaomi.voiceassistant.VoiceService.onStartCommand(Intent, int, int)` 将导航识屏请求转交 `contextual_search`，不接管对话业务。
+On Android 17 / HyperOS 4, a long press on the handle can be handed directly to Super XiaoAI screen search, bypassing the launcher callbacks above. In the `com.miui.voiceassist` package process, Atom installs only the clearly-structured `HyperOsScreenSearchHooks`, hooking `com.xiaomi.voiceassistant.VoiceService.onStartCommand(Intent, int, int)` to forward navigation screen-search requests to `contextual_search` without taking over the conversation business.
 
-只在现有手势开关开启，且请求满足以下全部条件时替换搜索分发：
+Search dispatch is replaced only when the existing gesture switch is on and the request satisfies all of the following:
 
-- Action 为 `android.intent.action.ASSIST`。
-- `voice_assist_function_key` 为 `start_screen_recognition`。
-- `triggerType` 为 `NavLongPress`。
-- `voice_assist_start_from_key` 为 `long_press_fullscreen_gesture_line`、`long_press_home_key` 或 `two_gesture_long_press`。这些来源只有与前两项同时匹配才视为导航识屏，不能单凭来源截获普通助理请求。
+- The Action is `android.intent.action.ASSIST`.
+- `voice_assist_function_key` is `start_screen_recognition`.
+- `triggerType` is `NavLongPress`.
+- `voice_assist_start_from_key` is `long_press_fullscreen_gesture_line`, `long_press_home_key`, or `two_gesture_long_press`. These sources are treated as navigation screen search only when they match the first two conditions simultaneously; they cannot intercept ordinary assistant requests based on the source alone.
 
-空 Intent、字段缺失 / 类型不符、其他功能及来源均放行。搜索请求发送失败时执行原 `onStartCommand`；发送成功后返回 `START_NOT_STICKY`，仅在 `stopSelfResult(startId)` 确认本次仍为最新启动时移除前台状态，避免停止已经排队的后续启动。清理失败记录节流诊断，不再重复唤起原识屏界面。不会把原 Intent、图片或其他 extras 转发给 Google，搜索参数仍由 Eta 固定生成。
+Empty Intents, missing fields / mismatched types, and other functions and sources are all passed through. If the search request fails to send, the original `onStartCommand` runs; on a successful send it returns `START_NOT_STICKY`, and only removes the foreground state when `stopSelfResult(startId)` confirms this is still the latest start, to avoid stopping already-queued subsequent starts. Cleanup failures record throttled diagnostics without re-waking the original screen-search UI. The original Intent, image, and other extras are not forwarded to Google; search parameters are still generated deterministically by Atom.
 
-启用条件：
+Enablement conditions:
 
-1. 在 LSPosed 的 Eta 作用域中勾选“超级小爱”（`com.miui.voiceassist`），保留 `system`、Google App 和实际使用的桌面作用域，重启使新 Hook 生效。
-2. 在 HyperOS 系统导航方式中，将“长按手势提示线”设为“超级小爱识屏”。
-3. 开启 Eta 的“手势条长按触发一圈即搜”，确保 Google App 已安装并初始化。
+1. In LSPosed's Atom scope, check "Super XiaoAI" (`com.miui.voiceassist`), keep the `system`, Google App, and the launcher scope actually in use, and reboot to make the new hooks effective.
+2. In HyperOS system navigation, set "Long-press gesture hint line" to "Super XiaoAI screen search".
+3. Enable Atom's "Gesture-handle long-press triggers Circle to Search" and make sure Google App is installed and initialized.
 
-系统设置未指向小爱识屏时，不保证会产生上述服务请求。Android 17 的 `startContextualSearch(int, ContextualSearchConfig)` 已由共享调用器支持，配置参数传 `null`，旧系统的一参数签名继续保留。接口兼容不等于入口已接通；诊断需同时查看 `HyperOsScreenSearch` 与 `ContextualSearch` 日志。
+When the system setting does not point to XiaoAI screen search, there is no guarantee that the above service request will be produced. Android 17's `startContextualSearch(int, ContextualSearchConfig)` is already supported by the shared invoker, passing `null` for the config parameter, while the older one-parameter signature is still kept. Interface compatibility does not mean the entry is connected; diagnostics must inspect both `HyperOsScreenSearch` and `ContextualSearch` logs.
 
-## 搜索服务与权限
+## Search Service and Permissions
 
-桌面与小爱识屏服务入口都复用 Eta 的 `CircleToSearchInvoker`，调用 `contextual_search` Binder，跳过原生识屏处理，也不在桌面或小爱 Hook 中执行 Agent Runtime。
+Both the launcher and XiaoAI screen-search service entries reuse Atom's `CircleToSearchInvoker`, call the `contextual_search` Binder, skip native screen-search processing, and do not run the Agent Runtime in the launcher or XiaoAI hooks.
 
-`ContextualSearchHooks` 负责：
+`ContextualSearchHooks` is responsible for:
 
-1. 将 `SystemServer.deviceHasConfigString(Context, int)` 对 `config_defaultContextualSearchPackageName` 的判断修正为可启动，其他资源判断走原逻辑。
-2. 保留 `startOtherServices` 尾段的服务补启动；服务已存在时不重复启动。
-3. 将 `ContextualSearchManagerService.getContextualSearchPackageName()` 指向 Google App。
-4. 仅对 `enforcePermission("startContextualSearch")` 扩展可信 HyperOS UID：调用 UID 包列表中须含上述桌面包或 `com.miui.voiceassist`，对应包须为系统应用或系统应用更新，且手势开关开启。既有 SystemUI 和 ColorOS 识屏调用方保持原权限规则。
+1. Correcting `SystemServer.deviceHasConfigString(Context, int)`'s check of `config_defaultContextualSearchPackageName` to report launchable; other resource checks follow original logic.
+2. Keeping the service re-start at the tail of `startOtherServices`; it does not start again when the service already exists.
+3. Pointing `ContextualSearchManagerService.getContextualSearchPackageName()` to Google App.
+4. Extending trusted HyperOS UIDs only for `enforcePermission("startContextualSearch")`: the calling UID's package list must contain the launcher package above or `com.miui.voiceassist`, the corresponding package must be a system app or system-app update, and the gesture switch must be on. Existing SystemUI and ColorOS screen-search callers keep their original permission rules.
 
-Binder 的 oneway 调用不提供界面是否显示的确认；代码返回成功只代表请求已发出，不代表 Google 已显示搜索界面。权限按 UID 裁决，shared UID 下的其他进程共享同一权限边界。
+The Binder oneway call provides no confirmation of whether the UI is shown; a successful return only means the request was sent, not that Google has displayed the search interface. Permissions are decided by UID; other processes under a shared UID share the same permission boundary.
 
-当前不实现旧式 `voiceinteraction.showSessionFromSession` 加资源覆盖的搜索旁路，也不取消整个语音交互服务的身份校验。ROM 若没有 `ContextualSearchManagerService`，仅靠本模块无法补出系统中不存在的实现，保留原触发逻辑。
+The current implementation does not provide the legacy `voiceinteraction.showSessionFromSession` plus resource-override search bypass, nor does it remove identity verification for the whole voice-interaction service. If the ROM lacks `ContextualSearchManagerService`, this module alone cannot supply an implementation that does not exist in the system, and the original trigger logic is kept.
 
-## 已知边界与真机验证
+## Known Boundaries and On-Device Verification
 
-- `MiuiSingleKeyRule.supportLongPress()` / `onLongPress(long)` 与 `mKeyCode == KEYCODE_HOME` 是另一条 Home 键长按路径，不是电源键或横条事件。Eta 不拦截该底层按键路径；服务收到明确的 `NavLongPress` 识屏请求时，才处理其中的兼容来源。
-- 类存在不等于回调一定被当前桌面使用。原生入口存在但被区域资格开关挡住、原生长按期间的最近任务动画、国际版桌面的包与进程布局，都需要对应版本验证。
-- Google App 资格补齐继续使用既有 Google Hook；不新增桌面设备伪装。
-- 双指识屏和 ColorOS 的锁屏语音、热词补偿没有新增 HyperOS 专用实现。
-- 配置 key、默认值与存储协议不变；新增作用域后需在模块管理器勾选并重启，已有进程不会自动获得新 Hook。
+- `MiuiSingleKeyRule.supportLongPress()` / `onLongPress(long)` with `mKeyCode == KEYCODE_HOME` is a separate Home-key long-press path, not a power-key or handle event. Atom does not hook that low-level key path; the service only processes the compatible sources within it when it receives an explicit `NavLongPress` screen-search request.
+- A class existing does not mean the callback is actually used by the current launcher. A native entry that exists but is blocked by regional eligibility switches, the recents animation during the native long press, and the international launcher's package and process layout all need per-version verification.
+- Google App eligibility patching continues to use the existing Google Hook; no additional launcher device spoofing is added.
+- Two-finger screen search and ColorOS's lock-screen voice and hotword compensation have no new HyperOS-specific implementation.
+- Config keys, defaults, and the storage protocol are unchanged; after adding a scope you must check it in the module manager and reboot, as existing processes do not automatically gain the new hooks.
 
-真机验证应覆盖：系统默认 / Gemini / Eta 三种目标、目标未设为默认或未安装、关机与 SOS 原动作、横条静止长按与滑动、多指和抬手取消、横竖屏切换、开关关闭及重启恢复。记录 ROM / Android / 桌面 / 小爱版本，以及 `HyperOsPower`、`HyperOsLauncher`、`HyperOsScreenSearch`、`ContextualSearch` 安装报告，以区分目标缺失、入口未被调用和 Binder / Google 侧失败。
+On-device verification should cover: the three targets (system default / Gemini / Atom), a target not set as default or not installed, the original power-off and SOS actions, stationary long-press and slide on the handle, multi-touch and lift-to-cancel, portrait/landscape switching, switch-off, and recovery after reboot. Record the ROM / Android / launcher / XiaoAI versions and the `HyperOsPower`, `HyperOsLauncher`, `HyperOsScreenSearch`, `ContextualSearch` install reports, to distinguish a missing target, an entry not being called, and a Binder / Google-side failure.

@@ -1,67 +1,67 @@
-# 普通设备与 Root 设备
+# Standard and Rooted Devices
 
-Eta 支持 Android 14 及以上版本的 ARM64（arm64-v8a）设备，使用同一个 APK，根据系统版本与实际授权提供能力。APK 仅包含 ARM64 原生库，不提供 32 位 ARM、x86 或 x86_64 构建。基础功能不会等待 Root 探测，Root 授权与框架服务连接分别展示；授权拒绝、断连或恢复都不改写用户保存的开关。
+Atom supports Android 14 and above on ARM64 (arm64-v8a) devices, using a single APK and providing capabilities based on system version and actual authorization. The APK contains only ARM64 native libraries and provides no 32-bit ARM, x86, or x86_64 builds. Core features do not wait for root probing; root authorization and framework-service connection are shown separately. Authorization denial, disconnection, or recovery never overwrite the toggles the user saved.
 
-系统增强页的“框架通信”仅表示收到框架服务 Binder，不代表 LSPosed 管理器中的 Eta 开关已开启或 Hook 已生效。当前 libxposed Service 接口没有模块开关查询或变更通知；关闭模块后，已有服务连接仍可能保留。模块开关与作用域以管理器为准，具体功能还取决于目标进程中的加载情况。运行目标列表也不能代替模块开关：空列表只能说明没有返回运行目标。
+The "Framework communication" row on the System enhancements page only indicates that a framework-service Binder was received; it does not mean the Atom switch in the LSPosed Manager is on or that hooks have taken effect. The current libxposed Service interface has no module-switch query or change notification; after turning the module off, an existing service connection may still be retained. The module switch and scope are authoritative from the manager, and specific features also depend on loading in the target process. The running-target list cannot substitute for the module switch either: an empty list only means no running targets were returned.
 
-## 能力边界
+## Capability Boundaries
 
-| 功能 | 普通设备 | 增强条件 |
+| Feature | Standard device | Enhancement condition |
 | --- | --- | --- |
-| 聊天、模型、记忆、Skills、MCP、内置浏览器 | 可用，按各自开关与配置运行 | 无 |
-| 数字助理浮窗的屏幕上下文 | Eta 设为默认数字助理并允许使用屏幕和应用数据后，自动附带唤醒时的截图与应用内容 | 不要求 Root 或无障碍；仍受系统共享设置和受保护窗口限制 |
-| GUI 节点、手势、输入与等待 | 开启 Eta 无障碍服务 | LSPosed 无障碍保护可提供有限重绑 |
-| 后台虚拟屏执行与主屏移交 | 自动回退至物理主屏前台操作 | 开启 Root 或 LSPosed（`system` 作用域）并通过焦点隔离与输入法策略校验时，支持后台受信任虚拟屏、胶囊微缩镜与原位全屏移交 |
-| GUI 逐窗口截图 | 开启 Eta 无障碍服务 | Root 截图仅在无需排除入口窗口等现有条件满足时回退 |
-| 启动应用、打开链接、闹钟与计时器 | 使用 Android 前台 Intent | 无障碍不作为前置条件 |
-| 当前通知与通知历史 | 授予通知使用权；当前通知要求监听服务已连接 | Root 用户保留已有系统来源 |
-| 应用使用情况、位置 | 授予对应 Android 访问权限 | 后台位置需要始终允许 |
-| Android Shell、文件与图片 | App UID，私有工作区或已授权来源 | Root 用户保留特权路径 |
-| Alpine、Debian、PTY | 通过 PRoot 运行 | 可另外安装 chroot |
-| 系统修改、冻结应用、私有数据读取 | 不向模型提供 | 需要 Root；部分数据还要求对应 ROM |
-| 系统助理路由与一圈即搜 | 可在系统增强中了解 | 需要 LSPosed 与对应 ROM（系统、SystemUI 与 Google 作用域） |
+| Chat, models, memory, Skills, MCP, built-in browser | Available; runs per their own switches and configuration | None |
+| Screen context of the digital-assistant overlay | Once Atom is set as the default digital assistant and allowed to use screen and app data, it automatically attaches the screenshot and app content from wake-up | Does not require Root or accessibility; still subject to system sharing settings and protected windows |
+| GUI nodes, gestures, input, and waiting | Enable Atom's accessibility service | LSPosed accessibility protection can provide limited rebinding |
+| Background virtual-display execution and main-screen handoff | Automatically falls back to foreground operation on the physical main screen | With Root or LSPosed (the `system` scope) enabled and focus-isolation and IME-policy checks passed, supports the trusted background virtual display, the capsule mini viewfinder, and in-place full-screen handoff |
+| GUI per-window screenshot | Enable Atom's accessibility service | Root screenshot falls back only when existing conditions such as no entry window to exclude are met |
+| Launching apps, opening links, alarms, and timers | Uses Android foreground Intents | Accessibility is not a precondition |
+| Current notifications and notification history | Grant notification access; current notifications require the listener service to be connected | Root users keep the existing system source |
+| App usage, location | Grant the corresponding Android access permissions | Background location requires Always allow |
+| Android Shell, files, and images | App UID, private workspace, or authorized sources | Root users keep privileged paths |
+| Alpine, Debian, PTY | Runs via PRoot | chroot can be installed separately |
+| System modification, freezing apps, private-data reads | Not exposed to the model | Requires Root; some data also requires the corresponding ROM |
+| System assistant routing and Circle to Search | Can be viewed under System enhancements | Requires LSPosed and the corresponding ROM (system, SystemUI, and Google scopes) |
 
-工具页默认“当前设备”。普通 Android 权限尚未开启的功能仍可发现；“全部能力”显示额外介绍与实际条件，查看不会申请权限，也不扩大模型权限。系统增强入口使用普通设置行，不持续提示未授权。Root 用户原有配置位置保持不变；失联时保留已使用配置，设置页顶部不显示重连提示卡片，框架通信状态可在系统增强页查看。
+The tools page defaults to "This device". Features whose ordinary Android permissions are not yet enabled can still be discovered; "All capabilities" shows additional descriptions and actual conditions, and viewing does not request permissions or expand the model's permissions. The System enhancements entry uses an ordinary settings row and does not persistently prompt about missing authorization. Root users keep their existing configuration location; when disconnected, used configurations are retained, no reconnect card is shown at the top of the settings page, and framework-communication status can be viewed on the System enhancements page.
 
-本次没有新增联系人、短信、日历等数据的普通权限版读取。
+This release adds no new ordinary-permission read paths for data such as contacts, SMS, and calendar.
 
-逐窗口截图不可用时，屏幕观察仍可返回节点与屏幕尺寸，并标明截图状态。默认数字助理收到的是唤醒时的系统快照。无障碍保护控制广播使用系统提供的发送者 UID 校验身份。
+When per-window screenshots are unavailable, screen observation can still return nodes and screen dimensions and indicate the screenshot status. The default digital assistant receives the system snapshot from wake-up. Accessibility-protection control broadcasts verify identity using the sender UID provided by the system.
 
-后台虚拟屏要求系统支持独立窗口焦点、防抢顶层焦点和隐藏输入法。设备缺少这些能力时，即使已授权 Root 也在主屏执行。虚拟屏运行中被系统移除或桥接进程退出时，当前画布失效并报告 `DISPLAY_UNAVAILABLE`；重新启动目标应用后才能继续观察和操作，不自动把旧画布上的动作转到主屏。
+The background virtual display requires system support for independent window focus, top-focus protection, and hidden IME. Devices lacking these abilities run on the main screen even with Root authorized. If the virtual display is removed by the system or the bridge process exits mid-run, the current canvas becomes invalid and reports `DISPLAY_UNAVAILABLE`; observation and operation can resume only after restarting the target app, and actions on the old canvas are not automatically transferred to the main screen.
 
-Android 17 对访问局域网增加运行时权限。连接局域网模型服务、MCP、网页或通过普通终端访问局域网前，在 Eta 权限页开启“局域网访问”；拒绝或撤销后可从该入口重新授权或进入应用设置。公网访问不要求这项权限。该权限也作用于 Eta 的 WebView 和 App UID 下运行的普通终端、PRoot 网络请求。
+Android 17 adds a runtime permission for accessing the local network. Before connecting to LAN model services, MCP, web pages, or accessing the LAN through the ordinary terminal, enable "Local network access" on Atom's permissions page; after denial or revocation you can re-authorize from that entry or go to app settings. Public-network access does not require this permission. This permission also applies to Atom's WebView and to the network requests of the ordinary terminal and PRoot running under the app UID.
 
-## 文件与 Linux 数据
+## Files and Linux Data
 
-新建普通工作区位于 `filesDir/terminal-user/workspace`，PRoot 环境位于 `filesDir/terminal-user/proot/<发行版>`，避开旧版可能由 Root 创建的 `filesDir/terminal` 父目录。已存在于旧布局的普通工作区与 PRoot 环境继续使用原位置，不自动迁移或修改属主；目录选择不依赖 Root 授权。工作区在 Linux 中仍映射为 `/workspace`。Android 文件与命令使用同一个私有工作区；已确认 Root 授权时默认直接使用 Root，否则使用 App UID，显式 `identity=user` 可选择普通身份。工作区页面支持通过 Root 文件后端列举和导出 Root 生成的文件。不额外设置文件路径白名单，其他路径是否可读写由系统权限决定。每次运行固定工作目录和已选 Linux 环境，获得或失去 Root 不自动切换工作区。文件选择器返回的 URI 如果无法作为 App UID 可读路径使用，会先有界导入工作区再引用；不能直接导入的目录会给出明确说明。公共目录共享按需申请“所有文件访问”，拒绝后仍可使用私有工作区与导入导出。
+A new ordinary workspace is located at `filesDir/terminal-user/workspace`, and the PRoot environment at `filesDir/terminal-user/proot/<distribution>`, avoiding the old `filesDir/terminal` parent directory that could be created by Root. Ordinary workspaces and PRoot environments that already exist under the old layout keep their original location and are not migrated or re-owned; directory choice does not depend on Root authorization. The workspace is still mapped as `/workspace` inside Linux. Android file and command tools use the same private workspace; when Root authorization is confirmed the default is to use Root directly, otherwise the app UID, and an explicit `identity=user` selects the ordinary identity. The workspace page supports listing and exporting Root-generated files through the Root file backend. No extra file-path whitelist is set; whether other paths are readable/writable is decided by system permissions. Each run fixes the working directory and selected Linux environment; gaining or losing Root does not automatically switch the workspace. If a URI returned by the file picker cannot be used as an app-UID-readable path, it is first imported into the workspace with bounds and then referenced; directories that cannot be imported directly get an explicit explanation. Public directory sharing requests "All files access" on demand; after denial, the private workspace and import/export still work.
 
-PRoot 与 chroot 使用独立 rootfs。旧 chroot、`/data/local/tmp/eta` 与特权共享挂载不迁移；运行会话和任务固定创建时的后端与路径。Root 状态变化不会删除环境、更改属主或自动切换已有会话。PRoot 内的模拟 root 没有 Android Root 权限。
+PRoot and chroot use independent rootfs images. The old chroot, `/data/local/tmp/eta`, and privileged shared mounts are not migrated; running sessions and tasks are pinned to the backend and path at creation. Root status changes do not delete environments, change ownership, or automatically switch existing sessions. The simulated root inside PRoot has no Android root permissions.
 
-免 Root 安装器复用固定 rootfs 的下载校验，在临时目录流式解包，处理归档路径、链接、取消与失败清理，运行检查成功后才写完成标记。基础工具、Python/uv、Node.js、SSH 和 APK 分析通过所选后端执行安装与检查。
+The rootless installer reuses the pinned-rootfs download verification, streams unpacking into a temporary directory, handles archive paths, links, cancellation, and failure cleanup, and writes the completion marker only after a successful runtime check. Base tools, Python/uv, Node.js, SSH, and APK analysis are installed and checked through the selected backend.
 
-## 运行与停止
+## Running and Stopping
 
-普通终端、后台命令和 PRoot tracer 使用执行前台服务的任务引用维持生命周期。后台命令不随 Agent 回复结束而停止，完成时发送系统通知，日志与状态可从终端页面或后续工具调用查看；通知关闭时仍保留结果。离开页面不停止这些任务，可通过任务入口及执行通知主动停止。最后一个任务结束后释放前台服务。
+The ordinary terminal, background commands, and the PRoot tracer maintain their lifecycle through task references held by an execution foreground service. Background commands do not stop when the agent's reply ends; they send a system notification on completion, and logs and status can be viewed from the terminal page or later tool calls; results are kept even when notifications are off. Leaving the page does not stop these tasks; they can be stopped proactively via the task entry and execution notification. The foreground service is released after the last task ends.
 
-Root daemon 沿用原有独立生命周期，不由普通任务服务批量回收。
+The Root daemon keeps its original independent lifecycle and is not bulk-recycled by the ordinary task service.
 
-通知权限拒绝不会直接阻止合法启动。前台服务仍受 Android 的[后台启动限制](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)和厂商进程管理影响；启动被拒绝时返回 Eta 重试。强停或重启后不自动重放命令。
+Notification-permission denial does not directly block a legitimate start. Foreground services are still subject to Android's [background start restrictions](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start) and vendor process management; when a start is rejected, it returns to Atom for retry. Commands are not automatically replayed after a force stop or reboot.
 
-## 验证边界与真机清单
+## Verification Boundaries and On-Device Checklist
 
-源码回归覆盖工具元数据完整性、普通能力投影、每轮工具目录与权限投影一致、运行中撤权、无障碍断连、归档解包、PRoot 命令引用、后端选择、任务引用与路由往返。构建和单元测试不等同于 Android 上成功运行原生二进制。
+Source regression covers tool-metadata integrity, ordinary capability projection, consistency between the per-turn tool catalog and the permission projection, mid-run permission revocation, accessibility disconnection, archive unpacking, PRoot command reference, backend selection, task references, and routing round-trips. Building and unit tests are not equivalent to successfully running native binaries on Android.
 
-PTY、PRoot 与配对 loader 按最低支持系统构建，仅提供 ARM64 版本。ELF 的 16 KiB 对齐、系统动态依赖及源码包一致性需要随重建一起检查。Android 14 的最低版本兼容性及 Android 17 的局域网授权、音频行为仍需设备验收，单元测试不能替代这些运行验证。
+PTY, PRoot, and the paired loader are built for the minimum supported system and provided only as ARM64. The ELF's 16 KiB alignment, system dynamic dependencies, and source-archive consistency need to be checked together with each rebuild. Android 14 minimum-version compatibility and Android 17's LAN authorization and audio behavior still require device acceptance; unit tests cannot replace these runtime verifications.
 
-目录隔离修复另通过 32 项定向测试，覆盖旧父目录不可写、旧普通数据原位读取、文件导入、安装解包、后端选择及普通终端。在 Android 16 arm64 真机上，已验证旧 `terminal` 为 Root 属主且不可写时，新工作区可以由 App UID 创建、Debian PRoot 基础环境安装成功、工作区页面正常读取，以及宿主与 guest 双向读写测试文件。旧 chroot 目录的 inode、属主、权限、大小、修改时间及就绪标记哈希在验证前后保持一致。尚未覆盖该机全部工具安装、长期后台运行及完整 Root 授权切换矩阵。
+The directory-isolation fix is additionally covered by 32 targeted tests, covering an unwritable old parent directory, in-place reads of old ordinary data, file import, install unpacking, backend selection, and the ordinary terminal. On an Android 16 arm64 device, it has been verified that when the old `terminal` is Root-owned and unwritable, the new workspace can be created under the app UID, the Debian PRoot base environment installs successfully, the workspace page reads correctly, and test files can be read/written in both directions between host and guest. The old chroot directory's inode, owner, permissions, size, modification time, and ready-marker hash remain consistent before and after verification. Full tool installation, long-term background running, and the complete Root-authorization switch matrix for that device are not yet covered.
 
-以下完整验收按能力边界在 Android 14 和 Android 17 真机执行：
+The following full acceptance is executed on Android 14 and Android 17 devices according to the capability boundaries:
 
-- 无 Root、仅 Root、仅 LSPosed、两者都有：查看工具目录和系统增强，验证拒绝、30 秒超时、撤销、断连和恢复；确认开关不重置，查看全部能力不弹授权。
-- 无障碍开启后完成节点点击、中文输入与等待；验证逐窗口截图、截图失败时的节点观察及符合窗口排除条件的 Root 回退。执行中断连立即报告错误，节点过期或动作结果不确定后不能盲目重放。
-- Android 17 验证局域网权限拒绝、授权、撤销后，模型、MCP、WebView 与普通终端的连接行为，以及公网请求不受该权限影响。
-- 拒绝公共文件访问后导入文件、在私有工作区读写并导出；授权后检查共享目录双向读写。
-- 在 ARM64 设备上分别安装 Alpine 和 Debian PRoot；验证下载失败、空间不足、取消、重新安装、基础工具与可选工具安装。Root 设备同时回归旧 chroot 与共享挂载。
-- 运行 PTY、多会话和后台命令；验证调整窗口、Ctrl-C、自然退出、停止通知、进程回收与日志。停止普通任务不影响 Root daemon。
-- 工具视图切换与详情返回恢复阅读位置；重新进入默认当前设备。验证窄屏、大字体、横屏、深浅色、系统栏和 IME。
-- 强停与重启后没有自动重放命令，状态可刷新并手动重启；模型配置保存不出现普通用户无法处理的 LSPosed 同步提示。
+- No Root, Root only, LSPosed only, and both: inspect the tool catalog and System enhancements; verify denial, the 30-second timeout, revocation, disconnection, and recovery; confirm switches are not reset, and viewing all capabilities does not trigger authorization prompts.
+- With accessibility enabled, complete node clicks, Chinese input, and waiting; verify per-window screenshots, node observation when screenshots fail, and Root fallback under window-exclusion conditions. Report errors immediately on mid-run disconnection; do not blindly replay after nodes go stale or action results are uncertain.
+- On Android 17, verify the connection behavior of models, MCP, WebView, and the ordinary terminal after LAN-permission denial, grant, and revocation, and that public-network requests are unaffected by this permission.
+- Import files after denying public-file access, read/write in the private workspace and export; after authorization, check bidirectional read/write of shared directories.
+- Install Alpine and Debian PRoot separately on an ARM64 device; verify download failure, insufficient space, cancellation, reinstallation, and base-tool and optional-tool installation. Root devices also regress the old chroot and shared mounts.
+- Run PTY, multiple sessions, and background commands; verify window resizing, Ctrl-C, natural exit, stop notification, process reclamation, and logs. Stopping ordinary tasks does not affect the Root daemon.
+- Tool-view switching and detail-back restore the reading position; re-entering defaults to the current device. Verify narrow screens, large fonts, landscape, light/dark, system bars, and IME.
+- After force stop and reboot there is no automatic command replay; state can be refreshed and manually restarted; saving model configuration shows no LSPosed sync prompt that an ordinary user cannot handle.

@@ -1,51 +1,51 @@
-# 可选角色
+# Optional Characters
 
-Eta 的默认体验是手机 Agent。侧边栏“角色”提供可选的会话人格：只有从角色详情开始的对话使用该角色，普通新对话与系统助手入口继续使用默认 Eta。模型、工具开关、Skills 与 MCP 沿用现有配置。
+Atom's default experience is the phone agent. The sidebar's "Characters" provides optional conversation personas: only conversations started from a character's detail page use that character; regular new conversations and system assistant entry points continue to use the default Atom. Models, tool toggles, Skills, and MCP reuse the existing configuration.
 
-## 使用
+## Usage
 
-进入角色库后可以创建、搜索或导入角色，打开详情选择开场白并开始对话。新角色库附带一个内置角色“小满”，可以编辑或删除；删除后库为空时可以从空库状态重新恢复她。开场白直接作为第一条角色消息，不发起模型请求。用户人设可以设置姓名和描述；未配置时使用“用户”。
+Once you enter the character library you can create, search, or import characters; open a character's details, choose a greeting, and start a conversation. A new character library ships with a built-in character "Xiaoman", which can be edited or deleted; if the library becomes empty after deletion, she can be restored from the empty-library state. The greeting is used directly as the first character message without triggering a model request. The user persona can set a name and description; when unset, "User" is used.
 
-编辑页默认展示名称、人物描述和开场白；高级设定收纳性格、场景、示例对话、系统提示和世界书等内容。保存角色卡后，关联会话的下一次请求使用新内容；正在运行的任务保持启动时的设定。删除角色不会清空已有会话（对话保留当时的角色快照），角色目录下的原图与剧情记忆一并移除，操作不可撤销。复制角色会创建新的角色和剧情记忆空间。Eta 界面不展示头像；导入 PNG 角色卡的原图仍然保留在本地，仅用于导出兼容。
+The edit page shows name, character description, and greeting by default; advanced settings hold personality, scenario, example dialogue, system prompt, and worldbook content. After saving a character card, the next request in associated conversations uses the new content; running tasks keep the settings from when they started. Deleting a character does not clear existing conversations (they retain a snapshot of the character at the time), and the original image and story memory under the character's directory are removed together; the operation cannot be undone. Copying a character creates a new character and story-memory space. Atom's UI does not display avatars; the original image of an imported PNG character card is still kept locally, used only for export compatibility.
 
-角色的身份和语气不会替代手机操作：真实任务继续调用已开启的工具，并依据实际执行结果回答。默认助手会话不加载角色卡、世界书或剧情记忆。
+A character's identity and tone do not replace phone actions: real tasks continue to call the enabled tools and answer based on actual execution results. Default assistant conversations do not load character cards, worldbooks, or story memory.
 
-## 交换格式
+## Exchange Format
 
-| 格式 | 导入 | 导出 |
+| Format | Import | Export |
 | --- | --- | --- |
-| V1 JSON | 支持，转换为现代角色结构 | 转为 V2 |
-| V2 / V3 JSON | 支持 | 保持对应版本 |
-| PNG 角色卡 | 读取 `chara` / `ccv3` 元数据 | 同时写入一致的 V2 / V3 元数据 |
+| V1 JSON | Supported, converted to the modern character structure | Converted to V2 |
+| V2 / V3 JSON | Supported | Kept at the corresponding version |
+| PNG character card | Reads `chara` / `ccv3` metadata | Writes consistent V2 / V3 metadata simultaneously |
 
-PNG 同时含两个角色块时优先读取 `ccv3`；优先块损坏会报告错误，不静默切换成另一份设定。普通图片不能直接当作角色卡导入。重复导入创建副本。
+When a PNG contains two character blocks, `ccv3` is read first; if the preferred block is corrupted an error is reported rather than silently falling back to the other definition. Ordinary images cannot be imported directly as character cards. Re-importing creates a duplicate.
 
-角色以完整 JSON 树保存。编辑已支持的字段时，未知字段、世界书数据及扩展仍保留；往返不保证 JSON 缩进和字段顺序不变。PNG 导出保留原图的非角色数据块，并替换角色元数据；没有原图的卡片导出时使用简单默认图片。
+Characters are saved as a complete JSON tree. When editing supported fields, unknown fields, worldbook data, and extensions are preserved; round-tripping does not guarantee that JSON indentation and field order stay unchanged. PNG export keeps the original image's non-character data chunks and replaces the character metadata; cards without an original image use a simple default image on export.
 
-格式依据 [Character Card V2](https://github.com/malfoyslastname/character-card-spec-v2/blob/main/spec_v2.md)、[Character Card V3](https://github.com/kwaroran/character-card-spec-v3/blob/main/SPEC_V3.md) 和 [PNG 元数据实现](https://github.com/SillyTavern/SillyTavern/blob/release/src/character-card-parser.js)。保存某项数据不代表执行所有扩展效果。
+Formats follow [Character Card V2](https://github.com/malfoyslastname/character-card-spec-v2/blob/main/spec_v2.md), [Character Card V3](https://github.com/kwaroran/character-card-spec-v3/blob/main/SPEC_V3.md), and the [PNG metadata implementation](https://github.com/SillyTavern/SillyTavern/blob/release/src/character-card-parser.js). Saving some data does not mean every extension effect is applied.
 
-## 人设与世界书
+## Persona and Worldbook
 
-人物描述、性格、场景、示例对话和系统提示进入角色背景；作者说明与标签仅用于管理。支持 `{{char}}`、`{{user}}`、`{{original}}` 和常见名称占位符；未知宏保留原文并列入兼容提示。`{{original}}` 引用 Eta 的默认角色表达模板，卡片不能替换真实工具权限和执行合同。
+Character description, personality, scenario, example dialogue, and system prompt go into the character background; author notes and tags are for management only. `{{char}}`, `{{user}}`, `{{original}}`, and common name placeholders are supported; unknown macros keep their original text and are listed in the compatibility notice. `{{original}}` references Atom's default character expression template; cards cannot replace the real tool permissions and execution contract.
 
-内嵌世界书支持启用、常驻、主次关键字、大小写、扫描深度、递归、插入顺序和 token 预算。匹配只扫描用户与角色的正文，不把工具输出、思考和图片观察作为触发词。默认扫描最近两条消息、关闭递归；缺省条目预算为用户填写模型窗口的 25%，不估算整份请求的剩余容量。条目按常驻、优先级和顺序选择，超出预算时不截断条目正文；条目自身的 token 估算仅用于角色卡预算，不参与自动压缩，显式零值与缺省值分别处理。
+Embedded worldbooks support enabling, constant (always-on) entries, primary/secondary keywords, case sensitivity, scan depth, recursion, insertion order, and token budget. Matching scans only user and character text; tool output, thinking, and image observations are not used as trigger words. By default it scans the last two messages and disables recursion; the default entry budget is 25% of the user-configured model window, without estimating the remaining capacity of the whole request. Entries are selected by constant, priority, and order; entry text is not truncated when the budget is exceeded. The token estimate of an entry is used only for the character-card budget and does not participate in automatic compression; explicit zero values and defaults are handled separately.
 
-角色深度备注按对话正文定位，投影不会拆开工具调用与结果。实际 Provider 对 `system` 消息的合并规则仍然适用，因此系统角色备注在部分协议中会合并到顶层系统提示；其内容仍保留，不保证与所有酒馆预设具有相同位置效果。
+Character depth notes are positioned against the conversation text; projection does not split apart tool calls and results. The actual provider's merge rules for `system` messages still apply, so system character notes are merged into the top-level system prompt in some protocols; their content is preserved, but the same positional effect as every Tavern preset is not guaranteed.
 
-当前面向常用文字角色卡，不执行复杂变量、正则替换插件、HTML 状态栏或脚本，也不支持群聊、CHARX、插件和预设系统。世界书使用字面关键字匹配；正则关键字、概率、分组、时序、特殊插入位置等未支持条件会使对应条目跳过，不会退化成无条件触发。相关数据保留，详情提供折叠的兼容说明。
+The current implementation targets common text character cards; it does not execute complex variables, regex substitution plugins, HTML status bars, or scripts, nor does it support group chat, CHARX, plugins, or preset systems. Worldbooks use literal keyword matching; unsupported conditions such as regex keywords, probability, grouping, timing, and special insertion positions cause the corresponding entry to be skipped rather than degrading into unconditional triggering. The relevant data is preserved, and details provide a collapsible compatibility note.
 
-## 现实与剧情记忆
+## Real-World and Story Memory
 
-角色会话可读取默认助手的现实 `MEMORY.md`，但其记忆工具不向该文件写入。剧情由 `character_memory_get` 和 `character_memory_write` 保存到当前角色的独立记忆中，模型不能通过这组工具指定其他角色。记忆总开关、核心预算和 revision 冲突规则继续生效。
+Character conversations can read the default assistant's real-world `MEMORY.md`, but their memory tools do not write to that file. Story is saved to the current character's isolated memory by `character_memory_get` and `character_memory_write`; the model cannot target other characters through this pair of tools. The memory master switch, core budget, and revision conflict rules continue to apply.
 
-同一角色的不同会话共享长期剧情记忆；可以从角色详情查看和编辑。编辑聊天或重新生成回复不会自动回滚剧情记忆，也不会撤销已执行的手机操作。
+Different conversations for the same character share long-term story memory; it can be viewed and edited from the character's detail page. Editing chat or regenerating a reply does not automatically roll back story memory, nor does it undo phone actions that have already been performed.
 
-角色卡导出只包含角色设定和卡片图片，不附带用户人设、聊天、现实记忆、剧情记忆或模型凭据。Eta 完整备份包含这些本机角色数据及正文修订，导入支持旧备份。
+Character card export contains only the character definition and card image, not the user persona, chat, real-world memory, story memory, or model credentials. Atom's full backup includes these on-device character data and text revisions; import supports older backups.
 
-## 编辑与重新生成
+## Editing and Regeneration
 
-角色会话的用户消息与角色正文支持原位编辑，保留后续聊天，不自动重跑。模型下一轮使用修订正文；原始请求、实际工具调用、结果和归档分别保留，不能把旧工具结果当作修改后请求已经执行的证据。
+User messages and character text in character conversations support in-place editing, keeping subsequent chat and not automatically rerunning. The next model round uses the revised text; the original request, actual tool calls, results, and archive are each retained, and old tool results cannot be treated as evidence that a modified request has already run.
 
-角色回复的“重新生成”只改写目标文字，使用目标之前的历史、原回复和允许保存的工具结果。该请求不运行设备工具、Skills、MCP 或托管工具，也不接受追加指令；可以停止。成功后可切换回复候选，失败或中断保留原回复。改写结束后从聊天输入框发送新消息继续对话，运行浮层不会把这次改写转成新任务。已脱敏的资料及图片不会重新读取来补齐证据。
+Regeneration of a character reply only rewrites the target text, using the history before the target, the original reply, and tool results allowed to be saved. That request does not run device tools, Skills, MCP, or managed tools, nor does it accept additional instructions; it can be stopped. On success you can switch between reply candidates; on failure or interruption the original reply is kept. After the rewrite, send a new message from the chat input to continue; the running overlay does not turn this rewrite into a new task. Already-redacted material and images are not re-read to fill in evidence.
 
-普通助手会话保持原有编辑和重新执行行为。从某轮删除对话也不会撤销已经发生的设备操作或记忆写入。
+Regular assistant conversations keep their existing editing and re-execution behavior. Deleting a conversation from a given turn also does not undo device operations or memory writes that have already occurred.

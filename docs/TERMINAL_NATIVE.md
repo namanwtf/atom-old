@@ -1,33 +1,33 @@
-# 终端原生组件
+# Native Terminal Components
 
-Eta 将终端辅助程序作为独立 ELF 可执行文件打包在 `jniLibs` 中。文件使用 `.so` 后缀以便由 Android 安装器提取到只读的 `nativeLibraryDir`，不会通过 JNI 加载，也不从可写目录执行 Android 原生辅助程序。
+Atom packages its terminal helper programs as standalone ELF executables under `jniLibs`. The files use a `.so` suffix so the Android installer extracts them to the read-only `nativeLibraryDir`; they are not loaded through JNI, and Android native helper programs are not executed from a writable directory.
 
-| 程序 | ABI | 用途 |
+| Program | ABI | Purpose |
 | --- | --- | --- |
-| `libeta_pty.so` | arm64-v8a | 为普通 Android Shell 和 Linux 会话创建真实伪终端 |
-| `libproot_exec.so` | arm64-v8a | 在 App UID 下运行 Linux 用户空间 |
-| `libproot_loader.so` | arm64-v8a | 与 PRoot 同一次编译产生的同 ABI 加载器 |
+| `libeta_pty.so` | arm64-v8a | Creates a real pseudo-terminal for regular Android Shell and Linux sessions |
+| `libproot_exec.so` | arm64-v8a | Runs a Linux userspace under the app UID |
+| `libproot_loader.so` | arm64-v8a | A same-ABI loader produced by the same build as PRoot |
 
-APK 仅支持 ARM64。`app/build.gradle.kts` 的 `ndk.abiFilters` 同时限制本地与依赖 AAR 的原生库，Debug 和 Release 均只打包 `arm64-v8a`。
+The APK supports ARM64 only. `ndk.abiFilters` in `app/build.gradle.kts` restricts both local and dependency-AAR native libraries, so Debug and Release both package only `arm64-v8a`.
 
-PRoot 只支持本机对应的 64 位 Linux rootfs，不执行异构指令集，也不提供设备 Root 权限。PRoot 静态链接 talloc 和 libandroid-shmem，运行时只依赖 Android 系统库。构建的 ELF 使用 16 KiB 页对齐。
+PRoot only supports a 64-bit Linux rootfs matching the device; it does not execute heterogeneous instruction sets and does not provide device root permissions. PRoot statically links talloc and libandroid-shmem, and at runtime depends only on Android system libraries. The built ELF uses 16 KiB page alignment.
 
-## 运行接口
+## Runtime Interface
 
-PTY 参数为 `rows cols -- executable args...`，Root 与普通身份的控制台会话都由它建立独立 session。标准输出传输原始终端字节；标准输入按帧传输，帧头为 1 字节类型与 2 字节大端长度：类型 0 为终端字节，原样写入伪终端；类型 1 为窗口尺寸，载荷是大端 rows、cols 各 2 字节，取值 1 到 1000，写入后由内核向前台进程组发送 SIGWINCH；未知类型按长度跳过。Ctrl-C 作为终端字节经 PTY 发送到当前前台进程组；输入管道关闭时发送终端 EOF；关闭窗口、父进程退出或输出管道断开时清理终端进程组。退出码保留子进程状态。
+The PTY arguments are `rows cols -- executable args...`; both root and regular-identity console sessions are set up as independent sessions by it. Standard output carries raw terminal bytes; standard input is transferred in frames with a 1-byte type and a 2-byte big-endian length header: type 0 is terminal bytes, written verbatim to the pseudo-terminal; type 1 is a window-size payload of big-endian rows and cols (2 bytes each, values 1 to 1000), after which the kernel sends SIGWINCH to the foreground process group; unknown types are skipped by length. Ctrl-C is sent as a terminal byte through the PTY to the current foreground process group; closing the input pipe sends a terminal EOF; the terminal process group is cleaned up on window close, parent exit, or output-pipe disconnect. The exit code preserves the child process status.
 
-PRoot 调用方必须设置 `PROOT_LOADER` 为当前 `nativeLibraryDir/libproot_loader.so`，设置 `PROOT_TMP_DIR` 为 Eta 可写的私有临时目录。缺失加载器不会转而寻找其他应用的安装路径。共享内存补丁也使用同一临时目录，不依赖全局 `/tmp`。
+PRoot callers must set `PROOT_LOADER` to the current `nativeLibraryDir/libproot_loader.so` and `PROOT_TMP_DIR` to a private temporary directory writable by Atom. A missing loader will not fall back to another app's installation path. The shared-memory patch also uses the same temporary directory and does not rely on a global `/tmp`.
 
-## 重建
+## Rebuilding
 
-构建需要与 `gradle/libs.versions.toml` 的 `ndk` 条目一致的 Android NDK、Python 3、GNU make、patch 与 tar，在 macOS 或 Linux 上运行：
+Building requires an Android NDK matching the `ndk` entry in `gradle/libs.versions.toml`, plus Python 3, GNU make, patch, and tar, run on macOS or Linux:
 
 ```sh
 ANDROID_NDK_HOME=/path/to/android-ndk scripts/build-terminal-native.sh
 ```
 
-脚本先核对 NDK 的 `source.properties` 与版本目录，再使用 APK 同步附带的固定源码压缩包，并校验 SHA-256；缺少源码时才从上游固定版本地址下载。第三方源码版本、URL、摘要和编译参数以脚本为准。`ETA_NATIVE_SOURCES` 与 `ETA_NATIVE_BUILD` 可以分别指定源码缓存和临时构建目录。编译日志保存在构建目录中，不包含模型配置或用户文件。
+The script first verifies the NDK's `source.properties` and version directory, then uses the pinned source archive shipped alongside the APK and checks its SHA-256; it only downloads from the upstream pinned-version URL when the source is missing. Third-party source versions, URLs, digests, and compile flags are authoritative from the script. `ETA_NATIVE_SOURCES` and `ETA_NATIVE_BUILD` can specify the source cache and temporary build directory respectively. Build logs are kept in the build directory and do not contain model configuration or user files.
 
-脚本只生成 ARM64 ELF，并把实际脚本、版本目录、PTY 源码及补丁自动打入 `app/src/main/assets/native-sources/eta-native-build.tgz`，该包不应手工修改。APK 的 `assets/native-sources` 还包含 PRoot、talloc 和 libandroid-shmem 的原始源码；源码资源使用 `.tgz` 后缀，避免 Android 资源打包自动解压 `.gz` 文件后改变名称与校验值。`assets/licenses` 包含各自许可证。解压构建包恢复仓库相对路径，再把原始源码所在目录传给 `ETA_NATIVE_SOURCES`，即可重建随包组件。
+The script only produces ARM64 ELFs, and automatically packs the actual script, version directory, PTY source, and patches into `app/src/main/assets/native-sources/eta-native-build.tgz`; that archive should not be edited by hand. The APK's `assets/native-sources` also contains the original sources of PRoot, talloc, and libandroid-shmem; source resources use a `.tgz` suffix to avoid Android resource packaging auto-extracting `.gz` files and changing names and checksums. `assets/licenses` contains the respective licenses. Extract the build archive to restore repository-relative paths, then pass the directory containing the original sources to `ETA_NATIVE_SOURCES` to rebuild the bundled components.
 
-源码包与重新生成的二进制需要一起更新。相关第三方程序和补丁继续适用各自开源许可证；详见[第三方声明](THIRD_PARTY_NOTICES.md)。
+The source archive and the regenerated binaries need to be updated together. The relevant third-party programs and patches continue to apply their own open-source licenses; see [Third-Party Notices](THIRD_PARTY_NOTICES.md).

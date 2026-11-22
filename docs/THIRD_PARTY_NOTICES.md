@@ -1,50 +1,50 @@
-# 第三方声明
+# Third-Party Notices
 
-## 终端原生组件
+## Native Terminal Components
 
-Eta 的免 Root Linux 后端以独立进程运行 [PRoot](https://github.com/termux/proot)，并静态链接 [talloc](https://talloc.samba.org/) 与 [libandroid-shmem](https://github.com/termux/libandroid-shmem)。PRoot 源码采用 GPL-2.0-or-later；talloc 采用 LGPL-3.0-or-later；libandroid-shmem 采用 BSD-3-Clause。附带的组合 PRoot 可执行程序按 GPL-3.0-or-later 分发，各组件版权与许可证保留。
+Atom's rootless Linux backend runs [PRoot](https://github.com/termux/proot) as an independent process and statically links [talloc](https://talloc.samba.org/) and [libandroid-shmem](https://github.com/termux/libandroid-shmem). The PRoot source uses GPL-2.0-or-later; talloc uses LGPL-3.0-or-later; libandroid-shmem uses BSD-3-Clause. The bundled combined PRoot executable is distributed under GPL-3.0-or-later, with each component's copyright and license retained.
 
-APK 的 `assets/native-sources` 附带校验过的原始源码，以及从实际构建入口自动生成的脚本、PTY 源码和补丁包；`assets/licenses` 附带许可证全文。构建脚本与说明位于 [终端原生组件](TERMINAL_NATIVE.md)。这些独立第三方程序继续适用各自许可证。
+The APK's `assets/native-sources` ships verified original sources, plus scripts, PTY source, and patch archives generated automatically from the actual build entry; `assets/licenses` ships the full license texts. The build script and instructions are at [Native Terminal Components](TERMINAL_NATIVE.md). These independent third-party programs continue to apply their own licenses.
 
-## models.dev 模型目录
+## models.dev Model Catalog
 
-Eta 的离线模型目录快照来自 [models.dev](https://models.dev/api.json)，由 `scripts/update-models-dev-catalog.py` 获取原始 JSON 并压缩后随 APK 分发。models.dev 的目录数据和源码采用 [MIT License](https://github.com/anomalyco/models.dev/blob/dev/LICENSE)，版权归 © 2025 models.dev。版权与许可全文随 APK 保存在 [`assets/licenses/models-dev-MIT.txt`](../app/src/main/assets/licenses/models-dev-MIT.txt)。
+Atom's offline model catalog snapshot comes from [models.dev](https://models.dev/api.json), fetched as raw JSON by `scripts/update-models-dev-catalog.py`, compressed, and distributed with the APK. models.dev's catalog data and source use the [MIT License](https://github.com/anomalyco/models.dev/blob/dev/LICENSE), copyright © 2025 models.dev. The copyright and full license text are shipped with the APK at [`assets/licenses/models-dev-MIT.txt`](../app/src/main/assets/licenses/models-dev-MIT.txt).
 
-## 网页正文解析
+## Web Page Text Parsing
 
-Eta 使用 [jsoup](https://jsoup.org/) 在本机解析已经下载的 HTML。jsoup 采用 MIT License，版权归 Jonathan Hedley；许可全文随 APK 保存在 [`assets/licenses/jsoup-MIT.txt`](../app/src/main/assets/licenses/jsoup-MIT.txt)。依赖版本以 `gradle/libs.versions.toml` 为准。
+Atom uses [jsoup](https://jsoup.org/) to parse already-downloaded HTML on-device. jsoup uses the MIT License, copyright Jonathan Hedley; the full license text ships with the APK at [`assets/licenses/jsoup-MIT.txt`](../app/src/main/assets/licenses/jsoup-MIT.txt). Dependency versions are authoritative from `gradle/libs.versions.toml`.
 
-Android 标准库兼容使用 [desugar_jdk_libs](https://github.com/google/desugar_jdk_libs) 的 NIO 规格，按 GNU GPL v2 with Classpath Exception 分发，许可全文保存在 [`assets/licenses/desugar-jdk-libs-LICENSE.txt`](../app/src/main/assets/licenses/desugar-jdk-libs-LICENSE.txt)。这些组件保留各自许可证权利。
+Android standard-library compatibility uses the NIO spec of [desugar_jdk_libs](https://github.com/google/desugar_jdk_libs), distributed under GNU GPL v2 with Classpath Exception, with the full license text kept at [`assets/licenses/desugar-jdk-libs-LICENSE.txt`](../app/src/main/assets/licenses/desugar-jdk-libs-LICENSE.txt). These components retain their respective license rights.
 
-## 账号身份验证
+## Account Authentication
 
-Eta 使用 [Nimbus JOSE + JWT](https://connect2id.com/products/nimbus-jose-jwt) 校验 OAuth 登录的签名和身份声明。该库由 Connect2id Ltd. 维护，采用 Apache License 2.0；许可全文随 APK 保存在 [`assets/licenses/nimbus-jose-jwt-Apache-2.0.txt`](../app/src/main/assets/licenses/nimbus-jose-jwt-Apache-2.0.txt)。依赖版本以 `gradle/libs.versions.toml` 为准。
+Atom uses [Nimbus JOSE + JWT](https://connect2id.com/products/nimbus-jose-jwt) to verify the signatures and identity claims of OAuth logins. The library is maintained by Connect2id Ltd. and uses Apache License 2.0; the full license text ships with the APK at [`assets/licenses/nimbus-jose-jwt-Apache-2.0.txt`](../app/src/main/assets/licenses/nimbus-jose-jwt-Apache-2.0.txt). Dependency versions are authoritative from `gradle/libs.versions.toml`.
 
-## COUI 与 Miuix
+## COUI and Miuix
 
-Eta 的应用界面使用 [COUI](https://github.com/suqi8/coui)（Maven group 为 `io.github.suqi8.coui.kmp`，许可全文随 APK 保存在 [`assets/licenses/coui-Apache-2.0.txt`](../app/src/main/assets/licenses/coui-Apache-2.0.txt)）与 [Miuix](https://github.com/compose-miuix-ui/miuix)（采用 [Apache License 2.0](https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE)）。依赖版本以 `gradle/libs.versions.toml` 为准。
+Atom's app UI uses [COUI](https://github.com/suqi8/coui) (Maven group `io.github.suqi8.coui.kmp`; full license text ships with the APK at [`assets/licenses/coui-Apache-2.0.txt`](../app/src/main/assets/licenses/coui-Apache-2.0.txt)) and [Miuix](https://github.com/compose-miuix-ui/miuix) (under [Apache License 2.0](https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE)). Dependency versions are authoritative from `gradle/libs.versions.toml`.
 
 ## DexKit
 
-Eta 使用 [DexKit](https://github.com/LuckyPray/DexKit) 解析系统应用的 DEX 特征，定位经过混淆的 Hook 目标。依赖版本以 `gradle/libs.versions.toml` 为准，官方发布记录见 [Releases](https://github.com/LuckyPray/DexKit/releases)。
+Atom uses [DexKit](https://github.com/LuckyPray/DexKit) to parse DEX signatures of system apps and locate obfuscated hook targets. Dependency versions are authoritative from `gradle/libs.versions.toml`; official release records are at [Releases](https://github.com/LuckyPray/DexKit/releases).
 
-DexKit 的 JVM 接口等非 `Core/` 代码采用 [Apache License 2.0](https://github.com/LuckyPray/DexKit/blob/2.2.0/LICENSE)，`Core/` 原生解析代码采用 [GNU LGPL v3](https://github.com/LuckyPray/DexKit/blob/2.2.0/Core/LICENSE)。Eta 通过官方 AAR 使用其独立原生动态库；上游源码、构建配置与版权声明可在 [官方源码](https://github.com/LuckyPray/DexKit/tree/2.2.0) 获取。这些第三方组件继续适用各自许可证。
+DexKit's non-`Core/` code such as the JVM interface uses [Apache License 2.0](https://github.com/LuckyPray/DexKit/blob/2.2.0/LICENSE), and the `Core/` native parsing code uses [GNU LGPL v3](https://github.com/LuckyPray/DexKit/blob/2.2.0/Core/LICENSE). Atom uses its standalone native dynamic library through the official AAR; upstream source, build configuration, and copyright notices are available at [official source](https://github.com/LuckyPray/DexKit/tree/2.2.0). These third-party components continue to apply their own licenses.
 
 ## JetBrains Mono
 
-终端界面使用 [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) 2.304 的无连字版本（Regular、Bold），以字体资源随 APK 分发。该字体采用 SIL Open Font License 1.1，版权归 The JetBrains Mono Project Authors；许可全文随 APK 保存在 [`assets/licenses/jetbrains-mono-OFL.txt`](../app/src/main/assets/licenses/jetbrains-mono-OFL.txt)。
+The terminal UI uses the no-ligature version (Regular, Bold) of [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) 2.304, distributed as a font resource with the APK. The font uses the SIL Open Font License 1.1, copyright The JetBrains Mono Project Authors; the full license text ships with the APK at [`assets/licenses/jetbrains-mono-OFL.txt`](../app/src/main/assets/licenses/jetbrains-mono-OFL.txt).
 
 ## Material Icons
 
-Eta 的功能图标使用 AndroidX Compose Material Icons 的 Rounded 系列，通过 `material-icons-extended` 依赖提供。图标及其 AndroidX 实现采用 [Apache License 2.0](https://github.com/androidx/androidx/blob/androidx-main/LICENSE.txt)，来源见 [Material Design Icons](https://github.com/google/material-design-icons)。
+Atom's feature icons use the Rounded series of AndroidX Compose Material Icons, provided via the `material-icons-extended` dependency. The icons and their AndroidX implementation use [Apache License 2.0](https://github.com/androidx/androidx/blob/androidx-main/LICENSE.txt); source at [Material Design Icons](https://github.com/google/material-design-icons).
 
-## 应用图标
+## App Icon
 
-Eta 的应用图标取材自 Google [AI Edge Gallery](https://github.com/google-ai-edge/gallery) 的应用图标，转换为 VectorDrawable 并保留安全留白，通知图标为其单色变体。AI Edge Gallery 采用 [Apache License 2.0](https://github.com/google-ai-edge/gallery/blob/main/LICENSE)。
+Atom's app icon is derived from the app icon of Google's [AI Edge Gallery](https://github.com/google-ai-edge/gallery), converted to a VectorDrawable with safe padding retained, and the notification icon is its monochrome variant. AI Edge Gallery uses [Apache License 2.0](https://github.com/google-ai-edge/gallery/blob/main/LICENSE).
 
 ## Lucide Atom
 
-思考图标使用 [Lucide Atom](https://github.com/lucide-icons/lucide/blob/main/icons/atom.svg)，以本地 VectorDrawable 资源保存，不依赖 Lucide 图标库。该图标采用 ISC License：
+The thinking icon uses [Lucide Atom](https://github.com/lucide-icons/lucide/blob/main/icons/atom.svg), kept as a local VectorDrawable resource without depending on the Lucide icon library. The icon uses the ISC License:
 
 ```text
 ISC License
@@ -66,15 +66,13 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ## Android Hidden API Bypass
 
-Eta 使用 [Android Hidden API Bypass](https://github.com/LSPosed/AndroidHiddenApiBypass) 应用用户选择的预测性返回设置。该库采用 [Apache License 2.0](https://github.com/LSPosed/AndroidHiddenApiBypass/blob/main/LICENSE)。
+Atom uses [Android Hidden API Bypass](https://github.com/LSPosed/AndroidHiddenApiBypass) to apply the user-selected predictive-back setting. The library uses [Apache License 2.0](https://github.com/LSPosed/AndroidHiddenApiBypass/blob/main/LICENSE).
 
 ## Lobe Icons
 
-模型与提供商品牌图标来自
-[Lobe Icons](https://github.com/lobehub/lobe-icons) 的
-`@lobehub/icons-static-avatar` 1.13.0。原始 1280×1280 WebP 素材在不改变颜色和比例的前提下，无损缩放为 128×128 后随 Eta 本地打包。
+Model and provider brand icons come from `@lobehub/icons-static-avatar` 1.13.0 of [Lobe Icons](https://github.com/lobehub/lobe-icons). The original 1280×1280 WebP assets are losslessly scaled to 128×128 without changing colors or proportions and packaged locally with Atom.
 
-| Eta 资源 | Lobe Icons Avatar |
+| Atom resource | Lobe Icons Avatar |
 | --- | --- |
 | `provider_logo_openai.webp` | `openai.webp` |
 | `provider_logo_anthropic.webp` | `anthropic.webp` |
@@ -99,7 +97,7 @@ Eta 使用 [Android Hidden API Bypass](https://github.com/LSPosed/AndroidHiddenA
 | `model_logo_hunyuan.webp` | `hunyuan.webp` |
 | `model_logo_yi.webp` | `yi.webp` |
 
-Lobe Icons 使用 MIT License：
+Lobe Icons uses the MIT License:
 
 ```text
 MIT License
@@ -125,27 +123,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-OpenAI、Anthropic、Claude、阿里云百炼、Qwen、DeepSeek、Kimi、Xiaomi MiMo、MiniMax、StepFun、Z.ai、ChatGLM、Gemini、Gemma、Grok、Meta、Mistral、豆包、混元、Yi、硅基流动和 OpenRouter 的名称、图标及其他品牌标识归各自权利人所有。Eta 展示这些图标仅用于准确标识用户正在配置的模型服务，不表示这些厂商对 Eta 的赞助、认可或合作关系。OpenAI 图标的使用还应遵循其[品牌规范](https://openai.com/brand/)。
+The names, icons, and other brand marks of OpenAI, Anthropic, Claude, Alibaba Cloud Bailian, Qwen, DeepSeek, Kimi, Xiaomi MiMo, MiniMax, StepFun, Z.ai, ChatGLM, Gemini, Gemma, Grok, Meta, Mistral, Doubao, Hunyuan, Yi, SiliconFlow, and OpenRouter belong to their respective rights holders. Atom displays these icons only to accurately identify the model service the user is configuring, and does not imply sponsorship, endorsement, or partnership of these vendors with Atom. Use of the OpenAI icon should also follow its [brand guidelines](https://openai.com/brand/).
 
-## 可选语言运行时
+## Optional Language Runtimes
 
-Eta 不把 uv 或 Node.js 打包进 APK。用户主动安装对应 profile 时，Eta 下载当前固定的最新正式版制品；Debian 使用 Node.js 官方 Linux glibc 发行包，Alpine 使用其稳定仓库中的 `nodejs-current`，uv 按所选发行版下载官方 glibc 或 musl 制品。
+Atom does not bundle uv or Node.js into the APK. When the user actively installs the corresponding profile, Atom downloads the currently pinned latest stable artifacts; Debian uses the official Node.js Linux glibc distribution package, Alpine uses `nodejs-current` from its stable repository, and uv downloads the official glibc or musl artifact according to the selected distribution.
 
-| 工具 | 来源 | 许可证 |
+| Tool | Source | License |
 | --- | --- | --- |
 | uv / uvx | [astral-sh/uv](https://github.com/astral-sh/uv) | Apache License 2.0 / MIT |
-| Node.js / npm / npx | [nodejs/node](https://github.com/nodejs/node) | MIT 及发行包内第三方许可证 |
+| Node.js / npm / npx | [nodejs/node](https://github.com/nodejs/node) | MIT and third-party licenses inside the distribution package |
 
-## 可选 APK 分析工具
+## Optional APK Analysis Tools
 
-Eta 不把下列工具打包进 APK。用户在 Linux 工具环境页面主动安装“APK 分析”时，Eta 从固定官方 Release 下载并校验制品；工具保存在用户当前选择的 Alpine 或 Debian 环境中，适用各自许可证：
+Atom does not bundle the following tools into the APK. When the user actively installs "APK analysis" on the Linux tool environment page, Atom downloads and verifies artifacts from the pinned official Releases; tools are kept in the user's currently selected Alpine or Debian environment and apply their own licenses:
 
-| 工具 | 来源 | 许可证 |
+| Tool | Source | License |
 | --- | --- | --- |
 | JADX | [skylot/jadx](https://github.com/skylot/jadx) | Apache License 2.0 |
 | Apktool | [iBotPeaches/Apktool](https://github.com/iBotPeaches/Apktool) | Apache License 2.0 |
 | smali / baksmali | [google/smali](https://github.com/google/smali) | BSD 3-Clause License |
 
-JADX 的发行包许可证会随所需 CLI 文件一并保留；Apktool、smali 与 baksmali 的许可证和第三方声明保留在各自 JAR 制品中。Eta 仅提供经过校验的安装、命令入口和能力边界，不对这些工具重新授权。
+The license of JADX's distribution package is retained together with the required CLI files; the licenses and third-party notices of Apktool, smali, and baksmali are retained within their respective JAR artifacts. Atom only provides verified installation, command entry points, and capability boundaries, and does not re-license these tools.
 
-GitHub 的实际制品域名不可达或较慢时，安装器可能通过 `gh-proxy.com` 请求同一个公开 Release URL；Node.js 制品可能先通过 `cdn.npmmirror.com` 请求。下载入口会获知用户的网络地址及所请求的公开制品；Eta 不向其发送账号、Cookie、API Key 或其他 Eta 数据，并在落盘前继续校验内置的官方制品大小与 SHA-256。不希望使用下载入口的用户可以不安装对应可选档案。
+When GitHub's actual artifact domain is unreachable or slow, the installer may request the same public Release URL through `gh-proxy.com`; Node.js artifacts may be requested through `cdn.npmmirror.com` first. The download entry learns the user's network address and the requested public artifact; Atom does not send it accounts, cookies, API keys, or other Atom data, and continues to verify the built-in official artifact size and SHA-256 before writing to disk. Users who do not want to use the download entry can simply not install the corresponding optional profile.
