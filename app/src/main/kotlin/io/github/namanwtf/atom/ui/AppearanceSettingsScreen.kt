@@ -251,6 +251,40 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                     }
                 }
 
+                // Pure black and the floating bubble have nothing to do with
+                // Monet, but they lived inside the Monet-only block, so they
+                // disappeared whenever Monet colours were off.
+                item(key = "appearance_bubble") {
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 12.dp)
+                            .padding(bottom = 12.dp),
+                    ) {
+                        SwitchPreference(
+                            title = stringResource(R.string.appearance_pure_black),
+                            summary = stringResource(R.string.appearance_pure_black_summary),
+                            checked = appearance.pureBlackEnabled,
+                            onCheckedChange = { enabled ->
+                                update { current -> current.copy(pureBlackEnabled = enabled) }
+                            },
+                        )
+                        SwitchPreference(
+                            title = stringResource(R.string.appearance_floating_bubble),
+                            summary = stringResource(R.string.appearance_floating_bubble_summary),
+                            checked = appearance.floatingBubbleEnabled,
+                            onCheckedChange = { enabled ->
+                                update { current -> current.copy(floatingBubbleEnabled = enabled) }
+                                val ctx = context
+                                if (enabled) {
+                                    ctx.startService(Intent(ctx, AtomBubbleService::class.java))
+                                } else {
+                                    ctx.stopService(Intent(ctx, AtomBubbleService::class.java))
+                                }
+                            },
+                        )
+                    }
+                }
+
                 item(key = "appearance_interface") {
                     SmallTitle(text = stringResource(R.string.appearance_group_interface))
                     Card(
