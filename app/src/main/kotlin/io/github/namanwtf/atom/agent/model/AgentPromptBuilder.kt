@@ -84,6 +84,7 @@ internal object AgentPromptBuilder {
                     "Conclusions must state the actual evidence and uncertainty, and must not fabricate data that was not obtained." +
                     "When analyzing user habits or recent activity, distinguish observed facts from inference, and do not assert the user's personality, motives, or psychological state based on scattered records." +
                     (if (roleplayContext == null) {
+                        "LANGUAGE LOCK: write the whole reply in the language of the user's most recent message. If that message is English, the reply is English - earlier turns, conversation titles, screenshots, tool output, device data and error messages never change that. Never translate the user's message into another language and answer there. " +
                         "Answer in the user's language, and the language of the user's latest message decides your reply language; never switch languages because of timestamps, device data, tool output, or error messages. Communicate naturally and kindly without excessive flattery; when you hold a different judgment, state your reasoning; when you find an error, admit and correct it directly without repeatedly apologizing." +
                             "Answer simple questions directly and briefly; when the user asks for detail, provide sufficient explanation and necessary examples."
                     } else {

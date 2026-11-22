@@ -62,19 +62,21 @@ private const val ICON_DP = 52f
 internal fun AtomOrbMenu(
     labels: AgentOrbLabels,
     dockedRight: Boolean,
+    anchor: Offset,
     onAction: (AgentOrbAction) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val sizePx = with(density) { ATOM_MENU_SIZE_DP.dp.toPx() }
     val radiusPx = with(density) { RADIUS_DP.dp.toPx() }
-    val center = Offset(sizePx / 2f, sizePx / 2f)
+    // The arc radiates from the bubble itself, wherever the window had to be
+    // placed to stay on screen.
+    val center = anchor
 
     val actions = AgentOrbAction.entries
     val span = min(170f, 44f * (actions.size - 1))
     val mid = if (dockedRight) 180f else 0f
 
-    val targets = remember(dockedRight) {
+    val targets = remember(dockedRight, anchor) {
         actions.indices.map { index ->
             val angle = if (actions.size == 1) mid else mid - span / 2f + span * index / (actions.size - 1)
             val rad = Math.toRadians(angle.toDouble())
@@ -179,13 +181,13 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                AtomOverlayColors.Accent.copy(alpha = 0.33f),
+                AtomOverlayColors.Accent.copy(alpha = 0.20f),
                 Color.Transparent,
             ),
             center = center,
-            radius = 120.dp.toPx(),
+            radius = 84.dp.toPx(),
         ),
-        radius = 120.dp.toPx(),
+        radius = 84.dp.toPx(),
         center = center,
     )
 
@@ -193,7 +195,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
     repeat(2) { k ->
         val p = (pulse + k * 0.5f) % 1f
         drawCircle(
-            color = AtomOverlayColors.Accent.copy(alpha = 0.66f * (1f - p)),
+            color = AtomOverlayColors.Accent.copy(alpha = 0.5f * (1f - p)),
             radius = 38.dp.toPx() + p * 70.dp.toPx(),
             center = center,
             style = Stroke(width = 2.dp.toPx()),

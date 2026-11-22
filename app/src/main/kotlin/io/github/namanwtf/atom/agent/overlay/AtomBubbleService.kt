@@ -196,6 +196,19 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val centerY = bubbleLp.y + bubbleHeight / 2
         val dockedRight = bubbleLp.x < metrics.bounds.width() / 2
 
+        // Keep the window on screen, then draw the arc from wherever the bubble
+        // actually sits inside it: a clamped window would otherwise put the
+        // menu somewhere else entirely.
+        val size = (ATOM_MENU_SIZE_DP * density).toInt()
+        val originX = (centerX - size / 2)
+            .coerceIn(0, (metrics.bounds.width() - size).coerceAtLeast(0))
+        val originY = (centerY - size / 2)
+            .coerceIn(0, (metrics.bounds.height() - size).coerceAtLeast(0))
+        val anchorOffset = androidx.compose.ui.geometry.Offset(
+            (centerX - originX).toFloat(),
+            (centerY - originY).toFloat(),
+        )
+
         val labels = AgentOrbLabels(
             hide = getString(R.string.bubble_hide),
             openChat = getString(R.string.bubble_open_chat),
@@ -211,6 +224,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     AtomOrbMenu(
                         labels = labels,
                         dockedRight = dockedRight,
+                        anchor = anchorOffset,
                         onAction = { action ->
                             hideMenu()
                             bubbleView?.visibility = View.VISIBLE
@@ -221,7 +235,6 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 }
             }
         }
-        val size = (ATOM_MENU_SIZE_DP * density).toInt()
         val lp = WindowManager.LayoutParams(
             size,
             size,
@@ -235,10 +248,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            // Centred on the bubble even when that hangs past the screen edge:
-            // the arc must radiate from the bubble, not from a clamped box.
-            x = centerX - size / 2
-            y = centerY - size / 2
+            x = originX
+            y = originY
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
