@@ -23,17 +23,22 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      - uses: android-actions/setup-android@v3
+      # ubuntu-latest ships the Android SDK. android-actions/setup-android@v3
+      # fails on the removed "tools" package, so configure the SDK directly.
+      - name: Setup Android SDK
+        run: |
+          set -e
+          if ! command -v sdkmanager >/dev/null 2>&1; then
+            export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+            echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          fi
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-37" >/dev/null 2>&1 || echo "note: platforms;android-37 not installable"
+          sdkmanager --list_installed | sed -n '1,40p'
 
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
-
-      - name: Accept SDK licenses
-        run: yes | sdkmanager --licenses > /dev/null || true
-
-      - name: Show installed platforms
-        run: sdkmanager --list_installed | sed -n '1,40p'
 
       - name: Assemble release
         run: |
