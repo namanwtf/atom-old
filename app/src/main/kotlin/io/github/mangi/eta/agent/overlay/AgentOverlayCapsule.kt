@@ -90,10 +90,10 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 顶部状态胶囊：收起时只显示一句当前步骤（后台虚拟屏激活时右侧镶嵌 18×32.dp 实时微缩镜），
- * 点击展开补充、暂停、停止及画廊装裱式虚拟屏交互视窗。
- * 位置固定在状态栏下方居中，不随 Agent 的点击位置移动，避免和目标控件重叠。
- * 状态文字只在语义变化时以上滑淡入切换，流式正文不进入胶囊。
+ * Top status capsule: when collapsed it shows only a single line of the current step (with a 18×32.dp live micro-lens inlaid on the right when the background virtual display is active);
+ * tapping expands it to reveal supplement, pause, stop, and the gallery-matte virtual display interaction stage.
+ * Position is fixed and centered below the status bar, and does not follow the Agent's tap position, avoiding overlap with the target control.
+ * Status text only switches with a slide-up fade when the semantics change; the streaming body does not enter the capsule.
  */
 @Composable
 internal fun AgentOverlayCapsule(
@@ -128,7 +128,7 @@ internal fun AgentOverlayCapsule(
         if (!enabled) supplementText.clearText()
     }
 
-    // 收起键盘后再切换窗口焦点，避免输入法在窗口失焦瞬间闪退或残留。
+    // Hide the keyboard before switching window focus, to avoid the IME flashing or lingering when the window loses focus.
     fun leaveSupplementMode(then: () -> Unit = {}) {
         focusManager.clearFocus(force = true)
         keyboard?.hide()
@@ -143,7 +143,7 @@ internal fun AgentOverlayCapsule(
         if (!expanded && supplementMode) leaveSupplementMode()
     }
 
-    // 为 Agent 手势让路：使用平滑减速曲线，不用弹簧回弹。
+    // Make way for the Agent's gestures: use a smooth deceleration curve, not a spring bounce.
     val clearance by animateFloatAsState(
         targetValue = if (yielded) 1f else 0f,
         animationSpec = if (yielded) {
@@ -156,7 +156,7 @@ internal fun AgentOverlayCapsule(
     val accent by animateColorAsState(overlayPhaseAccent(state.phase), tween(240), label = "capsule_accent")
     val statusText = state.status.localizedText()
     val expandDescription = stringResource(R.string.overlay_capsule_toggle, statusText)
-    // 展开进度只驱动绘制层的透明度与位移，不参与测量；控制区用 AnimatedVisibility 只在两端各测一次。
+    // Expansion progress drives only the draw layer's opacity and translation, not measurement; the control area uses AnimatedVisibility and is measured once at each end.
     val expansion by animateFloatAsState(
         targetValue = if (expanded) 1f else 0f,
         animationSpec = tween(durationMillis = 260, easing = SmoothOutEasing),
@@ -362,7 +362,7 @@ internal fun AgentOverlayCapsule(
     }
 }
 
-/** 运行中是旋转的弧形光点，暂停为静止空心环，结束为实心点；只在运行时持有帧动画。 */
+/** While running it is a rotating arc light dot, paused is a static hollow ring, finished is a solid dot; a frame animation is held only while running. */
 @Composable
 private fun PhaseIndicator(phase: AgentOverlayPhase, accent: Color) {
     val size = 14.dp
@@ -415,8 +415,8 @@ private fun PhaseIndicator(phase: AgentOverlayPhase, accent: Color) {
 }
 
 /**
- * 思考尾句：单行、从左侧裁掉旧内容，让最新的字始终可见。
- * 流式增量只改文字，不做逐字动画；行的出现与消失用高度不变的淡入淡出，避免胶囊上下跳动。
+ * Trailing thought line: single line, old content is clipped from the left so the latest characters stay visible.
+ * Streaming increments only change the text, with no per-character animation; the line appears and disappears with a height-preserving fade to avoid the capsule jumping up and down.
  */
 @Composable
 private fun ThoughtLine(thought: String) {
@@ -430,7 +430,7 @@ private fun ThoughtLine(thought: String) {
         fontSize = 11.sp,
         lineHeight = 14.sp,
         maxLines = 1,
-        // 起始端省略：保留尾部最新的推理，像滚动字幕一样向前推进。
+        // Start ellipsis: keep the latest trailing reasoning, advancing forward like a scrolling marquee.
         overflow = TextOverflow.StartEllipsis,
         modifier = Modifier
             .padding(top = 1.dp)

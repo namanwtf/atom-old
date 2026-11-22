@@ -5,7 +5,7 @@ import io.github.mangi.eta.agent.runtime.AgentRuntimeWire
 import io.github.mangi.eta.agent.runtime.GuiControlStatus
 import io.github.mangi.eta.agent.tool.AgentToolRequirements
 
-/** 浮窗只跟随实际手机操作权；模型正在生成工具参数不表示已经可以操作前台。 */
+/** The overlay only follows actual phone control; the model generating tool arguments does not mean the foreground can already be operated. */
 internal object AgentOverlayVisibilityPolicy {
     fun shouldRevealFor(event: AgentEvent): Boolean = when (event) {
         is AgentEvent.GuiControlChanged -> event.status == GuiControlStatus.Acquired
@@ -30,8 +30,8 @@ internal object AgentOverlayVisibilityPolicy {
         requiresEntrySurfaceDismissal(event.name) && event.success != false
 
     /**
-     * App 自身聊天页发起的任务，当用户仍停留在 Eta 前台且未启用后台虚拟屏时不再叠加系统浮窗，
-     * 避免遮挡已经在展示实时过程的对话流；若后台虚拟屏已激活，则保留顶部微缩镜胶囊供用户随时展开查看或接管。
+     * For tasks initiated from the app's own chat page, when the user is still on the Eta foreground and the background virtual display is not enabled, no system overlay is stacked,
+     * avoiding covering the conversation stream that is already showing the live process; if the background virtual display is active, keep the top micro-lens capsule so the user can expand to view or take over at any time.
      */
     internal fun shouldSuppressOverlayInEtaUi(
         handoffSource: String?,

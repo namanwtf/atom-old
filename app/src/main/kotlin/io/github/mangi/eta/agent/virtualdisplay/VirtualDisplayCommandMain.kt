@@ -17,11 +17,11 @@ import org.json.JSONObject
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 /**
- * 进程内 Surface 临时登记表。
+ * In-process temporary registry of Surfaces.
  *
- * 当设备仅具 Root 而未挂载 system_server Hook 时，Eta 主进程将 ImageReader.surface
- * 以一次性随机 token 放入此表；特权子进程（UID 0 / 1000）通过受保护的 ContentProvider
- * 取出 Parcelable Surface 并在系统权限下创建受信任 VirtualDisplay。
+ * When the device has only Root and no system_server hook mounted, the Eta main process places ImageReader.surface
+ * into this table under a one-shot random token; a privileged child process (UID 0 / 1000) uses the protected ContentProvider to
+ * retrieve the Parcelable Surface and create a trusted VirtualDisplay under system privileges.
  */
 internal object VirtualDisplaySurfaceRegistry {
     private data class Entry(
@@ -57,19 +57,19 @@ internal object VirtualDisplaySurfaceRegistry {
 }
 
 /**
- * Root 特权虚拟屏桥接入口（由 app_process 启动）。
+ * Root-privileged virtual display bridge entry point (launched by app_process).
  *
- * 支持两种模式：
- * 1. action="hold_display"：通过 ContentProvider 取得 Eta 进程的 Surface，以系统身份创建
- *    TRUSTED VirtualDisplay，输出 ETA_VD_READY:<displayId> 后保持存活；stdin 断开即自动释放。
- * 2. action="move_to_main"：查找指定 displayId 或 packageName 的 RootTask 并调用
- *    IActivityTaskManager.moveRootTaskToDisplay 迁移至物理主屏（DEFAULT_DISPLAY）。
+ * Supports two modes:
+ * 1. action="hold_display": obtains the Eta process's Surface via ContentProvider, and creates under system identity
+ *    a TRUSTED VirtualDisplay, prints ETA_VD_READY:<displayId>, then stays alive; it is released automatically when stdin disconnects.
+ * 2. action="move_to_main": finds the RootTask for the given displayId or packageName and calls
+ *    IActivityTaskManager.moveRootTaskToDisplay to move it to the physical main display (DEFAULT_DISPLAY).
  */
 internal object VirtualDisplayCommandMain {
     const val READY_PREFIX = "ETA_VD_READY:"
     const val RESULT_PREFIX = "ETA_VD_RESULT:"
 
-    // 静态强引用持有 VirtualDisplay 与 Surface，防止 ART 局部栈帧优化在等待期间提前触发 GC finalize 销毁虚拟屏。
+    // Hold VirtualDisplay and Surface via static strong references to prevent ART local stack-frame optimization from triggering GC finalize and destroying the virtual display while waiting.
     @Volatile
     private var retainedVirtualDisplay: android.hardware.display.VirtualDisplay? = null
 
@@ -127,7 +127,7 @@ internal object VirtualDisplayCommandMain {
             exitProcess(1)
         }
 
-        // 优先切换至 SYSTEM_UID (1000) 以通过 DisplayManagerService 对 ADD_TRUSTED_DISPLAY 与 CAPTURE_VIDEO_OUTPUT 的校验
+        // Prefer switching to SYSTEM_UID (1000) to pass DisplayManagerService checks for ADD_TRUSTED_DISPLAY and CAPTURE_VIDEO_OUTPUT
         switchToSystemUidIfPossible()
 
         val virtualDisplay = createTrustedVirtualDisplay(surface, width, height, densityDpi)
@@ -186,7 +186,7 @@ internal object VirtualDisplayCommandMain {
                     if (line.trim() == "release") break
                 }
             } catch (_: Throwable) {
-                // 宿主关闭管道或取消任务
+                // The host closed the pipe or cancelled the task
             } finally {
                 mainHandler.post {
                     releaseRetainedDisplay()
@@ -241,7 +241,7 @@ internal object VirtualDisplayCommandMain {
         switchToSystemUidIfPossible()
         return try {
             val wms = resolveWindowManagerService()
-            // DisplayContent 与 mDisplayImePolicyCache 在刚创建虚拟屏时可能存在短暂异步就绪窗口，短重试后再决定回退主屏。
+            // DisplayContent and mDisplayImePolicyCache may have a brief async readiness window right after the virtual display is created; retry briefly before deciding to fall back to the main display.
             CanvasRoutingPolicy.applyDisplayImePolicyHide(
                 wms = wms,
                 displayId = displayId,
@@ -258,8 +258,8 @@ internal object VirtualDisplayCommandMain {
     }
 
     private fun resolveWindowManagerService(): Any? {
-        // app_process 未经过 Zygote bindApplication，Android 16/17 上 WindowManagerGlobal.getWindowManagerService()
-        // 可能因读取未初始化的 ApplicationSharedMemory 而抛出 IllegalStateException；优先直接获取 Binder 代理。
+        // app_process does not go through Zygote bindApplication; on Android 16/17, WindowManagerGlobal.getWindowManagerService()
+        // may throw IllegalStateException from reading uninitialized ApplicationSharedMemory; prefer obtaining the Binder proxy directly.
         val directProxy = runCatching {
             val smClass = Class.forName("android.os.ServiceManager")
             val binder = smClass.getMethod("getService", String::class.java)

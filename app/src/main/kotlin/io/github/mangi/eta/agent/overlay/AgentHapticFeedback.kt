@@ -7,10 +7,10 @@ import android.os.VibratorManager
 import android.provider.Settings
 
 /**
- * Agent 前台操作的触感语义。
+ * Haptic semantics for the Agent's foreground operations.
  *
- * 优先让系统根据线性马达能力渲染预定义 primitive；设备不支持时退回系统 effect，
- * 避免固定时长、默认振幅带来的持续嗡鸣感。
+ * Prefer letting the system render a predefined primitive based on the linear motor's capability; when the device does not support it, fall back to a system effect,
+ * avoiding the continuous buzz of a fixed duration and default amplitude.
  */
 internal object AgentHapticFeedback {
     enum class Type(

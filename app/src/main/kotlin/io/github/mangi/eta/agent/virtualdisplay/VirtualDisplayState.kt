@@ -5,8 +5,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 
 /**
- * 虚拟屏画布内的微距触控视觉反馈。
- * 坐标全部归一化到 [0f, 1f]，与画布当前渲染尺寸解耦，在微缩镜与画廊视窗中均可精确绘制。
+ * Macro touch visual feedback inside the virtual display canvas.
+ * Coordinates are normalized to [0f, 1f], decoupled from the canvas's current render size, so they can be drawn precisely in both the micro-lens and the gallery stage.
  */
 @Immutable
 internal sealed interface VirtualTouchEffect {
@@ -35,7 +35,7 @@ internal sealed interface VirtualTouchEffect {
 }
 
 /**
- * 虚拟屏实时状态快照，供顶部胶囊微缩镜、画廊装裱视窗与破壁全屏过渡共享订阅。
+ * Real-time state snapshot of the virtual display, shared and subscribed by the top capsule micro-lens, the gallery stage, and the fullscreen handoff transition.
  */
 @Immutable
 internal data class VirtualDisplaySnapshot(
@@ -45,14 +45,14 @@ internal data class VirtualDisplaySnapshot(
     val height: Int = 2400,
     val appName: String = "",
     val packageName: String = "",
-    /** 用户是否已在画廊视窗内开启手动触控接管。 */
+    /** Whether the user has enabled manual touch takeover inside the gallery stage. */
     val userControlling: Boolean = false,
-    /** 是否正在执行从虚拟屏到物理主屏的破壁全屏放大动画。 */
+    /** Whether the fullscreen handoff zoom animation from the virtual display to the physical main display is in progress. */
     val materializingToMain: Boolean = false,
-    /** 最新采集的画面帧。 */
+    /** The most recently captured frame. */
     val frame: ImageBitmap? = null,
     val frameSequence: Long = 0L,
-    /** 最近一次在虚拟屏内发生的手势光效。 */
+    /** The most recent gesture glow effect that occurred inside the virtual display. */
     val touchEffect: VirtualTouchEffect? = null,
 ) {
     val aspectRatio: Float

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalResources
 import io.github.mangi.eta.R
 
-/** 浮窗只保存语义状态，文案在渲染时根据当前系统语言解析。 */
+/** The overlay stores only semantic state; the copy is resolved at render time according to the current system language. */
 internal sealed interface AgentOverlayStatus {
     data object Reasoning : AgentOverlayStatus
     data object SupplementReceived : AgentOverlayStatus
@@ -26,11 +26,11 @@ internal sealed interface AgentOverlayStatus {
 @Composable
 internal fun AgentOverlayStatus.localizedText(): String = localizedText(LocalResources.current)
 
-/** 通知等非 Compose 表面与浮层共用同一套状态文案。 */
+/** Non-Compose surfaces such as notifications share the same set of status copy as the overlay. */
 internal fun AgentOverlayStatus.localizedText(resources: Resources): String = when (this) {
     AgentOverlayStatus.Reasoning -> resources.getString(R.string.overlay_reasoning)
     AgentOverlayStatus.SupplementReceived -> resources.getString(R.string.overlay_supplement_received)
-    // 工具名本身就是动作（点击元素、读取文件），不再加"执行："前缀。
+    // The tool name is itself the action (tap element, read file), so no "execute:" prefix is added.
     is AgentOverlayStatus.RunningTool -> toolDisplayName(resources, name)
     is AgentOverlayStatus.HostedToolRunning -> resources.getString(R.string.overlay_hosted_tool_running, name)
     AgentOverlayStatus.ResultReady -> resources.getString(R.string.overlay_result_ready)

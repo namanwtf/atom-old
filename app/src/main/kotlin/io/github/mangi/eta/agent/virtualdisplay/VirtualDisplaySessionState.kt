@@ -1,6 +1,6 @@
 package io.github.mangi.eta.agent.virtualdisplay
 
-/** 调用方在同一状态锁内使用；创建、移除与子进程退出都必须携带对应实例的身份。 */
+/** Used by callers under the same state lock; creation, removal, and child-process exit must all carry the identity of the corresponding instance. */
 internal class VirtualDisplaySessionState {
     class Token internal constructor()
 

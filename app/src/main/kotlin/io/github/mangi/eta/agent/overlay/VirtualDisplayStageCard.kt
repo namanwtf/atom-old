@@ -60,9 +60,9 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
- * 镶嵌在收起态顶部胶囊右侧的 18×32.dp 实时微缩取景器（Micro-Lens）。
+ * The 18×32.dp live micro viewfinder (Micro-Lens) inlaid on the right of the collapsed top capsule.
  *
- * 平时安静展示虚拟屏缩略画面；当虚拟屏内发生点击或滑动时，外圈泛起柔和的呼吸微光。
+ * Normally it quietly shows a thumbnail of the virtual display; when a tap or swipe happens inside the virtual display, a soft breathing glow rises around the rim.
  */
 @Composable
 internal fun VirtualDisplayMicroLens(
@@ -133,10 +133,10 @@ internal fun VirtualDisplayMicroLens(
 }
 
 /**
- * 画廊装裱式虚拟屏视窗（Gallery Matte Stage）。
+ * Gallery-matte virtual display stage (Gallery Matte Stage).
  *
- * 采用外框 28.dp + 10.dp 留白衬底 + 内画框 18.dp 的同心圆角装裱设计，
- * 支持用户手指直接在画布上点按/滑动接管，以及一键全屏投射至物理主屏。
+ * Uses a concentric rounded matte design of 28.dp outer frame + 10.dp matte backing + 18.dp inner frame,
+ * supporting direct tap/swipe takeover on the canvas by the user's finger, and one-tap fullscreen projection to the physical main display.
  */
 @Composable
 internal fun VirtualDisplayStageSection(
@@ -163,7 +163,7 @@ internal fun VirtualDisplayStageSection(
             .padding(horizontal = StageMattePadding, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // ── 画廊留白内衬画布（Concentric 18.dp Corner） ────────────────────
+        // ── Gallery matte inner canvas（Concentric 18.dp Corner） ────────────────────
         Box(
             modifier = Modifier
                 .height(StageCanvasHeight)
@@ -247,7 +247,7 @@ internal fun VirtualDisplayStageSection(
 
         Spacer(Modifier.height(10.dp))
 
-        // ── 极简画廊信息与接管栏 ───────────────────────────────────────────
+        // ── Minimal gallery info and takeover bar ───────────────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -342,7 +342,7 @@ private fun StagePillButton(
 }
 
 /**
- * 画布内生微距触控光效：点击呈现双层阻尼水波纹，滑动呈现流光尾迹。
+ * In-canvas macro touch glow effect: taps render a two-layer damped ripple, swipes render a flowing light trail.
  */
 @Composable
 private fun VirtualTouchEffectOverlay(
@@ -431,10 +431,10 @@ private fun VirtualTouchEffectOverlay(
 }
 
 /**
- * 破壁移交全屏放大过渡层（Seamless Materialize Overlay）。
+ * Fullscreen zoom transition layer for the handoff (Seamless Materialize Overlay).
  *
- * 当虚拟屏画面移交物理主屏时，画面从居中画廊视窗比例以弹簧曲线平滑放大贴合至物理全屏，
- * 圆角同步过渡到手机真实屏幕圆角，消除切屏闪烁与割裂感。
+ * When the virtual display frame is handed off to the physical main display, the frame smoothly zooms from the centered gallery-stage aspect to fit the physical fullscreen along a spring curve,
+ * while the corners transition in sync to the phone's real screen corners, eliminating the screen-switch flicker and the sense of a cut.
  */
 @Composable
 internal fun VirtualDisplayMaterializeOverlay(

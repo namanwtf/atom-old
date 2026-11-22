@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.json.JSONObject
 
-/** 已分离的资源只在工作线程回收，不再持有 Controller 的状态锁。 */
+/** Detached resources are reclaimed only on the worker thread, without holding the Controller's state lock. */
 internal class VirtualDisplaySessionResources(
     val reader: ImageReader?,
     val frameWorker: HandlerThread?,
@@ -60,7 +60,7 @@ internal class RootVirtualDisplayBridge private constructor(
             process.outputStream.flush()
             process.outputStream.close()
         } catch (_: Exception) {
-            // 断开的管道交给下面的进程树回收处理。
+            // A disconnected pipe is handed to the process-tree reaper below.
         }
         supervisor.beginClosing()
         try {
@@ -119,7 +119,7 @@ internal class RootVirtualDisplayBridge private constructor(
                             }
                         }
                     } catch (_: java.io.IOException) {
-                        // 管道关闭与子进程退出共用失效路径。
+                        // Pipe closure and child-process exit share the same invalidation path.
                     } finally {
                         disconnected.set(true)
                         readyLatch.countDown()

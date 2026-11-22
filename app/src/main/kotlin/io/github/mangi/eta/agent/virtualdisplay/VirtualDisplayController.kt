@@ -38,12 +38,12 @@ import org.json.JSONObject
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 /**
- * 虚拟屏会话与生命周期中枢。
+ * Hub for the virtual display session and lifecycle.
  *
- * 画面通过常驻 [ImageReader] 接收：
- * - 收起态（仅胶囊微缩取景器可见）按 ~6fps 节流更新，兼顾真实动感与低功耗；
- * - 展开态（画廊装裱视窗 / 用户手动接管）提升至 ~30fps 实时更新；
- * - Agent 调用 observe_screen(include_screenshot=true) 时直接提取最新原尺寸 Bitmap，无需等待无障碍截图冷却。
+ * Frames are received through a resident [ImageReader]:
+ * - Collapsed state (only the capsule micro-lens viewfinder visible) updates throttled at ~6fps, balancing real motion with low power;
+ * - Expanded state (gallery stage / user manual takeover) ramps up to ~30fps real-time updates;
+ * - When the Agent calls observe_screen(include_screenshot=true), the latest full-size Bitmap is extracted directly without waiting for the accessibility screenshot cooldown.
  */
 internal object VirtualDisplayController {
 
@@ -85,7 +85,7 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 确保受信任虚拟屏已就绪并返回其 displayId；不可用时返回 null，由调用方平滑回退至物理主屏。
+     * Ensures a trusted virtual display is ready and returns its displayId; returns null when unavailable, letting the caller fall back smoothly to the physical main display.
      */
     fun ensureVirtualDisplay(
         context: Context,
@@ -93,7 +93,7 @@ internal object VirtualDisplayController {
     ): Int? {
         val appContext = context.applicationContext
         val manager = appContext.getSystemService(DisplayManager::class.java) ?: return null
-        // 创建可包含 Binder 与 Root 等待；发布状态和释放不等待这把创建锁。
+        // Creation may involve Binder and Root waits; publishing state and releasing do not wait on this creation lock.
         synchronized(creationLock) {
             val existing = synchronized(lock) { sessionState.active }
             if (existing != null) {
@@ -199,7 +199,7 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 在虚拟屏上启动指定应用，并对其施加后台音频焦点静默保护。
+     * Launches the given app on the virtual display and applies background audio-focus silencing protection to it.
      */
     fun launchAppOnVirtualDisplay(
         context: Context,
@@ -262,7 +262,7 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 在虚拟屏上打开外部 URI。
+     * Opens an external URI on the virtual display.
      */
     fun openUriOnVirtualDisplay(
         context: Context,
@@ -313,8 +313,8 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 将虚拟屏中正在运行的应用无缝破壁移交到物理主屏（DEFAULT_DISPLAY）。
-     * 先触发 UI 层的 260ms 全屏放大贴合过渡，同时在底层原位迁移 RootTask。
+     * Seamlessly hands off the running app from the virtual display to the physical main display (DEFAULT_DISPLAY).
+     * First triggers the UI-layer 260ms fullscreen zoom-fit transition, while migrating the RootTask in place underneath.
      */
     fun handoffToMainDisplay(
         context: Context,
@@ -343,7 +343,7 @@ internal object VirtualDisplayController {
             rootAvailable = rootAvailable,
         )
 
-        // 留出 260ms 让 VirtualDisplayMaterializeOverlay 完成从画板到物理全屏的弹簧贴合动画
+        // Allow 260ms for VirtualDisplayMaterializeOverlay to finish its spring-fit animation from the stage to the physical fullscreen
         try {
             Thread.sleep(260L)
         } catch (_: InterruptedException) {
@@ -355,7 +355,7 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 当虚拟屏内部发生跨应用跳转（如从应用 A 跳往应用 B 或拉起授权页）时，同步更新当前虚拟屏承载的包名与应用名。
+     * When a cross-app jump happens inside the virtual display (e.g. from app A to app B or opening an authorization page), sync the package and app names currently hosted by the virtual display.
      */
     fun onTopPackageObserved(
         context: Context,
@@ -438,7 +438,7 @@ internal object VirtualDisplayController {
     }
 
     /**
-     * 用户在画廊视窗画布上直接触摸时，将归一化坐标注入虚拟屏。
+     * Injects normalized coordinates into the virtual display when the user touches the gallery stage canvas directly.
      */
     fun dispatchUserTapOnCanvas(
         normalizedX: Float,
@@ -581,7 +581,7 @@ internal object VirtualDisplayController {
                 if (!old.isRecycled) old.recycle()
             }
         } catch (_: Throwable) {
-            // 单帧解码异常不影响后续帧流
+            // A single-frame decode exception does not affect subsequent frames
         } finally {
             runCatching { image.close() }
         }
@@ -592,7 +592,7 @@ internal object VirtualDisplayController {
         val height = image.height
         if (width <= 0 || height <= 0) return null
 
-        // 优先直接通过 HardwareBuffer 映射，避免不同 ROM Gralloc 行尾 padding 差异导致的 BufferUnderflowException
+        // Prefer mapping directly through HardwareBuffer to avoid BufferUnderflowException caused by differing row-tail padding across ROM Gralloc implementations
         runCatching {
             image.hardwareBuffer?.use { hb ->
                 val wrapped = Bitmap.wrapHardwareBuffer(hb, ColorSpace.get(ColorSpace.Named.SRGB))
@@ -674,7 +674,7 @@ internal object VirtualDisplayController {
         packageName: String,
         rootAvailable: () -> Boolean,
     ): Boolean {
-        // 1. 尝试进程内通过 system_server Hook 放行的 moveRootTaskToDisplay 迁移
+        // 1. Try in-process moveRootTaskToDisplay migration allowed by the system_server hook
         val movedInProcess = runCatching {
             HiddenApiBypass.addHiddenApiExemptions("Landroid/app/ActivityTaskManager", "Landroid/app/IActivityTaskManager")
             val atmClass = Class.forName("android.app.ActivityTaskManager")
@@ -713,7 +713,7 @@ internal object VirtualDisplayController {
 
         if (movedInProcess) return true
 
-        // 2. Root 特权桥调用 moveRootTaskToDisplay
+        // 2. Root-privileged bridge call to moveRootTaskToDisplay
         if (rootAvailable()) {
             val apkPath = context.applicationInfo.sourceDir
             val cmd = "CLASSPATH=${DeviceToolContract.quote(apkPath)} app_process /system/bin " +
@@ -744,7 +744,7 @@ internal object VirtualDisplayController {
             }
         }
 
-        // 3. 兜底：以 SINGLE_TOP + NEW_TASK 在 DEFAULT_DISPLAY 唤起该应用
+        // 3. Fallback: launch the app on DEFAULT_DISPLAY with SINGLE_TOP + NEW_TASK
         if (packageName.isNotBlank()) {
             return runCatching {
                 val intent = context.packageManager.getLaunchIntentForPackage(packageName)
@@ -775,7 +775,7 @@ internal object VirtualDisplayController {
                     timeoutMillis = 3_000L,
                 )
             } catch (_: Throwable) {
-                // 忽略部分 ROM appops 差异
+                // Ignore appops differences across some ROMs
             } finally {
                 exec.close()
             }

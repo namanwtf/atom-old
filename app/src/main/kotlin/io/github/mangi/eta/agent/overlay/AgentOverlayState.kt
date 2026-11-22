@@ -4,11 +4,11 @@ import androidx.compose.runtime.Immutable
 import io.github.mangi.eta.agent.runtime.AgentEvent
 import io.github.mangi.eta.agent.runtime.GuiControlStatus
 
-/** Agent 浮窗所处的阶段。 */
+/** The phase the Agent overlay is in. */
 internal enum class AgentOverlayPhase { RUNNING, PAUSED, FINISHED, FAILED }
 
 /**
- * Agent 浮窗的渲染状态。由 [AgentEvent] 流累积而来，[AgentOverlayBubble] 直接消费。
+ * Render state of the Agent overlay, accumulated from the [AgentEvent] stream and consumed directly by [AgentOverlayBubble].
  */
 @Immutable
 internal data class AgentOverlayState(
@@ -17,11 +17,11 @@ internal data class AgentOverlayState(
     val status: AgentOverlayStatus = AgentOverlayStatus.Reasoning,
     val detailText: String = "",
     /**
-     * 胶囊第二行：思考时是模型最近一句可见推理，执行工具时是参数摘要（如"点击「搜索」"）。
-     * 只保留尾部一小段，供用户扫一眼知道 Agent 在想什么；完整推理仍在会话里。
+     * Capsule second line: while thinking it is the model's latest visible reasoning; while running a tool it is the argument summary (e.g. "taps 「Search」").
+     * Only a short trailing segment is kept so the user can glance at what the Agent is thinking; the full reasoning stays in the conversation.
      */
     val thought: String = "",
-    /** 当前在途的工具调用，保证多 Subagent 并发时不会因首个完成而提前切回思考态。 */
+    /** Currently in-flight tool calls; ensures that with multiple concurrent Subagents the state does not switch back to thinking early just because the first one finished. */
     val activeTools: List<ActiveTool> = emptyList(),
 ) {
     @Immutable
@@ -37,15 +37,15 @@ internal data class AgentOverlayState(
 }
 
 /**
- * 将一个 [AgentEvent] 折叠进当前渲染状态。
+ * Folds a single [AgentEvent] into the current render state.
  *
- * 胶囊与通知只展示用户关心的少数几个阶段：思考、操作某个工具、整理回答。
- * 请求模型、模型已响应、生成工具参数、轮次、读取截图等内部步骤不单独露出：
- * 它们每轮都会出现、持续不到一秒，频繁切换只会干扰用户。
- * 同一工具的完成与下一次调用之间也不切到"完成"，保持在操作态，避免文字来回跳。
+ * The capsule and notification only surface the few phases the user cares about: thinking, operating a tool, and composing the answer.
+ * Internal steps such as requesting the model, model responded, generating tool arguments, rounds, and reading screenshots are not exposed individually:
+ * they appear every round and last less than a second, so frequent switching would only distract the user.
+ * Between one tool finishing and the next call, the state also does not switch to "done"; it stays in the operating phase to avoid the text jumping back and forth.
  */
 internal fun AgentOverlayState.applyEvent(event: AgentEvent): AgentOverlayState {
-    // 暂停在下一个检查点生效，之前已在途的工具结束等事件不能把文字切回运行态。
+    // Pause takes effect at the next checkpoint; events like an already in-flight tool finishing must not switch the text back to the running state.
     if (phase == AgentOverlayPhase.PAUSED && event !is AgentEvent.RunFinished &&
         event !is AgentEvent.RunFailed && event !is AgentEvent.GuiControlChanged) {
         return this
@@ -76,7 +76,7 @@ private fun AgentOverlayState.projectEvent(event: AgentEvent): AgentOverlayState
         AgentEvent.AssistantBlockKind.TOOL_CALL -> this
     }
 
-    // 新一轮思考从空白开始，避免把上一轮的尾句当成当前想法。
+    // Each new round of thinking starts blank, to avoid treating the previous round's trailing sentence as the current thought.
     is AgentEvent.AssistantBlockStart -> if (event.kind == AgentEvent.AssistantBlockKind.THINKING) copy(thought = "") else this
 
     is AgentEvent.ToolStarted -> {
@@ -92,7 +92,7 @@ private fun AgentOverlayState.projectEvent(event: AgentEvent): AgentOverlayState
     }
     is AgentEvent.HostedToolStarted -> running(AgentOverlayStatus.HostedToolRunning(event.name), event.round)
 
-    // 多个工具并发（如并行 Subagent）时，仅当全部在途工具都结束后才切回思考态。
+    // When multiple tools run concurrently (e.g. parallel Subagents), switch back to thinking only after all in-flight tools have finished.
     is AgentEvent.ToolFinished -> {
         val remaining = if (event.toolCallId.isNotBlank() && activeTools.any { it.callId == event.toolCallId }) {
             activeTools.filterNot { it.callId == event.toolCallId }
@@ -143,7 +143,7 @@ private fun AgentOverlayState.projectEvent(event: AgentEvent): AgentOverlayState
 private fun AgentOverlayState.running(status: AgentOverlayStatus, round: Int) =
     copy(phase = AgentOverlayPhase.RUNNING, round = round, status = status)
 
-/** 正在执行工具或输出回答时，后台的请求、重试与压缩事件不打断当前文字。 */
+/** While running a tool or producing an answer, background request, retry, and compaction events do not interrupt the current text. */
 private fun AgentOverlayState.thinkingUnlessWorking(): AgentOverlayState = when (status) {
     is AgentOverlayStatus.RunningTool,
     is AgentOverlayStatus.HostedToolRunning,
@@ -157,7 +157,7 @@ private fun AgentOverlayState.thinkingUnlessWorking(): AgentOverlayState = when 
 private const val MaxStreamingPreviewChars = 320
 private const val MaxThoughtChars = 96
 
-/** 合并空白并只保留尾部，胶囊里显示的是"刚刚想到哪"，不是整段推理。 */
+/** Merges whitespace and keeps only the tail; the capsule shows "what was just thought", not the whole reasoning. */
 private fun appendThought(current: String, delta: String): String {
     val merged = (current + delta).replace(Regex("\\s+"), " ").trimStart()
     return if (merged.length <= MaxThoughtChars) merged else merged.takeLast(MaxThoughtChars).trimStart()

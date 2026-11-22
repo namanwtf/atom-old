@@ -4,19 +4,19 @@ import android.view.Display
 import java.util.Locale
 
 /**
- * 虚拟屏与物理主屏的空间路由契约。
+ * Spatial routing contract between the virtual display and the physical main display.
  *
- * 核心原则：
- * 1. 原地延续走物理主屏：目标应用已经处于物理主屏前台（用户正在注视）时，直接在主屏操作，避免抽走 Task 导致闪退回桌面。
- * 2. 系统全局界面走物理主屏：桌面、SystemUI、Eta 自身留在主屏。
- * 3. 跨应用委托默认走后台虚拟屏：从 Eta 聊天页发起，或在 A 应用唤醒但需打开后台 B 应用时，在虚拟屏静默执行。
- * 4. 临门一脚台前呈现：遇到收银台、安全窗口（FLAG_SECURE）或模型调用 present_to_user 时，原位迁移回物理主屏。
+ * Core principles:
+ * 1. In-place continuation goes to the physical main display: when the target app is already in the foreground of the physical main display (and the user is looking at it), operate directly on the main display to avoid pulling the Task away and flashing back to the launcher.
+ * 2. System-wide surfaces go to the physical main display: the launcher, SystemUI, and Eta itself stay on the main display.
+ * 3. Cross-app delegation defaults to the background virtual display: initiated from the Eta chat page, or when app A is awake but a background app B must be opened, execute silently on the virtual display.
+ * 4. The final step is presented in the foreground: on a checkout, a secure window (FLAG_SECURE), or when the model calls present_to_user, migrate back to the physical main display in place.
  */
 internal object CanvasRoutingPolicy {
 
     const val VIRTUAL_DISPLAY_NAME = "EtaAgentVirtualDisplay"
 
-    // DisplayManager 公开与内部受信任虚拟屏标志位（AOSP DisplayManager.java）
+    // DisplayManager public and internal trusted virtual display flags (AOSP DisplayManager.java)
     const val FLAG_PUBLIC = 1 shl 0
     const val FLAG_PRESENTATION = 1 shl 1
     const val FLAG_OWN_CONTENT_ONLY = 1 shl 3
@@ -30,21 +30,21 @@ internal object CanvasRoutingPolicy {
     const val FLAG_OWN_FOCUS = 1 shl 14
     const val FLAG_STEAL_TOP_FOCUS_DISABLED = 1 shl 16
 
-    /** android.view.Display.getFlags() 返回的受信任标志位，用于检验虚拟屏是否真正取得系统级 TRUSTED 权限。 */
+    /** Trusted flags returned by android.view.Display.getFlags(), used to verify the virtual display really obtained system-level TRUSTED permission. */
     const val DISPLAY_FLAG_TRUSTED = 1 shl 7
     const val DISPLAY_FLAG_OWN_FOCUS = 1 shl 11
     const val DISPLAY_FLAG_STEAL_TOP_FOCUS_DISABLED = 1 shl 12
 
-    /** WindowManager IME 显示策略：禁止虚拟屏在主屏回退弹出或抢占软键盘。 */
+    /** WindowManager IME display policy: prevents the virtual display from popping up a fallback on the main display or grabbing the soft keyboard. */
     const val DISPLAY_IME_POLICY_LOCAL = 0
     const val DISPLAY_IME_POLICY_FALLBACK_DISPLAY = 1
     const val DISPLAY_IME_POLICY_HIDE = 2
 
     /**
-     * 受信任后台交互画布所需的完整标志组合：
-     * - OWN_FOCUS 是 STEAL_TOP_FOCUS_DISABLED 的前置条件；IME 另由 DISPLAY_IME_POLICY_HIDE 隔离；
-     * - 不启用 FLAG_ROTATES_WITH_CONTENT，锁定与物理主屏一致的固定画幅，避免跨应用跳转旋转时重建 Surface；
-     * - 不启用 FLAG_DESTROY_CONTENT_ON_REMOVAL，避免跨应用栈迁移或释放时误杀应用进程。
+     * The full flag combination required for a trusted background interactive canvas:
+     * - OWN_FOCUS is the prerequisite for STEAL_TOP_FOCUS_DISABLED; the IME is additionally isolated by DISPLAY_IME_POLICY_HIDE;
+     * - FLAG_ROTATES_WITH_CONTENT is not set, locking a fixed aspect matching the physical main display to avoid rebuilding the Surface when a cross-app jump rotates;
+     * - FLAG_DESTROY_CONTENT_ON_REMOVAL is not set, avoiding accidentally killing the app process during cross-app stack migration or release.
      */
     const val TRUSTED_INTERACTIVE_FLAGS: Int =
         FLAG_PUBLIC or
@@ -209,7 +209,7 @@ internal object CanvasRoutingPolicy {
             if (normalizedTarget == ownPackage || normalizedTarget in MAIN_DISPLAY_ONLY_PACKAGES) {
                 return CanvasLaunchPlan(CanvasTarget.MAIN_DISPLAY, "main_only_package")
             }
-            // 同包名应用正处于物理主屏前台：若在虚拟屏启动，Android 会将该 Task 从主屏抽走，直接破坏用户当前视线。
+            // The same-package app is already in the physical main display foreground: launching on the virtual display would make Android pull that Task off the main display, breaking the user's current view.
             val normalizedForeground = foregroundPackageOnMainDisplay?.trim().orEmpty()
             if (normalizedForeground.isNotEmpty() && normalizedTarget == normalizedForeground) {
                 return CanvasLaunchPlan(CanvasTarget.MAIN_DISPLAY, "already_on_main")

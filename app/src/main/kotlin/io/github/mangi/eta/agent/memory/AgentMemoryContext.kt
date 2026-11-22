@@ -75,7 +75,7 @@ internal object AgentMemoryContextBuilder {
 
     private val HEADING = Regex("^#{1,2}\\s+.+$")
     private const val CORE_HEADING = "# Core Memory"
-    /** 窗口未知时用于按比例分配记忆、世界书等注入预算的保守基准，不参与压缩判定。 */
+    /** Conservative baseline used to proportionally allocate the injection budget for memory, world book, etc. when the window is unknown; it does not participate in compaction decisions. */
     const val DEFAULT_CONTEXT_WINDOW = 128_000
     private const val CONTEXT_WINDOW_DIVISOR = 16
     private const val MIN_CORE_CHARS = 4_000

@@ -109,7 +109,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-// Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
+// Miuix does not provide a semantic success color, so reuse the project's existing value; the failure color uses the theme error
 private val SuccessColor = Color(0xFF34C759)
 
 
@@ -121,7 +121,7 @@ internal fun overlayPhaseAccent(phase: AgentOverlayPhase): Color = when (phase) 
     AgentOverlayPhase.FAILED -> MiuixTheme.colorScheme.error
 }
 
-// 边缘流光取主题强调色与相邻冷暖色，避免高饱和彩虹在浅色页面上喧宾夺主。
+// The edge light flow takes the theme accent color and adjacent warm/cool colors, avoiding an over-saturated rainbow stealing the show on light pages.
 private val EdgeLightColors = listOf(
     Color(0xFF7AB8FF),
     Color(0xFFB59CFF),
@@ -131,19 +131,19 @@ private val EdgeLightColors = listOf(
 )
 
 /**
- * 屏幕边缘光窗口：全屏触摸穿透（FLAG_NOT_TOUCHABLE），不压暗页面，不挡操作。
- * 窗口类型 TYPE_ACCESSIBILITY_OVERLAY，截图时被 takeScreenshotOfWindow 过滤，对 Agent 透明。
- * - RUNNING：沿屏幕圆角边缘流动的细光带，外侧一层柔光；告诉用户手机正被接管。
- * - PAUSED：静止的淡色描边，提示任务仍在、控制权暂回用户。
- * - FINISHED / FAILED：不绘制。
+ * Screen edge glow window: full-screen touch pass-through (FLAG_NOT_TOUCHABLE), does not dim the page or block interaction.
+ * Window type TYPE_ACCESSIBILITY_OVERLAY, filtered out by takeScreenshotOfWindow during screenshots, so it is transparent to the Agent.
+ * - RUNNING: a thin light band flowing along the screen's rounded edges with a soft outer glow; tells the user the phone is being taken over.
+ * - PAUSED: a static faint outline, hinting the task is still running and control has temporarily returned to the user.
+ * - FINISHED / FAILED: not drawn.
  */
 /**
- * 屏幕圆角半径（像素）。Display 只按圆弧上报一个半径，实际面板是连续曲率的圆角；
- * 光带用同一半径画连续曲线，转角处比圆弧更饱满，贴住屏幕边缘而不是在角上内缩一截。
+ * Screen corner radii (pixels). Display reports only one radius for a circular arc, but the actual panel uses continuously-curved corners;
+ * the light band draws a continuous curve with the same radius, fuller at the corners than a circular arc, hugging the screen edge instead of inset at the corners.
  */
 @Immutable
 internal data class ScreenCornerRadii(val topLeft: Float, val topRight: Float, val bottomRight: Float, val bottomLeft: Float) {
-    /** 四角在主流机型上一致；取最大值作为连续曲线的转角尺寸，不让任何一角露出直边。 */
+    /** All four corners are equal on mainstream devices; take the maximum as the corner size of the continuous curve so no corner exposes a straight edge. */
     val radius: Float get() = maxOf(topLeft, topRight, bottomRight, bottomLeft)
 }
 
@@ -157,7 +157,7 @@ internal fun AgentOverlayGlow(
         VirtualDisplayMaterializeOverlay(snapshot = virtualDisplay, corners = corners)
         return
     }
-    // 后台虚拟屏激活时，物理屏幕属于用户，不绘制四边流光。
+    // When the background virtual display is active, the physical screen belongs to the user, so no edge glow is drawn.
     if (virtualDisplay.active) return
     val phase = state.phase
     if (phase != AgentOverlayPhase.RUNNING && phase != AgentOverlayPhase.PAUSED) return
@@ -181,7 +181,7 @@ internal fun AgentOverlayGlow(
         modifier = Modifier.fillMaxSize().drawBehind {
             val density = this.density
             val inset = 1.5f * density
-            // 光带沿屏幕轮廓的连续曲线走：路径向内收 inset，转角同步减小，保证与屏幕边缘等距。
+            // The light band follows a continuous curve along the screen outline: the path is inset inward and corners shrink accordingly, keeping equal distance from the screen edge.
             val edge = Path().apply {
                 addSquircleRect(
                     width = size.width - inset * 2,
@@ -205,7 +205,7 @@ internal fun AgentOverlayGlow(
                 ).apply {
                     setLocalMatrix(android.graphics.Matrix().apply { setRotate(rotation, size.width / 2f, size.height / 2f) })
                 }
-                // 外层柔光与内层亮线共用同一个旋转渐变，光带看起来是一体流动的。
+                // The outer soft glow and inner bright line share the same rotating gradient, so the band looks like it flows as one piece.
                 val halo = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                     style = android.graphics.Paint.Style.STROKE
                     strokeWidth = 14f * density
@@ -325,9 +325,9 @@ internal fun OverlaySupplementInput(
 }
 
 /**
- * 任务结束后的结果卡片：底部浮起的圆角面板，顶部抓手提示可下滑关闭。
- * 关闭途径：无交互自动收起、下滑、系统返回（由 Service 注册）、底部"完成"按钮；
- * 次要操作"复制"放在同一行，正文可滚动，过长时底部渐隐提示还有内容。
+ * Result card shown after a task ends: a rounded panel floating up from the bottom, with a grab handle hint at the top that it can be swiped down to close.
+ * Ways to close: auto-dismiss after no interaction, swipe down, system back (registered by the Service), and the bottom "done" button;
+ * the secondary "copy" action sits on the same row, the body is scrollable, and when too long the bottom fades to hint there is more content.
  */
 @Composable
 internal fun AgentResultCard(
@@ -343,7 +343,7 @@ internal fun AgentResultCard(
     fun close() {
         if (!visible) return
         visible = false
-        // 等退场动画结束再移除窗口，避免卡片被瞬间抽走。
+        // Wait for the exit animation to finish before removing the window, so the card is not yanked away instantly.
         scope.launch {
             delay(ResultCardExitMs.toLong())
             onClose()
@@ -435,7 +435,7 @@ internal fun AgentResultCard(
                             onDragCancel = { dragOffset = 0f },
                         ) { change, amount ->
                             change.consume()
-                            // 只允许向下拖；向上带阻尼，避免卡片被拖离底边。
+                            // Only downward drag is allowed; upward drag is damped, so the card is not pulled off the bottom edge.
                             dragOffset = (dragOffset + amount).coerceAtLeast(0f)
                         }
                     },
@@ -533,7 +533,7 @@ private fun ResultCardActions(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val isCoui = LocalUiStyle.current == AppearanceUiStyle.COUI
-        // 复制是图标按钮，主次两个文字按钮分别是"完成"（留在当前应用）与"回到 Eta"或"打开画面"。
+        // Copy is an icon button; the two text buttons are the primary/secondary "done" (stay in the current app) and "back to Eta" or "open the display".
         if (isCoui) {
             val dark = CouiTheme.isDark
             val source = remember { MutableInteractionSource() }
