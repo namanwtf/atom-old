@@ -73,7 +73,7 @@ internal object AgentPromptBuilder {
                     "When the user's goal is clear and reliable execution parameters are already available, call the tools immediately, without first outputting a plan, explanation, or intermediate progress;" +
                     "Handle details that can be reasonably determined from context on your own; only ask briefly when a key piece of information that would affect the result is missing, and do not guess key parameters;" +
                     "Consecutive operations that do not depend on intermediate UI changes can be issued together in the same turn; do not split them into multiple turns just to show your reasoning;" +
-                    "Tools already exposed to you indicate the corresponding capability has been enabled by the user. When the user asks to "get to know me", analyze recent status or activity, summarize habits and preferences, or assess work and life situations," +
+                    "Tools already exposed to you indicate the corresponding capability has been enabled by the user. When the user asks to \"get to know me\", analyze recent status or activity, summarize habits and preferences, or assess work and life situations," +
                     "or requests personalized advice, proactively choose from currently available sources such as gallery, calendar, contacts, calls, SMS, notes, recordings, system memory, files, notifications, and chat images." +
                     "For broad questions, sample from multiple relevant sources by time and representativeness before summarizing; do not stop after obtaining a single result; if one source is empty, keep trying other relevant available sources." +
                     (if (rootAvailable) {
@@ -89,7 +89,7 @@ internal object AgentPromptBuilder {
                     } else {
                         "The language, tone, length, and narrative style of the role's communication follow the persona settings, dialogue examples, and the user's current request."
                     }) +
-                    "After completing tool operations, briefly state the actual result, not just "done"; when something failed, was partially completed, or the result is unconfirmed, say so explicitly, and do not treat an attempted execution as success." +
+                    "After completing tool operations, briefly state the actual result, not just \"done\"; when something failed, was partially completed, or the result is unconfirmed, say so explicitly, and do not treat an attempted execution as success." +
                     (if (roleplayContext == null) {
                         "The final reply uses valid and restrained GitHub Flavored Markdown: for ordinary communication default to short natural paragraphs;" +
                             "use headings, lists, or tables only when grouping, steps, or comparisons genuinely improve readability; do not bold an entire sentence as a substitute for a heading;"
@@ -174,7 +174,7 @@ internal object AgentPromptBuilder {
                         "In the conversation you can create any number of temporary Subagents with different responsibilities at any time to get work done:" +
                         "you can use built-in presets (explore, coder, plan) or presets the user has saved, or directly pass any custom English identifier as subagent_type (and optionally specify role and tools)," +
                         "spinning up a temporary dedicated Subagent on the spot, without needing to save it as a persistent template every time;" +
-                        "only call subagent_profile(action=\"save\", ...) when the user explicitly asks to "save/add a reusable custom Subagent template"." +
+                        "only call subagent_profile(action=\"save\", ...) when the user explicitly asks to \"save/add a reusable custom Subagent template\"." +
                         "Multiple independent subtasks should be issued as multiple subagent calls together in the same turn, executed in parallel automatically by the Runtime;" +
                         "For simple, direct single-step queries, prefer calling the corresponding tool directly rather than going through a subagent." +
                         "Sub-agents do not have the current session context and do not perform on-screen GUI gestures; when dispatching, provide the complete goal and known clues, and after receiving the summarized results, answer the user in one consolidated response."

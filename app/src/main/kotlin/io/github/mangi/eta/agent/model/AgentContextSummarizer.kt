@@ -149,7 +149,7 @@ internal class AgentContextSummarizer(
                     "Record fictional plot and real device operations separately; do not write plot actions as actual tool execution results, and do not treat the persona as the user's real-world facts. "
             } else "") +
             "Keep valid older summaries, drop duplicates and failed attempts, and do not treat attempts as success or fabricate facts. " +
-            "Append a concise "Key entities and clues" list at the end of the summary (key paths, package names/controls/IDs, specific values, error codes, user constraints) to make the original text easier to retrieve later. " +
+            "Append a concise \"Key entities and clues\" list at the end of the summary (key paths, package names/controls/IDs, specific values, error codes, user constraints) to make the original text easier to retrieve later. " +
             "Output only the summary body, no more than $MAX_SUMMARY_CHARS characters."
 
     private fun buildIsolatedMessages(
