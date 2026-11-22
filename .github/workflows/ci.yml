@@ -45,6 +45,12 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
 
+      # Runs the unit-test suite so stale assertions can't hide. Non-blocking while
+      # the translated fixtures are being reconciled; make it blocking once green.
+      - name: Run unit tests
+        continue-on-error: true
+        run: ./gradlew --no-daemon testDebugUnitTest
+
       # secrets are not allowed in `if:` expressions, so the presence check happens in shell.
       - name: Sign APK
         env:
