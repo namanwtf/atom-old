@@ -324,7 +324,6 @@ internal object ColorOsMemoryDatabaseQuery {
     )
     private val ORDER_KEYWORDS = listOf(
         "order", "food delivery", "pickup", "delivery", "courier", "express delivery", "train ticket", "flight ticket", "hotel", "movie ticket",
-        "订单", "外卖", "取餐", "配送", "骑手", "送达", "商家", "快递", "车票", "机票", "酒店", "电影票",
     )
     private val ORDER_PACKAGES = listOf(
         "com.sankuai.meituan", "me.ele", "com.ss.android.ugc.lifeservices",

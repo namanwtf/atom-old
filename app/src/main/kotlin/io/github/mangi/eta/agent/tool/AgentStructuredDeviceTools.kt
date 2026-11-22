@@ -827,7 +827,6 @@ internal class AgentStructuredDeviceTools(
                 "order", "food delivery", "pickup", "delivery", "courier", "delivered",
                 "merchant", "express delivery", "train ticket", "flight ticket", "hotel",
                 "movie ticket",
-                "订单", "外卖", "取餐", "配送", "骑手", "送达", "商家", "快递", "车票", "机票", "酒店", "电影票",
             )
         const val COLOROS_CLOCK_PACKAGE = "com.coloros.alarmclock"
         val NETWORK_BLOCK = Regex("<Network>.*?</Network>", setOf(RegexOption.DOT_MATCHES_ALL))
@@ -840,7 +839,7 @@ internal class AgentStructuredDeviceTools(
         val OTP = Regex("""(?<!\d)(\d{4,8})(?!\d)""")
         val OTP_CONTEXT =
             Regex(
-                """验证码|校验码|动态码|确认码|一次性密码|verification code|check code|dynamic code|confirmation code|one-time password|verification\s*code|one[- ]time\s*(?:code|password)|\botp\b""",
+                """verification code|check code|dynamic code|confirmation code|one-time password|verification\s*code|one[- ]time\s*(?:code|password)|\botp\b""",
                 RegexOption.IGNORE_CASE,
             )
         val WIFI_STATUS_SSID = Regex("""\bSSID:\s*([^,\r\n]+)""")

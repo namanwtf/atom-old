@@ -399,7 +399,7 @@ internal object AgentRuntimeWire {
             bundle.getParcelableArrayList(KEY_IMAGES, Bundle::class.java).orEmpty().forEach { image ->
                 val descriptor = image.getParcelable(KEY_IMAGE_FD, ParcelFileDescriptor::class.java)
                 val reference = image.getString(KEY_IMAGE_URL)
-                    ?: image.getString(KEY_DATA_URL) // 兼容升级前仍内联 data URL 的入口进程。
+                    ?: image.getString(KEY_DATA_URL) // Compatible with pre-upgrade entry processes that still inline the data URL.
                 require((reference == null) xor (descriptor == null)) {
                     "Each image transfer item must contain exactly one reference or file descriptor"
                 }

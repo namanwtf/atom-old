@@ -1811,7 +1811,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
 
         private const val ACTION_KEEP_ALIVE = "io.github.mangi.eta.agent.runtime.KEEP_ALIVE"
         private const val WAKE_LOCK_TAG = "Eta:AgentRun"
-        private const val LEGACY_STOPPED_ERROR = "已停止"
+        private const val LEGACY_STOPPED_ERROR = "Stopped"
         private const val SYNTHETIC_STOPPED_ERROR = "eta_status:stopped"
         private const val HIDE_DELAY_MS = 2_500L
         private const val RESULT_REVIEW_DELAY_MS = 120_000L

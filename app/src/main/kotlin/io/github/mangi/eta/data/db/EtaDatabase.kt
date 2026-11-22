@@ -293,7 +293,7 @@ internal abstract class EtaDatabase : RoomDatabase() {
             // 只清理由旧版“新建对话”产生、且用户从未真正使用或命名过的占位记录。
             database.execSQL(
                 "DELETE FROM conversations " +
-                    "WHERE title = '新对话' " +
+                    "WHERE title = 'New chat' " +
                     "AND TRIM(history_json) = '[]' " +
                     "AND TRIM(applied_runtime_run_ids_json) = '[]' " +
                     "AND NOT EXISTS (" +

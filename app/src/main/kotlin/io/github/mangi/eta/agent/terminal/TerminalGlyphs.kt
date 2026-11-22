@@ -31,10 +31,10 @@ private fun isZeroWidth(codePoint: Int): Boolean =
     codePoint in 0x0300..0x036F || // Combining Diacritical Marks
         codePoint in 0x1AB0..0x1AFF ||
         codePoint in 0x1DC0..0x1DFF ||
-        codePoint in 0x200B..0x200F || // ZWSP、ZWJ 与方向标记
+        codePoint in 0x200B..0x200F || // ZWSP, ZWJ and directional marks
         codePoint in 0x20D0..0x20FF ||
         codePoint in 0xFE00..0xFE0F || // Variation Selectors
-        codePoint in 0x1F3FB..0x1F3FF || // Emoji 肤色修饰符
+        codePoint in 0x1F3FB..0x1F3FF || // Emoji skin tone modifiers
         codePoint in 0xE0100..0xE01EF
 
 /**

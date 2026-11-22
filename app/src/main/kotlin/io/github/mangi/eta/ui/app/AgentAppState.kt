@@ -2984,7 +2984,7 @@ internal class AgentAppState(
     private companion object {
         const val MAX_TITLE_CHARS = 24
         const val MAX_PREVIEW_CHARS = 48
-        const val LEGACY_STOPPED_ERROR = "已停止"
+        const val LEGACY_STOPPED_ERROR = "Stopped"
         const val SYNTHETIC_STATUS_STOPPED = "eta_status:stopped"
         private val SHARED_IMAGE_EXTENSIONS = setOf(
             "jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif",

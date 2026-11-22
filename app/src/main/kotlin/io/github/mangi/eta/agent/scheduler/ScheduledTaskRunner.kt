@@ -461,7 +461,7 @@ internal object ScheduledTaskRunner {
                 run = finalRun,
                 summaryText = summary,
             )
-            status.countsAsFailure -> false // 失败通知在提交熔断判定后统一发送，避免连发两条。
+            status.countsAsFailure -> false // Failure notifications are sent after the breaker decision to avoid duplicates.
             else -> false
         }
 

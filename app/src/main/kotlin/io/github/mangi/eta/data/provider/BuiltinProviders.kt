@@ -138,8 +138,8 @@ internal object BuiltinProviders {
         ),
     )
 
-    private val BAILIAN_DEFAULT_NAMES = setOf("阿里百炼", "阿里百煉", "Alibaba Bailian")
-    private val SILICONFLOW_DEFAULT_NAMES = setOf("硅基流动", "矽基流動", "SiliconFlow")
+    private val BAILIAN_DEFAULT_NAMES = setOf("Alibaba Bailian")
+    private val SILICONFLOW_DEFAULT_NAMES = setOf("SiliconFlow")
 
     fun providerById(id: String): ProviderSetting? =
         PROVIDERS.firstOrNull { it.id == id }

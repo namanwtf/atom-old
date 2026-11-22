@@ -117,8 +117,8 @@ internal object ImageGenSettingsRepository {
                             ImageGenBackend.DOUBAO ->
                                 (provider is OpenAiCompatibleProviderSetting || provider is CustomProviderSetting) &&
                                     (provider.baseUrl.contains("volces.com", ignoreCase = true) ||
-                                        provider.name.contains("火山", ignoreCase = true) ||
-                                        provider.name.contains("豆包", ignoreCase = true))
+                                        provider.name.contains("volcano", ignoreCase = true) ||
+                                        provider.name.contains("doubao", ignoreCase = true))
                             ImageGenBackend.SILICONFLOW ->
                                 ProviderSourceRegistry.resolve(provider) == ProviderSourceTypes.SILICONFLOW ||
                                     provider.baseUrl.contains("siliconflow", ignoreCase = true)
