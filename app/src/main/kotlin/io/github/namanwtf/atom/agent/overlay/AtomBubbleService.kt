@@ -77,7 +77,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var menuParams: WindowManager.LayoutParams? = null
     private var panelBaseY: Int = 0
     private var panelLifted = false
-    private var panelMaxLift = 0
+    private var panelFullHeight = 0
     private val dragging = mutableStateOf(false)
     private val dragBubbleCenter = mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
     private val dragFused = mutableStateOf(false)
@@ -466,6 +466,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                             messages.value = emptyList()
                             streaming.value = ""
                         },
+                        onMic = { handleAction(AgentOrbAction.TALK) },
                         onOpenInApp = {
                             val intent = Intent(this@AtomBubbleService, MainActivity::class.java)
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -486,12 +487,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val bottomInset = insets?.bottom ?: dpToPx(48)
         val gap = dpToPx(8)
         val chatWidth = (bounds.width() - gap * 2).coerceAtLeast(dpToPx(240))
-        // A card, not a takeover: tall enough to read a conversation, short
-        // enough that the app behind stays visible and reachable.
-        val chatHeight = minOf(
-            (bounds.height() * 0.62f).toInt(),
-            bounds.height() - topInset - bottomInset - gap * 2,
-        ).coerceAtLeast(dpToPx(220))
+        // Buddy's panel is a full-height sheet between the bars.
+        val chatHeight = (bounds.height() - topInset - bottomInset - gap * 2)
+            .coerceAtLeast(dpToPx(280))
         val flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -504,9 +502,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             flags,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             x = 0
-            y = bottomInset + gap
+            y = topInset + gap
             dimAmount = 0.45f
             windowAnimations = 0
             // The panel lifts itself when the composer takes focus, so the
@@ -522,9 +520,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatParams = lp
         panelBaseY = lp.y
         panelLifted = false
-        // The lift keeps the panel's top inside the usable area.
-        panelMaxLift = (bounds.height() - chatHeight - topInset - gap - panelBaseY)
-            .coerceAtLeast(0)
+        panelFullHeight = chatHeight
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
@@ -546,8 +542,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val wm = windowManager ?: return
         panelLifted = focused
         val keyboardShare = (resources.displayMetrics.heightPixels * 0.40f).toInt()
-        val lift = keyboardShare.coerceAtMost(panelMaxLift)
-        lp.y = panelBaseY + if (focused) lift else 0
+        // A full-height sheet cannot move up, so it gets shorter instead: the
+        // composer then sits above the keyboard.
+        lp.height = (panelFullHeight - if (focused) keyboardShare else 0)
+            .coerceAtLeast(dpToPx(280))
         runCatching { wm.updateViewLayout(view, lp) }
     }
 

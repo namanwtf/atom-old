@@ -32,9 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -62,6 +64,7 @@ internal fun AtomBubbleChat(
     onInputFocusChanged: (Boolean) -> Unit = {},
     onNewChat: () -> Unit = {},
     onOpenInApp: () -> Unit = {},
+    onMic: () -> Unit = {},
 ) {
     var input by remember { mutableStateOf(TextFieldValue()) }
     val scroll = rememberScrollState()
@@ -144,31 +147,36 @@ internal fun AtomBubbleChat(
 
         Spacer(Modifier.height(8.dp))
 
+        // One pill, like Buddy's: paperclip, field, mic, then the round send.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
-                    .background(AtomOverlayColors.Card, RoundedCornerShape(22.dp))
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .background(AtomOverlayColors.Card, RoundedCornerShape(26.dp))
+                    .border(1.dp, AtomOverlayColors.Outline, RoundedCornerShape(26.dp))
+                    .padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 BasicTextField(
                     value = input,
                     onValueChange = { input = it },
                     textStyle = TextStyle(color = AtomOverlayColors.Text, fontSize = 14.sp),
-                    cursorBrush = SolidColor(AtomOverlayColors.Accent),
+                    cursorBrush = SolidColor(AtomOverlayColors.Bolt),
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 8.dp)
                         .onFocusChanged { onInputFocusChanged(it.isFocused) },
                     decorationBox = { inner ->
                         if (input.text.isEmpty()) {
                             BasicText(
-                                "Message Atom…",
+                                "Ask Atom…",
                                 style = TextStyle(color = AtomOverlayColors.Muted, fontSize = 14.sp),
                             )
                         }
                         inner()
                     },
                 )
+                PillIcon(PillGlyph.MIC) { onMic() }
             }
             Spacer(Modifier.width(8.dp))
             SendButton(
@@ -186,6 +194,41 @@ internal fun AtomBubbleChat(
 
     LaunchedEffect(messages.size, streaming.length) {
         if (scroll.maxValue > 0) scroll.scrollTo(scroll.maxValue)
+    }
+}
+
+private enum class PillGlyph { MIC }
+
+@Composable
+private fun PillIcon(glyph: PillGlyph, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier.size(36.dp).clickable { onClick() },
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.size(18.dp)) {
+            val stroke = 1.7.dp.toPx()
+            val tint = AtomOverlayColors.Muted
+            when (glyph) {
+                PillGlyph.MIC -> {
+                    drawRoundRect(
+                        color = tint,
+                        topLeft = Offset(size.width * 0.36f, 0f),
+                        size = Size(size.width * 0.28f, size.height * 0.52f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
+                        style = Stroke(width = stroke),
+                    )
+                    drawArc(
+                        color = tint,
+                        startAngle = 0f,
+                        sweepAngle = 180f,
+                        useCenter = false,
+                        topLeft = Offset(size.width * 0.2f, size.height * 0.28f),
+                        size = Size(size.width * 0.6f, size.height * 0.48f),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -291,14 +334,14 @@ private fun SendButton(enabled: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .size(46.dp)
             .background(
-                if (enabled) AtomOverlayColors.Accent else AtomOverlayColors.Card2,
+                if (enabled) AtomOverlayColors.Bolt else AtomOverlayColors.Card2,
                 CircleShape,
             )
             .clickable(enabled = enabled) { onClick() },
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.size(18.dp)) {
-            val tint = if (enabled) AtomOverlayColors.OnAccent else AtomOverlayColors.Muted
+            val tint = if (enabled) Color.White else AtomOverlayColors.Muted
             val stroke = 2.2.dp.toPx()
             drawLine(
                 tint,
