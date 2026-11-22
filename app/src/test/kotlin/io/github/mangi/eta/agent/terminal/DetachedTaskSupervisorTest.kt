@@ -207,15 +207,15 @@ class DetachedTaskSupervisorTest {
         )
         val androidTask = linuxTask.copy(
             environment = TerminalEnvironment.ANDROID,
-            logPath = "/data/local/tmp/eta/daemon/dm_android01.log",
+            logPath = "/data/local/tmp/atom/daemon/dm_android01.log",
         )
 
         assertEquals(
-            "/data/local/tmp/eta/daemon/dm_linux01.log",
+            "/data/local/tmp/atom/daemon/dm_linux01.log",
             supervisor.hostDaemonPath(linuxTask, linuxTask.logPath),
         )
         assertEquals(
-            "/data/local/tmp/eta/daemon/dm_linux01.pid",
+            "/data/local/tmp/atom/daemon/dm_linux01.pid",
             supervisor.hostDaemonPath(linuxTask, linuxTask.logPath.removeSuffix(".log") + ".pid"),
         )
         // Android task paths are preserved as-is.

@@ -1000,8 +1000,8 @@ internal class RootShellDeviceController(
         }
         if (!rootAvailable()) return UiNodeDump(emptyList(), ShellActionOutcomePolicy.Outcome.FAILED)
         val result = runSuText(
-            "uiautomator dump --compressed /data/local/tmp/eta_window.xml >/dev/null && " +
-                "cat /data/local/tmp/eta_window.xml && rm -f /data/local/tmp/eta_window.xml",
+            "uiautomator dump --compressed /data/local/tmp/atom_window.xml >/dev/null && " +
+                "cat /data/local/tmp/atom_window.xml && rm -f /data/local/tmp/atom_window.xml",
             timeoutSeconds = 10
         )
         if (result.exitCode != 0 || result.output.isBlank()) {

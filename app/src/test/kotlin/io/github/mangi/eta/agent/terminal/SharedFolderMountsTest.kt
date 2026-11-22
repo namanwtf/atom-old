@@ -33,7 +33,7 @@ class SharedFolderMountsTest {
         )
         assertEquals(
             SharedFolderMounts.SourceError.FORBIDDEN_ROOT,
-            SharedFolderMounts.validateSource("/data/local/tmp/eta/mounts/x", existing),
+            SharedFolderMounts.validateSource("/data/local/tmp/atom/mounts/x", existing),
         )
         assertEquals(
             SharedFolderMounts.SourceError.FORBIDDEN_ROOT,
@@ -132,7 +132,7 @@ class SharedFolderMountsTest {
         assertTrue(payload.contains("\$eta_rootfs/workspace/mounts/dl\" bind"))
         assertTrue(payload.contains("\$eta_rootfs/workspace/mounts/app\" bind"))
         // Shared mounts must run after the workspace bind so the target path lands on the already-mounted workspace.
-        val workspaceBind = payload.indexOf("eta_mount_required /data/local/tmp/eta")
+        val workspaceBind = payload.indexOf("eta_mount_required /data/local/tmp/atom")
         val sharedMount = payload.indexOf("workspace/mounts/dl")
         assertTrue(workspaceBind >= 0 && sharedMount > workspaceBind)
     }

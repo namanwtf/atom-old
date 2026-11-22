@@ -13,7 +13,7 @@ internal enum class LinuxExecutionBackend(val wireName: String) {
 
 /** Terminal runtime conditions for the app process; reading capabilities never triggers an su prompt. */
 internal object TerminalRuntime {
-    const val ROOT_WORKSPACE_PATH = "/data/local/tmp/eta"
+    const val ROOT_WORKSPACE_PATH = "/data/local/tmp/atom"
     const val LINUX_WORKSPACE_PATH = "/workspace"
 
     @Volatile private var appContext: Context? = null
