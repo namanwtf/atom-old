@@ -664,7 +664,17 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             // composer then sits just above the keyboard.
             keyboardTopPx > 0 ->
                 (keyboardTopPx - gap - lp.y).coerceIn(dpToPx(280), panelFullHeight)
-            else -> (panelFullHeight - (resources.displayMetrics.heightPixels * 0.40f).toInt())
+            else -> {
+                // Prefer the real IME inset; fall back to the measured keyboard
+                // share (32% of this display) because an application overlay
+                // does not receive IME insets on this ROM.
+                val ime = runCatching {
+                    wm.currentWindowMetrics.windowInsets
+                        .getInsets(android.view.WindowInsets.Type.ime()).bottom
+                }.getOrDefault(0)
+                val keyboard = if (ime > 0) ime else (resources.displayMetrics.heightPixels * 0.32f).toInt()
+                panelFullHeight - keyboard
+            }
                 .coerceAtLeast(dpToPx(280))
         }
         if (lp.height == target) return
