@@ -1068,9 +1068,10 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             if (suppress) dismissResult(run)
             return
         }
-        val guiState = guiControl.state.value
-        val activeGuiRun = guiState.userPaused || (guiState.ownerRunId == run.runId && !run.session.isTerminal)
-        if (!activeGuiRun) return
+        // Atom fork: show the overlay (status capsule + floating orb) for ANY live run
+        // when the Atom UI is backgrounded, not only while the agent holds GUI control.
+        // Plain chat runs previously never surfaced the orb.
+        if (run.session.isTerminal) return
         if (suppress) {
             removeAmbientWindows()
         } else {
