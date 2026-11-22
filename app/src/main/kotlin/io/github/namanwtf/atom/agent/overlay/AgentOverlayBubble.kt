@@ -95,10 +95,6 @@ internal fun AgentOverlayBubble(
         modifier = modifier.padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (expanded) {
-            BubbleMenu(labels = labels, onAction = onAction)
-            Spacer(Modifier.width(6.dp))
-        }
         Box(
             modifier = Modifier
                 .size(74.dp)
@@ -149,35 +145,6 @@ internal class AgentOrbLabels(
         AgentOrbAction.HIDE -> hide
         AgentOrbAction.OPEN_CHAT -> openChat
         AgentOrbAction.TALK -> talk
-    }
-}
-
-@Composable
-private fun BubbleMenu(labels: AgentOrbLabels, onAction: (AgentOrbAction) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        AgentOrbAction.entries.forEach { action ->
-            Row(
-                modifier = Modifier
-                    .background(AtomOverlayColors.Card, RoundedCornerShape(14.dp))
-                    .border(1.dp, AtomOverlayColors.Outline, RoundedCornerShape(14.dp))
-                    .clickable { onAction(action) }
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Canvas(Modifier.size(14.dp)) {
-                    drawMenuGlyph(action)
-                }
-                Spacer(Modifier.width(8.dp))
-                BasicText(
-                    labels.text(action),
-                    style = TextStyle(
-                        color = AtomOverlayColors.Text,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                )
-            }
-        }
     }
 }
 

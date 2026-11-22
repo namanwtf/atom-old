@@ -61,6 +61,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var bubbleParams: WindowManager.LayoutParams? = null
     private var chatView: ComposeView? = null
     private var chatParams: WindowManager.LayoutParams? = null
+    private var menuView: ComposeView? = null
+    private var menuParams: WindowManager.LayoutParams? = null
 
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
@@ -119,7 +121,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         state = AgentOverlayState(phase = AgentOverlayPhase.FINISHED),
                         expanded = expanded,
                         labels = labels,
-                        onToggleExpanded = { expanded = !expanded },
+                        onToggleExpanded = { toggleMenu() },
                         onAction = { action ->
                             expanded = false
                             handleAction(action)
@@ -155,6 +157,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     private fun moveBubble(dx: Float, dy: Float) {
+        hideMenu()
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
@@ -172,6 +175,80 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         lp.x = lp.x.coerceIn(margin, maxOf(margin, metrics.bounds.width() - width - margin))
         lp.y = lp.y.coerceIn(margin, maxOf(margin, metrics.bounds.height() - bottomInset - height - margin))
         runCatching { wm.updateViewLayout(view, lp) }
+    }
+
+    // ── Radial hold menu (Buddy's RadialMenu) ──────────────────────────────
+    private fun toggleMenu() {
+        if (menuView != null) hideMenu() else showMenu()
+    }
+
+    private fun showMenu() {
+        val bubble = bubbleView ?: return
+        val bubbleLp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val bubbleWidth = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val bubbleHeight = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        // x counts from the right edge because the bubble window is END-anchored.
+        val left = metrics.bounds.width() - bubbleLp.x - bubbleWidth
+        val centerX = left + bubbleWidth / 2
+        val centerY = bubbleLp.y + bubbleHeight / 2
+        val dockedRight = bubbleLp.x < metrics.bounds.width() / 2
+
+        val labels = AgentOrbLabels(
+            hide = getString(R.string.bubble_hide),
+            openChat = getString(R.string.bubble_open_chat),
+            talk = getString(R.string.bubble_talk),
+        )
+        val view = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(this@AtomBubbleService)
+            setViewTreeSavedStateRegistryOwner(this@AtomBubbleService)
+            setContent {
+                val appearance by AppearanceSettingsRepository.settingsFlow()
+                    .collectAsState(initial = AppearanceSettings())
+                AgentAppTheme(appearance = appearance, systemOverlay = true) {
+                    AtomOrbMenu(
+                        labels = labels,
+                        dockedRight = dockedRight,
+                        onAction = { action ->
+                            hideMenu()
+                            bubbleView?.visibility = View.VISIBLE
+                            handleAction(action)
+                        },
+                        onDismiss = { hideMenu() },
+                    )
+                }
+            }
+        }
+        val size = (ATOM_MENU_SIZE_DP * density).toInt()
+        val lp = WindowManager.LayoutParams(
+            size,
+            size,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = (centerX - size / 2).coerceIn(0, (metrics.bounds.width() - size).coerceAtLeast(0))
+            y = (centerY - size / 2).coerceIn(0, (metrics.bounds.height() - size).coerceAtLeast(0))
+            windowAnimations = 0
+        }
+        runCatching { wm.addView(view, lp) }.onFailure { return }
+        menuView = view
+        menuParams = lp
+        bubble.visibility = View.GONE
+    }
+
+    private fun hideMenu() {
+        menuView?.let { view -> runCatching { windowManager?.removeView(view) } }
+        menuView = null
+        menuParams = null
+        bubbleView?.visibility = View.VISIBLE
     }
 
     /**
@@ -293,7 +370,28 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatView?.let { view -> runCatching { windowManager?.removeView(view) } }
         chatView = null
         chatParams = null
-        bubbleView?.visibility = View.VISIBLE
+        dockBubbleToBottom()
+    }
+
+    /**
+     * After the panel closes the bubble comes back at the bottom of the screen on
+     * the edge it was parked on, which is where the thumb expects it.
+     */
+    private fun dockBubbleToBottom() {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val height = view.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val margin = dpToPx(6)
+        val leftmost = metrics.bounds.width() - width - margin
+        lp.x = if (lp.x > leftmost / 2) leftmost else margin
+        lp.y = (metrics.bounds.height() - navBarInset(wm) - height - dpToPx(24))
+            .coerceAtLeast(margin)
+        view.visibility = View.VISIBLE
+        runCatching { wm.updateViewLayout(view, lp) }
     }
 
     private fun sendChat(text: String) {
@@ -356,6 +454,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     private fun hideBubble() {
+        hideMenu()
         bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         bubbleView = null
         bubbleParams = null
