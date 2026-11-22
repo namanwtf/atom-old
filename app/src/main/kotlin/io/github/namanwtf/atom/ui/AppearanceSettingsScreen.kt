@@ -22,6 +22,9 @@ import io.github.namanwtf.atom.data.model.AppearanceThemeMode
 import io.github.namanwtf.atom.data.model.AppearanceUiStyle
 import io.github.namanwtf.atom.data.repository.AppearanceSettingsRepository
 import io.github.namanwtf.atom.ui.app.LocalAppearanceSettings
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import io.github.namanwtf.atom.agent.overlay.AtomBubbleService
 import io.github.namanwtf.atom.ui.app.LocalUiStyle
 import io.github.namanwtf.atom.ui.components.MiuixScaffoldPage
 import io.github.namanwtf.atom.ui.components.coui.CouiDropdownPreference
@@ -226,6 +229,20 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                                     checked = appearance.pureBlackEnabled,
                                     onCheckedChange = { enabled ->
                                         update { current -> current.copy(pureBlackEnabled = enabled) }
+                                    },
+                                )
+                                SwitchPreference(
+                                    title = stringResource(R.string.appearance_floating_bubble),
+                                    summary = stringResource(R.string.appearance_floating_bubble_summary),
+                                    checked = appearance.floatingBubbleEnabled,
+                                    onCheckedChange = { enabled ->
+                                        update { current -> current.copy(floatingBubbleEnabled = enabled) }
+                                        val ctx = LocalContext.current
+                                        if (enabled) {
+                                            ctx.startService(Intent(ctx, AtomBubbleService::class.java))
+                                        } else {
+                                            ctx.stopService(Intent(ctx, AtomBubbleService::class.java))
+                                        }
                                     },
                                 )
                             }

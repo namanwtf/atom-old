@@ -220,6 +220,9 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/atom_file_paths" />
         </provider>
+        <service
+            android:name=".agent.overlay.AtomBubbleService"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -172,6 +172,7 @@ internal object SettingsDataStore {
     private val APPEARANCE_PALETTE_STYLE = stringPreferencesKey("appearance_palette_style")
     private val APPEARANCE_ACCENT_COLOR = stringPreferencesKey("appearance_accent_color")
     private val APPEARANCE_PURE_BLACK_ENABLED = booleanPreferencesKey("appearance_pure_black_enabled")
+    private val APPEARANCE_FLOATING_BUBBLE_ENABLED = booleanPreferencesKey("appearance_floating_bubble_enabled")
     private val APPEARANCE_BLUR_ENABLED = booleanPreferencesKey("appearance_blur_enabled")
     private val APPEARANCE_PROGRESSIVE_BLUR_ENABLED =
         booleanPreferencesKey("appearance_progressive_blur_enabled")
@@ -409,6 +410,7 @@ internal object SettingsDataStore {
             ),
             swipeDismissEnabled = this[APPEARANCE_SWIPE_DISMISS_ENABLED] ?: true,
             predictiveBackEnabled = this[APPEARANCE_PREDICTIVE_BACK_ENABLED] ?: true,
+            floatingBubbleEnabled = this[APPEARANCE_FLOATING_BUBBLE_ENABLED] ?: true,
         ),
     )
 
@@ -427,5 +429,6 @@ internal object SettingsDataStore {
         this[APPEARANCE_TOP_BAR_BLUR_STYLE] = settings.topBarBlurStyle.persistedValue
         this[APPEARANCE_SWIPE_DISMISS_ENABLED] = settings.swipeDismissEnabled
         this[APPEARANCE_PREDICTIVE_BACK_ENABLED] = settings.predictiveBackEnabled
+        this[APPEARANCE_FLOATING_BUBBLE_ENABLED] = settings.floatingBubbleEnabled
     }
 }

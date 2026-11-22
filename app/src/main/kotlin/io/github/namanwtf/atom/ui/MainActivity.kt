@@ -19,6 +19,7 @@ import io.github.namanwtf.atom.agent.voice.AtomAssistantOverlayService
 import io.github.namanwtf.atom.core.AndroidAgentLogger
 import io.github.namanwtf.atom.data.model.AppearanceThemeMode
 import io.github.namanwtf.atom.data.repository.AppearanceSettingsRepository
+import io.github.namanwtf.atom.agent.overlay.AtomBubbleService
 import io.github.namanwtf.atom.ui.app.AgentAppRoot
 import io.github.namanwtf.atom.ui.app.AgentAppTheme
 import io.github.namanwtf.atom.ui.app.PredictiveBackController
@@ -114,6 +115,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         startedInstances.add(this)
         isInForeground = true
+        startService(Intent(this, AtomBubbleService::class.java))
         AgentRuntimeService.onAtomUiVisibilityChanged()
     }
 

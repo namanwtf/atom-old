@@ -15,6 +15,7 @@ data class AppearanceSettings(
     val topBarBlurStyle: AppearanceTopBarBlurStyle = AppearanceTopBarBlurStyle.GAUSSIAN,
     val swipeDismissEnabled: Boolean = true,
     val predictiveBackEnabled: Boolean = true,
+    val floatingBubbleEnabled: Boolean = true,
 )
 
 @Serializable
