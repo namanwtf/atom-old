@@ -27,7 +27,7 @@ internal object DoubaoAsrCodec {
     fun decode(bytes: ByteArray): Result {
         fun invalid(): Nothing = throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,
-            AppStrings.get(R.string.voice_i18n_doubao_asr_invalid_frame, "豆包识别返回了无效音频协议帧"),
+            AppStrings.get(R.string.voice_i18n_doubao_asr_invalid_frame, "Doubao recognition returned an invalid audio protocol frame"),
         )
         if (bytes.size < 8 || bytes.size > SpeechHttp.MAX_JSON_BYTES) invalid()
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
@@ -44,7 +44,7 @@ internal object DoubaoAsrCodec {
             val code = buffer.int
             throw SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_doubao_asr_failed_code, "豆包识别失败（%1\$d）", code),
+                AppStrings.get(R.string.voice_i18n_doubao_asr_failed_code, "Doubao recognition failed（%1\$d）", code),
             )
         }
         if (type != 9 || encoding shr 4 != 1 || flags !in 0..3) invalid()

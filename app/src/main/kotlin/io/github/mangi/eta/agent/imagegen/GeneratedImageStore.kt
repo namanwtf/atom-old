@@ -138,7 +138,7 @@ internal object GeneratedImageStore {
                         throw IOException(
                             AppStrings.get(
                                 R.string.imagegen_store_error_publish_failed,
-                                "无法原子发布生成图片：%1\$s",
+                                "Unable to atomically publish the generated image: %1\$s",
                                 targetFile.name,
                             ),
                         )
@@ -160,7 +160,7 @@ internal object GeneratedImageStore {
             committedFiles.forEach { file -> runCatching { if (file.exists()) file.delete() } }
             if (throwable is RuntimeException) throw throwable
             throw IOException(
-                AppStrings.get(R.string.imagegen_store_error_save_local_failed, "保存生成图片到本地失败"),
+                AppStrings.get(R.string.imagegen_store_error_save_local_failed, "Failed to save the generated image locally"),
                 throwable,
             )
         }
@@ -276,7 +276,7 @@ internal object GeneratedImageStore {
 
     fun saveToSystemGallery(context: Context, source: String): Result<Uri> = runCatching {
         val (bytes, mimeType) = decodeSourceBytes(source)
-            ?: error(AppStrings.get(R.string.imagegen_store_error_read_image_failed, "无法读取图片数据"))
+            ?: error(AppStrings.get(R.string.imagegen_store_error_read_image_failed, "Unable to read image data"))
         val ext = extensionForMime(mimeType)
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val displayName = "Eta_${timestamp}_${UUID.randomUUID().toString().take(4)}.$ext"
@@ -288,15 +288,15 @@ internal object GeneratedImageStore {
             put(MediaStore.Images.Media.IS_PENDING, 1)
         }
         val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: error(AppStrings.get(R.string.imagegen_store_error_gallery_write_failed, "无法写入系统相册"))
+            ?: error(AppStrings.get(R.string.imagegen_store_error_gallery_write_failed, "Unable to write to the system gallery"))
         try {
             resolver.openOutputStream(uri)?.use { out -> out.write(bytes) }
-                ?: error(AppStrings.get(R.string.imagegen_store_error_gallery_stream_failed, "无法打开相册输出流"))
+                ?: error(AppStrings.get(R.string.imagegen_store_error_gallery_stream_failed, "Unable to open the gallery output stream"))
             values.clear()
             values.put(MediaStore.Images.Media.IS_PENDING, 0)
             val updatedRows = resolver.update(uri, values, null, null)
             if (updatedRows <= 0) {
-                error(AppStrings.get(R.string.imagegen_store_error_gallery_publish_failed, "相册发布状态更新失败"))
+                error(AppStrings.get(R.string.imagegen_store_error_gallery_publish_failed, "Failed to update the gallery publish status"))
             }
             uri
         } catch (throwable: Throwable) {
@@ -309,7 +309,7 @@ internal object GeneratedImageStore {
         val appContext = context.applicationContext
         val authority = "${appContext.packageName}.fileprovider"
         val (shareFile, mimeType) = prepareShareableFile(appContext, source)
-            ?: error(AppStrings.get(R.string.imagegen_store_error_share_prepare_failed, "无法准备待分享图片"))
+            ?: error(AppStrings.get(R.string.imagegen_store_error_share_prepare_failed, "Unable to prepare the image to share"))
         val contentUri = FileProvider.getUriForFile(appContext, authority, shareFile)
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = mimeType

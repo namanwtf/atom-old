@@ -83,7 +83,7 @@ internal class SpeechOssUpload(
                 SpeechErrorCode.STORAGE,
                 AppStrings.get(
                     R.string.voice_i18n_oss_pending_cleanup_limit,
-                    "待清理录音较多，请检查 OSS 删除权限后重启 Eta",
+                    "Many recordings are pending cleanup，please check OSS delete permissions and restart Eta",
                 ),
             )
         }
@@ -91,7 +91,7 @@ internal class SpeechOssUpload(
         if (!preferences.edit().putStringSet("pending", pending).commit()) {
             throw SpeechFailure(
                 SpeechErrorCode.STORAGE,
-                AppStrings.get(R.string.voice_i18n_oss_cleanup_record_failed, "无法记录录音清理信息"),
+                AppStrings.get(R.string.voice_i18n_oss_cleanup_record_failed, "Cannot record the recording cleanup info"),
             )
         }
         active += entry

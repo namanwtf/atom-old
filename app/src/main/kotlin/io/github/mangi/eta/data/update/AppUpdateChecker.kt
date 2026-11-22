@@ -35,7 +35,7 @@ internal object AppUpdateChecker {
                 throw IOException(
                     AppStrings.get(
                         R.string.update_err_github_release_http,
-                        "GitHub Release 请求失败（HTTP %1\$d）",
+                        "GitHub Release request failed（HTTP %1\$d）",
                         response.code,
                     ),
                 )
@@ -45,7 +45,7 @@ internal object AppUpdateChecker {
                     throw IOException(
                         AppStrings.get(
                             R.string.update_err_github_release_invalid_json,
-                            "GitHub Release 响应不是有效 JSON",
+                            "GitHub Release response is not valid JSON",
                         ),
                         it,
                     )
@@ -56,7 +56,7 @@ internal object AppUpdateChecker {
                 throw IOException(
                     AppStrings.get(
                         R.string.update_err_github_release_missing_fields,
-                        "GitHub Release 响应缺少 tag_name/html_url",
+                        "GitHub Release response is missing tag_name/html_url",
                     ),
                 )
             }

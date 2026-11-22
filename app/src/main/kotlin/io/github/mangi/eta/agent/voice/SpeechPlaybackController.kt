@@ -59,13 +59,13 @@ internal class SpeechPlaybackController(
                 if (readable.isBlank()) {
                     throw SpeechFailure(
                         SpeechErrorCode.NO_SPEECH,
-                        AppStrings.get(R.string.voice_i18n_playback_no_readable_text, "这条消息没有可朗读的正文"),
+                        AppStrings.get(R.string.voice_i18n_playback_no_readable_text, "This message has no readable text"),
                     )
                 }
                 if (readable.length > 30_000) {
                     throw SpeechFailure(
                         SpeechErrorCode.CONFIGURATION,
-                        AppStrings.get(R.string.voice_i18n_playback_text_too_long, "正文过长，请选择较短的回答朗读"),
+                        AppStrings.get(R.string.voice_i18n_playback_text_too_long, "Text too long，please choose a shorter answer to read aloud"),
                     )
                 }
                 lease?.requestPlaybackFocus { beforePlayback(); playbackActive = true }

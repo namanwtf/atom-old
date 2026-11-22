@@ -131,7 +131,7 @@ internal class RuntimeRunRegistry(private val capacity: Int = MAX_ACTIVE_RUNS) {
         val conversationId = AgentConversationIdentity.fromHandoff(request.handoff, request.runId)
         runs[request.runId]?.let { existing ->
             return if (existing.conversationId == conversationId) Admission.Duplicate(existing)
-            else Admission.Rejected("RUN_ID_CONFLICT", "运行标识与已有会话不一致，请重新发起任务")
+            else Admission.Rejected("RUN_ID_CONFLICT", "Run ID does not match the existing session; please start a new task")
         }
         val previous = runs.values.filter { it.conversationId == conversationId }
         val source = request.handoff?.source
@@ -139,10 +139,10 @@ internal class RuntimeRunRegistry(private val capacity: Int = MAX_ACTIVE_RUNS) {
             AgentExternalArchivePayload.from(request.handoff.payload) != null &&
             previous.all { it.request.handoff?.source == source }
         if (previous.isNotEmpty() && !replacesExternalRun) {
-            return Admission.Rejected("CONVERSATION_BUSY", "当前会话仍有任务在运行，请等待完成或停止后再试")
+            return Admission.Rejected("CONVERSATION_BUSY", "The current session still has a task running; wait for it to finish or stop it and try again")
         }
         if (runs.size >= capacity) {
-            return Admission.Rejected("RUN_CAPACITY_REACHED", "同时运行的任务已达上限，请等待任务完成后再试")
+            return Admission.Rejected("RUN_CAPACITY_REACHED", "The maximum number of concurrent tasks has been reached; wait for tasks to finish and try again")
         }
         val run = create()
         check(run.runId == request.runId && run.conversationId == conversationId)

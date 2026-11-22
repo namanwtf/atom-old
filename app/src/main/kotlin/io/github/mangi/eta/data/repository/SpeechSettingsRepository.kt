@@ -102,7 +102,7 @@ internal object SpeechSettingsRepository {
             .putString("credentials", Base64.getEncoder().encodeToString(encrypted)).commit()) {
             AppStrings.get(
                 R.string.repo_err_speech_credentials_save_failed,
-                "语音凭据保存失败",
+                "Failed to save voice credentials",
             )
         }
     }
@@ -124,6 +124,6 @@ internal object SpeechSettingsRepository {
 internal class SpeechCredentialsUnavailable : Exception(
     AppStrings.get(
         R.string.repo_err_speech_credentials_unavailable,
-        "语音凭据无法解密，请重新填写并保存",
+        "Voice credentials cannot be decrypted，please re-enter and save",
     ),
 )

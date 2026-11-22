@@ -40,7 +40,7 @@ internal object SystemUiHooks {
                 hooks.missing(
                     id = "systemui.ocr-long-press",
                     description = "OplusOcrScreenBusiness.onLongPressed",
-                    detail = "未找到 OplusOcrScreenBusiness.onLongPressed()"
+                    detail = "OplusOcrScreenBusiness.onLongPressed() not found"
                 )
                 return@install
             }
@@ -57,7 +57,7 @@ internal object SystemUiHooks {
                 val context = resolveContext(chain.getThisObject())
                 if (context == null) {
                     logger.warnThrottled("systemui_context") {
-                        "SystemUI 无法取得 Context，回退原 OCR 逻辑"
+                        "SystemUI cannot get Context, falling back to original OCR logic"
                     }
                     return@intercept chain.proceed()
                 }
@@ -66,7 +66,7 @@ internal object SystemUiHooks {
                         context,
                         logger,
                         "SystemUI",
-                        "回退原 OCR 逻辑"
+                        "fall back to original OCR logic"
                     )
                 ) {
                     return@intercept chain.proceed()
@@ -91,14 +91,14 @@ internal object SystemUiHooks {
     private fun performOriginalLongPressHaptic(context: Context, logger: ModuleLogger) {
         val vibrationHelper = resolveVibrationHelper(context) ?: run {
             logger.warnThrottled("systemui_cts_vibration_helper_missing") {
-                "SystemUI: 无法取得原生 VibrationHelper，跳过导航条长按震动"
+                "SystemUI: cannot get native VibrationHelper, skipping navbar long-press vibration"
             }
             return
         }
 
         if (!invokeVibrateCustomized(vibrationHelper, context)) {
             logger.warnThrottled("systemui_cts_linear_haptic_failed") {
-                "SystemUI: 调用原生导航条长按震动失败"
+                "SystemUI: native navbar long-press vibration invocation failed"
             }
         }
     }

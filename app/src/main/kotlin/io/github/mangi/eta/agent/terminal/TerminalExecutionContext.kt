@@ -51,12 +51,12 @@ internal data class TerminalExecutionContext(
         if (environment.isLinux) linuxIdentity else if (rootAvailable) "root" else "user"
 
     fun description(rootAvailable: Boolean): String = buildString {
-        append("本次运行的命令和文件工具共用默认执行上下文：environment=android，identity=")
+        append("The command and file tools of this run share a default execution context：environment=android，identity=")
         append(identityFor(TerminalEnvironment.ANDROID, rootAvailable))
-        append("，工作区=")
+        append("，workspace=")
         append(JSONObject.quote(androidWorkspacePath))
-        append("。已授权 Root 时直接使用 Root，未确认授权时使用 App 身份。identity=user 可显式选择普通身份；工作目录不因身份变化而移动。\n")
-        append("environment=linux 使用已选择的 ")
+        append("。When Root is authorized, use Root directly，when authorization is unconfirmed, use the App identity。identity=user explicitly selects the normal identity；the working directory does not move when identity changes。\n")
+        append("environment=linux uses the selected ")
         append(linuxEnvironment.wireName)
         append("，backend=")
         append(linuxBackend.wireName)
@@ -68,22 +68,22 @@ internal data class TerminalExecutionContext(
         append(linuxCommonToolsReady)
         append("，profiles=")
         append(linuxInstalledProfiles.ifEmpty { listOf("none") }.joinToString("/"))
-        append("。Linux 工作区 ")
+        append("。Linux workspace ")
         append(JSONObject.quote(linuxWorkspacePath))
-        append(" 映射宿主目录 ")
+        append(" maps to host directory ")
         append(JSONObject.quote(linuxHostWorkspacePath))
-        append("（bind mount 同一个物理文件夹，双向实时同步）；")
+        append("（bind mount of the same physical folder, synced in real time both ways）；")
         if (linuxHostWorkspacePath == androidWorkspacePath) {
-            append("与默认 Android 工作区完全同目录，两边修改直接互通。")
+            append("is the exact same directory as the default Android workspace; edits on either side propagate directly。")
         } else {
-            append("与默认 Android 工作区不同目录，Android 侧可直接通过 ")
+            append("is a different directory from the default Android workspace; the Android side can directly access the same folder via ")
             append(JSONObject.quote(linuxHostWorkspacePath))
-            append(" 访问同一文件夹。")
+            append("。")
         }
         if (sharedMounts.isEmpty()) {
-            append("当前未配置额外共享目录（/workspace/mounts 仅在配置挂载项后挂载）；")
+            append("No extra shared directory is currently configured（/workspace/mounts is mounted only after a mount entry is configured）；")
         } else {
-            append("已配置的额外共享目录（Linux 挂载点 <-> Android 源目录，底层为同一物理文件夹，双向实时同步）：")
+            append("Configured extra shared directories（Linux mount point <-> Android source directory, the same physical folder underneath, synced in real time both ways）：")
             append(
                 sharedMounts.joinToString("，") { mount ->
                     "${JSONObject.quote("${SharedFolderMounts.LINUX_MOUNTS_ROOT}/${mount.name}")} <-> ${JSONObject.quote(mount.sourcePath)}"
@@ -92,11 +92,11 @@ internal data class TerminalExecutionContext(
             append("；")
         }
         if (linuxBackend == LinuxExecutionBackend.CHROOT) {
-            append("chroot 下宿主 \"/storage/emulated/0\"（及符号链接 \"/sdcard\"）与 \"/data/local/tmp\" 已默认挂载至 Linux 同路径。")
+            append("Under chroot, the host \"/storage/emulated/0\"（and the symbolic link \"/sdcard\"）and \"/data/local/tmp\" are mounted to Linux the same path。")
         } else {
-            append("PRoot 下若已授予所有文件访问权限，宿主 \"/storage/emulated/0\" 也会默认挂载至 Linux 同路径。")
+            append("Under PRoot, if all file access permissions have been granted, the host \"/storage/emulated/0\" is also mounted to Linux the same path。")
         }
-        append("Linux 路径按 Linux 环境解释。")
+        append("Linux paths are interpreted in the Linux environment。")
     }
 
     private companion object {

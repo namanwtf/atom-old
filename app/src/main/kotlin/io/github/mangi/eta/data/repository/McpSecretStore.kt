@@ -51,13 +51,13 @@ internal class McpSecretStore(context: Context) {
             preferences.edit()
             .putString(tokenKey(serverId), Base64.encodeToString(payload, Base64.NO_WRAP))
             .commit()
-        ) { AppStrings.get(R.string.repo_err_mcp_secret_save_failed, "MCP 凭据保存失败") }
+        ) { AppStrings.get(R.string.repo_err_mcp_secret_save_failed, "Failed to save MCP credentials") }
     }
 
     @Synchronized
     fun clear(serverId: String) {
         check(preferences.edit().remove(tokenKey(serverId)).commit()) {
-            AppStrings.get(R.string.repo_err_mcp_secret_delete_failed, "MCP 凭据删除失败")
+            AppStrings.get(R.string.repo_err_mcp_secret_delete_failed, "Failed to delete MCP credentials")
         }
     }
 

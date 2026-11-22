@@ -56,8 +56,8 @@ internal object ColorDirectHooks {
         if (activityClass == null) {
             hooks.missing(
                 id = "colordirect.collect-info",
-                description = "CollectInfoActivity Intent 处理入口",
-                detail = "未找到 CollectInfoActivity，无法接管双指识屏 Activity 入口"
+                description = "CollectInfoActivity Intent handling entry",
+                detail = "CollectInfoActivity not found, cannot take over the two-finger screen-recognition Activity entry"
             )
             return
         }
@@ -79,8 +79,8 @@ internal object ColorDirectHooks {
         if (method == null) {
             hooks.missing(
                 id = "colordirect.collect-info",
-                description = "CollectInfoActivity Intent 处理入口",
-                detail = "未唯一定位 CollectInfoActivity Intent 处理方法，保留系统双指识屏"
+                description = "CollectInfoActivity Intent handling entry",
+                detail = "Could not uniquely locate the CollectInfoActivity Intent handler, keeping system two-finger screen recognition"
             )
             return
         }
@@ -88,7 +88,7 @@ internal object ColorDirectHooks {
         hooks.intercept(
             id = "colordirect.collect-info",
             executable = method,
-            description = "CollectInfoActivity Intent 处理入口"
+            description = "CollectInfoActivity Intent handling entry"
         ) { chain ->
             // 开关关闭则走原双指识屏逻辑。
             if (!Prefs.isEnabled(Prefs.Keys.DOUBLE_FINGER_CIRCLE_TO_SEARCH)) {
@@ -112,20 +112,20 @@ internal object ColorDirectHooks {
     private fun tryStartCircleToSearch(context: Context, logger: ModuleLogger): Boolean {
         val now = SystemClock.uptimeMillis()
         if (now - lastHandledUptime <= ModuleConfig.INTERCEPT_DEDUP_WINDOW_MS) {
-            logger.debug { "$SOURCE: 命中去重窗口，吞掉重复双指识屏" }
+            logger.debug { "$SOURCE: hit dedup window, swallowing duplicate two-finger screen recognition" }
             return true
         }
 
-        if (!CircleToSearchInvoker.isAvailable(context, logger, SOURCE, "回退小布双指识屏")) {
+        if (!CircleToSearchInvoker.isAvailable(context, logger, SOURCE, "fall back to Breeno two-finger screen recognition")) {
             return false
         }
 
-        if (!CircleToSearchInvoker.trigger(logger, "$SOURCE 双指识屏")) {
+        if (!CircleToSearchInvoker.trigger(logger, "$SOURCE two-finger screen recognition")) {
             return false
         }
 
         lastHandledUptime = now
-        logger.debug { "$SOURCE: 命中双指识屏，已转发 Circle to Search" }
+        logger.debug { "$SOURCE: hit two-finger screen recognition, forwarded to Circle to Search" }
         return true
     }
 

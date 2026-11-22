@@ -895,7 +895,7 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
         private const val HANDOFF_TIMEOUT_MS = 5_000L
         private const val HANDOFF_EXIT_DURATION_MS = 220L
         private const val HANDOFF_REQUEST_CODE = 0x455441
-        private const val LEGACY_STOPPED_ERROR = "已停止"
+        private const val LEGACY_STOPPED_ERROR = "Stopped"
         private const val SYNTHETIC_STOPPED = "eta_status:stopped"
         private const val SYNTHETIC_RUNTIME_FAILED = "eta_status:runtime_failed"
         private const val FOREGROUND_DISMISS_TIMEOUT_MS = 2_000L

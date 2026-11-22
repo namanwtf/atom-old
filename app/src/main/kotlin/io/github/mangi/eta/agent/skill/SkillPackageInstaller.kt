@@ -41,7 +41,7 @@ class SkillPackageInstaller internal constructor(
         requireNotNull(canonicalSkillsRoot.parentFile) {
             AppStrings.get(
                 R.string.skill_i18n_skills_dir_parent_required,
-                "Skills 目录必须有父目录",
+                "Skills directory must have a parent directory",
             )
         },
         ".eta-skill-installer",
@@ -60,14 +60,14 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.NO_SKILL_FOUND,
                 AppStrings.get(
                     R.string.skill_i18n_zip_missing_skill_md,
-                    "ZIP 中没有找到 SKILL.md",
+                    "No SKILL.md found in the ZIP",
                 ),
             )
             candidates.size > 1 -> fail(
                 SkillInstallErrorCode.MULTIPLE_SKILLS_FOUND,
                 AppStrings.get(
                     R.string.skill_i18n_local_zip_multiple_skills,
-                    "本地 ZIP 必须只包含一个 Skill，当前发现 %1\$d 个",
+                    "A local ZIP must contain exactly one Skill，found %1\$d",
                     candidates.size,
                 ),
             )
@@ -80,7 +80,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_replace_requires_confirmed_id,
-                        "替换用户 Skill 时必须指定已确认的 Skill id",
+                        "Replacing a user Skill requires a confirmed Skill id",
                     ),
                 )
             }
@@ -89,7 +89,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_reread_zip_skill_mismatch,
-                        "重新读取的 ZIP 与已确认替换的 Skill 不一致",
+                        "The re-read ZIP does not match the confirmed Skill to replace",
                     ),
                 )
             }
@@ -98,7 +98,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_replace_requires_sha256,
-                        "替换用户 Skill 时必须提供有效的小写 SHA-256",
+                        "Replacing a user Skill requires a valid lowercase SHA-256",
                     ),
                 )
             }
@@ -107,7 +107,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_reread_zip_content_mismatch,
-                        "重新读取的 ZIP 内容与已确认归档不一致",
+                        "The re-read ZIP content does not match the confirmed archive",
                     ),
                 )
             }
@@ -116,7 +116,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SELECTION,
                 AppStrings.get(
                     R.string.skill_i18n_replace_identity_only_when_replacing,
-                    "仅替换现有用户 Skill 时可指定替换身份与归档摘要",
+                    "Replacement identity and archive digest can only be specified when replacing an existing user Skill",
                 ),
             )
         }
@@ -141,7 +141,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.NO_SKILL_FOUND,
                 AppStrings.get(
                     R.string.skill_i18n_repo_zip_missing_skill_md,
-                    "仓库 ZIP 中没有找到 SKILL.md",
+                    "No SKILL.md found in the repository ZIP",
                 ),
             )
         }
@@ -164,7 +164,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_select_at_least_one_path,
-                        "至少选择一个 Skill 路径",
+                        "Select at least one Skill path",
                     ),
                 )
             }
@@ -175,7 +175,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.NO_SKILL_FOUND,
                     AppStrings.get(
                         R.string.skill_i18n_repo_zip_missing_skill_md,
-                        "仓库 ZIP 中没有找到 SKILL.md",
+                        "No SKILL.md found in the repository ZIP",
                     ),
                 )
             }
@@ -186,7 +186,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_duplicate_selected_paths,
-                        "选择中包含重复的 Skill 路径",
+                        "The selection contains duplicate Skill paths",
                     ),
                 )
             }
@@ -196,7 +196,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.INVALID_SELECTION,
                         AppStrings.get(
                             R.string.skill_i18n_invalid_selected_skill_root,
-                            "所选路径不是有效的 Skill 根目录：%1\$s",
+                            "The selected path is not a valid Skill root directory：%1\$s",
                             relativePath,
                         ),
                     )
@@ -209,7 +209,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.INVALID_SELECTION,
                         AppStrings.get(
                             R.string.skill_i18n_reread_repo_skills_mismatch,
-                            "重新读取的仓库 Skill 与已确认替换的 Skill 集合不一致",
+                            "The re-read repository Skills do not match the confirmed set of Skills to replace",
                         ),
                     )
                 }
@@ -218,7 +218,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_expected_replacement_ids_only_when_replacing,
-                        "仅替换现有用户 Skill 时可指定 expectedReplacementIds",
+                        "expectedReplacementIds can only be specified when replacing existing user Skills",
                     ),
                 )
             }
@@ -262,7 +262,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.DUPLICATE_SKILL_ID,
                 AppStrings.get(
                     R.string.skill_i18n_duplicate_skill_names,
-                    "所选 Skill 使用了重复名称：%1\$s",
+                    "The selected Skills use a duplicate name：%1\$s",
                     duplicateIds.sorted().joinToString(),
                 ),
             )
@@ -317,7 +317,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.IO_ERROR,
                 AppStrings.get(
                     R.string.skill_i18n_create_skills_dir_failed,
-                    "无法创建 Skills 目录",
+                    "Unable to create the Skills directory",
                 ),
             )
         }
@@ -327,7 +327,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.IO_ERROR,
                 AppStrings.get(
                     R.string.skill_i18n_create_backup_dir_failed,
-                    "无法创建安装备份目录",
+                    "Unable to create the install backup directory",
                 ),
             )
         }
@@ -379,12 +379,12 @@ class SkillPackageInstaller internal constructor(
             val message = if (rollbackComplete) {
                 AppStrings.get(
                     R.string.skill_i18n_commit_failed_restored,
-                    "Skill 安装提交失败，旧 Skill 已恢复",
+                    "Skill install commit failed，the old Skill has been restored",
                 )
             } else {
                 AppStrings.get(
                     R.string.skill_i18n_commit_failed_recovery_incomplete,
-                    "Skill 安装提交失败，且自动恢复未完整完成",
+                    "Skill install commit failed，and automatic recovery did not complete",
                 )
             }
             return SkillInstallResult.Failure(
@@ -423,7 +423,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_SELECTION,
                     AppStrings.get(
                         R.string.skill_i18n_nested_skill_md,
-                        "Skill %1\$s 内还包含另一个 SKILL.md：%2\$s",
+                        "Skill %1\$s still contains another SKILL.md：%2\$s",
                         parent.relativePath,
                         nested.relativePath,
                     ),
@@ -464,7 +464,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_skill_file_too_large,
-                    "%1\$s 超过 %2\$d 字节限制",
+                    "%1\$s exceeds the %2\$d byte limit",
                     skillFile.name,
                     limits.maxSkillFileBytes,
                 ),
@@ -475,7 +475,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_skill_md_utf8_required,
-                    "SKILL.md 必须是 UTF-8 文本",
+                    "SKILL.md must be UTF-8 text",
                 ),
             )
         val frontmatter = strictFrontmatter(raw)
@@ -483,7 +483,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_skill_md_frontmatter_required,
-                    "SKILL.md 必须包含以 --- 包围的 YAML frontmatter",
+                    "SKILL.md must contain a YAML frontmatter wrapped in ---",
                 ),
             )
         val parsed = SkillParser.parseSimpleFrontmatter(frontmatter)
@@ -494,7 +494,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_invalid_skill_name,
-                    "Skill name 必须为不超过 %1\$d 字符的小写字母、数字和单连字符组合",
+                    "Skill name must be a combination of lowercase letters、digits and single hyphens，no more than %1\$d characters",
                     MAX_SKILL_NAME_LENGTH,
                 ),
             )
@@ -504,7 +504,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_SKILL,
                 AppStrings.get(
                     R.string.skill_i18n_invalid_skill_description,
-                    "Skill description 必填且不能超过 %1\$d 字符",
+                    "Skill description is required and must not exceed %1\$d characters",
                     MAX_SKILL_DESCRIPTION_LENGTH,
                 ),
             )
@@ -549,7 +549,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.IO_ERROR,
                 AppStrings.get(
                     R.string.skill_i18n_create_zip_staging_dir_failed,
-                    "无法创建 ZIP 暂存目录",
+                    "Unable to create the ZIP staging directory",
                 ),
             )
         }
@@ -566,7 +566,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.TOO_MANY_ENTRIES,
                         AppStrings.get(
                             R.string.skill_i18n_zip_too_many_entries,
-                            "ZIP 条目数超过 %1\$d 个",
+                            "ZIP entry count exceeds %1\$d",
                             limits.maxEntries,
                         ),
                     )
@@ -581,7 +581,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.ENTRY_PATH_TOO_DEEP,
                         AppStrings.get(
                             R.string.skill_i18n_zip_entry_path_too_deep,
-                            "ZIP 条目路径层级超过 %1\$d 层",
+                            "ZIP entry path depth exceeds %1\$d levels",
                             limits.maxPathDepth,
                         ),
                     )
@@ -593,7 +593,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_duplicate_entry,
-                            "ZIP 包含重复条目：%1\$s",
+                            "ZIP contains a duplicate entry：%1\$s",
                             relativePath,
                         ),
                     )
@@ -606,7 +606,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_entry_file_dir_conflict,
-                            "ZIP 条目存在文件与目录冲突：%1\$s",
+                            "ZIP entry has a file/directory conflict：%1\$s",
                             relativePath,
                         ),
                     )
@@ -616,7 +616,7 @@ class SkillPackageInstaller internal constructor(
                         SkillInstallErrorCode.DUPLICATE_ENTRY,
                         AppStrings.get(
                             R.string.skill_i18n_zip_entry_file_dir_conflict,
-                            "ZIP 条目存在文件与目录冲突：%1\$s",
+                            "ZIP entry has a file/directory conflict：%1\$s",
                             relativePath,
                         ),
                     )
@@ -631,7 +631,7 @@ class SkillPackageInstaller internal constructor(
                             SkillInstallErrorCode.IO_ERROR,
                             AppStrings.get(
                                 R.string.skill_i18n_create_zip_dir_failed,
-                                "无法创建 ZIP 目录",
+                                "Unable to create the ZIP directory",
                             ),
                         )
                     }
@@ -640,7 +640,7 @@ class SkillPackageInstaller internal constructor(
                             SkillInstallErrorCode.INVALID_ARCHIVE,
                             AppStrings.get(
                                 R.string.skill_i18n_zip_dir_entry_has_data,
-                                "ZIP 目录条目包含数据",
+                                "ZIP directory entry contains data",
                             ),
                         )
                     }
@@ -650,7 +650,7 @@ class SkillPackageInstaller internal constructor(
                             SkillInstallErrorCode.ENTRY_TOO_LARGE,
                             AppStrings.get(
                                 R.string.skill_i18n_zip_single_file_too_large,
-                                "ZIP 单个文件超过 %1\$d 字节限制",
+                                "ZIP single file exceeds the %1\$d byte limit",
                                 limits.maxSingleFileBytes,
                             ),
                         )
@@ -661,7 +661,7 @@ class SkillPackageInstaller internal constructor(
                                 SkillInstallErrorCode.IO_ERROR,
                                 AppStrings.get(
                                     R.string.skill_i18n_create_zip_parent_dir_failed,
-                                    "无法创建 ZIP 文件目录",
+                                    "Unable to create the ZIP file directory",
                                 ),
                             )
                         }
@@ -680,7 +680,7 @@ class SkillPackageInstaller internal constructor(
                                     SkillInstallErrorCode.ENTRY_TOO_LARGE,
                                     AppStrings.get(
                                         R.string.skill_i18n_zip_single_file_too_large,
-                                        "ZIP 单个文件超过 %1\$d 字节限制",
+                                        "ZIP single file exceeds the %1\$d byte limit",
                                         limits.maxSingleFileBytes,
                                     ),
                                 )
@@ -690,7 +690,7 @@ class SkillPackageInstaller internal constructor(
                                     SkillInstallErrorCode.EXTRACTED_CONTENT_TOO_LARGE,
                                     AppStrings.get(
                                         R.string.skill_i18n_zip_extracted_too_large,
-                                        "ZIP 解压内容超过 %1\$d 字节限制",
+                                        "ZIP extracted content exceeds the %1\$d byte limit",
                                         limits.maxExtractedBytes,
                                     ),
                                 )
@@ -707,7 +707,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.INVALID_ARCHIVE,
                 AppStrings.get(
                     R.string.skill_i18n_zip_empty_or_invalid,
-                    "ZIP 为空或格式无效",
+                    "ZIP is empty or has an invalid format",
                 ),
             )
         }
@@ -734,7 +734,7 @@ class SkillPackageInstaller internal constructor(
                             SkillInstallErrorCode.ARCHIVE_TOO_LARGE,
                             AppStrings.get(
                                 R.string.skill_i18n_zip_archive_too_large,
-                                "ZIP 压缩包超过 %1\$d 字节限制",
+                                "ZIP archive exceeds the %1\$d byte limit",
                                 limits.maxArchiveBytes,
                             ),
                         )
@@ -747,7 +747,7 @@ class SkillPackageInstaller internal constructor(
         if (total == 0L) {
             fail(
                 SkillInstallErrorCode.INVALID_ARCHIVE,
-                AppStrings.get(R.string.skill_i18n_zip_empty, "ZIP 为空"),
+                AppStrings.get(R.string.skill_i18n_zip_empty, "ZIP is empty"),
             )
         }
         return digest.digest().joinToString(separator = "") { byte ->
@@ -768,7 +768,7 @@ class SkillPackageInstaller internal constructor(
                 errorCode,
                 AppStrings.get(
                     R.string.skill_i18n_unsafe_relative_path,
-                    "路径不是安全的相对路径",
+                    "The path is not a safe relative path",
                 ),
             )
         }
@@ -783,7 +783,7 @@ class SkillPackageInstaller internal constructor(
                 errorCode,
                 AppStrings.get(
                     R.string.skill_i18n_invalid_path_segment,
-                    "路径包含非法层级",
+                    "The path contains an invalid segment",
                 ),
             )
         }
@@ -802,7 +802,7 @@ class SkillPackageInstaller internal constructor(
                 SkillInstallErrorCode.UNSAFE_ENTRY_PATH,
                 AppStrings.get(
                     R.string.skill_i18n_zip_entry_escapes_staging,
-                    "ZIP 条目试图写出暂存目录",
+                    "ZIP entry attempts to write outside the staging directory",
                 ),
             )
         }
@@ -819,7 +819,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_create_install_staging_failed,
-                        "无法创建 Skill 安装暂存目录",
+                        "Unable to create the Skill install staging directory",
                     ),
                 )
             )
@@ -838,7 +838,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.COMMIT_FAILED,
                     AppStrings.get(
                         R.string.skill_i18n_pending_recovery_detected,
-                        "检测到未完成的 Skill 恢复，已停止安装",
+                        "Detected an incomplete Skill recovery；installation stopped",
                     ),
                 ),
                 recoveryRequired = true,
@@ -849,7 +849,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_ARCHIVE,
                     AppStrings.get(
                         R.string.skill_i18n_zip_corrupted,
-                        "ZIP 格式无效或内容已损坏",
+                        "ZIP format is invalid or the content is corrupted",
                     ),
                 )
             )
@@ -859,7 +859,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_zip_read_or_stage_failed,
-                        "读取或暂存 ZIP 失败",
+                        "Failed to read or stage the ZIP",
                     ),
                 )
             )
@@ -869,7 +869,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_zip_permission_denied,
-                        "没有读取该 ZIP 的权限",
+                        "No permission to read this ZIP",
                     ),
                 )
             )
@@ -891,7 +891,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_create_inspection_staging_failed,
-                        "无法创建 Skill 检查暂存目录",
+                        "Unable to create the Skill inspection staging directory",
                     ),
                 )
             )
@@ -909,7 +909,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.INVALID_ARCHIVE,
                     AppStrings.get(
                         R.string.skill_i18n_zip_corrupted,
-                        "ZIP 格式无效或内容已损坏",
+                        "ZIP format is invalid or the content is corrupted",
                     ),
                 )
             )
@@ -919,7 +919,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_zip_read_or_stage_failed,
-                        "读取或暂存 ZIP 失败",
+                        "Failed to read or stage the ZIP",
                     ),
                 )
             )
@@ -929,7 +929,7 @@ class SkillPackageInstaller internal constructor(
                     SkillInstallErrorCode.IO_ERROR,
                     AppStrings.get(
                         R.string.skill_i18n_zip_permission_denied,
-                        "没有读取该 ZIP 的权限",
+                        "No permission to read this ZIP",
                     ),
                 )
             )
@@ -957,7 +957,7 @@ class SkillPackageInstaller internal constructor(
         if (isCancelled()) {
             fail(
                 SkillInstallErrorCode.CANCELLED,
-                AppStrings.get(R.string.skill_i18n_install_cancelled, "Skill 安装已取消"),
+                AppStrings.get(R.string.skill_i18n_install_cancelled, "Skill installation cancelled"),
             )
         }
     }

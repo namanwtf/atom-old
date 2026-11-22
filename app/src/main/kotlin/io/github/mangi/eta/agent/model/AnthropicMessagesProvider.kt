@@ -341,11 +341,11 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
             !sawMessageStop
         }
         if (!sawMessageStop) throw AgentModelFailure.incompleteStream(
-            AppStrings.get(R.string.provider_err_anthropic_stream_not_ended, "Anthropic SSE 流未正常结束"),
+            AppStrings.get(R.string.provider_err_anthropic_stream_not_ended, "Anthropic SSE stream did not end normally"),
         )
         if (blocks.values.any { it.type in setOf("text", "thinking", "redacted_thinking", "tool_use") && !it.stopped }) {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_anthropic_block_not_ended, "Anthropic SSE 内容块未正常结束"),
+                AppStrings.get(R.string.provider_err_anthropic_block_not_ended, "Anthropic SSE content block did not end normally"),
             )
         }
         val toolCalls = blocks.values
@@ -353,7 +353,7 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
             .sortedBy { it.index }
         if (toolCalls.isNotEmpty() && blocks.values.any { it.type == "thinking" && it.signature.isEmpty() }) {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_anthropic_missing_signature, "Anthropic SSE 工具回合缺少思考签名"),
+                AppStrings.get(R.string.provider_err_anthropic_missing_signature, "Anthropic SSE tool turn is missing a reasoning signature"),
             )
         }
 
@@ -422,7 +422,7 @@ internal object AnthropicMessagesProvider : AgentProviderClient {
         return when (type) {
             "error" -> throw AgentModelFailure.stream(
                 json.optJSONObject("error") ?: JSONObject(),
-                AppStrings.get(R.string.provider_err_anthropic_sse_error, "Anthropic SSE 返回错误"),
+                AppStrings.get(R.string.provider_err_anthropic_sse_error, "Anthropic SSE returned an error"),
             )
             "message_start" -> {
                 EventResult(usage = parseUsage(json.optJSONObject("message")?.optJSONObject("usage")))

@@ -141,7 +141,7 @@ internal object RoleplayConversationReducer {
         val base = edited ?: state
         val messages = if (edited != null) base.messages else base.messages + SystemNoticeMessageUi(
             id = "rewrite-result-$runId", code = SystemNoticeCode.RuntimeFailed,
-            detail = result.error ?: AppStrings.get(R.string.character_rewrite_incomplete, "重新生成未完成，已保留原回复。"),
+            detail = result.error ?: AppStrings.get(R.string.character_rewrite_incomplete, "Regeneration did not complete; the original reply has been kept."),
         )
         return base.copy(
             messages = messages,

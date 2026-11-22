@@ -39,14 +39,14 @@ internal class OidcTokenVerifier(private val http: OAuthHttpClient) {
         val response = http.get(provider.jwksUrl, controller)
         if (!response.successful) throw ProviderAuthException(
             "oidc_keys_unavailable",
-            AppStrings.get(R.string.auth_err_oidc_keys_unavailable, "暂时无法验证账号身份，请稍后重试"),
+            AppStrings.get(R.string.auth_err_oidc_keys_unavailable, "Unable to verify account identity right now; please try again later"),
         )
         val keys = try {
             JWKSet.parse(response.json.toString())
         } catch (_: Exception) {
             throw ProviderAuthException(
                 "oidc_invalid_keys",
-                AppStrings.get(R.string.auth_err_oidc_invalid_keys, "授权服务的身份验证密钥无效"),
+                AppStrings.get(R.string.auth_err_oidc_invalid_keys, "The authorization service's identity verification keys are invalid"),
             )
         }
         cache[provider] = CachedKeys(keys, System.currentTimeMillis() + 3_600_000)
@@ -103,7 +103,7 @@ internal class OidcTokenVerifier(private val http: OAuthHttpClient) {
         } catch (_: Exception) {
             throw ProviderAuthException(
                 "oidc_identity_invalid",
-                AppStrings.get(R.string.auth_err_oidc_identity_invalid, "无法验证登录账号，请重新登录"),
+                AppStrings.get(R.string.auth_err_oidc_identity_invalid, "Unable to verify the signed-in account; please sign in again"),
             )
         }
 
@@ -113,7 +113,7 @@ internal class OidcTokenVerifier(private val http: OAuthHttpClient) {
         } catch (_: Exception) {
             throw ProviderAuthException(
                 "oidc_token_invalid",
-                AppStrings.get(R.string.auth_err_oidc_token_invalid, "授权服务返回了无效的身份凭据"),
+                AppStrings.get(R.string.auth_err_oidc_token_invalid, "The authorization service returned invalid identity credentials"),
             )
         }
 

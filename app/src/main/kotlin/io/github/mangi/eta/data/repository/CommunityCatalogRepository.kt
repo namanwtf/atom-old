@@ -84,7 +84,7 @@ internal object CommunityCatalogRepository {
                         error(
                             AppStrings.get(
                                 R.string.repo_err_catalog_update_http,
-                                "目录更新失败：HTTP %1\$d",
+                                "Catalog update failed: HTTP %1\$d",
                                 response.code,
                             ),
                         )
@@ -93,7 +93,7 @@ internal object CommunityCatalogRepository {
                         error(
                             AppStrings.get(
                                 R.string.repo_err_catalog_update_not_json,
-                                "目录更新失败：响应格式不是 JSON",
+                                "Catalog update failed: response is not JSON",
                             ),
                         )
                     }
@@ -112,7 +112,7 @@ internal object CommunityCatalogRepository {
                 throw IllegalStateException(
                     AppStrings.get(
                         R.string.repo_err_catalog_invalid_format,
-                        "目录数据格式无效",
+                        "Catalog data format is invalid",
                     ),
                     failure,
                 )
@@ -138,14 +138,14 @@ internal object CommunityCatalogRepository {
         require(modelIds.isNotEmpty()) {
             AppStrings.get(
                 R.string.repo_err_catalog_select_model_required,
-                "请至少选择一个模型",
+                "Please select at least one model",
             )
         }
         val models = selection.models.filter { it.modelId in modelIds }
         require(models.size == modelIds.size) {
             AppStrings.get(
                 R.string.repo_err_catalog_selected_model_missing,
-                "选中的模型已不在目录中，请重新选择",
+                "The selected model is no longer in the catalog，please reselect",
             )
         }
         return CustomProviderSetting(
@@ -185,7 +185,7 @@ internal object CommunityCatalogRepository {
                 error(
                     AppStrings.get(
                         R.string.repo_err_catalog_size_limit,
-                        "模型目录超出大小限制",
+                        "Model catalog exceeds size limit",
                     ),
                 )
             }

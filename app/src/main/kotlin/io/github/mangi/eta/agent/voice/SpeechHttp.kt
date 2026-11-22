@@ -32,7 +32,7 @@ internal object SpeechHttp {
         if (source.request(MAX_JSON_BYTES + 1)) {
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_http_response_too_large, "语音服务响应过大"),
+                AppStrings.get(R.string.voice_i18n_http_response_too_large, "voice service response too large"),
             )
         }
         JSONObject(source.readUtf8())
@@ -67,15 +67,15 @@ internal object SpeechHttp {
         throw when (status) {
             401, 403 -> SpeechFailure(
                 SpeechErrorCode.AUTHENTICATION,
-                AppStrings.get(R.string.voice_i18n_http_auth_failed, "语音服务认证失败，请检查凭据和服务权限"),
+                AppStrings.get(R.string.voice_i18n_http_auth_failed, "Voice service authentication failed，please check credentials and service permissions"),
             )
             429 -> SpeechFailure(
                 SpeechErrorCode.RATE_LIMITED,
-                AppStrings.get(R.string.voice_i18n_http_rate_limited, "语音服务请求过于频繁，请稍后重试"),
+                AppStrings.get(R.string.voice_i18n_http_rate_limited, "Voice service requests too frequent，please retry later"),
             )
             else -> SpeechFailure(
                 SpeechErrorCode.SERVER,
-                AppStrings.get(R.string.voice_i18n_http_request_failed, "语音服务请求失败（HTTP %1\$d）", status),
+                AppStrings.get(R.string.voice_i18n_http_request_failed, "Voice service request failed（HTTP %1\$d）", status),
             )
         }
     }

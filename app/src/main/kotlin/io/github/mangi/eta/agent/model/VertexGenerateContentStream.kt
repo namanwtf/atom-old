@@ -59,7 +59,7 @@ internal class VertexGenerateContentStream(
         chunk.optJSONObject("error")?.let { error ->
             throw AgentModelFailure.stream(
                 error,
-                AppStrings.get(R.string.provider_err_vertex_stream_failed, "Vertex AI Gemini 流式响应失败。"),
+                AppStrings.get(R.string.provider_err_vertex_stream_failed, "Vertex AI Gemini streaming response failed."),
             )
         }
         chunk.optJSONObject("usageMetadata")?.let(::mergeUsage)
@@ -200,7 +200,7 @@ internal class VertexGenerateContentStream(
                 throw AgentModelFailure(
                     "CONTENT_FILTER",
                     false,
-                    AppStrings.get(R.string.provider_err_vertex_blocked, "Vertex AI 拦截了本次请求或回复。"),
+                    AppStrings.get(R.string.provider_err_vertex_blocked, "Vertex AI blocked this request or response."),
                 )
             reasonFromServer == "MAX_TOKENS" || reasonFromServer == "CONTINUATION" ->
                 throw AgentModelFailure(
@@ -208,13 +208,13 @@ internal class VertexGenerateContentStream(
                     false,
                     AppStrings.get(
                         R.string.provider_err_vertex_output_limit,
-                        "Vertex AI 达到单次输出上限，回复未完成。请缩小任务范围或降低思考档位后重试。",
+                        "Vertex AI hit the single-output limit and the response is incomplete. Narrow the task scope or lower the reasoning effort and retry.",
                     ),
                 )
             reasonFromServer in INVALID_TOOL_FINISH_REASONS -> malformed("GEMINI_INVALID_TOOL_CALL")
             reasonFromServer == null || reasonFromServer == "FINISH_REASON_UNSPECIFIED" ->
                 throw AgentModelFailure.incompleteStream(
-                    AppStrings.get(R.string.provider_err_vertex_incomplete, "Vertex AI 响应提前结束，未收到完整终态。"),
+                    AppStrings.get(R.string.provider_err_vertex_incomplete, "Vertex AI response ended early; the full terminal state was not received."),
                 )
             reasonFromServer != "STOP" -> malformed()
         }
@@ -296,11 +296,11 @@ internal class VertexGenerateContentStream(
             when (code) {
                 "GEMINI_INVALID_TOOL_CALL" -> AppStrings.get(
                     R.string.provider_err_vertex_invalid_tool_call,
-                    "Vertex AI 返回的工具调用不完整或无效。",
+                    "Vertex AI returned an incomplete or invalid tool call.",
                 )
                 else -> AppStrings.get(
                     R.string.provider_err_vertex_stream_invalid,
-                    "Vertex AI 流式响应格式无效或超过容量限制。",
+                    "Vertex AI streaming response format is invalid or exceeds capacity limits.",
                 )
             },
         )

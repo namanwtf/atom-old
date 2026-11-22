@@ -133,9 +133,9 @@ internal class AlpineEnvironmentInstaller(
         } catch (failure: RootlessInstallFailure) {
             return@withContext AlpineInstallResult.Failed(AlpineInstallStage.EXTRACTING, failure.code, failure.message)
         } catch (_: java.io.IOException) {
-            return@withContext AlpineInstallResult.Failed(AlpineInstallStage.EXTRACTING, "INSTALL_IO_FAILED", "安装文件无法读写，请检查内部存储空间并重试")
+            return@withContext AlpineInstallResult.Failed(AlpineInstallStage.EXTRACTING, "INSTALL_IO_FAILED", "Installation files cannot be read or written; check internal storage space and retry")
         } catch (_: IllegalArgumentException) {
-            return@withContext AlpineInstallResult.Failed(AlpineInstallStage.EXTRACTING, "INVALID_ARCHIVE", "环境归档无效或包含不安全路径，请重新下载后重试")
+            return@withContext AlpineInstallResult.Failed(AlpineInstallStage.EXTRACTING, "INVALID_ARCHIVE", "Environment archive is invalid or contains unsafe paths; re-download and retry")
         } finally {
             archive.delete()
         }

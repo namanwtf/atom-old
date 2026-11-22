@@ -34,7 +34,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
         if (minimum <= 0) {
             throw SpeechFailure(
                 SpeechErrorCode.AUDIO,
-                AppStrings.get(R.string.voice_i18n_recorder_format_unsupported, "设备不支持语音录音格式"),
+                AppStrings.get(R.string.voice_i18n_recorder_format_unsupported, "Device does not support the voice recording format"),
             )
         }
         val audio = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, RATE,
@@ -44,7 +44,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
             if (audio.state != AudioRecord.STATE_INITIALIZED) {
                 throw SpeechFailure(
                     SpeechErrorCode.AUDIO,
-                    AppStrings.get(R.string.voice_i18n_recorder_init_failed, "无法初始化麦克风"),
+                    AppStrings.get(R.string.voice_i18n_recorder_init_failed, "Cannot initialize microphone"),
                 )
             }
             if (finishing.get()) return@withContext
@@ -52,7 +52,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
             if (audio.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
                 throw SpeechFailure(
                     SpeechErrorCode.AUDIO,
-                    AppStrings.get(R.string.voice_i18n_recorder_mic_busy, "麦克风不可用，可能正被其他应用占用"),
+                    AppStrings.get(R.string.voice_i18n_recorder_mic_busy, "Microphone unavailable，possibly in use by another app"),
                 )
             }
             onReady()
@@ -64,7 +64,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
                 if (count <= 0 || count % 2 != 0) {
                     throw SpeechFailure(
                         SpeechErrorCode.AUDIO,
-                        AppStrings.get(R.string.voice_i18n_recorder_read_failed, "麦克风读取失败"),
+                        AppStrings.get(R.string.voice_i18n_recorder_read_failed, "Microphone read failed"),
                     )
                 }
                 val bytes = if (count == frame.size) frame else frame.copyOf(count)
@@ -73,7 +73,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
                     if (finishing.get() && sent.isClosed) break
                     throw SpeechFailure(
                         SpeechErrorCode.BACKPRESSURE,
-                        AppStrings.get(R.string.voice_i18n_upload_backpressure, "网络上传不及时，请重试"),
+                        AppStrings.get(R.string.voice_i18n_upload_backpressure, "network upload too slow，please retry"),
                     )
                 }
                 total += count
@@ -95,7 +95,7 @@ internal class SpeechRecorder : SpeechAudioCapture {
     override fun finish() {
         finishing.set(true)
         // stop 解除阻塞 read；由录音协程在 finally 中唯一释放实例。
-        try { recorder?.stop() } catch (_: IllegalStateException) { /* 初始化尚未完成或已经停止。 */ }
+        try { recorder?.stop() } catch (_: IllegalStateException) { /* Initialization not yet complete or already stopped. */ }
     }
 
     override fun cancel() { finish(); frames.cancel() }
@@ -121,7 +121,7 @@ internal suspend fun collectSpeechAudio(frames: kotlinx.coroutines.channels.Rece
         if (out.size() + frame.size > SpeechRecorder.MAX_BYTES) {
             throw SpeechFailure(
                 SpeechErrorCode.AUDIO,
-                AppStrings.get(R.string.voice_i18n_recording_too_long, "录音超过长度限制"),
+                AppStrings.get(R.string.voice_i18n_recording_too_long, "Recording exceeds length limit"),
             )
         }
         out.write(frame)
@@ -129,7 +129,7 @@ internal suspend fun collectSpeechAudio(frames: kotlinx.coroutines.channels.Rece
     if (out.size() == 0) {
         throw SpeechFailure(
             SpeechErrorCode.NO_SPEECH,
-            AppStrings.get(R.string.voice_i18n_no_audio_recorded, "没有录到语音，请重试"),
+            AppStrings.get(R.string.voice_i18n_no_audio_recorded, "No voice recorded，please retry"),
         )
     }
     return pcmToWav(out.toByteArray())

@@ -128,9 +128,9 @@ internal class DebianEnvironmentInstaller(
         } catch (failure: RootlessInstallFailure) {
             return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, failure.code, failure.message)
         } catch (_: java.io.IOException) {
-            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INSTALL_IO_FAILED", "安装文件无法读写，请检查内部存储空间并重试")
+            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INSTALL_IO_FAILED", "Installation files cannot be read or written; check internal storage space and retry")
         } catch (_: IllegalArgumentException) {
-            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INVALID_ARCHIVE", "环境归档无效或包含不安全路径，请重新下载后重试")
+            return@withContext DebianInstallResult.Failed(DebianInstallStage.EXTRACTING, "INVALID_ARCHIVE", "Environment archive is invalid or contains unsafe paths; re-download and retry")
         } finally {
             archive.delete()
         }
@@ -370,7 +370,7 @@ internal class DebianEnvironmentInstaller(
                 }
                 eta_apt_repair() {
                   eta_apt_healthy && return 0
-                  # 配置可能被缺失依赖阻塞，交给 APT 修复后必须再次配置并验证。
+                  # Configuration may be blocked by missing dependencies; after APT repairs it, it must be configured and verified again。
                   if dpkg --configure -a && eta_apt_healthy; then return 0; fi
                   eta_apt --fix-broken --no-remove install -y --no-install-recommends || return 1
                   dpkg --configure -a && eta_apt_healthy

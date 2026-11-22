@@ -62,36 +62,36 @@ internal object CharacterBackupTransfer {
     fun validate(data: CharacterBackupData, bindingIds: Set<String>) {
         val ids = data.characters.map { it.id }
         require(ids.size == ids.toSet().size && ids.all(::validId)) {
-            AppStrings.get(R.string.character_backup_invalid_id, "备份中的角色 ID 重复或无效")
+            AppStrings.get(R.string.character_backup_invalid_id, "Character ID in the backup is duplicated or invalid")
         }
         data.characters.forEach { character ->
             val card = CharacterCardCodec.decodeJson(character.cardJson)
             require(card.name.length <= 512) {
-                AppStrings.get(R.string.character_backup_name_too_long, "备份中的角色名称过长")
+                AppStrings.get(R.string.character_backup_name_too_long, "Character name in the backup is too long")
             }
         }
         val assets = data.assets.map { it.characterId }
         require(assets.size == assets.toSet().size && assets.all { it in ids || it in bindingIds }) {
-            AppStrings.get(R.string.character_backup_invalid_assets, "备份中的角色资源无效")
+            AppStrings.get(R.string.character_backup_invalid_assets, "Character assets in the backup are invalid")
         }
         data.assets.forEach { asset ->
             require(asset.memoryMd.toByteArray(Charsets.UTF_8).size <= 1024 * 1024) {
-                AppStrings.get(R.string.character_backup_memory_too_large, "角色记忆超过 1 MiB 限制")
+                AppStrings.get(R.string.character_backup_memory_too_large, "Character memory exceeds the 1 MiB limit")
             }
             asset.avatarBase64?.let {
                 val bytes = Base64.getDecoder().decode(it)
                 require(bytes.size <= CharacterRepository.MAX_FILE_BYTES && CharacterCardPng.isPng(bytes)) {
-                    AppStrings.get(R.string.character_backup_invalid_avatar, "备份中的角色图片无效")
+                    AppStrings.get(R.string.character_backup_invalid_avatar, "Character image in the backup is invalid")
                 }
                 CharacterCardPng.validate(bytes)
             }
         }
         data.persona?.let {
             require(it.id == "main" && it.name.isNotBlank() && it.name.length <= 256) {
-                AppStrings.get(R.string.character_backup_invalid_persona, "备份中的用户人设无效")
+                AppStrings.get(R.string.character_backup_invalid_persona, "User persona in the backup is invalid")
             }
             require(it.description.toByteArray(Charsets.UTF_8).size <= 1024 * 1024) {
-                AppStrings.get(R.string.character_repo_persona_too_large, "用户设定超过 1 MiB 限制")
+                AppStrings.get(R.string.character_repo_persona_too_large, "User persona exceeds the 1 MiB limit")
             }
         }
     }
@@ -99,11 +99,11 @@ internal object CharacterBackupTransfer {
     fun validateBindings(conversations: List<ConversationEntity>): List<RoleplayBinding> =
         conversations.mapNotNull { binding(it) }.onEach { binding ->
             require(validId(binding.characterId)) {
-                AppStrings.get(R.string.character_backup_invalid_binding_id, "备份中的角色会话 ID 无效")
+                AppStrings.get(R.string.character_backup_invalid_binding_id, "Character conversation ID in the backup is invalid")
             }
             CharacterCardCodec.decodeJson(binding.cardSnapshotJson)
             require(binding.userName.length <= 256 && binding.userDescription.toByteArray(Charsets.UTF_8).size <= 1024 * 1024) {
-                AppStrings.get(R.string.character_backup_binding_persona_too_large, "备份中的角色用户设定过大")
+                AppStrings.get(R.string.character_backup_binding_persona_too_large, "Character user persona in the backup is too large")
             }
         }
 
@@ -112,17 +112,17 @@ internal object CharacterBackupTransfer {
         val state = json.decodeFromString<RoleplayMessageState>(row.revisionsJson)
         state.links.forEach { (id, link) ->
             require(messageTypes[id] in setOf("user", "assistant") && link.transcriptMessageId.isNotBlank() && link.blockOrder >= 0) {
-                AppStrings.get(R.string.character_backup_invalid_link, "备份中的正文关联缺少有效消息")
+                AppStrings.get(R.string.character_backup_invalid_link, "A body link in the backup is missing a valid message")
             }
         }
         state.revisions.forEach { (id, revision) ->
             require(id in state.links && revision.candidates.isNotEmpty() && revision.selected in revision.candidates.indices) {
-                AppStrings.get(R.string.character_backup_invalid_revision, "备份中的正文候选或选中版本无效")
+                AppStrings.get(R.string.character_backup_invalid_revision, "A body candidate or selected revision in the backup is invalid")
             }
         }
         state.pendingRewrites.forEach { (runId, target) ->
             require(runId.isNotBlank() && target in state.links && messageTypes[target] == "assistant") {
-                AppStrings.get(R.string.character_backup_invalid_rewrite_target, "备份中的重新生成目标无效")
+                AppStrings.get(R.string.character_backup_invalid_rewrite_target, "The regeneration target in the backup is invalid")
             }
         }
     }

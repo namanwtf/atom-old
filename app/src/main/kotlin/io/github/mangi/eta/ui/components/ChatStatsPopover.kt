@@ -683,12 +683,12 @@ internal fun formatStatDuration(ms: Long): String {
         val whole = tenths / 10L
         val decimal = tenths % 10L
         val secValue = if (decimal == 0L) whole.toString() else "$whole.$decimal"
-        return AppStrings.get(R.string.stats_duration_seconds, "%1\$s秒", secValue)
+        return AppStrings.get(R.string.stats_duration_seconds, "%1\$ss", secValue)
     }
     val totalSeconds = seconds.roundToLong()
     val minutes = totalSeconds / 60L
     val remSeconds = totalSeconds % 60L
-    return AppStrings.get(R.string.stats_duration_min_sec, "%1\$d分%2\$d秒", minutes, remSeconds)
+    return AppStrings.get(R.string.stats_duration_min_sec, "%1\$dm %2\$ds", minutes, remSeconds)
 }
 
 internal fun formatTokensPerSecond(tps: Double): String {

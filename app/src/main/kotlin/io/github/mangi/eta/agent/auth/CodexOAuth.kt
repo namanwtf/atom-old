@@ -20,7 +20,7 @@ internal object CodexOAuth {
     } catch (_: Exception) {
         throw ProviderAuthException(
             "codex_account_missing",
-            AppStrings.get(R.string.auth_err_codex_account_missing, "Codex 凭据缺少工作区信息，请重新登录"),
+            AppStrings.get(R.string.auth_err_codex_account_missing, "Codex credentials are missing workspace info; please sign in again"),
         )
     }
 }

@@ -87,7 +87,7 @@ internal object EtaBackupJsonStreams {
             val first = checked.read()
             if (first < 0) {
                 throw EtaBackupException(
-                    AppStrings.get(R.string.backup_err_empty_file, "备份文件为空"),
+                    AppStrings.get(R.string.backup_err_empty_file, "Backup file is empty"),
                 )
             }
             checked.unread(first)
@@ -95,7 +95,7 @@ internal object EtaBackupJsonStreams {
                 JsonWriter(header.writer(Charsets.UTF_8).buffered()).use { writer ->
                     if (reader.peek() == JsonToken.END_DOCUMENT) {
                         throw EtaBackupException(
-                            AppStrings.get(R.string.backup_err_empty_file, "备份文件为空"),
+                            AppStrings.get(R.string.backup_err_empty_file, "Backup file is empty"),
                         )
                     }
                     reader.beginObject()
@@ -106,7 +106,7 @@ internal object EtaBackupJsonStreams {
                         val name = reader.nextName()
                         if (!seen.add(name)) {
                             throw EtaBackupException(
-                                AppStrings.get(R.string.backup_err_duplicate_field, "备份中存在重复字段"),
+                                AppStrings.get(R.string.backup_err_duplicate_field, "Duplicate field in the backup"),
                             )
                         }
                         onPhase(if (name in knownFields) "read_$name" else "read_unknown")
@@ -116,7 +116,7 @@ internal object EtaBackupJsonStreams {
                                     throw EtaBackupException(
                                         AppStrings.get(
                                             R.string.backup_err_invalid_record_list,
-                                            "备份中的记录列表格式无效",
+                                            "The record list format in the backup is invalid",
                                         ),
                                     )
                                 }
@@ -137,7 +137,7 @@ internal object EtaBackupJsonStreams {
                         throw EtaBackupException(
                             AppStrings.get(
                                 R.string.backup_err_trailing_content,
-                                "备份文件末尾存在额外内容",
+                                "Extra content at the end of the backup file",
                             ),
                         )
                     }
@@ -150,7 +150,7 @@ internal object EtaBackupJsonStreams {
             removeDirectory(directory)
             if (failure is CancellationException || failure is EtaBackupException || failure is Error) throw failure
             throw EtaBackupException(
-                AppStrings.get(R.string.backup_err_invalid_format, "备份文件格式无效"),
+                AppStrings.get(R.string.backup_err_invalid_format, "Backup file format is invalid"),
                 failure,
             )
         }
@@ -247,13 +247,13 @@ internal object EtaBackupJsonStreams {
         val message = if (limit >= 1024 * 1024) {
             AppStrings.get(
                 R.string.backup_err_size_limit_mib,
-                "备份文件超过 %1\$d MiB 限制",
+                "Backup file exceeds the %1\$d MiB limit",
                 limit / (1024 * 1024),
             )
         } else {
             AppStrings.get(
                 R.string.backup_err_size_limit_bytes,
-                "备份文件超过 %1\$d 字节 限制",
+                "Backup file exceeds the %1\$d byte limit",
                 limit,
             )
         }
@@ -264,7 +264,7 @@ internal object EtaBackupJsonStreams {
         checkCancelled()
         if (depth > 128) {
             throw EtaBackupException(
-                AppStrings.get(R.string.backup_err_json_too_deep, "备份中的 JSON 嵌套过深"),
+                AppStrings.get(R.string.backup_err_json_too_deep, "JSON nesting in the backup is too deep"),
             )
         }
         when (reader.peek()) {
@@ -286,7 +286,7 @@ internal object EtaBackupJsonStreams {
             JsonToken.BOOLEAN -> writer.value(reader.nextBoolean())
             JsonToken.NULL -> { reader.nextNull(); writer.nullValue() }
             else -> throw EtaBackupException(
-                AppStrings.get(R.string.backup_err_invalid_format, "备份文件格式无效"),
+                AppStrings.get(R.string.backup_err_invalid_format, "Backup file format is invalid"),
             )
         }
     }

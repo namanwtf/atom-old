@@ -582,7 +582,7 @@ internal object ScheduledTaskRunner {
             .replace(Regex("\\s+"), " ")
             .trim()
         return normalized.take(220).ifBlank {
-            AppStrings.get(R.string.scheduled_run_completed_summary, "已完成执行")
+            AppStrings.get(R.string.scheduled_run_completed_summary, "Execution completed")
         }
     }
 

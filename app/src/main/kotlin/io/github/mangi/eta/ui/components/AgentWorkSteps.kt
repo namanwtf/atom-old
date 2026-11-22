@@ -106,29 +106,29 @@ private fun stripAnyPrefix(text: String, prefixes: List<String>): String {
 }
 
 private fun failureLabels(): Set<String> = setOf(
-    "失败",
-    "失敗",
+    "failed",
+    "failed",
     "Failed",
-    AppStrings.get(R.string.workstep_failure_label, "失败"),
+    AppStrings.get(R.string.workstep_failure_label, "failed"),
 )
 
 private fun failurePrefixes(): List<String> = failureLabels().map { "$it · " }
 
 private fun trivialSuccessLabels(): Set<String> = setOf(
-    "完成",
-    "执行完成",
-    "執行完成",
+    "done",
+    "completed",
+    "completed",
     "Done",
     "Completed",
-    AppStrings.get(R.string.workstep_success_label, "完成"),
-    AppStrings.get(R.string.workstep_exec_done_label, "执行完成"),
+    AppStrings.get(R.string.workstep_success_label, "done"),
+    AppStrings.get(R.string.workstep_exec_done_label, "completed"),
 )
 
 private fun successPrefixes(): List<String> = listOf(
-    "完成 · ",
+    "done · ",
     "Done · ",
     "Completed · ",
-    "${AppStrings.get(R.string.workstep_success_label, "完成")} · ",
+    "${AppStrings.get(R.string.workstep_success_label, "done")} · ",
 ).distinct()
 
 // 与 Runtime 侧结果摘要的固定格式对应，同时兼容历史多语言持久化记录。

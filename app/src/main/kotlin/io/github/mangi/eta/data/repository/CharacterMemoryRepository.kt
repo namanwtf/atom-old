@@ -39,7 +39,7 @@ internal object CharacterMemoryRepository {
 
     fun discard(context: Context, characterId: String) {
         require(characterId.matches(Regex("[A-Za-z0-9_-]{1,128}"))) {
-            AppStrings.get(R.string.character_memory_invalid_id, "角色记忆标识无效")
+            AppStrings.get(R.string.character_memory_invalid_id, "Character memory identifier is invalid")
         }
         val root = File(context.applicationContext.filesDir, "roleplay/$characterId").canonicalFile
         stores.remove(root.path)
@@ -48,7 +48,7 @@ internal object CharacterMemoryRepository {
 
     private fun store(context: Context, characterId: String): AgentMemoryStore {
         require(characterId.matches(Regex("[A-Za-z0-9_-]{1,128}"))) {
-            AppStrings.get(R.string.character_memory_invalid_id, "角色记忆标识无效")
+            AppStrings.get(R.string.character_memory_invalid_id, "Character memory identifier is invalid")
         }
         val root = File(context.applicationContext.filesDir, "roleplay/$characterId").canonicalFile
         return stores.getOrPut(root.path) { AgentMemoryStore(root) }

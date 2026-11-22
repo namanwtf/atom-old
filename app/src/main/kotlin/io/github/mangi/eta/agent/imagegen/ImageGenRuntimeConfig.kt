@@ -69,7 +69,7 @@ internal data class ImageGenModelCapability(
                     val notice = if (isOfficialOpenAi && lower == "gpt-image-1") {
                         AppStrings.get(
                             R.string.imagegen_deprecation_gpt_image_1,
-                            "OpenAI 官方已下线 gpt-image-1，请改用 gpt-image-2.6-flare / gpt-image-2.5-flare 或 gpt-image-1.5",
+                            "OpenAI has officially discontinued gpt-image-1; please use gpt-image-2.6-flare / gpt-image-2.5-flare or gpt-image-1.5 instead",
                         )
                     } else {
                         null

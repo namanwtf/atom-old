@@ -39,7 +39,7 @@ internal object ContextualSearchHooks {
             HookSupport.findMethod(it, "deviceHasConfigString", Context::class.java, Int::class.javaPrimitiveType!!)
         }
         if (resourceId == null || resourceId == 0 || method == null || method.returnType != Boolean::class.javaPrimitiveType) {
-            hooks.skipped("system.contextual-search-config", "SystemServer.deviceHasConfigString", "未提供 Contextual Search 资源启动条件，保留尾段补启动")
+            hooks.skipped("system.contextual-search-config", "SystemServer.deviceHasConfigString", "no Contextual Search resource launch condition provided, keeping the tail bootstrap")
             return
         }
         hooks.intercept("system.contextual-search-config", method, "SystemServer.deviceHasConfigString") { chain ->
@@ -66,7 +66,7 @@ internal object ContextualSearchHooks {
             hooks.missing(
                 id = "system.contextual-search-bootstrap",
                 description = "SystemServer.startOtherServices",
-                detail = "未找到 SystemServer.startOtherServices(TimingsTraceAndSlog)"
+                detail = "SystemServer.startOtherServices(TimingsTraceAndSlog) not found"
             )
             return
         }
@@ -98,7 +98,7 @@ internal object ContextualSearchHooks {
             hooks.missing(
                 id = "system.contextual-search-package",
                 description = "ContextualSearchManagerService.getContextualSearchPackageName",
-                detail = "未找到 ContextualSearchManagerService.getContextualSearchPackageName()"
+                detail = "ContextualSearchManagerService.getContextualSearchPackageName() not found"
             )
             return
         }
@@ -120,7 +120,7 @@ internal object ContextualSearchHooks {
             hooks.missing(
                 id = "system.contextual-search-permission",
                 description = "ContextualSearchManagerService.enforcePermission",
-                detail = "未找到 ContextualSearchManagerService.enforcePermission(String)"
+                detail = "ContextualSearchManagerService.enforcePermission(String) not found"
             )
             return
         }
@@ -168,19 +168,19 @@ internal object ContextualSearchHooks {
         source: String
     ) {
         if (isContextualSearchServiceAlive()) {
-            logger.debug { "$source: contextual_search service 已存在" }
+            logger.debug { "$source: contextual_search service already exists" }
             return
         }
 
         val systemServiceManager = HookSupport.getFieldValue(systemServerInstance, "mSystemServiceManager")
         if (systemServiceManager == null) {
-            logger.warn("$source: mSystemServiceManager 为空，无法补启动 contextual_search")
+            logger.warn("$source: mSystemServiceManager is null, cannot bootstrap contextual_search")
             return
         }
 
         val serviceClass = HookSupport.findClassOrNull(classLoader, ModuleConfig.CONTEXTUAL_SEARCH_CLASS)
         if (serviceClass == null) {
-            logger.warn("$source: 未找到 ContextualSearchManagerService class，无法补启动")
+            logger.warn("$source: ContextualSearchManagerService class not found, cannot bootstrap")
             return
         }
 
@@ -190,20 +190,20 @@ internal object ContextualSearchHooks {
             Class::class.java
         )
         if (startServiceMethod == null) {
-            logger.warn("$source: 未找到 SystemServiceManager.startService(Class)")
+            logger.warn("$source: SystemServiceManager.startService(Class) not found")
             return
         }
 
         try {
             module.getInvoker(startServiceMethod).invoke(systemServiceManager, serviceClass)
             if (isContextualSearchServiceAlive()) {
-                logger.debug { "$source: 已补启动 ContextualSearchManagerService" }
+                logger.debug { "$source: bootstrapped ContextualSearchManagerService" }
             } else {
-                logger.warn("$source: 已调用 startService(Class)，但 contextual_search 仍不可用")
+                logger.warn("$source: startService(Class) invoked but contextual_search still unavailable")
             }
         } catch (exception: Exception) {
             // XposedFrameworkError 属于 Error，必须继续交给框架处理。
-            logger.error("$source: 补启动 ContextualSearchManagerService 失败", exception)
+            logger.error("$source: failed to bootstrap ContextualSearchManagerService", exception)
         }
     }
 

@@ -26,10 +26,10 @@ internal class ScheduledTaskToolExecutor(
 
     fun executeManage(call: AgentModelClient.ToolCall): AgentModelClient.ToolResult {
         if (activeRunContext != null) {
-            return errorJson("FORBIDDEN_IN_SCHEDULED_RUN", "定时任务执行期间不允许创建或修改其他定时任务")
+            return errorJson("FORBIDDEN_IN_SCHEDULED_RUN", "Cannot create or modify other scheduled tasks during a scheduled task run")
         }
         val args = runCatching { JSONObject(call.argumentsJson) }.getOrElse {
-            return errorJson("INVALID_ARGUMENTS", "工具参数不是合法的 JSON 对象")
+            return errorJson("INVALID_ARGUMENTS", "Tool arguments are not a valid JSON object")
         }
         val action = args.optString("action").trim().lowercase()
         return runBlocking {
@@ -39,16 +39,16 @@ internal class ScheduledTaskToolExecutor(
                 "update" -> handleUpdate(args)
                 "delete" -> handleDelete(args)
                 "run_now" -> handleRunNow(args)
-                else -> errorJson("INVALID_ACTION", "不支持的 action：$action")
+                else -> errorJson("INVALID_ACTION", "Unsupported action：$action")
             }
         }
     }
 
     fun executeSelfRun(call: AgentModelClient.ToolCall): AgentModelClient.ToolResult {
         val ctx = activeRunContext
-            ?: return errorJson("NOT_IN_SCHEDULED_RUN", "当前不在定时任务执行上下文中")
+            ?: return errorJson("NOT_IN_SCHEDULED_RUN", "Not currently in a scheduled task run context")
         val args = runCatching { JSONObject(call.argumentsJson) }.getOrElse {
-            return errorJson("INVALID_ARGUMENTS", "工具参数不是合法的 JSON 对象")
+            return errorJson("INVALID_ARGUMENTS", "Tool arguments are not a valid JSON object")
         }
         return when (call.name) {
             ScheduledTaskToolCatalog.TOOL_UPDATE_MEMO -> {
@@ -61,12 +61,12 @@ internal class ScheduledTaskToolExecutor(
                     )
                 }
                 if (!saved) {
-                    errorJson("TASK_NOT_FOUND", "当前定时任务已不存在")
+                    errorJson("TASK_NOT_FOUND", "The current scheduled task no longer exists")
                 } else {
                     okJson(
                         JSONObject()
                             .put("saved_chars", content.trim().take(ScheduledTask.MAX_MEMO_CHARS).length)
-                            .put("message", "任务小记事本已更新")
+                            .put("message", "Task memo updated")
                     )
                 }
             }
@@ -76,7 +76,7 @@ internal class ScheduledTaskToolExecutor(
                 val outcome = when (outcomeRaw) {
                     "deliver" -> ScheduledTaskReportedOutcome.Outcome.DELIVER
                     "no_change" -> ScheduledTaskReportedOutcome.Outcome.NO_CHANGE
-                    else -> return errorJson("INVALID_OUTCOME", "outcome 仅支持 deliver 或 no_change")
+                    else -> return errorJson("INVALID_OUTCOME", "outcome only supports deliver or no_change")
                 }
                 ScheduledTaskRunReportRegistry.record(
                     runId = ctx.runId,
@@ -88,7 +88,7 @@ internal class ScheduledTaskToolExecutor(
                         .put("summary", summary)
                 )
             }
-            else -> errorJson("UNKNOWN_TOOL", "未知的定时任务工具：${call.name}")
+            else -> errorJson("UNKNOWN_TOOL", "Unknown scheduled task tool：${call.name}")
         }
     }
 
@@ -118,11 +118,11 @@ internal class ScheduledTaskToolExecutor(
         val nowMs = System.currentTimeMillis()
         val name = args.optString("name").trim()
         val prompt = args.optString("prompt").trim()
-        if (name.isEmpty()) return errorJson("MISSING_NAME", "请提供任务名称 name")
-        if (prompt.isEmpty()) return errorJson("MISSING_PROMPT", "请提供任务指令 prompt")
+        if (name.isEmpty()) return errorJson("MISSING_NAME", "Please provide the task name")
+        if (prompt.isEmpty()) return errorJson("MISSING_PROMPT", "Please provide the task prompt")
 
         val schedule = parseScheduleFromArgs(args, base = ScheduledTaskSchedule(), nowMs = nowMs)
-            ?: return errorJson("INVALID_SCHEDULE", "排期参数无效，请检查触发类型与时间字段")
+            ?: return errorJson("INVALID_SCHEDULE", "Invalid schedule parameters，check the trigger type and time fields")
         val validationError = ScheduledTaskScheduleCalculator.validateSchedule(schedule, nowMs)
         if (validationError != null) {
             return errorJson("INVALID_SCHEDULE", validationError)
@@ -173,9 +173,9 @@ internal class ScheduledTaskToolExecutor(
 
     private suspend fun handleUpdate(args: JSONObject): AgentModelClient.ToolResult {
         val taskId = args.optString("task_id").trim()
-        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "请提供 task_id")
+        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "Please provide task_id")
         val existing = ScheduledTaskRepository.getTask(taskId, appContext)
-            ?: return errorJson("TASK_NOT_FOUND", "未找到 ID 为 $taskId 的定时任务")
+            ?: return errorJson("TASK_NOT_FOUND", "No scheduled task found with ID $taskId")
 
         val nowMs = System.currentTimeMillis()
         val hasSchedulePatch = args.has("trigger_kind") || args.has("hour") || args.has("minute") ||
@@ -183,7 +183,7 @@ internal class ScheduledTaskToolExecutor(
             args.has("trigger_at") || args.has("cron")
         val schedule = if (hasSchedulePatch) {
             val parsed = parseScheduleFromArgs(args, base = existing.schedule, nowMs = nowMs)
-                ?: return errorJson("INVALID_SCHEDULE", "排期参数无效")
+                ?: return errorJson("INVALID_SCHEDULE", "Invalid schedule parameters")
             val validationError = ScheduledTaskScheduleCalculator.validateSchedule(parsed, nowMs)
             if (validationError != null) return errorJson("INVALID_SCHEDULE", validationError)
             parsed
@@ -223,9 +223,9 @@ internal class ScheduledTaskToolExecutor(
 
     private suspend fun handleDelete(args: JSONObject): AgentModelClient.ToolResult {
         val taskId = args.optString("task_id").trim()
-        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "请提供 task_id")
+        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "Please provide task_id")
         val existing = ScheduledTaskRepository.getTask(taskId, appContext)
-            ?: return errorJson("TASK_NOT_FOUND", "未找到 ID 为 $taskId 的定时任务")
+            ?: return errorJson("TASK_NOT_FOUND", "No scheduled task found with ID $taskId")
         ScheduledTaskRunner.cancelRunningTask(appContext, existing.id)
         ScheduledTaskRepository.deleteTask(existing.id, rescheduleAlarm = true, context = appContext)
         return okJson(
@@ -237,21 +237,21 @@ internal class ScheduledTaskToolExecutor(
 
     private suspend fun handleRunNow(args: JSONObject): AgentModelClient.ToolResult {
         val taskId = args.optString("task_id").trim()
-        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "请提供 task_id")
+        if (taskId.isEmpty()) return errorJson("MISSING_TASK_ID", "Please provide task_id")
         return when (ScheduledTaskRunner.triggerManualRun(appContext, taskId)) {
             ScheduledTaskRunner.ManualTriggerResult.Started -> okJson(
                 JSONObject()
                     .put("task_id", taskId)
                     .put("status", "started")
-                    .put("message", "已开始后台试跑，完成后将发送结果通知并记入运行时间线")
+                    .put("message", "Background trial run started，a result notification will be sent and recorded in the run timeline when complete")
             )
             ScheduledTaskRunner.ManualTriggerResult.AlreadyRunning -> errorJson(
                 "ALREADY_RUNNING",
-                "该定时任务正在运行中",
+                "The scheduled task is currently running",
             )
             ScheduledTaskRunner.ManualTriggerResult.NotFound -> errorJson(
                 "TASK_NOT_FOUND",
-                "未找到 ID 为 $taskId 的定时任务",
+                "No scheduled task found with ID $taskId",
             )
         }
     }

@@ -16,7 +16,7 @@ internal enum class PersonalContextTimeUnit(val unitsPerSecond: Long, val requir
     fun toBounds(start: Instant?, end: Instant?): PersonalContextTimeBounds = try {
         PersonalContextTimeBounds(start?.let(::ceiling), end?.let(::ceiling))
     } catch (_: ArithmeticException) {
-        throw PersonalContextArgumentException("时间范围超出数据源支持的整数范围")
+        throw PersonalContextArgumentException("The time range exceeds the integer range supported by the data source")
     }
 
     private fun ceiling(value: Instant): Long {
@@ -85,7 +85,7 @@ internal object PersonalContextSources {
 
     val all: List<PersonalContextSource> = listOf(
         source(
-            "photos", "照片与截图", "gallery",
+            "photos", "Photos & screenshots", "gallery",
             listOf(
                 integer("origin_id", "media_idCom", required = true), text("uri", "uriCom"),
                 text("title", "titleCom"), text("text", "ocrCom"),
@@ -94,141 +94,141 @@ internal object PersonalContextSources {
                 protection("_media_type", "typeCom"), time("time", "date_modifiedCom", PersonalContextTimeUnit.SECONDS),
                 time("taken_time", "datetakenCom"),
             ), listOf("text", "caption", "tags", "location", "album"), "time", PersonalContextTimeUnit.SECONDS,
-            "系统索引中的图片修改时间，单位为秒；拍摄时间另见 taken_time，不代表当前媒体库状态", listOf(equal("_media_type", 1)),
+            "Image modification time in the system index, in seconds; for capture time see taken_time. This does not represent the current media library state", listOf(equal("_media_type", 1)),
         ),
         source(
-            "notes", "便签", "com.coloros.note#note",
+            "notes", "Notes", "com.coloros.note#note",
             listOf(
                 text("origin_id", "local_idCom"), text("title", "titleCom"), text("text", "textCom"),
                 text("folder", "folder_nameCom"), time("created_time", "create_timeCom"), time("time", "update_timeCom"),
                 protection("_recycled", "recycle_timeCom"), protection("_encrypted", "encryptedCom"),
-            ), listOf("title", "text", "folder"), "time", PersonalContextTimeUnit.MILLISECONDS, "便签最后编辑时间",
+            ), listOf("title", "text", "folder"), "time", PersonalContextTimeUnit.MILLISECONDS, "Notes last edit time",
             listOf(equal("_recycled", 0), equal("_encrypted", 0)),
         ),
         source(
-            "recordings", "录音", "recorder",
+            "recordings", "Recordings", "recorder",
             listOf(
                 integer("origin_id", "idCom"), text("title", "display_nameCom"), text("audio_path", "media_pathCom"),
                 text("transcript_path", "text_pathCom"), integer("duration_ms", "durationCom"), text("folder", "bucketCom"),
                 integer("has_transcript", "supportContentCom"), integer("has_summary", "summary_text_flagCom"),
                 time("time", "date_modifiedCom"),
-            ), listOf("title", "folder"), "time", PersonalContextTimeUnit.MILLISECONDS, "录音最后修改时间；转写路径不等于转写正文",
+            ), listOf("title", "folder"), "time", PersonalContextTimeUnit.MILLISECONDS, "Recording last modified time; the transcript path is not the transcript content",
         ),
         source(
-            "calendar", "日程", "calendar",
+            "calendar", "Calendar events", "calendar",
             listOf(
                 text("origin_id", "idCom"), text("title", "nameCom"), text("text", "descriptionCom"), text("location", "locationCom"),
                 time("time", "startTimeCom"), time("end_time", "endTimeCom"), text("timezone", "timezoneCom"),
                 text("recurrence", "isRepeatCom"), integer("all_day", "allDayIndexCom"),
             ), listOf("title", "text", "location"), "time", PersonalContextTimeUnit.MILLISECONDS,
-            "日程开始时间；重复实例是否展开取决于系统索引，返回 instance_id 时为具体实例；按 id 读取原始日程，不保证覆盖所有重复事件",
+            "Calendar event start time; whether recurring instances are expanded depends on the system index (a returned instance_id indicates a concrete instance). Reading by id retrieves the original event and does not guarantee coverage of all recurring occurrences",
         ),
         source(
-            "calendar_todos", "日历待办", "calendarTodo",
+            "calendar_todos", "Calendar to-dos", "calendarTodo",
             listOf(
                 text("origin_id", "idCom"), text("text", "contentCom"), text("source_package", "create_packageCom"),
                 time("time", "start_timeCom", PersonalContextTimeUnit.TEXT_MILLISECONDS),
                 time("planned_end_time", "finish_timeCom", PersonalContextTimeUnit.TEXT_MILLISECONDS),
                 text("recurrence", "rruleCom"), text("reminders", "remindTimesCom"), integer("starred", "starCom"),
-                time("source_created_time", "create_timeCom", PersonalContextTimeUnit.TEXT_MILLISECONDS, "来源提供的创建时间，不用于计划开始时间过滤"),
+                time("source_created_time", "create_timeCom", PersonalContextTimeUnit.TEXT_MILLISECONDS, "Creation time provided by the source; not used for scheduled start time filtering"),
             ), listOf("text", "source_package"), "time", PersonalContextTimeUnit.TEXT_MILLISECONDS,
-            "待办计划开始时间；系统可能展开重复实例但不提供实例 ID，按 id 读取原始待办，不保证覆盖所有重复事件；计划结束时间不表示已完成",
+            "To-do scheduled start time; the system may expand recurring instances without providing an instance ID. Reading by id retrieves the original to-do and does not guarantee coverage of all recurring occurrences; a scheduled end time does not indicate completion",
         ),
         source(
-            "todos", "待办记录", "com.oplus.deepthinker#donate_todo_record",
+            "todos", "To-do records", "com.oplus.deepthinker#donate_todo_record",
             listOf(
                 text("origin_id", "idCom"), text("title", "todoTitleCom"), text("text", "todoDescriptionCom"),
                 text("context", "descriptionCom"), text("original_text", "originalTodoCom"), text("status", "statusCom"),
-                text("origin", "sourceCom"), time("time", "eventStartTimeMillisCom", description = "0 表示未识别明确开始时间"),
-                time("deadline", "todoDeadlineTimeCom", description = "小于或等于 0 表示没有明确截止时间"),
-                time("indexed_time", "creationTimestampMillisCom", description = "记录生成或抽取时间，不是活动发生时间"),
+                text("origin", "sourceCom"), time("time", "eventStartTimeMillisCom", description = "0 means no explicit start time was recognized"),
+                time("deadline", "todoDeadlineTimeCom", description = "Less than or equal to 0 means no explicit deadline"),
+                time("indexed_time", "creationTimestampMillisCom", description = "Time the record was generated or extracted, not the time the activity occurred"),
             ), listOf("title", "text", "context", "original_text"), "time", PersonalContextTimeUnit.MILLISECONDS,
-            "识别出的待办开始时间；0 表示未知，按时间过滤不会补搜只写在文本中的日期",
+            "Recognized to-do start time; 0 means unknown. Time filtering will not additionally match dates only written in text",
         ),
         source(
-            "memories", "系统记忆", "com.oplus.aimemory#donate_AIMemory",
+            "memories", "System memories", "com.oplus.aimemory#donate_AIMemory",
             listOf(
                 text("origin_id", "memoryIdCom"), text("title", "titleCom"), text("text", "dataTextCom"),
                 text("summary", "summaryCom", "titleSummaryCom"), text("description", "descriptionCom"),
                 text("notes", "notesCom"), text("memory_type", "memoryTypeCom"), text("source_app", "appNameCom"),
                 time("time", "createdTimeCom"), time("updated_time", "updateTimeCom"),
-                time("indexed_time", "creationTimestampMillisCom", description = "系统索引写入时间，不是记忆创建时间"),
+                time("indexed_time", "creationTimestampMillisCom", description = "System index write time, not the memory creation time"),
                 protection("_recycled", "recycleTimeCom"),
             ), listOf("title", "text", "summary", "description", "notes", "source_app"), "time", PersonalContextTimeUnit.MILLISECONDS,
-            "记忆创建时间", listOf(nullOrEqual("_recycled", 0)),
+            "Memory creation time", listOf(nullOrEqual("_recycled", 0)),
         ),
         source(
-            "bills", "账单", "com.oplus.aimemory#billsDonate_Bills",
+            "bills", "Bills", "com.oplus.aimemory#billsDonate_Bills",
             listOf(
                 text("origin_id", "billIdCom"), text("title", "productNameCom"), text("merchant", "merchantNameCom"),
-                PersonalContextField("amount", listOf("amountCom"), PersonalContextFieldKind.DECIMAL, description = "金额单位为人民币元"),
+                PersonalContextField("amount", listOf("amountCom"), PersonalContextFieldKind.DECIMAL, description = "Amount is in Chinese yuan (RMB)"),
                 text("category", "categoryCom"), text("transaction_type", "transactionTypeCom"), text("transaction_status", "transactionStatusCom"),
                 time("transaction_time", "transactionTimeCom"), text("payment_source", "paymentSourceCom"),
                 protection("_recycled", "recycleTimeCom"),
             ), listOf("title", "merchant", "category", "transaction_status", "payment_source"), "transaction_time", PersonalContextTimeUnit.MILLISECONDS,
-            "账单记录的交易时间；交易状态仅按原文展示，不推断退款净额", listOf(nullOrEqual("_recycled", 0)),
+            "Transaction time of the bill record; transaction status is shown as-is without inferring refund net amounts", listOf(nullOrEqual("_recycled", 0)),
         ),
         source(
-            "collections", "记忆合集", "com.oplus.aimemory#collectionDonate_Collection",
+            "collections", "Memory collections", "com.oplus.aimemory#collectionDonate_Collection",
             listOf(
                 text("origin_id", "collectionIdCom"), text("title", "collectionNameCom"), text("text", "collectionSummaryCom"),
                 text("summary_title", "collectionSummaryTitleCom"), text("member_ids", "memoryIdsCom"),
-                time("indexed_time", "creationTimestampMillisCom", description = "仅为索引写入时间，不能表示合集首次创建时间"),
+                time("indexed_time", "creationTimestampMillisCom", description = "Only the index write time; it does not indicate the collection's first creation time"),
             ), listOf("title", "text", "summary_title"), null, null,
-            "没有已确认的业务时间字段；不支持按业务时间过滤",
+            "No confirmed business time field; filtering by business time is not supported",
         ),
         source(
-            "events", "生活事件", "com.oplus.deepthinker#donate_daily_event",
+            "events", "Life events", "com.oplus.deepthinker#donate_daily_event",
             listOf(text("title", "eventNameCom"), text("text", "eventDescriptionCom"), time("time", "startTimeMillisCom"),
-                time("end_time", "endTimeMillisCom", description = "空值或 0 可以表示进行中")),
-            listOf("title", "text"), "time", PersonalContextTimeUnit.MILLISECONDS, "事件开始时间；推断事件不是已确认事实",
+                time("end_time", "endTimeMillisCom", description = "Null or 0 may indicate ongoing")),
+            listOf("title", "text"), "time", PersonalContextTimeUnit.MILLISECONDS, "Event start time; inferred events are not confirmed facts",
         ),
         source(
-            "notifications", "历史通知", "com.oplus.deepthinker#donate_notification",
+            "notifications", "Notification history", "com.oplus.deepthinker#donate_notification",
             listOf(
                 text("origin_id", "notificationKeyCom"), text("title", "titleCom"), text("text", "descriptionCom"),
                 text("subtext", "subTextCom"), text("source_package", "packageNameCom"), text("channel", "channelIdCom"),
-                time("time", "eventTimeCom"), time("indexed_time", "createTimeCom", description = "系统索引创建时间，不是通知事件时间"),
+                time("time", "eventTimeCom"), time("indexed_time", "createTimeCom", description = "System index creation time, not the notification event time"),
             ), listOf("title", "text", "subtext", "source_package"), "time", PersonalContextTimeUnit.MILLISECONDS,
-            "历史通知事件时间；不代表当前通知栏或当前未读状态",
+            "Notification event time; it does not represent the current notification shade or unread state",
         ),
         source(
-            "files", "本地文件", "file",
+            "files", "Local files", "file",
             listOf(
                 text("origin_id", "idCom"), text("name", "filenameCom"), text("title", "titleCom"), text("text", "highlight"),
                 text("path", "absolutePathCom"), integer("size_bytes", "sizeCom"), integer("file_type", "typeCom"), time("time", "lastModifiedCom"),
             ), listOf("name", "title", "text"), "time", PersonalContextTimeUnit.MILLISECONDS,
-            "索引中记录的文件最后修改时间；路径不证明文件当前仍存在",
+            "File last modified time recorded in the index; the path does not prove the file still exists",
         ),
         source(
-            "app_files", "应用文件", "com.coloros.filemanager#third_app_file",
+            "app_files", "App files", "com.coloros.filemanager#third_app_file",
             listOf(text("name", "nameCom"), text("source_package", "packageCom"), text("source_app", "source_nameCom"),
                 integer("size_bytes", "sizeCom"), time("time", "file_timeCom")),
-            listOf("name", "source_package", "source_app"), "time", PersonalContextTimeUnit.MILLISECONDS, "来源文件的文件系统时间",
+            listOf("name", "source_package", "source_app"), "time", PersonalContextTimeUnit.MILLISECONDS, "Filesystem time of the source file",
         ),
         source(
-            "flights", "航班行程", "standard_data#flight",
+            "flights", "Flight trips", "standard_data#flight",
             listOf(
                 text("origin_id", "idCom"), text("title", "titleCom"), text("text", "descriptionCom"), text("number", "flightNumberCom"),
                 text("carrier", "airlineNameCom"), text("departure", "departureAirportNameCom"), text("arrival", "arrivalAirportNameCom"),
                 text("status", "flightStatusCom"), time("time", "planDepartureTimestampCom"), time("arrival_time", "planArrivalTimestampCom"),
-            ), listOf("title", "text", "number", "carrier", "departure", "arrival"), "time", PersonalContextTimeUnit.MILLISECONDS, "计划起飞时间",
+            ), listOf("title", "text", "number", "carrier", "departure", "arrival"), "time", PersonalContextTimeUnit.MILLISECONDS, "Scheduled departure time",
         ),
         source(
-            "hotels", "酒店预订", "standard_data#hotel",
+            "hotels", "Hotel bookings", "standard_data#hotel",
             listOf(
                 text("origin_id", "idCom"), text("title", "hotelNameCom"), text("text", "descriptionCom"), text("address", "addressCom"),
                 text("order_number", "orderNumberCom"), text("room_type", "room_typeCom"), text("status", "statusCom"),
                 time("time", "checkInTimestampCom"), time("checkout_time", "checkoutTimestampCom"),
-            ), listOf("title", "text", "address", "order_number"), "time", PersonalContextTimeUnit.MILLISECONDS, "预订入住时间",
+            ), listOf("title", "text", "address", "order_number"), "time", PersonalContextTimeUnit.MILLISECONDS, "Booking check-in time",
         ),
         source(
-            "trains", "火车行程", "standard_data#train",
+            "trains", "Train trips", "standard_data#train",
             listOf(
                 text("origin_id", "idCom"), text("title", "titleCom"), text("text", "descriptionCom"), text("number", "trainNumberCom"),
                 text("departure", "departureStationNameCom"), text("arrival", "arrivalStationNameCom"), integer("status", "trainStatusCom"),
                 time("time", "planDepartureTimestampCom"), time("arrival_time", "planArrivalTimestampCom"),
-            ), listOf("title", "text", "number", "departure", "arrival"), "time", PersonalContextTimeUnit.MILLISECONDS, "计划出发时间",
+            ), listOf("title", "text", "number", "departure", "arrival"), "time", PersonalContextTimeUnit.MILLISECONDS, "Scheduled departure time",
         ),
     )
 

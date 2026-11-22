@@ -24,13 +24,13 @@ internal object CharacterCardPng {
         val v3 = text.firstOrNull { it.first == "ccv3" }?.second
         val encoded = v3
             ?: text.firstOrNull { it.first == "chara" }?.second
-            ?: throw CharacterCardException("CARD_METADATA_MISSING", "这张图片没有角色卡数据，请选择原始角色卡 PNG")
+            ?: throw CharacterCardException("CARD_METADATA_MISSING", "this image has no character card data; please select the original character card PNG")
         return try {
             CharacterCardCodec.decodeBytes(Base64.getDecoder().decode(encoded))
         } catch (failure: IllegalArgumentException) {
             if (failure is CharacterCardException && failure.code == "CARD_TOO_LARGE") throw failure
-            if (v3 != null) throw CharacterCardException("CARD_V3_INVALID", "PNG 中的 V3 角色数据损坏，未使用旧版本数据替代", failure)
-            throw CharacterCardException("CARD_INVALID_PNG", "PNG 中的角色数据格式无效", failure)
+            if (v3 != null) throw CharacterCardException("CARD_V3_INVALID", "the V3 character data in the PNG is corrupted; legacy data is not used as a substitute", failure)
+            throw CharacterCardException("CARD_INVALID_PNG", "the character data format in the PNG is invalid", failure)
         }
     }
 
@@ -52,35 +52,35 @@ internal object CharacterCardPng {
                 writeChunk(stream, chunk)
             }
         }
-        if (output.size() > MAX_FILE_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "PNG 角色卡超过 32 MiB，请改用 JSON 导出")
+        if (output.size() > MAX_FILE_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "PNG character card exceeds 32 MiB; please export as JSON instead")
         return output.toByteArray()
     }
 
     private fun chunks(bytes: ByteArray): List<Chunk> {
-        require(bytes.size <= MAX_FILE_BYTES) { "角色卡图片超过 32 MiB 限制" }
-        require(isPng(bytes)) { "图片不是 PNG 格式" }
+        require(bytes.size <= MAX_FILE_BYTES) { "character card image exceeds the 32 MiB limit" }
+        require(isPng(bytes)) { "image is not in PNG format" }
         val result = mutableListOf<Chunk>()
         var offset = 8
         while (offset < bytes.size) {
-            require(bytes.size - offset >= 12) { "PNG 数据不完整" }
+            require(bytes.size - offset >= 12) { "incomplete PNG data" }
             val size = ByteBuffer.wrap(bytes, offset, 4).int
-            require(size >= 0 && size <= bytes.size - offset - 12) { "PNG 数据块长度无效" }
+            require(size >= 0 && size <= bytes.size - offset - 12) { "invalid PNG chunk length" }
             val typeBytes = bytes.copyOfRange(offset + 4, offset + 8)
             val data = bytes.copyOfRange(offset + 8, offset + 8 + size)
             val expectedCrc = ByteBuffer.wrap(bytes, offset + 8 + size, 4).int
             val crc = CRC32().apply { update(typeBytes); update(data) }.value.toInt()
-            require(crc == expectedCrc) { "PNG 数据校验失败" }
+            require(crc == expectedCrc) { "PNG data checksum failed" }
             val type = typeBytes.toString(Charsets.US_ASCII)
             result += Chunk(type, data)
             offset += size + 12
             if (type == "IEND") break
         }
-        require(result.firstOrNull()?.type == "IHDR" && result.lastOrNull()?.type == "IEND") { "PNG 结构不完整" }
+        require(result.firstOrNull()?.type == "IHDR" && result.lastOrNull()?.type == "IEND") { "incomplete PNG structure" }
         val header = result.first().data
-        require(header.size == 13 && result.count { it.type == "IHDR" } == 1) { "PNG 图片头无效" }
+        require(header.size == 13 && result.count { it.type == "IHDR" } == 1) { "invalid PNG header" }
         val width = ByteBuffer.wrap(header, 0, 4).int
         val height = ByteBuffer.wrap(header, 4, 4).int
-        require(width > 0 && height > 0 && width.toLong() * height <= 64_000_000) { "PNG 图片尺寸过大或无效" }
+        require(width > 0 && height > 0 && width.toLong() * height <= 64_000_000) { "PNG image dimensions are too large or invalid" }
         val bitDepth = header[8].toInt() and 0xff
         val colorType = header[9].toInt() and 0xff
         val allowedDepths = when (colorType) {
@@ -90,9 +90,9 @@ internal object CharacterCardPng {
             else -> emptySet()
         }
         require(bitDepth in allowedDepths && header[10] == 0.toByte() && header[11] == 0.toByte() && header[12].toInt() in 0..1) {
-            "PNG 图片头格式无效"
+            "invalid PNG header format"
         }
-        require(result.any { it.type == "IDAT" } && result.last().data.isEmpty()) { "PNG 缺少图片数据" }
+        require(result.any { it.type == "IDAT" } && result.last().data.isEmpty()) { "PNG is missing image data" }
         return result
     }
 

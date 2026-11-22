@@ -77,10 +77,10 @@ internal class ConversationTitleGenerator(
         const val MAX_TITLE_CHARS = 40
 
         private val TITLE_PREFIXES = listOf(
-            "对话标题：",
-            "对话标题:",
-            "标题：",
-            "标题:",
+            "Conversation title: ",
+            "Conversation title:",
+            "Title: ",
+            "Title:",
             "title:",
             "title：",
         )

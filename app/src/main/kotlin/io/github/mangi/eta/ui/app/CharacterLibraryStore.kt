@@ -85,7 +85,7 @@ internal class CharacterLibraryStore(
 
     fun loadLibrary() = runOperation(
         R.string.character_error_load_library,
-        "角色库读取失败，请重试",
+        "Failed to read the character library, please retry",
         queueIfBusy = true,
     ) {
         io { CharacterRepository.ensureDefaultCharacter() }
@@ -96,7 +96,7 @@ internal class CharacterLibraryStore(
 
     fun loadDetail(id: String) = runOperation(
         R.string.character_error_load_detail,
-        "角色读取失败，请返回角色库重试",
+        "Failed to read the character, please return to the library and retry",
         queueIfBusy = true,
     ) {
         val profile = io { CharacterRepository.get(id) } ?: error("CHARACTER_NOT_FOUND")
@@ -111,13 +111,13 @@ internal class CharacterLibraryStore(
         if (editorLoaded && editorKey == id) return
         runOperation(
             R.string.character_error_load_editor,
-            "角色读取失败，请重试",
+            "Failed to read the character, please retry",
             queueIfBusy = true,
         ) {
             val profile = id?.let { io { CharacterRepository.get(it) } ?: error("CHARACTER_NOT_FOUND") }
             selected = profile
             draft = profile?.card ?: CharacterCardCodec.create(
-                AppStrings.get(R.string.character_draft_default_name, "新角色"),
+                AppStrings.get(R.string.character_draft_default_name, "New character"),
             )
             draftName = profile?.card?.name.orEmpty()
             editorKey = id
@@ -144,14 +144,14 @@ internal class CharacterLibraryStore(
         } catch (_: IllegalArgumentException) {
             notice = AppStrings.get(
                 R.string.character_error_invalid_worldbook,
-                "世界书设置无效，请检查扫描深度、预算与条目位置",
+                "Worldbook settings are invalid, please check scan depth, budget, and entry positions",
             )
         }
     }
 
     fun importCard(uri: Uri, onImported: (String) -> Unit) = runOperation(
         R.string.character_error_import_generic,
-        "导入失败，请确认文件是完整的 PNG 或 JSON 角色卡，且未超过大小限制",
+        "Import failed, please confirm the file is a complete PNG or JSON character card within the size limit",
         diagnoseCardImport = true,
     ) {
         val profile = io {
@@ -167,12 +167,12 @@ internal class CharacterLibraryStore(
     fun saveEditor(onSaved: (String) -> Unit) {
         val originalDraft = draft ?: return
         if (draftName.isBlank()) {
-            notice = AppStrings.get(R.string.character_error_name_required, "请填写角色名称")
+            notice = AppStrings.get(R.string.character_error_name_required, "Please enter the character name")
             return
         }
         val card = originalDraft.withEdits(name = draftName)
         val original = selected
-        runOperation(R.string.character_error_save, "角色保存失败，请重试") {
+        runOperation(R.string.character_error_save, "Failed to save the character, please retry") {
             val profile = io {
                 if (original == null) CharacterRepository.create(card)
                 else CharacterRepository.save(original.copy(card = card))
@@ -187,7 +187,7 @@ internal class CharacterLibraryStore(
 
     fun duplicate(id: String, onDuplicated: (String) -> Unit) = runOperation(
         R.string.character_error_duplicate,
-        "角色复制失败，请重试",
+        "Failed to duplicate the character, please retry",
     ) {
         val profile = io { CharacterRepository.duplicate(id) }
         characters = io { CharacterRepository.list() }
@@ -196,7 +196,7 @@ internal class CharacterLibraryStore(
 
     fun toggleFavorite(id: String) = runOperation(
         R.string.character_error_favorite,
-        "收藏状态保存失败，请重试",
+        "Failed to save the favorite status, please retry",
     ) {
         val profile = io { CharacterRepository.get(id) } ?: error("CHARACTER_NOT_FOUND")
         val saved = io { CharacterRepository.save(profile.copy(card = profile.card.withFavorite(!profile.card.favorite))) }
@@ -207,7 +207,7 @@ internal class CharacterLibraryStore(
     /** 更换头像：图片统一转为 PNG 存入角色目录，导出 PNG 角色卡时即使用新头像。 */
     fun changeAvatar(id: String, uri: Uri) = runOperation(
         R.string.character_error_change_avatar,
-        "头像更换失败，请换一张图片重试",
+        "Failed to change the avatar, please try another image",
     ) {
         val saved = io {
             context.contentResolver.openInputStream(uri)?.use { CharacterRepository.replaceAvatar(id, it) }
@@ -219,7 +219,7 @@ internal class CharacterLibraryStore(
 
     fun restoreDefaultCharacter() = runOperation(
         R.string.character_error_restore_default,
-        "默认角色恢复失败，请重试",
+        "Failed to restore the default character, please retry",
     ) {
         io { CharacterRepository.createDefaultCharacter() }
         characters = io { CharacterRepository.list() }
@@ -227,7 +227,7 @@ internal class CharacterLibraryStore(
 
     fun delete(id: String, onDeleted: () -> Unit) = runOperation(
         R.string.character_error_delete,
-        "角色删除失败，请重试",
+        "Failed to delete the character, please retry",
     ) {
         io { CharacterRepository.delete(id) }
         if (selected?.id == id) selected = null
@@ -237,14 +237,14 @@ internal class CharacterLibraryStore(
 
     fun export(id: String, format: CharacterCardFormat, uri: Uri) = runOperation(
         R.string.character_error_export,
-        "角色卡导出失败，请重试",
+        "Failed to export the character card, please retry",
     ) {
         io {
             context.contentResolver.openOutputStream(uri, "wt")?.use {
                 CharacterRepository.export(id, format, it)
             } ?: error("CHARACTER_OUTPUT_UNAVAILABLE")
         }
-        notice = AppStrings.get(R.string.character_notice_exported, "角色卡已导出")
+        notice = AppStrings.get(R.string.character_notice_exported, "Character card exported")
     }
 
     fun startConversation(id: String, onReady: (RoleplayBinding, String) -> Unit) = runOperation(
@@ -254,7 +254,7 @@ internal class CharacterLibraryStore(
         val profile = io { CharacterRepository.get(id) } ?: error("CHARACTER_NOT_FOUND")
         val storedBinding = io { CharacterRepository.binding(id) }
         val binding = if (usePersona) storedBinding else storedBinding.copy(
-            userName = AppStrings.get(R.string.character_default_user_name, "用户"),
+            userName = AppStrings.get(R.string.character_default_user_name, "User"),
             userDescription = "",
         )
         val greetings = listOf(profile.card.firstMessage) + profile.card.alternateGreetings
@@ -265,7 +265,7 @@ internal class CharacterLibraryStore(
         if (personaLoaded && personaDraft != persona) return
         runOperation(
             R.string.character_error_load_persona,
-            "用户人设读取失败，请重试",
+            "Failed to read the user persona, please retry",
             queueIfBusy = true,
         ) {
             persona = io { CharacterRepository.persona() }
@@ -280,10 +280,10 @@ internal class CharacterLibraryStore(
 
     fun savePersona(onSaved: () -> Unit) = runOperation(
         R.string.character_error_save_persona,
-        "用户人设保存失败，请重试",
+        "Failed to save the user persona, please retry",
     ) {
         val normalized = personaDraft.copy(
-            name = personaDraft.name.trim().ifBlank { AppStrings.get(R.string.character_default_user_name, "用户") },
+            name = personaDraft.name.trim().ifBlank { AppStrings.get(R.string.character_default_user_name, "User") },
         )
         io { CharacterRepository.savePersona(normalized) }
         persona = normalized
@@ -295,7 +295,7 @@ internal class CharacterLibraryStore(
         if (!force && memoryCharacterId == id && memorySnapshot != null && memoryDraft != memorySnapshot?.content) return
         runOperation(
             R.string.character_error_load_memory,
-            "剧情记忆读取失败，请重试",
+            "Failed to read the story memory, please retry",
             queueIfBusy = true,
         ) {
             val snapshot = io { CharacterMemoryRepository.snapshot(context, id) }
@@ -312,19 +312,19 @@ internal class CharacterLibraryStore(
         val content = memoryDraft
         runOperation(
             R.string.character_error_save_memory,
-            "剧情记忆保存失败，请检查内容长度后重试",
+            "Failed to save the story memory, please check the content length and retry",
         ) {
             when (val result = io {
                 CharacterMemoryRepository.replaceAllIfRevision(context, id, original.revision, content)
             }) {
                 is AgentMemoryWriteResult.Success -> {
                     memorySnapshot = result.snapshot
-                    notice = AppStrings.get(R.string.character_notice_memory_saved, "剧情记忆已保存")
+                    notice = AppStrings.get(R.string.character_notice_memory_saved, "Story memory saved")
                 }
                 is AgentMemoryWriteResult.Conflict -> {
                     notice = AppStrings.get(
                         R.string.character_notice_memory_conflict,
-                        "剧情记忆已被对话更新。当前草稿仍保留，请复制需要的内容后重新载入，再合并保存。",
+                        "Story memory was updated by the conversation. The current draft is kept; copy what you need, reload, then merge and save.",
                     )
                 }
             }

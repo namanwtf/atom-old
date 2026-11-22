@@ -14,18 +14,18 @@ import io.github.mangi.eta.core.AppStrings
 internal class AssistantSpeechForeground(private val service: Service) {
     fun recording() = start(
         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
-        AppStrings.get(R.string.voice_i18n_fg_listening, "Eta 正在聆听"),
+        AppStrings.get(R.string.voice_i18n_fg_listening, "Eta is listening"),
     )
     fun playback() = start(
         ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
-        AppStrings.get(R.string.voice_i18n_fg_speaking, "Eta 正在朗读"),
+        AppStrings.get(R.string.voice_i18n_fg_speaking, "Eta is reading aloud"),
     )
 
     private fun start(type: Int, title: String) {
         service.getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(
                 CHANNEL,
-                AppStrings.get(R.string.voice_i18n_fg_channel_name, "助手语音"),
+                AppStrings.get(R.string.voice_i18n_fg_channel_name, "Assistant voice"),
                 NotificationManager.IMPORTANCE_LOW,
             ),
         )
@@ -36,13 +36,13 @@ internal class AssistantSpeechForeground(private val service: Service) {
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(0xFF4285F4.toInt())
             .setContentTitle(title)
-            .setContentText(AppStrings.get(R.string.voice_i18n_fg_content_text, "仅在助手浮窗可见时运行"))
+            .setContentText(AppStrings.get(R.string.voice_i18n_fg_content_text, "Runs only while the assistant overlay is visible"))
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_SERVICE)
             .addAction(
                 Notification.Action.Builder(
                     null,
-                    AppStrings.get(R.string.voice_i18n_fg_action_stop, "停止"),
+                    AppStrings.get(R.string.voice_i18n_fg_action_stop, "Stop"),
                     stop,
                 ).build(),
             )
@@ -54,7 +54,7 @@ internal class AssistantSpeechForeground(private val service: Service) {
                 SpeechErrorCode.PERMISSION,
                 AppStrings.get(
                     R.string.voice_i18n_fg_permission_denied,
-                    "系统不允许当前浮窗使用音频，请检查麦克风权限和默认数字助理设置",
+                    "The system does not allow the current overlay to use audio，please check microphone permission and default digital assistant settings",
                 ),
             )
         }

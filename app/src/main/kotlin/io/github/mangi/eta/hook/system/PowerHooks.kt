@@ -54,7 +54,7 @@ internal object PowerHooks {
             hooks.missing(
                 id = "system.power-assist-message",
                 description = "OplusSpeechHandler.handleMessage",
-                detail = "未找到 OplusSpeechHandler.handleMessage(Message)"
+                detail = "OplusSpeechHandler.handleMessage(Message) not found"
             )
             return
         }
@@ -79,7 +79,7 @@ internal object PowerHooks {
             val pwm = resolvePhoneWindowManager(chain.getThisObject())
             if (pwm == null) {
                 logger.warnThrottled("oplus_speech_missing_pwm") {
-                    "OplusSpeechHandler 未能解析 PhoneWindowManager，回退原逻辑"
+                    "OplusSpeechHandler could not resolve PhoneWindowManager, falling back to original logic"
                 }
                 return@intercept chain.proceed()
             }
@@ -129,21 +129,21 @@ internal object PowerHooks {
         val context = HookSupport.getFieldValue(phoneWindowManager, "mContext") as? Context
         if (context == null) {
             logger.warnThrottled("${source}_missing_context") {
-                "$source 缺少 mContext，回退原逻辑"
+                "$source lacks mContext, falling back to original logic"
             }
             return LaunchResult.NOT_HANDLED
         }
 
         if (!HookSupport.isPackageInstalled(context, binding.packageName)) {
             logger.warnThrottled("${source}_${target.persistedValue}_missing") {
-                "$source: ${binding.displayName} 未安装，回退原逻辑"
+                "$source: ${binding.displayName} not installed, falling back to original logic"
             }
             return LaunchResult.NOT_HANDLED
         }
 
         val now = SystemClock.uptimeMillis()
         if (now - lastInterceptUptime <= ModuleConfig.INTERCEPT_DEDUP_WINDOW_MS) {
-            logger.debug { "$source: 命中去重窗口，直接吞掉重复触发" }
+            logger.debug { "$source: hit dedup window, swallowing duplicate trigger" }
             return LaunchResult.LAUNCHED
         }
 
@@ -155,7 +155,7 @@ internal object PowerHooks {
                 logFailures = false
             )) {
             finalizeSuccessfulLaunch(logger, phoneWindowManager, source, now)
-            logger.debug { "$source: 已通过 voiceinteraction 启动 ${binding.displayName}" }
+            logger.debug { "$source: launched ${binding.displayName} via voiceinteraction" }
             return LaunchResult.LAUNCHED
         }
 
@@ -225,14 +225,14 @@ internal object PowerHooks {
         val resolves = runCatching { HookSupport.resolvesActivity(context, intent) }
             .getOrElse { throwable ->
                 logger.warnThrottled("${source}_${action}_resolve_failed") {
-                    "$source: 查询 ${binding.displayName} $action 入口失败，" +
+                    "$source: failed to resolve ${binding.displayName} $action entry, " +
                         "type=${throwable.safeLogType()}"
                 }
                 false
             }
         if (!resolves) {
             logger.warnThrottled("${source}_${action}_missing") {
-                "$source: ${binding.displayName} 未暴露 $action，回退原逻辑"
+                "$source: ${binding.displayName} does not expose $action, falling back to original logic"
             }
             return false
         }
@@ -240,11 +240,11 @@ internal object PowerHooks {
         return runCatching {
             context.startActivity(intent)
             finalizeSuccessfulLaunch(logger, phoneWindowManager, source, now)
-            logger.debug { "$source: 已通过 $action 启动 ${binding.displayName}" }
+            logger.debug { "$source: launched ${binding.displayName} via $action" }
             true
         }.getOrElse { throwable ->
             logger.warnThrottled("${source}_${action}_failed") {
-                "$source: $action 启动失败，回退原逻辑，type=${throwable.safeLogType()}"
+                "$source: $action launch failed, falling back to original logic, type=${throwable.safeLogType()}"
             }
             false
         }
@@ -266,12 +266,12 @@ internal object PowerHooks {
         source: String
     ) {
         if (invokeOplusAssistantHapticFeedback(phoneWindowManager)) {
-            logger.debug { "$source: 已补发 Oplus 原生助理震感" }
+            logger.debug { "$source: re-sent Oplus native assistant haptic feedback" }
             return
         }
 
         logger.warnThrottled("${source}_assistant_haptic_missing") {
-            "$source: 未找到 Oplus 原生长按助理震感入口"
+            "$source: Oplus native long-press assistant haptic entry not found"
         }
     }
 
@@ -302,7 +302,7 @@ internal object PowerHooks {
         }
         if (handler == null) {
             logger.warnThrottled("${source}_recovery_missing_handler") {
-                "$source: 无法取得 OplusSpeechHandler 实例，跳过后台配置修复"
+                "$source: cannot get OplusSpeechHandler instance, skipping background config fix"
             }
             return
         }
@@ -310,7 +310,7 @@ internal object PowerHooks {
         val context = HookSupport.getFieldValue(phoneWindowManager, "mContext") as? Context
         if (context == null) {
             logger.warnThrottled("${source}_recovery_missing_context") {
-                "$source: 无法取得 mContext，跳过后台配置修复"
+                "$source: cannot get mContext, skipping background config fix"
             }
             return
         }
@@ -323,11 +323,11 @@ internal object PowerHooks {
         )
         if (!scheduled) {
             logger.warnThrottled("${source}_configuration_schedule_failed") {
-                "$source: 默认助理后台修复无法入队"
+                "$source: default assistant background fix cannot be enqueued"
             }
         } else {
             logger.warnThrottled("${source}_assistant_recovery_pending") {
-                "$source: voiceinteraction 失败，已在后台修复默认助理配置"
+                "$source: voiceinteraction failed, fixed default assistant config in background"
             }
         }
     }

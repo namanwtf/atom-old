@@ -89,7 +89,7 @@ internal class SpeechPcmDecoder(private val onAudio: (ByteArray) -> Unit) {
 
     private fun invalid(): Nothing = throw SpeechFailure(
         SpeechErrorCode.PROTOCOL,
-        AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "语音音频格式或长度无效"),
+        AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "voice audio format or length invalid"),
     )
 
     private companion object {

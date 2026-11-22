@@ -23,7 +23,7 @@ internal object ProviderRequestHeaders {
         val profile = ProviderConnectionProfile.forAuthMode(authMode)
         if (profile != null) {
             require(customHeaders.none { isSubscriptionManagedHeader(it.name) }) {
-                "订阅连接的认证、Cookie 与路由请求头由 Eta 管理，不能自定义覆盖"
+                "Authentication, Cookie, and routing request headers for the subscription connection are managed by Eta and cannot be overridden"
             }
         }
         builder.set("User-Agent", "Eta")

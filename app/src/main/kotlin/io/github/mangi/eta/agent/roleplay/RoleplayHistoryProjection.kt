@@ -11,7 +11,7 @@ internal object RoleplayHistoryProjection {
     ): List<ConversationMessage>? = buildList {
         val grouped = state.links.entries.groupBy { it.value.transcriptMessageId }
         if (journal.any { it.contextSummary }) add(ConversationMessage(
-            role = "system", content = "早期历史仅保留摘要；正文修订只应用于仍有原文的消息，不能恢复已缺失的历史。",
+            role = "system", content = "early history keeps only a summary; content revisions apply only to messages that still have their original text and cannot recover already-missing history.",
         ))
         journal.forEach { entry ->
             val links = grouped[entry.messageId].orEmpty().sortedBy { it.value.blockOrder }
@@ -20,7 +20,7 @@ internal object RoleplayHistoryProjection {
                 val body = links.map { (id, _) -> content(id) ?: return null }.joinToString("\n\n")
                 if (entry.role == "user") add(ConversationMessage(
                     role = "system",
-                    content = "以下历史用户正文经用户修订；后续已有工具记录来自原请求，不能视为修订后请求已被执行。",
+                    content = "the following historical user content was revised by the user; existing later tool records come from the original request and must not be treated as if the revised request had been executed.",
                 ))
                 add(entry.copy(content = body, contentJson = ""))
             }

@@ -33,21 +33,21 @@ internal class ImageGenToolExecutor(
     fun execute(call: AgentModelClient.ToolCall): AgentModelClient.ToolResult {
         runController.throwIfCancelled()
         val args = runCatching { JSONObject(call.argumentsJson) }.getOrElse {
-            return failure("INVALID_ARGUMENTS", "生图工具参数不是合法的 JSON")
+            return failure("INVALID_ARGUMENTS", "Image generation tool arguments are not valid JSON")
         }
         val prompt = args.optString("prompt").trim()
         if (prompt.isEmpty()) {
-            return failure("EMPTY_PROMPT", "缺少 prompt 提示词参数")
+            return failure("EMPTY_PROMPT", "Missing the \"prompt\" parameter")
         }
         val requestedRatio = ImageGenAspectRatio.fromWireValue(args.optString("aspect_ratio"))
         val requestedCount = args.optInt("count", 1).coerceIn(1, 4)
 
         val config = runBlocking { ImageGenSettingsRepository.resolveRuntimeConfig(appContext) }
         if (!config.enabled) {
-            return failure("IMAGE_GEN_DISABLED", "AI 生图功能尚未启用，请前往「设置 → AI 生图」开启")
+            return failure("IMAGE_GEN_DISABLED", "AI image generation is not enabled; go to \"Settings → AI Image Generation\" to turn it on")
         }
         if (config.apiKey.isBlank()) {
-            return failure("IMAGE_GEN_MISSING_API_KEY", "AI 生图尚未配置 API Key，请前往「设置 → AI 生图」填写或关联已有服务商")
+            return failure("IMAGE_GEN_MISSING_API_KEY", "AI image generation has no API key configured; go to \"Settings → AI Image Generation\" to enter one or link an existing provider")
         }
 
         val capability = config.capability
@@ -140,7 +140,7 @@ internal class ImageGenToolExecutor(
                 .put("model", config.model)
                 .put("backend", config.backend.wireValue)
                 .put("images", imagesJson)
-                .put("display_note", "图片已直接渲染在用户聊天界面中，无需输出 Markdown 图片链接或本地路径；如需继续改图请传 reference_images=[\"latest_generated_image\"] 或具体图片 id。")
+                .put("display_note", "The image has been rendered directly in the user's chat; do not output a Markdown image link or local path. To continue editing, pass reference_images=[\"latest_generated_image\"] or a specific image id.")
                 .toString()
             AgentModelClient.ToolResult(
                 content = resultJson,
@@ -165,7 +165,7 @@ internal class ImageGenToolExecutor(
         } catch (throwable: Exception) {
             runController.throwIfCancelled()
             AndroidAgentLogger.warn("generate_image unexpected error: type=${throwable.safeLogType()}")
-            val msg = "生图执行失败（${throwable.javaClass.simpleName}）"
+            val msg = "Image generation failed (${throwable.javaClass.simpleName})"
             failure(
                 code = "IMAGE_GEN_ERROR",
                 message = msg,
@@ -189,7 +189,7 @@ internal class ImageGenToolExecutor(
     ): List<ImageGenInputImage> {
         if (array == null || array.length() == 0) return emptyList()
         if (!capability.supportsEdit) {
-            throw ImageGenException("IMAGE_GEN_EDIT_UNSUPPORTED", "当前生图模型不支持图生图编辑，无法使用参考图")
+            throw ImageGenException("IMAGE_GEN_EDIT_UNSUPPORTED", "The current image generation model does not support image-to-image editing, so reference images cannot be used")
         }
         val resolved = mutableListOf<ImageGenInputImage>()
         for (i in 0 until array.length()) {
@@ -197,25 +197,25 @@ internal class ImageGenToolExecutor(
             val raw = array.optString(i).trim()
             if (raw.isEmpty()) continue
             if (raw.startsWith("data:", ignoreCase = true)) {
-                throw ImageGenException("UNSUPPORTED_REFERENCE_FORMAT", "参考图请传 latest_user_image、latest_generated_image、图片 ID 或有效本地路径，不要内联 data URL")
+                throw ImageGenException("UNSUPPORTED_REFERENCE_FORMAT", "For reference images, pass latest_user_image, latest_generated_image, an image ID, or a valid local path; do not inline a data URL")
             }
             when (raw.lowercase()) {
                 "latest_user_image", "user_image", "latest_user_images" -> {
                     val userImgs = loadLatestConversationUserImages()
                     if (userImgs.isEmpty()) {
-                        throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "当前会话中未找到用户发送的图片，请先发送图片后再编辑")
+                        throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "No user-sent image found in the current session; send an image first before editing")
                     }
                     resolved += userImgs
                 }
                 "latest_generated_image", "previous_generated_image", "last_generated_image" -> {
                     val record = loadLatestConversationGeneratedRecord()
-                        ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "当前会话中未找到最近生成的图片，请先生成图片或指定图片 ID")
+                        ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "No recently generated image found in the current session; generate an image first or specify an image ID")
                     resolved += decodeAllowedLocalImage(record.filePath)
                 }
                 else -> {
                     val targetPath = if (raw.startsWith("img_")) {
                         GeneratedImageStore.findById(appContext, raw)?.filePath
-                            ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "找不到指定的生成图片资产（$raw）")
+                            ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "Could not find the specified generated image asset ($raw)")
                     } else {
                         raw
                     }
@@ -225,12 +225,12 @@ internal class ImageGenToolExecutor(
             if (resolved.size > capability.maxReferenceImages) {
                 throw ImageGenException(
                     "TOO_MANY_REFERENCE_IMAGES",
-                    "当前生图模型最多支持 ${capability.maxReferenceImages} 张参考图，请减少参考图数量",
+                    "The current image generation model supports at most ${capability.maxReferenceImages} reference images; reduce the number of reference images",
                 )
             }
         }
         if (resolved.isEmpty()) {
-            throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "未能解析到有效的参考图片")
+            throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "Could not resolve a valid reference image")
         }
         return resolved
     }
@@ -306,20 +306,20 @@ internal class ImageGenToolExecutor(
     private fun decodeAllowedLocalImage(path: String): ImageGenInputImage {
         val file = File(path.removePrefix("file://").trim())
         if (!file.isFile || !file.canRead()) {
-            throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "找不到指定的参考图片文件")
+            throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "Could not find the specified reference image file")
         }
         val canonical = runCatching { file.canonicalFile }.getOrNull()
-            ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "参考图片路径无效")
+            ?: throw ImageGenException("REFERENCE_IMAGE_NOT_FOUND", "The reference image path is invalid")
         val managed = GeneratedImageStore.isManagedGeneratedFile(appContext, canonical)
         val inPublicStorage = isPublicSharedStoragePath(canonical.path)
         if (!managed && !inPublicStorage) {
-            throw ImageGenException("REFERENCE_PATH_FORBIDDEN", "出于隐私保护，不允许将应用私有目录文件作为参考图上传")
+            throw ImageGenException("REFERENCE_PATH_FORBIDDEN", "For privacy protection, uploading files from the app's private directory as reference images is not allowed")
         }
         if (canonical.length() <= 0L || canonical.length() > MAX_LOCAL_REF_BYTES) {
-            throw ImageGenException("REFERENCE_IMAGE_TOO_LARGE", "参考图片体积超出限制（最大 20MB）")
+            throw ImageGenException("REFERENCE_IMAGE_TOO_LARGE", "The reference image exceeds the size limit (max 20MB)")
         }
         val bytes = runCatching { canonical.readBytes() }.getOrNull()
-            ?: throw ImageGenException("REFERENCE_IMAGE_UNREADABLE", "读取参考图片失败")
+            ?: throw ImageGenException("REFERENCE_IMAGE_UNREADABLE", "Failed to read the reference image")
         return ImageGenClient.prepareReferenceImage(bytes, "image/png")
     }
 

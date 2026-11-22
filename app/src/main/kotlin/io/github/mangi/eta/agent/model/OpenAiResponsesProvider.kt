@@ -60,7 +60,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
     internal fun buildHttpRequest(request: ProviderRequest): Request {
         val config = request.effectiveConfig
         require(config.openAiEndpointMode == OpenAiEndpointMode.RESPONSES) {
-            AppStrings.get(R.string.provider_err_not_responses_api, "当前 Provider 未配置为 Responses API")
+            AppStrings.get(R.string.provider_err_not_responses_api, "The current Provider is not configured as the Responses API")
         }
         val body = buildRequestJson(config, request.messages, request.effectiveTools, request.purpose)
             .toString()
@@ -96,7 +96,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
         runController: AgentRunController,
         onEvent: (ProviderEvent) -> Unit,
     ): JSONObject {
-        if (stream == null) error(AppStrings.get(R.string.provider_err_no_response_stream, "模型接口未返回响应流"))
+        if (stream == null) error(AppStrings.get(R.string.provider_err_no_response_stream, "The model API did not return a response stream"))
         val streamedText = StringBuilder()
         val streamedReasoning = StringBuilder()
         val toolCalls = linkedMapOf<String, StreamingFunctionCall>()
@@ -330,15 +330,15 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
                 "response.web_search_call.in_progress",
                 "response.web_search_call.searching" -> {
                     val itemId = event.hostedToolId("web_search")
-                    startHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "网页搜索"))
+                    startHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "Web search"))
                 }
                 "response.web_search_call.completed" -> {
                     val itemId = event.hostedToolId("web_search")
-                    finishHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "网页搜索"), success = true)
+                    finishHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "Web search"), success = true)
                 }
                 "response.web_search_call.failed" -> {
                     val itemId = event.hostedToolId("web_search")
-                    finishHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "网页搜索"), success = false)
+                    finishHostedTool(itemId, AppStrings.get(R.string.provider_hosted_tool_web_search, "Web search"), success = false)
                 }
                 "response.completed", "response.done", "response.incomplete", "response.failed" -> {
                     terminal = event.optJSONObject("response") ?: event
@@ -348,7 +348,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
                             "failed" -> "response.failed"
                             "incomplete" -> "response.incomplete"
                             else -> throw AgentModelFailure.incompleteStream(
-                                AppStrings.get(R.string.provider_err_codex_terminal_status, "Codex 终止事件缺少有效状态"),
+                                AppStrings.get(R.string.provider_err_codex_terminal_status, "Codex terminal event is missing a valid status"),
                             )
                         }
                     } else type
@@ -359,10 +359,10 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
         }
 
         if (!sawEvent) throw AgentModelFailure.incompleteStream(
-            AppStrings.get(R.string.provider_err_no_sse_chunk, "模型接口未返回 SSE data chunk"),
+            AppStrings.get(R.string.provider_err_no_sse_chunk, "The model API did not return an SSE data chunk"),
         )
         val finalResponse = terminal ?: throw AgentModelFailure.incompleteStream(
-            AppStrings.get(R.string.provider_err_responses_no_terminal, "模型接口 Responses SSE 流缺少合法终止事件"),
+            AppStrings.get(R.string.provider_err_responses_no_terminal, "The model API Responses SSE stream is missing a valid terminal event"),
         )
         if (terminalType == "response.failed") throwResponseFailure(finalResponse)
 
@@ -448,7 +448,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
             }
         }
         hostedTools.filterValues { !it }.forEach { (id, _) ->
-            onEvent(ProviderEvent.HostedToolFinished(id, AppStrings.get(R.string.provider_hosted_tool_web_search, "网页搜索"), success = true))
+            onEvent(ProviderEvent.HostedToolFinished(id, AppStrings.get(R.string.provider_hosted_tool_web_search, "Web search"), success = true))
         }
 
         parseUsage(finalResponse.optJSONObject("usage"))?.let { onEvent(ProviderEvent.Usage(it)) }
@@ -632,35 +632,35 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
     private fun throwEventError(event: JSONObject) {
         val error = event.optJSONObject("error") ?: return
         val message = error.optString("message")
-            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "未提供错误信息") }
+            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "No error message provided") }
             .compactError()
         val type = error.optString("type").takeIf { it.isNotBlank() }
         val detailContext = type?.let { " (type=$it)" }.orEmpty()
         throw AgentModelFailure.stream(
             error,
-            AppStrings.get(R.string.provider_err_sse_error_detail, "模型接口 SSE 返回错误%1\$s：%2\$s", detailContext, message),
+            AppStrings.get(R.string.provider_err_sse_error_detail, "The model API SSE returned error%1\$s: %2\$s", detailContext, message),
         )
     }
 
     private fun throwTopLevelEventError(event: JSONObject): Nothing {
         val message = event.optString("message")
-            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "未提供错误信息") }
+            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "No error message provided") }
             .compactError()
         val code = event.optString("code").takeIf { it.isNotBlank() }
         val detailContext = code?.let { " (code=$it)" }.orEmpty()
         throw AgentModelFailure.stream(
             event,
-            AppStrings.get(R.string.provider_err_sse_error_detail, "模型接口 SSE 返回错误%1\$s：%2\$s", detailContext, message),
+            AppStrings.get(R.string.provider_err_sse_error_detail, "The model API SSE returned error%1\$s: %2\$s", detailContext, message),
         )
     }
 
     private fun throwResponseFailure(response: JSONObject): Nothing {
         val error = response.optJSONObject("error")
         val message = error?.optString("message").orEmpty()
-            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "未提供错误信息") }
+            .ifBlank { AppStrings.get(R.string.provider_err_no_error_message, "No error message provided") }
         throw AgentModelFailure.stream(
             error ?: JSONObject(),
-            AppStrings.get(R.string.provider_err_responses_failed, "模型接口 Responses 请求失败：%1\$s", message.compactError()),
+            AppStrings.get(R.string.provider_err_responses_failed, "The model API Responses request failed: %1\$s", message.compactError()),
         )
     }
 
@@ -692,12 +692,12 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
             .ifBlank { "${fallbackPrefix}_${optInt("output_index", 0)}" }
 
     private fun String.hostedToolDisplayName(): String? = when (this) {
-        "web_search_call" -> AppStrings.get(R.string.provider_hosted_tool_web_search, "网页搜索")
-        "file_search_call" -> AppStrings.get(R.string.provider_hosted_tool_file_search, "文件搜索")
-        "code_interpreter_call" -> AppStrings.get(R.string.provider_hosted_tool_code_interpreter, "代码执行")
-        "computer_call" -> AppStrings.get(R.string.provider_hosted_tool_computer, "计算机操作")
-        "image_generation_call" -> AppStrings.get(R.string.provider_hosted_tool_image_generation, "图像生成")
-        "mcp_call" -> AppStrings.get(R.string.provider_hosted_tool_mcp, "MCP 工具")
+        "web_search_call" -> AppStrings.get(R.string.provider_hosted_tool_web_search, "Web search")
+        "file_search_call" -> AppStrings.get(R.string.provider_hosted_tool_file_search, "File search")
+        "code_interpreter_call" -> AppStrings.get(R.string.provider_hosted_tool_code_interpreter, "Code execution")
+        "computer_call" -> AppStrings.get(R.string.provider_hosted_tool_computer, "Computer operation")
+        "image_generation_call" -> AppStrings.get(R.string.provider_hosted_tool_image_generation, "Image generation")
+        "mcp_call" -> AppStrings.get(R.string.provider_hosted_tool_mcp, "MCP tool")
         else -> null
     }
 

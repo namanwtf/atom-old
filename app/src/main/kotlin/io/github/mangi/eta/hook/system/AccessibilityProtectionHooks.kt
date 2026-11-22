@@ -44,7 +44,7 @@ internal object AccessibilityProtectionHooks {
                 hooks.missing(
                     id = "system.accessibility-protection",
                     description = "SystemServer.startOtherServices",
-                    detail = "未找到 SystemServer.startOtherServices(TimingsTraceAndSlog)",
+                    detail = "SystemServer.startOtherServices(TimingsTraceAndSlog) not found",
                 )
                 return@install
             }
@@ -74,12 +74,12 @@ internal object AccessibilityProtectionHooks {
         if (enforcer != null) return
         val context = SystemServerContextResolver.resolve(systemServer)
         if (context == null) {
-            logger.warn("SystemServer 已启动，但无法取得 system context")
+            logger.warn("SystemServer started, but system context unavailable")
             return
         }
         val handler = resolveSystemBackgroundHandler(classLoader)
         if (handler == null) {
-            logger.warn("无法取得 Android BackgroundThread，跳过无障碍保护")
+            logger.warn("cannot get Android BackgroundThread, skipping accessibility protection")
             return
         }
         AccessibilityServiceEnforcer(

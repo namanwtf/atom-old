@@ -57,7 +57,7 @@ internal object DoubaoTtsCodec {
     fun decode(bytes: ByteArray): Frame {
         fun invalid(): Nothing = throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,
-            AppStrings.get(R.string.voice_i18n_doubao_tts_invalid_frame, "豆包语音合成返回了无效协议帧"),
+            AppStrings.get(R.string.voice_i18n_doubao_tts_invalid_frame, "Doubao voice synthesis returned an invalid protocol frame"),
         )
         if (bytes.size < 8) invalid()
         val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)

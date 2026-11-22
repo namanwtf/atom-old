@@ -31,7 +31,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
                             respond(
                                 socket,
                                 "200 OK",
-                                AppStrings.get(R.string.auth_callback_success_html, "授权已返回，请回到 Eta 完成登录。"),
+                                AppStrings.get(R.string.auth_callback_success_html, "Authorization returned; return to Eta to finish signing in."),
                             )
                         } catch (_: java.io.IOException) {
                             // 浏览器可能在回调后立即关闭标签页，已验证的授权码仍交给 Eta 换码。
@@ -43,7 +43,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
                             respond(
                                 socket,
                                 "400 Bad Request",
-                                AppStrings.get(R.string.auth_callback_failed_html, "授权未完成，请回到 Eta 重试。"),
+                                AppStrings.get(R.string.auth_callback_failed_html, "Authorization incomplete; return to Eta and retry."),
                             )
                         } catch (_: java.io.IOException) {
                             controller.throwIfCancelled()
@@ -58,13 +58,13 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
             }
             throw ProviderAuthException(
                 "oauth_login_expired",
-                AppStrings.get(R.string.auth_err_login_timeout, "登录已超时，请重试"),
+                AppStrings.get(R.string.auth_err_login_timeout, "Sign-in timed out; please retry"),
             )
         } catch (_: java.io.IOException) {
             controller.throwIfCancelled()
             throw ProviderAuthException(
                 "oauth_callback_unavailable",
-                AppStrings.get(R.string.auth_err_callback_unavailable, "无法接收登录回调，请重试"),
+                AppStrings.get(R.string.auth_err_callback_unavailable, "Unable to receive the sign-in callback; please retry"),
             )
         } finally {
             binding.close()
@@ -75,7 +75,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
     internal fun validateCallback(target: String, state: String): String {
         fun invalid(): Nothing = throw ProviderAuthException(
             "oauth_callback_invalid",
-            AppStrings.get(R.string.auth_err_callback_invalid, "登录回调无效"),
+            AppStrings.get(R.string.auth_err_callback_invalid, "Sign-in callback invalid"),
         )
         if (!target.startsWith("/auth/callback?")) invalid()
         val url = (redirectUri.substringBefore("/auth/callback") + target).toHttpUrlOrNull() ?: invalid()
@@ -91,7 +91,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
         value("error")?.let {
             throw ProviderAuthException(
                 "oauth_access_denied",
-                AppStrings.get(R.string.auth_err_access_denied, "登录未获授权"),
+                AppStrings.get(R.string.auth_err_access_denied, "Sign-in was not authorized"),
             )
         }
         val code = value("code")?.takeIf { it.isNotBlank() && it.length <= 8_192 } ?: invalid()
@@ -122,7 +122,7 @@ internal class LoopbackAuthorizationReceiver(port: Int = CodexOAuth.CALLBACK_POR
         }
         throw ProviderAuthException(
             "oauth_callback_invalid",
-            AppStrings.get(R.string.auth_err_callback_invalid, "登录回调无效"),
+            AppStrings.get(R.string.auth_err_callback_invalid, "Sign-in callback invalid"),
         )
     }
 

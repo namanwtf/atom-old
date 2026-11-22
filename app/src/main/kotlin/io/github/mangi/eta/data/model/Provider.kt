@@ -186,7 +186,7 @@ internal val ProviderSetting.typeLabel: String
 
 internal val ProviderSetting.displayApiKeySummary: String
     get() = when {
-        apiKey.isBlank() -> "未填写"
+        apiKey.isBlank() -> "Not filled in"
         apiKey.length <= 8 -> "*".repeat(apiKey.length)
         else -> "${apiKey.take(4)}${"*".repeat(apiKey.length - 8)}${apiKey.takeLast(4)}"
     }

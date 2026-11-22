@@ -84,7 +84,7 @@ internal enum class OAuthProvider(
         fun fromAuthMode(mode: String): OAuthProvider = entries.firstOrNull { it.authMode == mode }
             ?: throw ProviderAuthException(
                 "unsupported_auth_mode",
-                AppStrings.get(R.string.auth_err_unsupported_auth_mode, "当前连接不支持账号登录"),
+                AppStrings.get(R.string.auth_err_unsupported_auth_mode, "The current connection does not support account sign-in"),
             )
     }
 }

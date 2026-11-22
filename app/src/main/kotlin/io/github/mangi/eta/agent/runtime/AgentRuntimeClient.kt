@@ -79,7 +79,7 @@ internal class AgentRuntimeClient(
                 "",
                 false,
                 "",
-                AppStrings.get(R.string.runtime_err_bind_failed, "Agent Runtime 服务绑定失败"),
+                AppStrings.get(R.string.runtime_err_bind_failed, "Failed to bind Agent Runtime service"),
             )
         val serviceMessenger = lease.messenger
         val deathRecipient = IBinder.DeathRecipient {
@@ -90,7 +90,7 @@ internal class AgentRuntimeClient(
                             request.runId,
                             false,
                             "",
-                            AppStrings.get(R.string.runtime_err_disconnected, "Agent Runtime 服务连接已断开"),
+                            AppStrings.get(R.string.runtime_err_disconnected, "Agent Runtime service connection lost"),
                             contextSnapshotRef = request.runId,
                         )
                     )
@@ -114,7 +114,7 @@ internal class AgentRuntimeClient(
                     "",
                     false,
                     "",
-                    AppStrings.get(R.string.runtime_err_no_result, "Agent Runtime 未返回结果"),
+                    AppStrings.get(R.string.runtime_err_no_result, "Agent Runtime returned no result"),
                 )
         } catch (interrupted: InterruptedException) {
             Thread.currentThread().interrupt()
@@ -127,7 +127,7 @@ internal class AgentRuntimeClient(
                 request.runId,
                 false,
                 "",
-                AppStrings.get(R.string.runtime_err_wait_interrupted, "Agent Runtime 等待被中断"),
+                AppStrings.get(R.string.runtime_err_wait_interrupted, "Agent Runtime wait was interrupted"),
                 contextSnapshotRef = request.runId,
             )
         } catch (throwable: Throwable) {
@@ -142,7 +142,7 @@ internal class AgentRuntimeClient(
                     is AgentRuntimeImageTransfer.ImageTransferException -> throwable.message
                     else -> AppStrings.get(
                         R.string.runtime_err_send_failed,
-                        "Agent Runtime 请求发送失败（%1\$s）",
+                        "Failed to send Agent Runtime request (%1\$s)",
                         throwable.safeLogType(),
                     )
                 },

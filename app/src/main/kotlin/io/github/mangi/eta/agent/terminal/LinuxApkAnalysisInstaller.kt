@@ -363,9 +363,9 @@ internal class LinuxApkAnalysisInstaller(
         if (previous.exists() && !previous.deleteRecursively()) return false
         if (current.exists() && !current.renameTo(previous)) return false
         try {
-            if (!staging.renameTo(current)) throw java.io.IOException("无法激活工具目录")
+            if (!staging.renameTo(current)) throw java.io.IOException("Unable to activate the tool directory")
             listOf("jadx/bin/jadx", "bin/java", "bin/apktool", "bin/smali", "bin/baksmali").forEach {
-                if (!File(current, it).setExecutable(true, false)) throw java.io.IOException("无法设置工具权限")
+                if (!File(current, it).setExecutable(true, false)) throw java.io.IOException("Unable to set tool permissions")
             }
             val localBin = File(rootfs, "usr/local/bin").apply { mkdirs() }
             listOf("java", "jadx", "apktool", "smali", "baksmali").forEach { name ->
@@ -461,7 +461,7 @@ internal class LinuxApkAnalysisInstaller(
             #!/bin/sh
             case "${'$'}{1:-}" in
               b|build)
-                echo "APKTOOL_BUILD_UNAVAILABLE: Eta APK 分析档案暂不包含 ARM64 AAPT2，仅支持解码与检查。" >&2
+                echo "APKTOOL_BUILD_UNAVAILABLE: Eta APK analysis archive does not include ARM64 AAPT2 yet; only decoding and inspection are supported。" >&2
                 exit 64
                 ;;
             esac

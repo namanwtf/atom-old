@@ -2061,7 +2061,7 @@ internal class AgentAppState(
             }
             if (withContext(Dispatchers.Main) { runStore.isStopRequested(runId) }) {
                 withContext(Dispatchers.Main) {
-                    applyRunResult(runId, AgentRuntimeWire.RunResult(runId, false, "", "已停止", operation = operation))
+                    applyRunResult(runId, AgentRuntimeWire.RunResult(runId, false, "", "Stopped", operation = operation))
                 }
                 return@launch
             }

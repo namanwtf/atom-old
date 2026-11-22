@@ -79,7 +79,7 @@ internal class ProviderCredentialSessions(
                 invalidate(providerId, session, generation)
                 throw ProviderAuthException(
                     "oauth_session_expired",
-                    AppStrings.get(R.string.auth_err_session_expired, "登录已失效，请重新登录"),
+                    AppStrings.get(R.string.auth_err_session_expired, "Sign-in expired; please sign in again"),
                 )
             }
             val refreshed = try {
@@ -136,12 +136,12 @@ internal class ProviderCredentialSessions(
         if (credential == null || credential.subject == null || credential.authMode != authMode || credential.accessToken.isBlank()) {
             throw ProviderAuthException(
                 "oauth_login_required",
-                AppStrings.get(R.string.auth_err_login_required, "请先登录此服务商账号"),
+                AppStrings.get(R.string.auth_err_login_required, "Please sign in to this provider account first"),
             )
         }
         if (!credential.planEnabled) throw ProviderAuthException(
             "oauth_plan_permission_required",
-            AppStrings.get(R.string.auth_err_plan_permission_required, "账号凭据不能用于当前订阅连接，请重新登录"),
+            AppStrings.get(R.string.auth_err_plan_permission_required, "Account credentials cannot be used for the current subscription connection; please sign in again"),
         )
         return credential
     }
@@ -149,7 +149,7 @@ internal class ProviderCredentialSessions(
     private fun session(providerId: String): Session {
         if (providerId.isBlank()) throw ProviderAuthException(
             "oauth_provider_missing",
-            AppStrings.get(R.string.auth_err_provider_missing, "服务商连接不存在"),
+            AppStrings.get(R.string.auth_err_provider_missing, "Provider connection does not exist"),
         )
         return sessions.computeIfAbsent(providerId) { Session() }
     }
@@ -157,7 +157,7 @@ internal class ProviderCredentialSessions(
     private fun requireGeneration(current: Long, expected: Long) {
         if (current != expected) throw ProviderAuthException(
             "oauth_session_changed",
-            AppStrings.get(R.string.auth_err_session_changed, "登录状态已变更，请重试"),
+            AppStrings.get(R.string.auth_err_session_changed, "Sign-in state changed; please retry"),
         )
     }
 

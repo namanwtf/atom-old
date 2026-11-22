@@ -29,65 +29,65 @@ internal object PersonalSearchTools {
                 name = "search_bills",
                 source = "bills",
                 titleRes = R.string.tool_cat_search_bills_title,
-                titleFallback = "查询账单",
+                titleFallback = "Search bills",
                 descriptionRes = R.string.tool_cat_search_bills_desc,
-                descriptionFallback = "按商户、内容和时间查找账单记录。",
+                descriptionFallback = "Find bill records by merchant, content, and time.",
             ),
             Search(
                 name = "search_todos",
                 source = "todos",
                 titleRes = R.string.tool_cat_search_todos_title,
-                titleFallback = "查询待办线索",
+                titleFallback = "Search to-do leads",
                 descriptionRes = R.string.tool_cat_search_todos_desc,
-                descriptionFallback = "查询系统从个人信息中提取的待办线索，未识别时间的记录不能按时间命中。",
+                descriptionFallback = "Search to-do leads extracted from personal information; records without a recognized time cannot be matched by time.",
             ),
             Search(
                 name = "search_calendar_todos",
                 source = "calendar_todos",
                 titleRes = R.string.tool_cat_search_calendar_todos_title,
-                titleFallback = "查询日历待办",
+                titleFallback = "Search calendar to-dos",
                 descriptionRes = R.string.tool_cat_search_calendar_todos_desc,
-                descriptionFallback = "查询日历中的待办及其计划时间。",
+                descriptionFallback = "Search to-dos in the calendar and their scheduled times.",
             ),
             Search(
                 name = "search_memory_collections",
                 source = "collections",
                 titleRes = R.string.tool_cat_search_memory_collections_title,
-                titleFallback = "查询记忆合集",
+                titleFallback = "Search memory collections",
                 descriptionRes = R.string.tool_cat_search_memory_collections_desc,
-                descriptionFallback = "查找已保存的记忆合集，不支持业务时间筛选。",
+                descriptionFallback = "Find saved memory collections; filtering by business time is not supported.",
             ),
             Search(
                 name = "search_daily_events",
                 source = "events",
                 titleRes = R.string.tool_cat_search_daily_events_title,
-                titleFallback = "查询生活事件",
+                titleFallback = "Search life events",
                 descriptionRes = R.string.tool_cat_search_daily_events_desc,
-                descriptionFallback = "查找系统记录或推断的生活事件，不把推断当成确认事实。",
+                descriptionFallback = "Find life events recorded or inferred by the system; inferences are not treated as confirmed facts.",
             ),
             Search(
                 name = "search_flights",
                 source = "flights",
                 titleRes = R.string.tool_cat_search_flights_title,
-                titleFallback = "查询航班行程",
+                titleFallback = "Search flight trips",
                 descriptionRes = R.string.tool_cat_search_flights_desc,
-                descriptionFallback = "按航班、机场和计划起飞时间检索行程。",
+                descriptionFallback = "Retrieve trips by flight, airport, and scheduled departure time.",
             ),
             Search(
                 name = "search_hotels",
                 source = "hotels",
                 titleRes = R.string.tool_cat_search_hotels_title,
-                titleFallback = "查询酒店预订",
+                titleFallback = "Search hotel bookings",
                 descriptionRes = R.string.tool_cat_search_hotels_desc,
-                descriptionFallback = "按酒店、地址、订单和入住时间检索预订。",
+                descriptionFallback = "Retrieve bookings by hotel, address, order, and check-in time.",
             ),
             Search(
                 name = "search_trains",
                 source = "trains",
                 titleRes = R.string.tool_cat_search_trains_title,
-                titleFallback = "查询火车行程",
+                titleFallback = "Search train trips",
                 descriptionRes = R.string.tool_cat_search_trains_desc,
-                descriptionFallback = "按车次、车站和出发时间检索行程。",
+                descriptionFallback = "Retrieve trips by train number, station, and departure time.",
             ),
         )
     val names =
@@ -159,7 +159,7 @@ internal class IndexedPersonalSearch(private val service: PersonalContextQuerySe
                         item.put("ref", "eta-index:$source:$it")
                     }
             }
-            result.put("reference_scope", "索引引用仅用于读取；修改原始应用记录必须重新核对原始对象 ID")
+            result.put("reference_scope", "Index references are for reading only; modifying the original app record requires re-verifying the original object ID")
         }
     }
 
@@ -170,5 +170,5 @@ internal class IndexedPersonalSearch(private val service: PersonalContextQuerySe
         JSONObject()
             .put("ok", false)
             .put("code", "INVALID_ARGUMENT")
-            .put("message", "必须提供查询结果返回的完整 ref")
+            .put("message", "A complete ref returned by the query result must be provided")
 }

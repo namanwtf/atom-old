@@ -59,9 +59,9 @@ internal object AgentPendingResultRecovery {
                     messages = state.messages,
                     ok = result.ok,
                     detail = if (result.ok) {
-                        AppStrings.get(R.string.ui_misc_compaction_completed, "上下文压缩完成")
+                        AppStrings.get(R.string.ui_misc_compaction_completed, "Context compaction completed")
                     } else {
-                        result.error ?: AppStrings.get(R.string.ui_misc_compaction_failed, "上下文压缩失败")
+                        result.error ?: AppStrings.get(R.string.ui_misc_compaction_failed, "Context compaction failed")
                     },
                 )), false)
         }

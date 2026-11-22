@@ -130,7 +130,7 @@ internal object HookSupport {
             val deoptimized = module.deoptimize(executable)
             logger.debug { "Deopt $description = $deoptimized" }
         } catch (exception: Exception) {
-            logger.warn("Deopt 失败: $description, type=${exception.safeLogType()}")
+            logger.warn("Deopt failed: $description, type=${exception.safeLogType()}")
         }
     }
 

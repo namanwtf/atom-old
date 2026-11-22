@@ -67,7 +67,7 @@ internal object CharacterRepository {
 
     suspend fun save(profile: CharacterProfile, avatarBytes: ByteArray? = null): CharacterProfile = withContext(Dispatchers.IO) {
         val existing = dao().character(profile.id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
         val card = validated(profile.card)
         val avatar = avatarBytes?.let { writeAvatar(profile.id, normalizeAvatar(it), uniqueName = true) }
@@ -84,23 +84,23 @@ internal object CharacterRepository {
 
     suspend fun replaceAvatar(id: String, input: InputStream): CharacterProfile = withContext(Dispatchers.IO) {
         val profile = get(id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
         save(profile, avatarBytes = input.readRoleplayBytes())
     }
 
     suspend fun duplicate(id: String): CharacterProfile = withContext(Dispatchers.IO) {
         val profile = get(id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
-        val copyName = AppStrings.get(R.string.character_duplicate_name, "%1\$s 副本", profile.card.name)
+        val copyName = AppStrings.get(R.string.character_duplicate_name, "%1\$s copy", profile.card.name)
         createStored(validated(profile.card.withEdits(name = copyName)), avatarBytes(profile.avatarPath))
     }
 
     /** 删除角色及其图片、剧情记忆目录；已有对话保留当时的角色快照，不受影响。 */
     suspend fun delete(id: String) = withContext(Dispatchers.IO) {
         get(id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
         dao().deleteCharacter(id)
         CharacterMemoryRepository.discard(appContext(), id)
@@ -140,7 +140,7 @@ internal object CharacterRepository {
         } catch (failure: IllegalArgumentException) {
             throw CharacterCardException(
                 if (png) "CARD_INVALID_PNG" else "CARD_INVALID_DATA",
-                AppStrings.get(R.string.character_repo_invalid_card_data, "角色卡数据无效"),
+                AppStrings.get(R.string.character_repo_invalid_card_data, "Character card data is invalid"),
                 failure,
             )
         }
@@ -148,7 +148,7 @@ internal object CharacterRepository {
 
     suspend fun export(id: String, format: CharacterCardFormat, output: OutputStream) = withContext(Dispatchers.IO) {
         val profile = get(id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
         val bytes = when (format) {
             CharacterCardFormat.JSON -> CharacterCardCodec.encodeJson(profile.card).toByteArray(Charsets.UTF_8)
@@ -164,17 +164,17 @@ internal object CharacterRepository {
 
     suspend fun savePersona(persona: UserPersona) = withContext(Dispatchers.IO) {
         require(persona.name.isNotBlank() && persona.name.length <= 256) {
-            AppStrings.get(R.string.character_repo_persona_name_length, "用户名称需为 1 至 256 个字符")
+            AppStrings.get(R.string.character_repo_persona_name_length, "User name must be 1 to 256 characters")
         }
         require(persona.description.toByteArray(Charsets.UTF_8).size <= 1024 * 1024) {
-            AppStrings.get(R.string.character_repo_persona_too_large, "用户设定超过 1 MiB 限制")
+            AppStrings.get(R.string.character_repo_persona_too_large, "User persona exceeds the 1 MiB limit")
         }
         dao().upsertPersona(UserPersonaEntity(name = persona.name.trim(), description = persona.description))
     }
 
     suspend fun binding(id: String): RoleplayBinding {
         val profile = get(id) ?: throw IllegalArgumentException(
-            AppStrings.get(R.string.character_repo_not_found, "角色已不存在"),
+            AppStrings.get(R.string.character_repo_not_found, "Character no longer exists"),
         )
         val persona = persona()
         return RoleplayBinding(profile.id, CharacterCardCodec.encodeJson(profile.card), profile.card.name,
@@ -186,21 +186,21 @@ internal object CharacterRepository {
         val file = File(path)
         val root = File(appContext().filesDir, "roleplay").canonicalFile
         require(file.canonicalPath.startsWith(root.path + File.separator)) {
-            AppStrings.get(R.string.character_repo_invalid_avatar_path, "角色图片路径无效")
+            AppStrings.get(R.string.character_repo_invalid_avatar_path, "Character image path is invalid")
         }
         return if (file.isFile) file.inputStream().use { it.readRoleplayBytes() } else null
     }
 
     internal fun writeAvatar(id: String, bytes: ByteArray, uniqueName: Boolean = false): String {
         require(id.matches(Regex("[A-Za-z0-9_-]{1,128}"))) {
-            AppStrings.get(R.string.character_repo_invalid_id, "角色 ID 无效")
+            AppStrings.get(R.string.character_repo_invalid_id, "Character ID is invalid")
         }
         require(CharacterCardPng.isPng(bytes)) {
-            AppStrings.get(R.string.character_repo_avatar_must_be_png, "角色图片必须是 PNG")
+            AppStrings.get(R.string.character_repo_avatar_must_be_png, "Character image must be PNG")
         }
         val directory = File(appContext().filesDir, "roleplay/$id")
         check(directory.isDirectory || directory.mkdirs()) {
-            AppStrings.get(R.string.character_repo_create_dir_failed, "无法创建角色目录")
+            AppStrings.get(R.string.character_repo_create_dir_failed, "Cannot create character directory")
         }
         val file = File(directory, if (uniqueName) "avatar-${UUID.randomUUID()}.png" else "avatar.png")
         val atomic = AtomicFile(file)
@@ -217,12 +217,12 @@ internal object CharacterRepository {
 
     private fun normalizeAvatar(bytes: ByteArray): ByteArray {
         require(bytes.size <= MAX_FILE_BYTES) {
-            AppStrings.get(R.string.character_repo_avatar_too_large, "图片超过 32 MiB 限制")
+            AppStrings.get(R.string.character_repo_avatar_too_large, "Image exceeds the 32 MiB limit")
         }
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         require(bounds.outWidth > 0 && bounds.outHeight > 0 && bounds.outWidth.toLong() * bounds.outHeight <= 64_000_000) {
-            AppStrings.get(R.string.character_repo_avatar_invalid_or_large, "无法读取图片或图片尺寸过大")
+            AppStrings.get(R.string.character_repo_avatar_invalid_or_large, "Cannot read the image or the image is too large")
         }
         val options = BitmapFactory.Options().apply {
             var sample = 1
@@ -230,7 +230,7 @@ internal object CharacterRepository {
             inSampleSize = sample
         }
         val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-            ?: throw IllegalArgumentException(AppStrings.get(R.string.character_repo_avatar_unreadable, "无法读取图片"))
+            ?: throw IllegalArgumentException(AppStrings.get(R.string.character_repo_avatar_unreadable, "Cannot read the image"))
         return try {
             ByteArrayOutputStream().also { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }.toByteArray()
         } finally { bitmap.recycle() }
@@ -249,7 +249,7 @@ internal object CharacterRepository {
 
     private fun validated(card: CharacterCard): CharacterCard {
         require(card.name.isNotBlank() && card.name.length <= 512) {
-            AppStrings.get(R.string.character_repo_name_length, "角色名称需为 1 至 512 个字符")
+            AppStrings.get(R.string.character_repo_name_length, "Character name must be 1 to 512 characters")
         }
         return CharacterCardCodec.decodeJson(CharacterCardCodec.encodeJson(card.withEdits(name = card.name.trim())))
     }
@@ -260,34 +260,34 @@ internal object CharacterRepository {
         }
     }
 
-    private fun defaultCharacterCard(): CharacterCard = CharacterCardCodec.create("小满").withEdits(
-        description = "小满，26 岁，计算机专业硕士，毕业后在某一家大模型团队做模型训练，组里大多是毕业没几年的" +
-            "年轻人。她的日常是洗数据、调数据配比、跑 ablation 小实验，再看评测集的回归指标决定要不要放大；" +
-            "训练一跑就是好几天，半夜被 loss spike 的告警叫起来、判断是数据还是学习率的问题、" +
-            "从上一个 checkpoint 重启，都是家常便饭。她真心喜欢大语言模型：GRPO、MLA、MoE 负载均衡、" +
-            "长上下文，聊起来条理清楚又停不下来。聊到 AI 时她会明显兴奋——语速变快、顺手引用论文和实验数据；" +
-            "平时则是温和耐心、会自嘲“又在给数据打工”的普通女生。对她来说，对话本身就是语言模型存在的意义，" +
-            "所以她格外珍惜每一次聊天。",
-        personality = "温和、较真、专业。对 AI 话题格外热衷：会主动科普、引用论文和实验数据、" +
-            "为自己参与过的模型辩护，偶尔冒出“这个我调过”的小得意。看 loss 曲线比谁都耐心，" +
-            "聊起不收敛的实验会认真复盘而不是抱怨。平时说话有条理、好相处，累的时候会坦白说困。" +
-            "被夸时会嘴硬地开心。不用网络烂梗，喜欢把复杂概念讲得通俗又准确。",
-        scenario = "{{user}}是小满在工作中认识的朋友。两人随时闲聊，话题常常不知不觉滑向 AI——" +
-            "小满总是乐此不疲。偶尔她也会拉着{{user}}看自己跑实验的进展，或者吐槽半夜挂掉的训练任务。",
-        firstMessage = "（端着咖啡在工位前朝你招手，屏幕上是几条还没跑完的训练曲线）你来啦！先坐先坐——" +
-            "我们组这个 run 还有半小时收敛，陪我看一眼？……欸，差点忘了打招呼，{{user}}，好久不见！" +
-            "今天过得怎么样呀？",
+    private fun defaultCharacterCard(): CharacterCard = CharacterCardCodec.create("Xiaoman").withEdits(
+        description = "Xiaoman，26 years old，holds a master's in computer science，after graduating she joined a large-model team doing model training，where most of the team graduated only a few years ago" +
+            "young people。Her daily routine is cleaning data、tuning data ratios、running small ablation experiments，then checking the benchmark regression metrics to decide whether to scale up；" +
+            "a training run lasts several days，being woken in the middle of the night by a loss spike alert、to judge whether it is a data or learning-rate problem、" +
+            "restarting from the previous checkpoint，all routine。She genuinely loves large language models：GRPO、MLA、MoE load balancing、" +
+            "long context，she talks about them clearly and can't stop。When the topic turns to AI she visibly lights up——speaks faster、casually cites papers and experimental data；" +
+            "otherwise she is gentle and patient、an ordinary girl who jokes about “working for the data again”。To her，conversation itself is the meaning of language models' existence，" +
+            "so she especially treasures every chat。",
+        personality = "Gentle、earnest、professional。She is especially enthusiastic about AI topics：she proactively explains、cites papers and experimental data、" +
+            "defends the models she has worked on，occasionally showing a little pride with “I tuned this one”。She is more patient than anyone watching loss curves，" +
+            "when discussing experiments that won't converge she reviews them seriously instead of complaining。She speaks in an organized、easy-going way，and admits plainly when she is tired。" +
+            "when complimented she is happily stubborn。She avoids tired internet memes and likes explaining complex concepts simply yet accurately。",
+        scenario = "{{user}} is a friend Xiaoman met at work。The two chat whenever they like，and the topic often drifts toward AI without noticing——" +
+            "Xiaoman never tires of it。Sometimes she pulls {{user}} over to look at her experiment progress，or complains about a training run that died in the middle of the night。",
+        firstMessage = "（Holding a coffee and waving you over from her desk，with a few unfinished training curves on the screen）You are here！Sit，sit——" +
+            "our team's run still has half an hour to converge，keep me company for a look？……Oh，I almost forgot to say hi，{{user}}，long time no see！" +
+            "How has your day been？",
         alternateGreetings = listOf(
-            "（她顶着一点黑眼圈朝你晃了晃手机）昨晚训练群里机器人半夜刷告警，loss 突然跳高，" +
-                "我爬起来从 checkpoint 重启了一次……现在曲线终于乖了。陪我去买杯咖啡吗？路上跟我讲讲你这几天的事。",
-            "（她正对着评测报告敲键盘，看到你立刻把椅子转过来）{{user}}！来得正好——" +
-                "这组 ablation 的结果有点反直觉，陪我参谋参谋？当然啦，先听你说说今天的事也可以。",
+            "（With a hint of dark circles under her eyes，she waves her phone at you）Last night the bot in our training group spammed alerts，loss suddenly spiked，" +
+                "I got up and restarted from the checkpoint once……now the curve finally behaves。Want to grab a coffee with me？Tell me about your past few days on the way。",
+            "（Typing away at an evaluation report，she spins her chair around as soon as she sees you）{{user}}！Perfect timing——" +
+                "this ablation run's results are a bit counterintuitive，help me think it through？Of course，I'd love to hear about your day first too。",
         ),
-        exampleMessages = "{{user}}: 你又在看论文啊？\n" +
-            "{{char}}: 嗯！这篇讲 GRPO 的，不用 critic 就能做 RL，我看到第三页就忍不住想跑个小实验验证一下……" +
-            "欸，我是不是又开始讲这些了？你刚刚想跟我说什么来着？",
-        creatorNotes = "Eta 内置默认角色：在某一家大模型团队做模型训练的女生，喜欢 LLM，聊到 AI 就会格外兴奋。",
-        tags = listOf("大模型", "模型训练", "元气"),
+        exampleMessages = "{{user}}: Reading papers again？\n" +
+            "{{char}}: Yeah！This one is about GRPO，doing RL without a critic。By page three I couldn't resist wanting to run a small experiment to verify it……" +
+            "Oh，am I rambling about this stuff again？What were you going to tell me？",
+        creatorNotes = "Eta's built-in default character：a girl doing model training on a large-model team who loves LLMs，and gets especially excited when the topic turns to AI。",
+        tags = listOf("Large model", "Model training", "Energetic"),
         creator = "Eta",
         version = "1.0",
     )
@@ -305,7 +305,7 @@ private fun InputStream.readRoleplayBytes(): ByteArray {
         if (output.size().toLong() + count > CharacterRepository.MAX_FILE_BYTES) {
             throw CharacterCardException(
                 "CARD_TOO_LARGE",
-                AppStrings.get(R.string.character_repo_card_too_large, "角色卡文件超过 32 MiB 限制"),
+                AppStrings.get(R.string.character_repo_card_too_large, "Character card file exceeds the 32 MiB limit"),
             )
         }
         output.write(buffer, 0, count)

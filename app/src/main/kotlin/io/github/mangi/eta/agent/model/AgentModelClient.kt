@@ -136,8 +136,8 @@ internal object AgentModelClient {
         )
         if (rewriteReply) {
             messages.put(messages.length() - 1, AgentConversationCodec.userTextMessage(
-                "请只改写下面这条角色回复，保持已有事实与实际工具结果，以当前角色设定改善表达。" +
-                    "这不是重新执行任务；不得调用任何工具、重读设备、更新记忆或编造缺失证据。只输出替代正文。\n" +
+                "Rewrite only the assistant reply below, keeping the existing facts and actual tool results, and improve the phrasing according to the current role settings. " +
+                    "This is not re-running the task; do not call any tools, re-read the device, update memory, or fabricate missing evidence. Output only the replacement text.\n" +
                     "<reply_to_rewrite>\n$prompt\n</reply_to_rewrite>",
             ))
         } else if (!compactOnly) {
@@ -242,7 +242,7 @@ internal object AgentModelClient {
                 } else {
                     ToolResult(
                         JSONObject().put("ok", false).put("code", unavailable)
-                            .put("message", "该工具当前不可用（$unavailable），本次未执行").toString(),
+                            .put("message", "This tool is currently unavailable ($unavailable); not executed this time").toString(),
                     )
                 }
             },
@@ -287,32 +287,32 @@ internal object AgentModelClient {
 
     private fun ModelConfig.validate() {
         require(baseUrl.isNotBlank()) {
-            AppStrings.get(R.string.model_err_base_url_required, "请先配置 API 地址")
+            AppStrings.get(R.string.model_err_base_url_required, "Configure the API URL first")
         }
         when {
             authMode == ProviderAuthModes.API_KEY -> require(apiKey.isNotBlank()) {
-                AppStrings.get(R.string.model_err_api_key_required, "请先配置 API Key")
+                AppStrings.get(R.string.model_err_api_key_required, "Configure the API Key first")
             }
             ProviderAuthModes.isOAuth(authMode) -> {
                 require(providerId.isNotBlank()) {
                     AppStrings.get(
                         R.string.model_err_oauth_provider_required,
-                        "账号登录缺少服务商标识，请重新选择服务商",
+                        "Account sign-in is missing a provider identifier; select the provider again",
                     )
                 }
                 require(apiKey.isEmpty()) {
                     AppStrings.get(
                         R.string.model_err_oauth_api_key_forbidden,
-                        "账号登录配置不能包含 API Key",
+                        "Account sign-in configuration must not contain an API Key",
                     )
                 }
             }
             else -> error(
-                AppStrings.get(R.string.model_err_auth_mode_unsupported, "不支持的服务商认证方式")
+                AppStrings.get(R.string.model_err_auth_mode_unsupported, "Unsupported provider authentication mode")
             )
         }
         require(model.isNotBlank()) {
-            AppStrings.get(R.string.model_err_model_required, "请先配置模型名")
+            AppStrings.get(R.string.model_err_model_required, "Configure the model name first")
         }
         require(
             reasoningCapabilities?.mandatory != true ||
@@ -320,7 +320,7 @@ internal object AgentModelClient {
         ) {
             AppStrings.get(
                 R.string.model_err_mandatory_thinking,
-                "当前模型强制启用思考，不能选择 Off 或禁用思考权限",
+                "The current model forces reasoning on; Off or disabling the reasoning permission is not allowed",
             )
         }
         if (extraBodyJson.isNotBlank()) {
@@ -329,7 +329,7 @@ internal object AgentModelClient {
                     error(
                         AppStrings.get(
                             R.string.model_err_extra_body_invalid,
-                            "额外请求体 JSON 无效：%1\$s",
+                            "Additional request body JSON is invalid: %1\$s",
                             throwable.message ?: throwable.javaClass.simpleName,
                         )
                     )

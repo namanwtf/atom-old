@@ -38,7 +38,7 @@ internal object GoogleAppHooks {
         val field = runCatching {
             clazz.getDeclaredField(fieldName).apply { isAccessible = true }
         }.getOrElse { throwable ->
-            logger.warn("GSA: 找不到 Build.$fieldName，type=${throwable.safeLogType()}")
+            logger.warn("GSA: Build.$fieldName not found, type=${throwable.safeLogType()}")
             return
         }
 
@@ -64,7 +64,7 @@ internal object GoogleAppHooks {
             }
             check(field.get(null) == value) { "build_field_write_not_applied" }
         } catch (exception: Exception) {
-            logger.warn("GSA: 修改 Build.$fieldName 失败，type=${exception.safeLogType()}")
+            logger.warn("GSA: failed to modify Build.$fieldName, type=${exception.safeLogType()}")
         }
     }
 }

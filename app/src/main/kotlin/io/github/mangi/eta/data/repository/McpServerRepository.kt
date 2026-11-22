@@ -55,7 +55,7 @@ internal object McpServerRepository {
 
     suspend fun update(server: McpServerSetting, bearerToken: String? = null) {
         val previous = requireNotNull(serverById(server.id)) {
-            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
         }
         val changesSecret = bearerToken != null ||
             (previous.authorizationType != McpAuthorizationType.NONE &&
@@ -72,7 +72,7 @@ internal object McpServerRepository {
         }
         try {
             require(dao().update(updated.toEntity()) == 1) {
-                AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+                AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
             }
         } catch (failure: Throwable) {
             if (changesSecret && secretStore != null) runCatching {
@@ -84,7 +84,7 @@ internal object McpServerRepository {
 
     suspend fun setToolEnabled(serverId: String, toolName: String, enabled: Boolean) {
         val server = requireNotNull(serverById(serverId)) {
-            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
         }
         val names = server.enabledToolNames.toMutableSet()
         if (enabled) names += toolName else names -= toolName
@@ -93,7 +93,7 @@ internal object McpServerRepository {
 
     suspend fun setAllToolsEnabled(serverId: String, enabled: Boolean) {
         val server = requireNotNull(serverById(serverId)) {
-            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
         }
         val names = if (enabled) server.tools.mapTo(linkedSetOf()) { it.name } else emptySet()
         update(server.copy(enabledToolNames = names))
@@ -110,14 +110,14 @@ internal object McpServerRepository {
 
     suspend fun delete(serverId: String) {
         val previous = requireNotNull(serverById(serverId)) {
-            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+            AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
         }
         val secretStore = secrets()
         val previousToken = secretStore.bearerToken(serverId)
         secretStore.clear(serverId)
         try {
             require(dao().delete(serverId) == 1) {
-                AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP 服务器不存在")
+                AppStrings.get(R.string.repo_err_mcp_server_not_found, "MCP server does not exist")
             }
         } catch (failure: Throwable) {
             runCatching { updateSecret(secretStore, previous, previousToken.orEmpty()) }

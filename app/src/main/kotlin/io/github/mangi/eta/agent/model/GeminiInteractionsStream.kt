@@ -43,14 +43,14 @@ internal class GeminiInteractionsStream(
     fun read(stream: InputStream, controller: AgentRunController): JSONObject {
         readProviderSse(stream, controller, onEvent = ::accept)
         return assistant ?: throw AgentModelFailure.incompleteStream(
-            AppStrings.get(R.string.provider_err_gemini_incomplete, "Gemini 响应提前结束，未收到完整终态。"),
+            AppStrings.get(R.string.provider_err_gemini_incomplete, "Gemini response ended early; the full terminal state was not received."),
         )
     }
 
     private fun accept(eventName: String, data: String): Boolean {
         if (data.trim() == "[DONE]") {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_gemini_missing_completed, "Gemini 响应缺少完成事件。"),
+                AppStrings.get(R.string.provider_err_gemini_missing_completed, "Gemini response is missing a completion event."),
             )
         }
         receivedChars += data.length
@@ -80,7 +80,7 @@ internal class GeminiInteractionsStream(
             }
             "error" -> throw AgentModelFailure.stream(
                 event.optJSONObject("error") ?: JSONObject(),
-                AppStrings.get(R.string.provider_err_gemini_stream_failed, "Gemini 流式响应失败。"),
+                AppStrings.get(R.string.provider_err_gemini_stream_failed, "Gemini streaming response failed."),
             )
             // 新增事件可以忽略；已知步骤里的未知输出必须明确失败。
         }
@@ -224,7 +224,7 @@ internal class GeminiInteractionsStream(
             val errors = interaction.optJSONArray("errors")
             throw AgentModelFailure.stream(
                 errors?.optJSONObject(0) ?: JSONObject(),
-                AppStrings.get(R.string.provider_err_gemini_request_failed, "Gemini 请求未成功完成。"),
+                AppStrings.get(R.string.provider_err_gemini_request_failed, "Gemini request did not complete successfully."),
             )
         }
         if (status !in setOf("completed", "requires_action", "incomplete", "budget_exceeded")) malformed()
@@ -238,25 +238,25 @@ internal class GeminiInteractionsStream(
                 false,
                 AppStrings.get(
                     R.string.provider_err_gemini_output_limit,
-                    "Gemini 输出未完整生成，可能已达到输出或执行预算；请调整输出上限或思考档位后重试。",
+                    "Gemini output was not fully generated; it may have hit the output or execution budget. Adjust the output limit or reasoning effort and retry.",
                 ),
             )
         }
         if (steps.values.any { !it.stopped }) {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_gemini_step_incomplete, "Gemini 输出步骤未完整结束。"),
+                AppStrings.get(R.string.provider_err_gemini_step_incomplete, "Gemini output step did not complete."),
             )
         }
         val calls = steps.values.filter { it.type == "function_call" }
         if (status == "requires_action" && calls.isEmpty()) malformed()
         if (calls.isNotEmpty() && status != "requires_action") {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_gemini_tool_call_incomplete, "Gemini 工具调用缺少可执行的完整终态。"),
+                AppStrings.get(R.string.provider_err_gemini_tool_call_incomplete, "Gemini tool call is missing an executable complete terminal state."),
             )
         }
         if (searchCalls != searchResults) {
             throw AgentModelFailure.incompleteStream(
-                AppStrings.get(R.string.provider_err_gemini_search_incomplete, "Gemini 搜索步骤未完整结束。"),
+                AppStrings.get(R.string.provider_err_gemini_search_incomplete, "Gemini search step did not complete."),
             )
         }
         val reason = when (status) {
@@ -391,15 +391,15 @@ internal class GeminiInteractionsStream(
         throw AgentModelFailure(code, false, when (code) {
             "GEMINI_UNSUPPORTED_OUTPUT" -> AppStrings.get(
                 R.string.provider_err_gemini_unsupported_output,
-                "Gemini 返回了当前不支持的输出类型。",
+                "Gemini returned an output type that is currently unsupported.",
             )
             "GEMINI_SEARCH_SUGGESTIONS_LIMIT" -> AppStrings.get(
                 R.string.provider_err_gemini_search_suggestions_limit,
-                "Gemini 搜索建议超过展示容量限制。",
+                "Gemini search suggestions exceed the display capacity limit.",
             )
             else -> AppStrings.get(
                 R.string.provider_err_gemini_stream_invalid,
-                "Gemini 流式响应格式无效或超过容量限制。",
+                "Gemini streaming response format is invalid or exceeds capacity limits.",
             )
         })
 

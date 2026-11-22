@@ -14,7 +14,7 @@ internal class PersonalContextQueryService(
         val request = try {
             PersonalContextRequest.parse(arguments)
         } catch (failure: PersonalContextArgumentException) {
-            return failure(failure.code, failure.message ?: "个人上下文参数无效")
+            return failure(failure.code, failure.message ?: "Invalid personal context arguments")
         }
         val source = request.source
         if (source == null) {
@@ -229,17 +229,17 @@ internal class PersonalContextQueryService(
         .put("ok", false).put("tool", "personal_context").put("code", code).put("message", message)
 
     private fun errorMessage(code: String): String = when (code) {
-        "ROOT_REQUIRED", "ROOT_UNAVAILABLE" -> "个人上下文索引需要可用的 Root 授权"
-        "ROOT_EXECUTOR_CLOSED" -> "个人上下文查询已取消"
-        "DMP_ACCESS_DENIED" -> "系统未允许访问此个人上下文来源，请检查系统数据授权及应用隐藏或加密状态"
-        "DMP_RESOURCE_UNAVAILABLE" -> "当前系统未提供或未准备好此个人上下文来源"
-        "DMP_QUERY_TIMEOUT" -> "个人上下文查询超时，请缩小查询范围后重试"
-        "PERSONAL_CONTEXT_NOT_FOUND" -> "索引中未找到此记录；记录可能已移除或索引已变化"
-        "PERSONAL_CONTEXT_SCHEMA_UNSUPPORTED", "DMP_COLUMN_MISSING" -> "此系统版本的数据字段暂不兼容，未移除必要的保护条件"
-        "PERSONAL_CONTEXT_FIELD_UNAVAILABLE" -> "此系统版本缺少本次筛选、排序或汇总所需的字段"
-        "PERSONAL_CONTEXT_OUTPUT_LIMIT", "DMP_OUTPUT_LIMIT" -> "个人上下文结果超过读取预算，请缩小查询范围"
-        "DMP_BINARY_TEXT", "DMP_INVALID_UTF8", "DMP_OUTPUT_INVALID" -> "系统返回的数据格式无法完整读取，未将其当成空结果"
-        else -> "个人上下文数据源查询失败，未将其当成没有数据"
+        "ROOT_REQUIRED", "ROOT_UNAVAILABLE" -> "The personal context index requires available Root authorization"
+        "ROOT_EXECUTOR_CLOSED" -> "Personal context query was cancelled"
+        "DMP_ACCESS_DENIED" -> "The system has not granted access to this personal context source; check system data authorization and app hiding or encryption state"
+        "DMP_RESOURCE_UNAVAILABLE" -> "This personal context source is not provided or not ready on the current system"
+        "DMP_QUERY_TIMEOUT" -> "Personal context query timed out; narrow the query scope and retry"
+        "PERSONAL_CONTEXT_NOT_FOUND" -> "This record was not found in the index; it may have been removed or the index may have changed"
+        "PERSONAL_CONTEXT_SCHEMA_UNSUPPORTED", "DMP_COLUMN_MISSING" -> "The data fields of this system version are not yet compatible; necessary protection conditions were not removed"
+        "PERSONAL_CONTEXT_FIELD_UNAVAILABLE" -> "This system version is missing fields required for the requested filter, sort, or summary"
+        "PERSONAL_CONTEXT_OUTPUT_LIMIT", "DMP_OUTPUT_LIMIT" -> "Personal context results exceeded the read budget; narrow the query scope"
+        "DMP_BINARY_TEXT", "DMP_INVALID_UTF8", "DMP_OUTPUT_INVALID" -> "The data format returned by the system could not be fully read; it was not treated as an empty result"
+        else -> "Personal context data source query failed; it was not treated as having no data"
     }
 
     private class QueryFailure(val code: String) : RuntimeException(code)

@@ -15,11 +15,11 @@ internal object HyperOsLegacyGesture {
         if (type == null || !View::class.java.isAssignableFrom(type) || touch?.declaringClass != type ||
             touch.returnType != Boolean::class.javaPrimitiveType
         ) {
-            hooks.missing("hyperos.legacy-touch", "NavStubView.onTouchEvent", "HyperOS: 未找到旧版导航视图触摸入口")
+            hooks.missing("hyperos.legacy-touch", "NavStubView.onTouchEvent", "HyperOS: legacy navbar view touch entry not found")
             return
         }
         if (HookSupport.findField(type, "mCheckLongPress") != null) {
-            hooks.skipped("hyperos.legacy-touch", "NavStubView.onTouchEvent", "HyperOS: 桌面已有长按检测但回调未知，保留原生手势")
+            hooks.skipped("hyperos.legacy-touch", "NavStubView.onTouchEvent", "HyperOS: launcher already has long-press detection but the callback is unknown, keeping native gesture")
             return
         }
         // View 回调在所属 UI 线程串行执行；弱键和值中的弱引用共同避免已销毁视图泄漏。
@@ -35,7 +35,7 @@ internal object HyperOsLegacyGesture {
                             current.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         } catch (exception: Exception) {
                             hooks.logger.warnThrottled("hyperos_haptic_failed") {
-                                "HyperOS: 长按反馈失败，type=${exception.safeLogType()}"
+                                "HyperOS: long-press feedback failed, type=${exception.safeLogType()}"
                             }
                         }
                     }
@@ -63,7 +63,7 @@ internal object HyperOsLegacyGesture {
                 else chain.proceed()
             }
         } else {
-            hooks.skipped("hyperos.legacy-recents", "NavStubView.startRecentsAnimationPre", "HyperOS: 未提供最近任务预启动入口")
+            hooks.skipped("hyperos.legacy-recents", "NavStubView.startRecentsAnimationPre", "HyperOS: recents pre-launch entry not available")
         }
     }
 }

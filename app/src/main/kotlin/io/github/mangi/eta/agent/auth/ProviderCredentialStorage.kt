@@ -104,7 +104,7 @@ internal class EncryptedProviderCredentialStorage(context: Context) : ProviderCr
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
         if (!create) throw ProviderAuthException(
             "credential_key_unavailable",
-            AppStrings.get(R.string.auth_err_key_unavailable, "登录凭据的密钥不可用，请退出后重新登录"),
+            AppStrings.get(R.string.auth_err_key_unavailable, "The sign-in credential key is unavailable; please sign out and sign in again"),
         )
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
             init(KeyGenParameterSpec.Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
@@ -123,7 +123,7 @@ internal class EncryptedProviderCredentialStorage(context: Context) : ProviderCr
     } catch (_: Exception) {
         throw ProviderAuthException(
             "credential_storage_failed",
-            AppStrings.get(R.string.auth_err_storage_failed, "无法读写登录凭据，请退出后重新登录"),
+            AppStrings.get(R.string.auth_err_storage_failed, "Unable to read or write sign-in credentials; please sign out and sign in again"),
         )
     }
 

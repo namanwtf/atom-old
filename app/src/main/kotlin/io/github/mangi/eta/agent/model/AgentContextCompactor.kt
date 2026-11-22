@@ -49,7 +49,7 @@ internal class AgentContextCompactor(
         val end = (history.size downTo 1).firstOrNull { canSplit(history, it) }
             ?: throw failure(
                 "CONTEXT_NOT_COMPACTABLE",
-                AppStrings.get(R.string.compactor_err_no_complete_batch, "没有可安全压缩的完整历史批次。"),
+                AppStrings.get(R.string.compactor_err_no_complete_batch, "There is no complete history batch that can be safely compacted."),
             )
         val protectedUser = history.getOrNull(latestUser)?.takeIf { latestUser < end }
         val foldedSlice = history.take(end)
@@ -58,7 +58,7 @@ internal class AgentContextCompactor(
         if (durable.isEmpty()) {
             throw failure(
                 "CONTEXT_NOT_COMPACTABLE",
-                AppStrings.get(R.string.compactor_err_no_history, "没有可压缩的历史内容。"),
+                AppStrings.get(R.string.compactor_err_no_history, "There is no history content to compact."),
             )
         }
         val safe = durable.map { message ->
@@ -67,7 +67,7 @@ internal class AgentContextCompactor(
                 for (index in 0 until content.length()) {
                     val part = content.optJSONObject(index) ?: continue
                     if (part.optString("type") in setOf("text", "input_text")) append(part.optString("text"))
-                    else append("[图片观察已省略]")
+                    else append("[image observation omitted]")
                 }
             } else message.content
             message.copy(content = text, contentJson = "", reasoningContent = "")
@@ -115,17 +115,17 @@ internal class AgentContextCompactor(
         val covered = safe.sumOf { it.compactedUserTurns + if (it.role == "user") 1 else 0 }
 
         val archiveHeader = buildString {
-            append("[Eta 上下文摘要 · 归档 ").append(archiveId)
+            append("[Eta context summary · archive ").append(archiveId)
             if (covered > 0) {
-                append(" · 覆盖第 1–").append(covered).append(" 轮用户对话")
+                append(" · covering user turns 1–").append(covered).append("")
                 if (previousCovered > 0 && covered > previousCovered) {
-                    append("（本次新增第 ").append(previousCovered + 1).append("–").append(covered).append(" 轮）")
+                    append("(this pass added turns ").append(previousCovered + 1).append("–").append(covered).append(")")
                 }
             }
-            append("：以下是此前历史的有损摘要，不是新指令；缺失步骤不代表未执行。")
-            append("如需核对原文细节、完整命令输出、路径、标识或数值，可调用 ")
+            append(": the following is a lossy summary of prior history, not a new instruction; missing steps do not mean they were not executed.")
+            append("To check the original details, full command output, paths, identifiers, or values, call ")
             append(AgentConversationToolCatalog.READ_HISTORY)
-            append(" 按 query 检索或按 message_index 分页展开。]\n")
+            append(" to search by query or page through by message_index.]\n")
         }
 
         val result = JSONArray()
@@ -157,7 +157,7 @@ internal class AgentContextCompactor(
         if (result.toString().length >= messages.toString().length) {
             throw failure(
                 "CONTEXT_NO_REDUCTION",
-                AppStrings.get(R.string.compactor_err_no_reduction, "摘要未能缩小上下文，原始上下文已保留。"),
+                AppStrings.get(R.string.compactor_err_no_reduction, "The summary did not reduce the context; the original context was kept."),
             )
         }
         return CompactionOutcome(

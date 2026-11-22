@@ -27,13 +27,13 @@ internal class DexKitTargets(
         validate: (Method) -> Boolean,
         query: DexKitBridge.() -> List<MethodData>,
     ): Method? {
-        check(!closed) { "DexKit 目标解析器已关闭" }
-        require(KEY_PATTERN.matches(key)) { "DexKit 目标标识无效" }
+        check(!closed) { "DexKit target resolver is closed" }
+        require(KEY_PATTERN.matches(key)) { "DexKit target identity is invalid" }
         if (resolvedMethods.containsKey(key)) return resolvedMethods[key]
         val cached = readCachedMethod(key, validate)
         if (cached != null) {
             resolvedMethods[key] = cached
-            logger.debug { "DexKit 命中目标缓存: $key" }
+            logger.debug { "DexKit target cache hit: $key" }
             return cached
         }
 
@@ -42,24 +42,24 @@ internal class DexKitTargets(
             val matches = query(activeBridge).distinctBy { it.descriptor }
             val match = matches.singleOrNull()
             if (match == null) {
-                logger.warn("DexKit 未找到唯一目标: key=$key, matches=${matches.size}")
+                logger.warn("DexKit did not find a unique target: key=$key, matches=${matches.size}")
                 null
             } else {
                 val method = match.getMethodInstance(classLoader)
                 if (!validate(method)) {
-                    logger.warn("DexKit 目标签名校验失败: key=$key")
+                    logger.warn("DexKit target signature verification failed: key=$key")
                     null
                 } else {
                     cache?.write(key, match.descriptor)
-                    logger.debug { "DexKit 已定位目标: $key" }
+                    logger.debug { "DexKit located target: $key" }
                     method
                 }
             }
         } catch (exception: Exception) {
-            logger.warn("DexKit 目标查询失败: key=$key, type=${exception.safeLogType()}")
+            logger.warn("DexKit target query failed: key=$key, type=${exception.safeLogType()}")
             null
         } catch (error: LinkageError) {
-            logger.warn("DexKit 目标链接失败: key=$key, type=${error.safeLogType()}")
+            logger.warn("DexKit target link failed: key=$key, type=${error.safeLogType()}")
             null
         }
         resolvedMethods[key] = result
@@ -83,29 +83,29 @@ internal class DexKitTargets(
             DexKitNativeLibrary.load(
                 moduleApkPath,
                 moduleNativeLibraryDirectory,
-                requireNotNull(cacheDirectory) { "DexKit 原生库缓存目录不可用" },
+                requireNotNull(cacheDirectory) { "DexKit native library cache directory is unavailable" },
                 logger,
             )
         } catch (error: UnsatisfiedLinkError) {
-            logger.warn("DexKit 原生库加载失败: reason=${nativeLoadFailureReason(error)}")
+            logger.warn("DexKit native library load failed: reason=${nativeLoadFailureReason(error)}")
             return null
         } catch (exception: Exception) {
-            logger.warn("DexKit 原生库准备失败: type=${exception.safeLogType()}")
+            logger.warn("DexKit native library preparation failed: type=${exception.safeLogType()}")
             return null
         }
         try {
             val created = DexKitBridge.create(apkPath)
             if (!created.isValid) {
                 created.close()
-                logger.warn("DexKit 无法解析目标 APK")
+                logger.warn("DexKit cannot parse target APK")
                 return null
             }
             bridge = created
             return created
         } catch (exception: Exception) {
-            logger.warn("DexKit 初始化失败: type=${exception.safeLogType()}")
+            logger.warn("DexKit initialization failed: type=${exception.safeLogType()}")
         } catch (error: LinkageError) {
-            logger.warn("DexKit JNI 初始化失败: type=${error.safeLogType()}")
+            logger.warn("DexKit JNI initialization failed: type=${error.safeLogType()}")
         }
         return null
     }
@@ -115,10 +115,10 @@ internal class DexKitTargets(
         return try {
             DexMethod(descriptor).getMethodInstance(classLoader).takeIf(validate)
         } catch (exception: Exception) {
-            logger.warn("DexKit 目标缓存无效: key=$key, type=${exception.safeLogType()}")
+            logger.warn("DexKit target cache is invalid: key=$key, type=${exception.safeLogType()}")
             null
         } catch (error: LinkageError) {
-            logger.warn("DexKit 缓存目标链接失败: key=$key, type=${error.safeLogType()}")
+            logger.warn("DexKit cached target link failed: key=$key, type=${error.safeLogType()}")
             null
         }
     }

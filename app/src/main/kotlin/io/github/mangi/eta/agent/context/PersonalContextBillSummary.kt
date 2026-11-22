@@ -13,10 +13,10 @@ internal object PersonalContextBillSummary {
 
     fun aggregate(result: DmpQueryResult.Success): JSONObject {
         if (result.rows.size > MAX_RECORDS) {
-            return failure("PERSONAL_CONTEXT_AGGREGATE_LIMIT", "匹配账单超过 1000 条，请缩小时间或关键词范围；未返回部分总额")
+            return failure("PERSONAL_CONTEXT_AGGREGATE_LIMIT", "More than 1000 bills matched; narrow the time or keyword range, partial totals were not returned")
         }
         if (result.truncatedFields.isNotEmpty()) {
-            return failure("PERSONAL_CONTEXT_AGGREGATE_INCOMPLETE", "账单字段被截断，未生成汇总")
+            return failure("PERSONAL_CONTEXT_AGGREGATE_INCOMPLETE", "Bill fields were truncated; no summary generated")
         }
         val total = Totals()
         val categories = linkedMapOf<String, Totals>()
@@ -27,9 +27,9 @@ internal object PersonalContextBillSummary {
                 null
             }
             if (amount == null || amount.scale() !in -18..8 || amount.abs() > maximumAmount) {
-                return failure("PERSONAL_CONTEXT_INVALID_AMOUNT", "账单包含无法确认的金额，未生成汇总")
+                return failure("PERSONAL_CONTEXT_INVALID_AMOUNT", "Bills contain unverifiable amounts; no summary generated")
             }
-            val category = row["category"]?.trim().orEmpty().ifEmpty { "未分类" }
+            val category = row["category"]?.trim().orEmpty().ifEmpty { "Uncategorized" }
             val type = row["transaction_type"]?.trim()?.lowercase(Locale.ROOT)
             val bucket = when {
                 category.equals("transfer", ignoreCase = true) -> Bucket.TRANSFER
@@ -54,7 +54,7 @@ internal object PersonalContextBillSummary {
             .put("categories_truncated", ordered.size > MAX_CATEGORIES)
             .put("remaining_category_count", (ordered.size - MAX_CATEGORIES).coerceAtLeast(0))
             .put("other_categories", remainder.json())
-            .put("accounting_basis", "按索引中记录的原始金额和类型汇总；转账与未知类型单列，不推断退款净额或交易状态，不代表完整银行账本")
+            .put("accounting_basis", "Aggregated from original amounts and types recorded in the index; transfers and unknown types are listed separately, refund net amounts and transaction status are not inferred, and this is not a complete bank ledger")
     }
 
     private enum class Bucket(val key: String) {

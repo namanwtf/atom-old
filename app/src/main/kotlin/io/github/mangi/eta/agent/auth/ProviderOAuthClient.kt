@@ -46,7 +46,7 @@ internal class LiveProviderOAuthClient(
         val receiver = try { callbackReceiver() } catch (_: java.io.IOException) {
             throw ProviderAuthException(
                 "oauth_callback_unavailable",
-                AppStrings.get(R.string.auth_err_codex_callback_start, "无法启动 Codex 登录回调，请结束其他登录后重试"),
+                AppStrings.get(R.string.auth_err_codex_callback_start, "Unable to start the Codex sign-in callback; finish any other sign-in and retry"),
             )
         }
         return receiver.use {
@@ -100,13 +100,13 @@ internal class LiveProviderOAuthClient(
             val remaining = (deadline - monotonicNow()) / 1_000_000
             if (remaining <= 0) throw ProviderAuthException(
                 "oauth_login_expired",
-                AppStrings.get(R.string.auth_err_code_expired, "验证码已过期，请重新登录"),
+                AppStrings.get(R.string.auth_err_code_expired, "Verification code expired; please sign in again"),
             )
             waitForPoll(controller, minOf(intervalSeconds * 1_000, remaining))
             controller.throwIfCancelled()
             if (monotonicNow() >= deadline) throw ProviderAuthException(
                 "oauth_login_expired",
-                AppStrings.get(R.string.auth_err_code_expired, "验证码已过期，请重新登录"),
+                AppStrings.get(R.string.auth_err_code_expired, "Verification code expired; please sign in again"),
             )
             val response = try {
                 http.post(OAuthProvider.XAI.tokenEndpoint, mapOf(
@@ -128,11 +128,11 @@ internal class LiveProviderOAuthClient(
                 "slow_down" -> intervalSeconds += 5
                 "access_denied" -> throw ProviderAuthException(
                     "oauth_access_denied",
-                    AppStrings.get(R.string.auth_err_access_denied, "登录未获授权"),
+                    AppStrings.get(R.string.auth_err_access_denied, "Sign-in was not authorized"),
                 )
                 "expired_token" -> throw ProviderAuthException(
                     "oauth_login_expired",
-                    AppStrings.get(R.string.auth_err_code_expired, "验证码已过期，请重新登录"),
+                    AppStrings.get(R.string.auth_err_code_expired, "Verification code expired; please sign in again"),
                 )
                 else -> requireSuccess(response)
             }
@@ -182,7 +182,7 @@ internal class LiveProviderOAuthClient(
         if (previous?.subject != null && previous.subject != identity.subject) {
             throw ProviderAuthException(
                 "oauth_account_mismatch",
-                AppStrings.get(R.string.auth_err_account_mismatch, "登录账号与原账号不一致，请新建服务商连接"),
+                AppStrings.get(R.string.auth_err_account_mismatch, "Signed-in account differs from the original account; create a new provider connection"),
             )
         }
         val scope = json.optString("scope").takeIf { it.isNotBlank() && it != "null" }
@@ -192,7 +192,7 @@ internal class LiveProviderOAuthClient(
         if (refreshing && previous?.accountId != accountId) {
             throw ProviderAuthException(
                 "oauth_account_mismatch",
-                AppStrings.get(R.string.auth_err_account_context_mismatch, "刷新后的账号上下文不一致，请重新登录"),
+                AppStrings.get(R.string.auth_err_account_context_mismatch, "Account context after refresh is inconsistent; please sign in again"),
             )
         }
         return ProviderCredential(
@@ -216,18 +216,18 @@ internal class LiveProviderOAuthClient(
         if (response.errorCode in TERMINAL_REFRESH_ERRORS) {
             throw ProviderAuthException(
                 "oauth_session_expired",
-                AppStrings.get(R.string.auth_err_session_expired, "登录已失效，请重新登录"),
+                AppStrings.get(R.string.auth_err_session_expired, "Sign-in expired; please sign in again"),
             )
         }
         if (response.errorCode == "invalid_client") {
             throw ProviderAuthException(
                 "oauth_client_rejected",
-                AppStrings.get(R.string.auth_err_client_rejected, "授权服务未接受此客户端"),
+                AppStrings.get(R.string.auth_err_client_rejected, "The authorization service rejected this client"),
             )
         }
         throw ProviderAuthException(
             "oauth_request_failed",
-            AppStrings.get(R.string.auth_err_request_failed, "授权请求失败（HTTP %1\$d），请稍后重试", response.status),
+            AppStrings.get(R.string.auth_err_request_failed, "Authorization request failed (HTTP %1\$d); please try again later", response.status),
         )
     }
 
@@ -238,7 +238,7 @@ internal class LiveProviderOAuthClient(
         .takeIf { it.isNotBlank() && it != "null" && it.length <= 65_536 }
         ?: throw ProviderAuthException(
             "oauth_invalid_response",
-            AppStrings.get(R.string.auth_err_incomplete_response, "授权服务返回的数据不完整"),
+            AppStrings.get(R.string.auth_err_incomplete_response, "The authorization service returned incomplete data"),
         )
 
     private fun positiveSeconds(json: JSONObject, key: String): Long = json.optLong(key, -1).also {
@@ -248,7 +248,7 @@ internal class LiveProviderOAuthClient(
     private fun requireProtocol(condition: Boolean) {
         if (!condition) throw ProviderAuthException(
             "oauth_invalid_response",
-            AppStrings.get(R.string.auth_err_invalid_response, "授权服务返回的数据无效"),
+            AppStrings.get(R.string.auth_err_invalid_response, "The authorization service returned invalid data"),
         )
     }
 

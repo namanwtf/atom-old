@@ -22,11 +22,11 @@ internal class ColorOsMemoryHostDatabase private constructor(
         if (database.javaClass.getMethod("isOpen").invoke(database) != true) return null
         val path = database.javaClass.getMethod("getPath").invoke(database) as? String
             ?: return null
-        check(File(path).canonicalFile == databaseFile.canonicalFile) { "小布记忆数据库路径不匹配" }
+        check(File(path).canonicalFile == databaseFile.canonicalFile) { "Breeno Memory database path mismatch" }
         val query = database.javaClass.getMethod(
             "rawQuery", String::class.java, Array<String>::class.java,
         ).apply { isAccessible = true }
-        check(Cursor::class.java.isAssignableFrom(query.returnType)) { "小布记忆游标类型不匹配" }
+        check(Cursor::class.java.isAssignableFrom(query.returnType)) { "Breeno Memory cursor type mismatch" }
         return ColorOsMemoryReadDatabase { sql, args ->
             query.invoke(database, sql, args) as Cursor
         }
@@ -85,10 +85,10 @@ internal class ColorOsMemoryHostDatabase private constructor(
                     connectionField.apply { isAccessible = true },
                 )
             } catch (exception: Exception) {
-                logger.warn("小布记忆宿主连接定位失败: type=${exception.safeLogType()}")
+                logger.warn("Breeno Memory host connection location failed: type=${exception.safeLogType()}")
                 null
             } catch (error: LinkageError) {
-                logger.warn("小布记忆宿主连接类型缺失: type=${error.safeLogType()}")
+                logger.warn("Breeno Memory host connection type missing: type=${error.safeLogType()}")
                 null
             }
         }

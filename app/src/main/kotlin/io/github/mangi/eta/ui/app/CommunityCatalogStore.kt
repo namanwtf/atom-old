@@ -136,7 +136,7 @@ internal class CommunityCatalogStore(
     }
 
     private fun Throwable.catalogErrorMessage(): String {
-        val status = Regex("^目录更新失败：HTTP ([0-9]{3})$")
+        val status = Regex("^Catalog update failed: HTTP ([0-9]{3})$")
             .matchEntire(message.orEmpty())
             ?.groupValues
             ?.get(1)
@@ -146,7 +146,7 @@ internal class CommunityCatalogStore(
             this is SocketTimeoutException -> applicationContext.getString(R.string.catalog_i18n_error_timeout)
             this is UnknownHostException -> applicationContext.getString(R.string.catalog_i18n_error_host)
             this is SSLException -> applicationContext.getString(R.string.catalog_i18n_error_ssl)
-            message == "模型目录超出大小限制" ||
+            message == "Model catalog exceeds size limit" ||
                 message == applicationContext.getString(R.string.repo_err_catalog_size_limit) ->
                 applicationContext.getString(R.string.catalog_i18n_error_too_large)
             this is org.json.JSONException || this is IllegalArgumentException -> applicationContext.getString(R.string.catalog_i18n_error_invalid_format)

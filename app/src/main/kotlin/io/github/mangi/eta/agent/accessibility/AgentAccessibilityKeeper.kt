@@ -54,21 +54,21 @@ object AgentAccessibilityKeeper {
         if (!protectionAvailable() || !protectionEnabled()) {
             return AccessibilityEnableResult.failure(
                 code = "ACCESSIBILITY_UNAVAILABLE",
-                message = "Eta 无障碍服务未连接；请在系统设置中开启 Eta 无障碍服务",
+                message = "Eta accessibility service not connected; enable Eta accessibility service in system settings",
                 recoveryRequested = false,
             )
         }
         if (!requestRecovery()) {
             return AccessibilityEnableResult.failure(
                 code = "ACCESSIBILITY_PROTECTION_UNAVAILABLE",
-                message = "无障碍保护后端不可用；本次 GUI 操作未执行",
+                message = "Accessibility protection backend unavailable; this GUI operation was not executed",
                 recoveryRequested = true,
             )
         }
         if (!awaitServiceBinding()) {
             return AccessibilityEnableResult.failure(
                 code = "ACCESSIBILITY_REPAIR_TIMEOUT",
-                message = "Eta 无障碍服务未在恢复时限内连接；本次 GUI 操作未执行",
+                message = "Eta accessibility service did not connect within the recovery time limit; this GUI operation was not executed",
                 recoveryRequested = true,
             )
         }

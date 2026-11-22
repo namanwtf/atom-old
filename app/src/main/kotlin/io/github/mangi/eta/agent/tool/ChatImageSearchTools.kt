@@ -23,7 +23,7 @@ internal class ChatImageSearchTools(private val root: BoundedRootCommandExecutor
             pathFilter =
                 "\\( -path '*/chatimg/*' -o -path '*/chatraw/*' -o -path '*/chatthumb/*' \\)",
             unavailableCode = "QQ_CHAT_IMAGES_UNAVAILABLE",
-            unavailableMessage = "QQ 聊天图片缓存暂时不可访问",
+            unavailableMessage = "QQ chat image cache is temporarily inaccessible",
             args = args,
             kind = ::qqImageKind,
         )
@@ -34,7 +34,7 @@ internal class ChatImageSearchTools(private val root: BoundedRootCommandExecutor
             directory = WECHAT_CHAT_IMAGES_DIRECTORY,
             pathFilter = "-path '*/image/*'",
             unavailableCode = "WECHAT_CHAT_IMAGES_UNAVAILABLE",
-            unavailableMessage = "微信聊天图片缓存暂时不可访问",
+            unavailableMessage = "WeChat chat image cache is temporarily inaccessible",
             args = args,
             kind = { "image" },
         )

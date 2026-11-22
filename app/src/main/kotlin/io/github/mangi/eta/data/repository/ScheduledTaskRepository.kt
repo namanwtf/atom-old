@@ -42,7 +42,7 @@ internal object ScheduledTaskRepository {
 
     private fun dao(context: Context? = null): ScheduledTaskDao {
         val ctx = context?.applicationContext ?: appContext
-            ?: error("ScheduledTaskRepository 未初始化")
+            ?: error("ScheduledTaskRepository not initialized")
         return EtaDatabase.get(ctx).scheduledTaskDao()
     }
 
@@ -225,8 +225,8 @@ internal object ScheduledTaskRepository {
             AppStrings.quantity(
                 R.plurals.scheduled_auto_disabled_consecutive_failures,
                 nextFailures,
-                "连续失败 %1\$d 次，已自动暂停以避免反复耗电与重试",
-                "连续失败 %1\$d 次，已自动暂停以避免反复耗电与重试",
+                "Failed %1\$d times in a row，automatically paused to avoid repeated battery drain and retries",
+                "Failed %1\$d times in a row，automatically paused to avoid repeated battery drain and retries",
                 nextFailures,
             )
         } else if (run.status.isSuccess) {
@@ -281,7 +281,7 @@ internal object ScheduledTaskRepository {
         val d = dao(context)
         val interruptedSummary = AppStrings.get(
             R.string.scheduled_run_interrupted_process_exit,
-            "执行期间应用进程退出，任务已中断",
+            "The app process exited during execution，the task was interrupted",
         )
         val dangling = d.runningRuns()
         dangling.forEach { entity ->

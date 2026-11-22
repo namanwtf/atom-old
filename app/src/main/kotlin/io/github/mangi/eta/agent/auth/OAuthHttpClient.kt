@@ -38,7 +38,7 @@ internal class OAuthHttpClient(private val client: OkHttpClient = defaultClient(
                 body.request(MAX_BYTES + 1)
                 if (body.buffer.size > MAX_BYTES) throw ProviderAuthException(
                     "oauth_response_too_large",
-                    AppStrings.get(R.string.auth_err_response_too_large, "授权服务返回的数据过大"),
+                    AppStrings.get(R.string.auth_err_response_too_large, "The authorization service returned data that is too large"),
                 )
                 val text = body.readUtf8()
                 val parsed = try {
@@ -46,7 +46,7 @@ internal class OAuthHttpClient(private val client: OkHttpClient = defaultClient(
                 } catch (_: Exception) {
                     throw ProviderAuthException(
                         "oauth_invalid_response",
-                        AppStrings.get(R.string.auth_err_invalid_http_response, "授权服务返回了无效响应（HTTP %1\$d）", response.code),
+                        AppStrings.get(R.string.auth_err_invalid_http_response, "The authorization service returned an invalid response (HTTP %1\$d)", response.code),
                     )
                 }
                 OAuthHttpResponse(response.code, parsed)
@@ -55,7 +55,7 @@ internal class OAuthHttpClient(private val client: OkHttpClient = defaultClient(
             controller.throwIfCancelled()
             throw ProviderAuthException(
                 "oauth_network_error",
-                AppStrings.get(R.string.auth_err_network, "无法连接授权服务，请检查网络后重试"),
+                AppStrings.get(R.string.auth_err_network, "Unable to connect to the authorization service; check your network and retry"),
             )
         } finally {
             binding.close()

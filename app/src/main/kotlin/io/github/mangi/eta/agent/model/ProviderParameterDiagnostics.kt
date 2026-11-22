@@ -25,7 +25,7 @@ internal object ProviderParameterDiagnostics {
         }
         val separator = AppStrings.get(R.string.provider_param_separator, "；")
         return (codes.take(1) + fields.take(3).map {
-            AppStrings.get(R.string.provider_param_field, "字段 %1\$s", it)
+            AppStrings.get(R.string.provider_param_field, "Field %1\$s", it)
         }).joinToString(separator).ifEmpty { null }
     }
 
@@ -33,7 +33,7 @@ internal object ProviderParameterDiagnostics {
         if (raw.length > 192 || !parameterPath.matches(raw)) return null
         val segments = raw.split('.')
         if (segments.first().substringBefore('[') !in requestParameterRoots) return null
-        val customField = AppStrings.get(R.string.provider_param_custom_field, "<自定义字段>")
+        val customField = AppStrings.get(R.string.provider_param_custom_field, "<Custom field>")
         return segments.joinToString(".") { segment ->
             if (segment.substringBefore('[') in publicParameterNames) segment else customField
         }

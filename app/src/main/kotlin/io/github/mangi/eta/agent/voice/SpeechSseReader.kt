@@ -17,7 +17,7 @@ internal fun readSpeechSse(source: BufferedSource, onEvent: (String, String) -> 
             if (source.buffer.size > SpeechHttp.MAX_JSON_BYTES) {
                 throw SpeechFailure(
                     SpeechErrorCode.PROTOCOL,
-                    AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "语音音频块过大"),
+                    AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "voice audio chunk too large"),
                 )
             }
             source.readUtf8()
@@ -40,7 +40,7 @@ internal class SpeechSseDecoder(private val onEvent: (String, String) -> Unit) {
                 if (data.length.toLong() + value.length + 1 > SpeechHttp.MAX_JSON_BYTES) {
                     throw SpeechFailure(
                         SpeechErrorCode.PROTOCOL,
-                        AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "语音音频块过大"),
+                        AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "voice audio chunk too large"),
                     )
                 }
                 if (data.isNotEmpty()) data.append('\n')
@@ -65,7 +65,7 @@ internal fun readSpeechEvents(response: Response, onEvent: (String, String) -> B
         if (source.request(SpeechHttp.MAX_JSON_BYTES + 1)) {
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_http_response_too_large, "语音服务响应过大"),
+                AppStrings.get(R.string.voice_i18n_http_response_too_large, "voice service response too large"),
             )
         }
         onEvent("", source.readUtf8())
@@ -86,7 +86,7 @@ internal class SpeechSegmentAudio(
         if (bytes > limit) {
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "语音音频格式或长度无效"),
+                AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "voice audio format or length invalid"),
             )
         }
         pcm.write(audio)
@@ -96,7 +96,7 @@ internal class SpeechSegmentAudio(
         if (!completed || bytes == 0L) {
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_audio_incomplete, "语音音频不完整，请重试"),
+                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
             )
         }
         pcm.end()

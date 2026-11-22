@@ -21,7 +21,7 @@ internal suspend fun synthesizeSpeech(settings: SpeechSettings, credentials: Spe
         TtsProvider.DEEPSEEK -> return@withTimeout synthesizeDeepSeek(settings.deepseekTts, credentials.deepseekTts, text, onAudio)
         TtsProvider.NONE -> throw SpeechFailure(
             SpeechErrorCode.CONFIGURATION,
-            AppStrings.get(R.string.voice_i18n_tts_provider_not_selected, "请先选择语音播报服务"),
+            AppStrings.get(R.string.voice_i18n_tts_provider_not_selected, "Please select a voice read-aloud service first"),
         )
         TtsProvider.QWEN, TtsProvider.DOUBAO -> Unit
     }
@@ -46,7 +46,7 @@ internal suspend fun synthesizeSpeech(settings: SpeechSettings, credentials: Spe
                 if (source.buffer.size > SpeechHttp.MAX_JSON_BYTES) {
                     throw SpeechFailure(
                         SpeechErrorCode.PROTOCOL,
-                        AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "语音音频块过大"),
+                        AppStrings.get(R.string.voice_i18n_audio_chunk_too_large, "voice audio chunk too large"),
                     )
                 }
                 source.readUtf8()
@@ -80,7 +80,7 @@ internal class SpeechAudioStreamDecoder(private val qwen: Boolean, onAudio: (Byt
             if (message.optString("code").isNotBlank() || message.optInt("status_code", 200) != 200) {
                 throw SpeechFailure(
                     SpeechErrorCode.SERVER,
-                    AppStrings.get(R.string.voice_i18n_qwen_tts_failed, "千问语音合成失败，请检查配置"),
+                    AppStrings.get(R.string.voice_i18n_qwen_tts_failed, "Qwen voice synthesis failed，please check the configuration"),
                 )
             }
             val output = message.getJSONObject("output")
@@ -94,7 +94,7 @@ internal class SpeechAudioStreamDecoder(private val qwen: Boolean, onAudio: (Byt
                     SpeechErrorCode.SERVER,
                     AppStrings.get(
                         R.string.voice_i18n_doubao_tts_failed_code,
-                        "豆包语音合成失败（%1\$d）",
+                        "Doubao voice synthesis failed（%1\$d）",
                         message.getInt("code"),
                     ),
                 )

@@ -81,14 +81,14 @@ internal class AgentColorOsMemoryTools(
         val snapshotCreation = createSnapshot()
         val snapshot = snapshotCreation.file
             ?: return@synchronized sensitive(
-                error(snapshotCreation.errorCode, "ColorOS 系统记忆快照暂时不可用"),
+                error(snapshotCreation.errorCode, "ColorOS system memory snapshot is temporarily unavailable"),
             )
         try {
             if (!isPlaintextColorOsMemoryDatabase(snapshot)) {
                 return@synchronized sensitive(
                     error(
                         "COLOROS_MEMORY_ENCRYPTED_REQUIRES_HOOK",
-                        "系统记忆已加密，需要启用小布记忆的 Xposed 作用域并重新启动小布记忆",
+                        "System memory is encrypted; enable the Xposed scope for Breeno Memory and restart Breeno Memory",
                     ),
                 )
             }
@@ -106,18 +106,18 @@ internal class AgentColorOsMemoryTools(
                         } else {
                             "COLOROS_MEMORY_OPEN_FAILED"
                         },
-                        "ColorOS 系统记忆快照无法读取",
+                        "ColorOS system memory snapshot cannot be read",
                     ),
                 )
             }
             database.use { db ->
                 runCatching { sensitive(block(db)) }
                     .getOrElse {
-                        sensitive(error("COLOROS_MEMORY_QUERY_FAILED", "ColorOS 系统记忆查询失败"))
+                        sensitive(error("COLOROS_MEMORY_QUERY_FAILED", "ColorOS system memory query failed"))
                     }
             }
         } catch (_: IOException) {
-            sensitive(error("COLOROS_MEMORY_SNAPSHOT_INVALID", "ColorOS 系统记忆快照无法读取"))
+            sensitive(error("COLOROS_MEMORY_SNAPSHOT_INVALID", "ColorOS system memory snapshot cannot be read"))
         } finally {
             deleteSnapshot(snapshot)
         }

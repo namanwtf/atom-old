@@ -133,18 +133,18 @@ internal class AgentRuntimeRunExecutor(
             }
             if (request.operation == AgentRuntimeWire.OP_REWRITE_REPLY) {
                 require(roleplayContext != null) {
-                    AppStrings.get(R.string.runtime_err_rewrite_roleplay_only, "只有角色会话可以改写角色回复")
+                    AppStrings.get(R.string.runtime_err_rewrite_roleplay_only, "Only roleplay sessions can rewrite role replies")
                 }
                 val target = request.rewriteTargetMessageId?.takeIf { it.isNotBlank() && it.length <= 256 }
                     ?: throw IllegalArgumentException(
-                        AppStrings.get(R.string.runtime_err_rewrite_target_missing, "缺少有效的角色回复目标")
+                        AppStrings.get(R.string.runtime_err_rewrite_target_missing, "Missing a valid role reply target")
                     )
                 require(runBlocking {
                     EtaDatabase.get(appContext).conversationDao().hasAssistantMessage(conversationId, target)
                 }) {
                     AppStrings.get(
                         R.string.runtime_err_rewrite_target_not_found,
-                        "角色回复目标不存在或不属于当前会话",
+                        "Role reply target does not exist or does not belong to the current session",
                     )
                 }
             }
@@ -249,7 +249,7 @@ internal class AgentRuntimeRunExecutor(
                             entrySurfaceGuard?.dismissOnce() == false ->
                                 ToolExecutionDecision.Reject(
                                     code = "ENTRY_SURFACE_NOT_READY",
-                                    message = "入口窗口关闭未完成；本次工具未执行，请勿在当前任务中重复调用",
+                                    message = "The entry window has not finished closing; this tool was not executed. Do not call it again in the current task.",
                                 )
                             else -> ToolExecutionDecision.Allow
                         }
@@ -372,7 +372,7 @@ internal class AgentRuntimeRunExecutor(
                             JSONObject()
                                 .put("ok", false)
                                 .put("code", "TOOL_DISABLED")
-                                .put("message", "工具 ${call.name} 已在工具列表中关闭，本次未执行")
+                                .put("message", "Tool ${call.name} is disabled in the tool list; this call was not executed")
                                 .toString(),
                         )
                     } else {
@@ -390,7 +390,7 @@ internal class AgentRuntimeRunExecutor(
                         JSONObject()
                             .put("ok", false)
                             .put("code", "GUI_DISABLED_IN_SCHEDULED_TASK")
-                            .put("message", "当前定时任务未开启应用界面（GUI）操作权限，本次未执行")
+                            .put("message", "The current scheduled task has not enabled GUI (app interface) control permission; this call was not executed")
                             .toString(),
                     )
                 } else if (call.name in AgentSubagentToolCatalog.names) {
@@ -399,7 +399,7 @@ internal class AgentRuntimeRunExecutor(
                             JSONObject()
                                 .put("ok", false)
                                 .put("code", "SUBAGENT_DISABLED")
-                                .put("message", "Subagent 权限已关闭")
+                                .put("message", "Subagent permission is disabled")
                                 .toString(),
                         )
                     } else if (call.name == AgentSubagentToolCatalog.PROFILE_TOOL_NAME) {
@@ -415,7 +415,7 @@ internal class AgentRuntimeRunExecutor(
                             JSONObject()
                                 .put("ok", false)
                                 .put("code", "TOOL_DISABLED")
-                                .put("message", "工具 ${call.name} 已在工具列表中关闭，本次未执行")
+                                .put("message", "Tool ${call.name} is disabled in the tool list; this call was not executed")
                                 .toString(),
                         )
                     } else {
@@ -489,7 +489,7 @@ internal class AgentRuntimeRunExecutor(
             cancelled = runController.isCancelled || throwable is AgentRunCancelledException
             val modelFailure = throwable as? AgentModelExecutionException
             val message = if (cancelled) {
-                AppStrings.get(R.string.runtime_err_stopped, "已停止")
+                AppStrings.get(R.string.runtime_err_stopped, "Stopped")
             } else {
                 throwable.message ?: throwable.javaClass.simpleName
             }

@@ -71,17 +71,17 @@ internal object SubagentProfileCatalog {
     ): SubagentProfile {
         val normalizedName = name.trim().lowercase()
         require(isValidName(normalizedName)) {
-            "Subagent 名称必须为 2~48 位小写字母、数字与连字符（kebab-case，例如 bill-analyzer）"
+            "the subagent name must be 2 to 48 lowercase letters, digits, and hyphens (kebab-case, e.g. bill-analyzer)"
         }
         if (normalizedName in SubagentProfile.BUILTIN_NAMES && !overrideBuiltin) {
             throw IllegalArgumentException(
-                "不能覆盖内置 Subagent \"$normalizedName\"；请换用其他名称（例如 custom-$normalizedName）或显式开启 override",
+                "cannot overwrite the built-in subagent \"$normalizedName\"; use another name (e.g. custom-$normalizedName) or explicitly enable override",
             )
         }
         val cleanDescription = description.trim().replace(Regex("\\s+"), " ")
-        require(cleanDescription.isNotEmpty()) { "description 不能为空" }
+        require(cleanDescription.isNotEmpty()) { "description cannot be empty" }
         val cleanPrompt = prompt.trim()
-        require(cleanPrompt.isNotEmpty()) { "prompt 不能为空" }
+        require(cleanPrompt.isNotEmpty()) { "prompt cannot be empty" }
 
         val cleanWhenToUse = whenToUse.trim().replace(Regex("\\s+"), " ")
         val cleanTools = tools.map { it.trim() }
@@ -92,16 +92,16 @@ internal object SubagentProfileCatalog {
             .distinct()
 
         if (!agentsDir.exists() && !agentsDir.mkdirs()) {
-            error("无法创建 agents 目录：${agentsDir.absolutePath}")
+            error("unable to create agents directory: ${agentsDir.absolutePath}")
         }
         val canonicalRoot = agentsDir.canonicalFile.toPath()
         val targetFile = File(agentsDir, "$normalizedName.md")
         val canonicalTarget = targetFile.canonicalFile.toPath()
         require(canonicalTarget.startsWith(canonicalRoot) && canonicalTarget != canonicalRoot) {
-            "非法的 Subagent 文件路径"
+            "invalid subagent file path"
         }
         require(!Files.isSymbolicLink(targetFile.toPath())) {
-            "拒绝写入符号链接文件"
+            "refusing to write to a symbolic link file"
         }
 
         val markdown = renderProfileMarkdown(
@@ -115,7 +115,7 @@ internal object SubagentProfileCatalog {
         )
         targetFile.writeText(markdown, Charsets.UTF_8)
         return parseProfileFile(targetFile)
-            ?: error("保存 Subagent 文件后解析失败：$normalizedName")
+            ?: error("parsing failed after saving the subagent file: $normalizedName")
     }
 
     fun deleteCustomProfile(

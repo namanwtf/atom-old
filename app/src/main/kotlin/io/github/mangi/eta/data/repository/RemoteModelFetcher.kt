@@ -70,7 +70,7 @@ internal object RemoteModelFetcher {
                     CancellationException(
                         AppStrings.get(
                             R.string.repo_err_connection_test_cancelled,
-                            "连接测试已取消",
+                            "Connection test canceled",
                         ),
                         cancelled,
                     ),
@@ -109,7 +109,7 @@ internal object RemoteModelFetcher {
                         "oauth_session_changed",
                         AppStrings.get(
                             R.string.repo_err_oauth_account_changed_refetch,
-                            "登录账号已变更，请重新拉取模型",
+                            "The signed-in account has changed，please re-fetch the models",
                         ),
                     )
                 }
@@ -121,7 +121,7 @@ internal object RemoteModelFetcher {
                     CancellationException(
                         AppStrings.get(
                             R.string.repo_err_catalog_fetch_cancelled,
-                            "模型目录读取已取消",
+                            "Model catalog read canceled",
                         ),
                         cancelled,
                     ),
@@ -151,7 +151,7 @@ internal object RemoteModelFetcher {
                 ?: error(
                     AppStrings.get(
                         R.string.repo_err_provider_catalog_invalid_entry,
-                        "服务商模型目录包含无效模型项",
+                        "Provider model catalog contains an invalid model entry",
                     ),
                 )
         }
@@ -171,7 +171,7 @@ internal object RemoteModelFetcher {
                 ?: error(
                     AppStrings.get(
                         R.string.repo_err_anthropic_catalog_invalid_entry,
-                        "Anthropic 模型目录包含无效模型项",
+                        "Anthropic model catalog contains an invalid model entry",
                     ),
                 )
         }
@@ -183,26 +183,26 @@ internal object RemoteModelFetcher {
             error(
                 AppStrings.get(
                     R.string.repo_err_provider_catalog_invalid_json,
-                    "服务商模型目录不是有效的 JSON",
+                    "Provider model catalog is not valid JSON",
                 ),
             )
         }
             ?: error(
                 AppStrings.get(
                     R.string.repo_err_provider_catalog_invalid_format,
-                    "服务商模型目录格式无效",
+                    "Provider model catalog format is invalid",
                 ),
             )
         require(root["error"] == null || root["error"] == JsonNull) {
             AppStrings.get(
                 R.string.repo_err_provider_catalog_error,
-                "服务商返回了模型目录错误",
+                "Provider returned a model catalog error",
             )
         }
         return root[field]?.jsonArrayOrNull() ?: error(
             AppStrings.get(
                 R.string.repo_err_provider_catalog_missing_list,
-                "服务商模型目录缺少 %1\$s 列表",
+                "Provider model catalog is missing the %1\$s list",
                 field,
             ),
         )
@@ -290,7 +290,7 @@ internal object RemoteModelFetcher {
         require(body.size <= maxBytes) {
             AppStrings.get(
                 R.string.repo_err_provider_catalog_size_limit,
-                "服务商模型目录超过大小限制",
+                "Provider model catalog exceeds the size limit",
             )
         }
         body.toString(Charsets.UTF_8)

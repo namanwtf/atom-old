@@ -91,13 +91,13 @@ internal object ProviderRepository {
     suspend fun updateProvider(provider: ProviderSetting) {
         mutationMutex.withLock {
             val previous = requireNotNull(providerById(provider.id)) {
-                AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+                AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
             }
             if (previous.authMode != provider.authMode) {
                 forgetCredentials(provider.id)
             }
             require(dao().updateProvider(provider.toEntity()) == 1) {
-                AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+                AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
             }
         }
         repairSelection()
@@ -105,7 +105,7 @@ internal object ProviderRepository {
 
     internal suspend fun replaceModels(providerId: String, models: List<Model>) {
         val provider = requireNotNull(providerById(providerId)) {
-            AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+            AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
         }
         dao().replaceModels(
             providerId = providerId,
@@ -134,7 +134,7 @@ internal object ProviderRepository {
                 id = newId(),
                 name = AppStrings.get(
                     R.string.repo_err_provider_copy_name,
-                    "%1\$s 副本",
+                    "%1\$s copy",
                     source.name,
                 ),
                 sortOrder = nextOrder,

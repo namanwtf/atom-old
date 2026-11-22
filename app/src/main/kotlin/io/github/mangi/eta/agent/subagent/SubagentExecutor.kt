@@ -37,17 +37,17 @@ internal class SubagentExecutor(
     ): AgentModelClient.ToolResult {
         parentController.throwIfCancelled()
         val args = runCatching { JSONObject(toolCall.argumentsJson) }.getOrNull()
-            ?: return errorResult("INVALID_ARGUMENTS", "subagent 参数必须是合法的 JSON 对象")
+            ?: return errorResult("INVALID_ARGUMENTS", "the subagent argument must be a valid JSON object")
 
         val prompt = args.optString("prompt").trim()
         val description = args.optString("description").trim()
             .replace(Regex("\\s+"), " ")
             .takeUtf16Safe(120)
         if (prompt.isEmpty()) {
-            return errorResult("INVALID_ARGUMENTS", "prompt 不能为空")
+            return errorResult("INVALID_ARGUMENTS", "prompt cannot be empty")
         }
         if (description.isEmpty()) {
-            return errorResult("INVALID_ARGUMENTS", "description 不能为空")
+            return errorResult("INVALID_ARGUMENTS", "description cannot be empty")
         }
 
         val resumeId = args.optString("resume").trim()
@@ -57,7 +57,7 @@ internal class SubagentExecutor(
         if (isResume && requestedType.isNotEmpty()) {
             return errorResult(
                 "RESUME_WITH_TYPE_UNAVAILABLE",
-                "resume 续接已有 Subagent 时不得同时指定 subagent_type；请仅传递 resume 与 prompt。",
+                "when resuming an existing subagent with resume, subagent_type must not also be specified; pass only resume and prompt.",
             )
         }
 
@@ -67,12 +67,12 @@ internal class SubagentExecutor(
             val existing = SubagentSessionStore.get(conversationKey, resumeId)
                 ?: return errorResult(
                     "SUBAGENT_NOT_FOUND",
-                    "未找到可续接的 Subagent：$resumeId（可能已过期或不属于当前会话）",
+                    "no resumable subagent found: $resumeId (it may have expired or not belong to this session)",
                 )
             if (!existing.running.compareAndSet(false, true)) {
                 return errorResult(
                     "SUBAGENT_ALREADY_RUNNING",
-                    "Subagent $resumeId 当前正在运行中，无法并发续接",
+                    "subagent $resumeId is currently running and cannot be resumed concurrently",
                 )
             }
             entry = existing
@@ -99,7 +99,7 @@ internal class SubagentExecutor(
         val resolvedConfig = runCatching { configProvider() }.getOrElse { throwable ->
             SubagentSessionStore.releaseRunning(conversationKey, subagentId)
             controllerBinding.close()
-            return errorResult("SUBAGENT_CONFIG_ERROR", throwable.message ?: "无法加载 Subagent 模型配置")
+            return errorResult("SUBAGENT_CONFIG_ERROR", throwable.message ?: "unable to load the subagent model configuration")
         }
         val modelLabel = resolvedConfig.modelDisplayName.ifBlank { resolvedConfig.model }
         val tracker = StepTracker(
@@ -147,7 +147,7 @@ internal class SubagentExecutor(
                         .put("code", "SUBAGENT_TOOL_FORBIDDEN")
                         .put(
                             "message",
-                            "当前 Subagent (${profile.name}) 不允许调用工具 ${subCall.name}",
+                            "the current subagent (${profile.name}) is not allowed to call the tool ${subCall.name}",
                         )
                         .toString(),
                 )
@@ -201,7 +201,7 @@ internal class SubagentExecutor(
                     .put("summary", response.content)
                     .put(
                         "resume_hint",
-                        "如需在此 Subagent 已有上下文基础上继续追问或深挖，可调用 subagent(resume=\"$subagentId\", prompt=\"...\", description=\"...\")。",
+                        "to continue asking or digging deeper on top of this subagent's existing context, call subagent(resume=\"$subagentId\", prompt=\"...\", description=\"...\").",
                     )
                     .toString(),
                 command = terminalSnapshot,
@@ -222,7 +222,7 @@ internal class SubagentExecutor(
                 childController.isCancelled ||
                 throwable is AgentRunCancelledException
             val errorMessage = if (cancelled) {
-                AppStrings.get(R.string.subagent_status_stopped, "已停止")
+                AppStrings.get(R.string.subagent_status_stopped, "Stopped")
             } else {
                 throwable.message ?: throwable.javaClass.simpleName
             }
@@ -259,7 +259,7 @@ internal class SubagentExecutor(
                         if (!cancelled) {
                             put(
                                 "resume_hint",
-                                "可调用 subagent(resume=\"$subagentId\", prompt=\"继续完成未完部分\", description=\"$description\") 恢复执行，或由主 Agent 直接接手。",
+                                "resume execution by calling subagent(resume=\"$subagentId\", prompt=\"finish the remaining part\", description=\"$description\"), or let the main agent take over directly.",
                             )
                         }
                     }
@@ -274,7 +274,7 @@ internal class SubagentExecutor(
     fun executeProfileManagement(toolCall: AgentModelClient.ToolCall): AgentModelClient.ToolResult {
         parentController.throwIfCancelled()
         val args = runCatching { JSONObject(toolCall.argumentsJson) }.getOrNull()
-            ?: return errorResult("INVALID_ARGUMENTS", "subagent_profile 参数必须是合法的 JSON 对象")
+            ?: return errorResult("INVALID_ARGUMENTS", "the subagent_profile argument must be a valid JSON object")
         return when (val action = args.optString("action").trim().lowercase()) {
             "list" -> {
                 val profiles = SubagentProfileCatalog.listAll()
@@ -302,9 +302,9 @@ internal class SubagentExecutor(
 
             "get" -> {
                 val name = args.optString("name").trim().lowercase()
-                if (name.isEmpty()) return errorResult("INVALID_ARGUMENTS", "get 需要提供 name")
+                if (name.isEmpty()) return errorResult("INVALID_ARGUMENTS", "get requires a name")
                 val profile = SubagentProfileCatalog.get(name)
-                    ?: return errorResult("SUBAGENT_NOT_FOUND", "未找到 Subagent Profile：$name")
+                    ?: return errorResult("SUBAGENT_NOT_FOUND", "subagent profile not found: $name")
                 AgentModelClient.ToolResult(
                     content = JSONObject()
                         .put("ok", true)
@@ -347,25 +347,25 @@ internal class SubagentExecutor(
                                 .put("description", saved.summary)
                                 .put("tools", JSONArray(saved.toolHighlights))
                                 .put("file_path", saved.filePath.orEmpty())
-                                .put("message", "已保存自定义 Subagent \"${saved.name}\"，现在可直接通过 subagent(subagent_type=\"${saved.name}\", ...) 调用。")
+                                .put("message", "custom subagent \"${saved.name}\" saved; you can now call it directly via subagent(subagent_type=\"${saved.name}\", ...).")
                                 .toString(),
                         )
                     },
                     onFailure = { error ->
-                        errorResult("SUBAGENT_SAVE_FAILED", error.message ?: "保存自定义 Subagent 失败")
+                        errorResult("SUBAGENT_SAVE_FAILED", error.message ?: "failed to save custom subagent")
                     },
                 )
             }
 
             "delete" -> {
                 val name = args.optString("name").trim().lowercase()
-                if (name.isEmpty()) return errorResult("INVALID_ARGUMENTS", "delete 需要提供 name")
+                if (name.isEmpty()) return errorResult("INVALID_ARGUMENTS", "delete requires a name")
                 if (name in SubagentProfile.BUILTIN_NAMES) {
-                    return errorResult("BUILTIN_SUBAGENT_IMMUTABLE", "内置 Subagent ($name) 不可删除")
+                    return errorResult("BUILTIN_SUBAGENT_IMMUTABLE", "built-in subagent ($name) cannot be deleted")
                 }
                 val deleted = SubagentProfileCatalog.deleteCustomProfile(name)
                 if (!deleted) {
-                    return errorResult("SUBAGENT_NOT_FOUND", "未找到可删除的自定义 Subagent：$name")
+                    return errorResult("SUBAGENT_NOT_FOUND", "no deletable custom subagent found: $name")
                 }
                 AgentModelClient.ToolResult(
                     content = JSONObject()
@@ -376,7 +376,7 @@ internal class SubagentExecutor(
                 )
             }
 
-            else -> errorResult("INVALID_ARGUMENTS", "未知的 action：$action（可选：list, get, save, delete）")
+            else -> errorResult("INVALID_ARGUMENTS", "unknown action: $action (options: list, get, save, delete)")
         }
     }
 
@@ -407,7 +407,7 @@ internal class SubagentExecutor(
         private val steps = mutableListOf<SubagentStepSnapshot>()
         private var totalToolSteps = 0
         private var status = SubagentActivitySnapshot.STATUS_RUNNING
-        private var currentAction = AppStrings.get(R.string.subagent_i18n_action_thinking, "正在思考…")
+        private var currentAction = AppStrings.get(R.string.subagent_i18n_action_thinking, "Thinking…")
         private val roundTexts = linkedMapOf<Int, StringBuilder>()
         private var finalOutput = ""
         private var errorText: String? = null
@@ -425,9 +425,9 @@ internal class SubagentExecutor(
                 is AgentEvent.RoundStarted -> {
                     pendingStepUsage = null
                     currentAction = if (event.round <= 1) {
-                        AppStrings.get(R.string.subagent_i18n_action_thinking, "正在思考…")
+                        AppStrings.get(R.string.subagent_i18n_action_thinking, "Thinking…")
                     } else {
-                        AppStrings.get(R.string.subagent_i18n_action_thinking_round, "第 %1\$d 轮思考…", event.round)
+                        AppStrings.get(R.string.subagent_i18n_action_thinking_round, "Round %1\$d thinking…", event.round)
                     }
                     true
                 }
@@ -446,18 +446,18 @@ internal class SubagentExecutor(
                             steps += SubagentStepSnapshot(
                                 id = stepId,
                                 kind = SubagentStepSnapshot.KIND_THINKING,
-                                title = AppStrings.get(R.string.subagent_i18n_step_thinking, "思考"),
+                                title = AppStrings.get(R.string.subagent_i18n_step_thinking, "Thinking"),
                                 detail = event.delta.takeLastUtf16Safe(MAX_STEP_DETAIL_CHARS),
                                 status = SubagentStepSnapshot.STATUS_RUNNING,
                             )
                         }
-                        currentAction = AppStrings.get(R.string.subagent_i18n_action_thinking, "正在思考…")
+                        currentAction = AppStrings.get(R.string.subagent_i18n_action_thinking, "Thinking…")
                         false
                     }
 
                     AgentEvent.AssistantBlockKind.TEXT -> {
                         roundTexts.getOrPut(event.round) { StringBuilder() }.append(event.delta)
-                        currentAction = AppStrings.get(R.string.subagent_i18n_action_summarizing, "正在整理汇报…")
+                        currentAction = AppStrings.get(R.string.subagent_i18n_action_summarizing, "Summarizing…")
                         false
                     }
 
@@ -529,7 +529,7 @@ internal class SubagentExecutor(
                             detail = combinedDetail,
                         )
                     }
-                    currentAction = AppStrings.get(R.string.subagent_i18n_action_analyzing, "正在分析结果…")
+                    currentAction = AppStrings.get(R.string.subagent_i18n_action_analyzing, "Analyzing results…")
                     true
                 }
 
@@ -567,9 +567,9 @@ internal class SubagentExecutor(
             finalOutput = content.trim().takeUtf16Safe(MAX_OUTPUT_CHARS)
             val tools = toolCount()
             currentAction = if (tools > 0) {
-                AppStrings.get(R.string.subagent_completed_with_tools, "完成 · %1\$d 次工具调用", tools)
+                AppStrings.get(R.string.subagent_completed_with_tools, "Completed · %1\$d tool call(s)", tools)
             } else {
-                AppStrings.get(R.string.subagent_status_completed, "完成")
+                AppStrings.get(R.string.subagent_status_completed, "Completed")
             }
         }
 
@@ -579,13 +579,13 @@ internal class SubagentExecutor(
             errorText = error.takeUtf16Safe(1_000)
             if (partial.isNotBlank()) finalOutput = partial.takeUtf16Safe(MAX_OUTPUT_CHARS)
             currentAction = error.lineSequence().firstOrNull()?.takeUtf16Safe(80)
-                ?: AppStrings.get(R.string.subagent_i18n_action_failed, "执行失败")
+                ?: AppStrings.get(R.string.subagent_i18n_action_failed, "Failed")
         }
 
         fun markCancelled(partial: String) = synchronized(lock) {
             finishAllRunningSteps(SubagentStepSnapshot.STATUS_FAILED)
             status = SubagentActivitySnapshot.STATUS_CANCELLED
-            val stopped = AppStrings.get(R.string.subagent_status_stopped, "已停止")
+            val stopped = AppStrings.get(R.string.subagent_status_stopped, "Stopped")
             errorText = stopped
             if (partial.isNotBlank()) finalOutput = partial.takeUtf16Safe(MAX_OUTPUT_CHARS)
             currentAction = stopped

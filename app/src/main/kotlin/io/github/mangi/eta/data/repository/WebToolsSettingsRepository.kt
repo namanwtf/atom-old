@@ -66,7 +66,7 @@ internal object WebToolsSettingsRepository {
         ) {
             AppStrings.get(
                 R.string.repo_err_web_tools_credentials_save_failed,
-                "网页工具凭据保存失败",
+                "Failed to save web tool credentials",
             )
         }
     }
@@ -133,6 +133,6 @@ internal object WebToolsSettingsRepository {
 internal class WebToolsCredentialsUnavailable : Exception(
     AppStrings.get(
         R.string.repo_err_web_tools_credentials_unavailable,
-        "网页工具凭据无法解密，请重新填写并保存",
+        "Web tool credentials cannot be decrypted，please re-enter and save",
     ),
 )

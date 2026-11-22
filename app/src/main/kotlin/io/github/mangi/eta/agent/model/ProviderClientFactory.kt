@@ -24,7 +24,7 @@ internal object ProviderClientFactory {
                 GeminiEndpointMode.VERTEX_AI -> VertexGenerateContentProvider
                 else -> GeminiInteractionsProvider
             }
-            else -> error("不支持的 Provider 协议类型：${config.providerType}")
+            else -> error("Unsupported Provider protocol type: ${config.providerType}")
         }
     }
 }

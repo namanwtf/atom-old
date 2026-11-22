@@ -151,7 +151,7 @@ internal class AgentLoop(
                                 false,
                                 AppStrings.get(
                                     R.string.loop_err_reply_rewrite_tool_call,
-                                    "改写回复时模型请求了工具，已停止；原回复未改变。",
+                                    "While rewriting the reply the model requested a tool, so it was stopped; the original reply is unchanged.",
                                 ),
                             )
                         }
@@ -210,7 +210,7 @@ internal class AgentLoop(
                     false,
                     AppStrings.get(
                         R.string.loop_err_reply_rewrite_tool_call,
-                        "改写回复时模型请求了工具，已停止；原回复未改变。",
+                        "While rewriting the reply the model requested a tool, so it was stopped; the original reply is unchanged.",
                     ),
                 )
             }
@@ -220,7 +220,7 @@ internal class AgentLoop(
                     false,
                     AppStrings.get(
                         R.string.loop_err_reply_rewrite_incomplete,
-                        "模型未返回完整的改写回复；原回复未改变。",
+                        "The model did not return a complete rewritten reply; the original reply is unchanged.",
                     ),
                 )
             }
@@ -283,14 +283,14 @@ internal class AgentLoop(
                 val message = if (finishReason.isNotBlank()) {
                     AppStrings.get(
                         R.string.loop_err_empty_response_reason,
-                        "模型接口第 %1\$d 轮返回为空：%2\$s",
+                        "The model API returned empty on round %1\$d: %2\$s",
                         round,
                         finishReason,
                     )
                 } else {
                     AppStrings.get(
                         R.string.loop_err_empty_response,
-                        "模型接口第 %1\$d 轮返回为空",
+                        "The model API returned empty on round %1\$d",
                         round,
                     )
                 }
@@ -325,13 +325,13 @@ internal class AgentLoop(
             if (explanation != null) {
                 AppStrings.get(
                     R.string.loop_err_content_filter_detail,
-                    "模型服务商拦截了本次回复，未完成的内容已丢弃。服务商说明：%1\$s请修改或删除触发拦截的请求后重试，或换用其他模型。",
+                    "The model provider blocked this reply and the incomplete content was discarded. Provider note: %1\$sRevise or remove the request that triggered the block and retry, or switch to another model.",
                     explanation,
                 )
             } else {
                 AppStrings.get(
                     R.string.loop_err_content_filter,
-                    "模型服务商拦截了本次回复，未完成的内容已丢弃。请修改或删除触发拦截的请求后重试，或换用其他模型。",
+                    "The model provider blocked this reply and the incomplete content was discarded. Revise or remove the request that triggered the block and retry, or switch to another model.",
                 )
             },
         )
@@ -349,7 +349,7 @@ internal class AgentLoop(
                     false,
                     AppStrings.get(
                         R.string.loop_err_output_limit,
-                        "模型输出额度已耗尽但未生成正文，请检查输出上限或降低思考强度。",
+                        "The model output quota was exhausted before any text was generated; check the output limit or lower the reasoning effort.",
                     ),
                 )
             else -> AgentModelFailure(
@@ -357,7 +357,7 @@ internal class AgentLoop(
                 false,
                 AppStrings.get(
                     R.string.loop_err_empty_model_response,
-                    "模型未返回正文或工具调用，请检查服务商状态。",
+                    "The model returned no text or tool call; check the provider status.",
                 ),
             )
         }
@@ -380,7 +380,7 @@ internal class AgentLoop(
     }
 
     private fun steeringPrompt(supplement: String): String =
-        "用户补充指令：$supplement\n\n请基于当前任务上下文继续执行，不要从头重复已经完成或已经验证过的操作。"
+        "User supplemental instruction: $supplement\n\nContinue based on the current task context; do not redo from scratch operations that are already complete or verified."
 
     private fun steeringMessage(supplement: String): JSONObject =
         AgentConversationCodec.userTextMessage(steeringPrompt(supplement))
@@ -397,11 +397,11 @@ internal class AgentLoop(
                 when (stopReason) {
                     AssistantStopReason.OUTPUT_LIMIT -> rejectedToolOutcome(
                         round, call, "TRUNCATED_TOOL_CALL",
-                        "模型输出达到长度上限，工具参数可能不完整；本次调用未执行，请重新提交完整参数。",
+                        "The model output hit the length limit, so the tool arguments may be incomplete; this call was not executed. Please resubmit complete arguments.",
                     )
                     else -> rejectedToolOutcome(
                         round, call, "UNEXPECTED_TOOL_CALL",
-                        "模型在 ${stopReason.name} 终止状态下返回了工具调用；本批调用未执行，请重新规划。",
+                        "The model returned tool calls while in the ${stopReason.name} stop state; this batch was not executed. Please re-plan.",
                     )
                 }
             }
@@ -465,7 +465,7 @@ internal class AgentLoop(
                                     content = JSONObject()
                                         .put("ok", false)
                                         .put("code", "SUBAGENT_CANCELLED")
-                                        .put("message", "已停止")
+                                        .put("message", "Stopped")
                                         .toString(),
                                 )
                             } else {
@@ -507,7 +507,7 @@ internal class AgentLoop(
                 round = round,
                 toolCall = toolCall,
                 code = "TOOL_NOT_AVAILABLE",
-                message = "工具未在本轮能力目录中提供，请使用当前可用工具",
+                message = "This tool is not provided in this round's capability catalog; use a currently available tool",
             )
         }
         val roundCall = if (toolCall.round == round) toolCall else toolCall.copy(round = round)

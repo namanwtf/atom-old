@@ -41,7 +41,7 @@ import kotlinx.serialization.json.Json
 internal class ImageGenCredentialsUnavailable : IllegalStateException(
     AppStrings.get(
         R.string.imagegen_error_credentials_unavailable,
-        "AI 生图凭据暂时不可用，请重新填写并保存",
+        "AI image generation credentials are temporarily unavailable，please re-enter and save",
     ),
 )
 
@@ -92,7 +92,7 @@ internal object ImageGenSettingsRepository {
                 .putString(KEY_CREDENTIALS, Base64.getEncoder().encodeToString(encrypted))
                 .commit(),
         ) {
-            AppStrings.get(R.string.imagegen_error_credentials_save_failed, "AI 生图凭据保存失败")
+            AppStrings.get(R.string.imagegen_error_credentials_save_failed, "Failed to save AI image generation credentials")
         }
     }
 
@@ -408,19 +408,19 @@ internal object ImageGenSettingsRepository {
     internal fun validateEndpointUrl(baseUrl: String): String? {
         val trimmed = baseUrl.trim()
         if (trimmed.isEmpty()) {
-            return AppStrings.get(R.string.imagegen_error_url_empty, "接口地址不能为空")
+            return AppStrings.get(R.string.imagegen_error_url_empty, "Endpoint URL cannot be empty")
         }
         val uri = runCatching { URI(trimmed) }.getOrNull()
-            ?: return AppStrings.get(R.string.imagegen_error_url_invalid, "接口地址格式无效")
+            ?: return AppStrings.get(R.string.imagegen_error_url_invalid, "Endpoint URL format is invalid")
         val scheme = uri.scheme?.lowercase()
-            ?: return AppStrings.get(R.string.imagegen_error_url_missing_scheme, "接口地址缺少协议头（https://）")
+            ?: return AppStrings.get(R.string.imagegen_error_url_missing_scheme, "Endpoint URL is missing the scheme（https://）")
         val host = uri.host?.lowercase()?.takeIf { it.isNotBlank() }
-            ?: return AppStrings.get(R.string.imagegen_error_url_missing_host, "接口地址缺少有效主机名")
+            ?: return AppStrings.get(R.string.imagegen_error_url_missing_host, "Endpoint URL is missing a valid hostname")
         if (scheme == "https") return null
         if (scheme == "http" && isLocalOrPrivateHost(host)) return null
         return AppStrings.get(
             R.string.imagegen_error_url_https_required,
-            "携带 API Key 的公网接口必须使用 HTTPS 协议",
+            "A public endpoint carrying an API Key must use HTTPS",
         )
     }
 

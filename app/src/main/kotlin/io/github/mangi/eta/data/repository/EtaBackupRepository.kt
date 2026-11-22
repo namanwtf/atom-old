@@ -239,7 +239,7 @@ internal object EtaBackupRepository {
                         throw IllegalStateException(
                             AppStrings.get(
                                 R.string.backup_err_import_oauth_cleanup_incomplete,
-                                "数据已导入，但订阅登录清理未完成。订阅连接保持停用，请重新选择登录方式并登录。",
+                                "Data has been imported，but subscription sign-in cleanup was not completed。The subscription connection stays disabled，please reselect a sign-in method and sign in。",
                             ),
                             failure,
                         )
@@ -254,7 +254,7 @@ internal object EtaBackupRepository {
                         throw IllegalStateException(
                             AppStrings.get(
                                 R.string.backup_err_import_default_model_incomplete,
-                                "数据已导入，但默认模型设置未完全恢复，请重新选择服务商和模型。",
+                                "Data has been imported，but the default model settings were not fully restored，please reselect the provider and model。",
                             ),
                             failure,
                         )

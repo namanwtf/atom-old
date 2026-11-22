@@ -144,11 +144,11 @@ internal object AgentToolRequirements {
         val properties = function.getJSONObject("parameters").optJSONObject("properties")
         if (function.getString("name") in AgentFileToolCatalog.names + AgentTerminalToolCatalog.names) {
             properties?.optJSONObject("identity")?.put("enum", JSONArray().put("user"))
-                ?.put("description", "显式选择宿主身份；当前可用 user（Eta App UID）。省略时沿用本次运行的默认身份。")
+                ?.put("description", "Explicitly select the host identity; currently available: user (Eta App UID). Omit to use the default identity for this run.")
         }
         when (function.getString("name")) {
             "read_image" -> properties?.getJSONObject("path")?.put("description",
-                "当前应用有权读取的绝对图片路径、file URI 或已授权的 content URI。")
+                "An absolute image path, file URI, or authorized content URI that the current app can read.")
             "press_key" -> properties?.getJSONObject("button")?.let { button ->
                 val values = button.getJSONArray("enum")
                 button.put("enum", JSONArray().also { allowed ->
@@ -157,10 +157,10 @@ internal object AgentToolRequirements {
                         if (!value.equals("PASTE", ignoreCase = true)) allowed.put(value)
                     }
                 })
-                button.put("description", "无障碍支持的系统按键；输入文本请使用 type_text。")
+                button.put("description", "Accessibility-supported system keys; use type_text for text input.")
             }
             "search_personal_orders" -> function.put("description",
-                "从用户已授权保存的通知历史检索外卖、购物、快递、票券和出行订单。")
+                "Search food delivery, shopping, express delivery, ticket, and travel orders from the user's authorized notification history.")
         }
     }
 }

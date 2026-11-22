@@ -39,22 +39,22 @@ internal object ModelRepository {
         val modelId = draft.modelId.trim()
         val displayName = draft.displayName.trim()
         require(modelId.isNotEmpty()) {
-            AppStrings.get(R.string.repo_err_model_id_required, "Model ID 不能为空")
+            AppStrings.get(R.string.repo_err_model_id_required, "Model ID cannot be empty")
         }
         require(displayName.isNotEmpty()) {
-            AppStrings.get(R.string.repo_err_model_display_name_required, "展示名称不能为空")
+            AppStrings.get(R.string.repo_err_model_display_name_required, "Display name cannot be empty")
         }
         require(draft.contextWindowOverride == null || draft.contextWindowOverride > 0) {
             AppStrings.get(
                 R.string.repo_err_model_context_window_positive,
-                "上下文长度必须是正整数",
+                "Context length must be a positive integer",
             )
         }
         require(
             models.none { existing ->
                 existing.id != draft.id && existing.modelId.trim().equals(modelId, ignoreCase = true)
             }
-        ) { AppStrings.get(R.string.repo_err_model_id_exists, "Model ID 已存在") }
+        ) { AppStrings.get(R.string.repo_err_model_id_exists, "Model ID already exists") }
 
         val existing = models.firstOrNull { it.id == draft.id }
         val saved = if (existing == null) {
@@ -122,12 +122,12 @@ internal object ModelRepository {
     ): RemoteModelSyncResult {
         val result = ProviderRepository.mutationMutex.withLock {
             val provider = requireNotNull(ProviderRepository.providerById(providerId)) {
-                AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+                AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
             }
             require(provider.authMode == ProviderAuthModes.API_KEY) {
                 AppStrings.get(
                     R.string.repo_err_account_catalog_requires_session,
-                    "账号模型目录必须绑定当前登录状态，请重新拉取",
+                    "The account model catalog must be bound to the current sign-in state，please re-fetch",
                 )
             }
             applyRemoteModels(provider, fetched, adoptedModelIds)
@@ -142,12 +142,12 @@ internal object ModelRepository {
     ): RemoteModelSyncResult = withContext(Dispatchers.IO) {
         val result = ProviderRepository.mutationMutex.withLock {
             val provider = requireNotNull(ProviderRepository.providerById(catalog.connection.id)) {
-                AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+                AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
             }
             require(catalog.matches(provider)) {
                 AppStrings.get(
                     R.string.repo_err_provider_connection_changed,
-                    "服务商连接已变更，请重新拉取模型",
+                    "The provider connection has changed，please re-fetch the models",
                 )
             }
             val binding = catalog.accountBinding
@@ -159,7 +159,7 @@ internal object ModelRepository {
                         "oauth_session_changed",
                         AppStrings.get(
                             R.string.repo_err_oauth_session_changed_refetch,
-                            "登录状态已变更，请重新拉取模型",
+                            "The sign-in state has changed，please re-fetch the models",
                         ),
                     )
                 }
@@ -167,7 +167,7 @@ internal object ModelRepository {
                 require(binding == null) {
                     AppStrings.get(
                         R.string.repo_err_apikey_catalog_no_account_binding,
-                        "API Key 模型目录不能携带账号绑定",
+                        "An API Key model catalog cannot carry account binding",
                     )
                 }
             }
@@ -209,7 +209,7 @@ internal object ModelRepository {
 
     private suspend fun currentModels(providerId: String): List<Model> =
         requireNotNull(ProviderRepository.providerById(providerId)) {
-            AppStrings.get(R.string.repo_err_provider_not_found, "Provider 不存在")
+            AppStrings.get(R.string.repo_err_provider_not_found, "Provider does not exist")
         }
             .models
             .sortedBy { it.sortOrder }

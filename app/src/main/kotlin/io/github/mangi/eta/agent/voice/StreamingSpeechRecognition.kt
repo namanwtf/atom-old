@@ -80,13 +80,13 @@ private suspend fun recognizeQwen(
                     "error", "conversation.item.input_audio_transcription.failed" ->
                         throw SpeechFailure(
                             SpeechErrorCode.SERVER,
-                            AppStrings.get(R.string.voice_i18n_qwen_asr_failed, "千问识别失败，请检查模型权限和配置"),
+                            AppStrings.get(R.string.voice_i18n_qwen_asr_failed, "Qwen recognition failed，please check model permissions and configuration"),
                         )
                 }
             }
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_qwen_asr_connection_ended_early, "千问识别连接提前结束"),
+                AppStrings.get(R.string.voice_i18n_qwen_asr_connection_ended_early, "Qwen recognition connection ended early"),
             )
         } finally { sender?.cancel() }
     }
@@ -135,7 +135,7 @@ private suspend fun recognizeDoubao(
             }
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_doubao_asr_connection_ended_early, "豆包识别连接提前结束"),
+                AppStrings.get(R.string.voice_i18n_doubao_asr_connection_ended_early, "Doubao recognition connection ended early"),
             )
         } finally { sender.cancel() }
     }

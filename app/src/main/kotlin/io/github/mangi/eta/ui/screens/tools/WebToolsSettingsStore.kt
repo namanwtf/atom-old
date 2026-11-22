@@ -113,7 +113,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_deepseek_key_required,
-                    "请填写 DeepSeek API Key，或先在模型提供商中配置 DeepSeek",
+                    "Please enter the DeepSeek API Key, or configure DeepSeek in model providers first",
                 ),
             )
         }
@@ -123,7 +123,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_deepseek_url_invalid,
-                    "DeepSeek Base URL 须为合法的 HTTP(S) 地址",
+                    "DeepSeek Base URL must be a valid HTTP(S) address",
                 ),
             )
         }
@@ -134,7 +134,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_custom_search_url_required,
-                    "请填写自定义搜索接口地址",
+                    "Please enter the custom search endpoint address",
                 ),
             )
         }
@@ -146,7 +146,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_custom_search_url_invalid,
-                    "自定义搜索接口须为合法的 HTTP(S) 地址",
+                    "Custom search endpoint must be a valid HTTP(S) address",
                 ),
             )
         }
@@ -159,7 +159,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 it.message ?: AppStrings.get(
                     R.string.ui_misc_web_custom_search_headers_invalid,
-                    "自定义搜索请求头格式无效",
+                    "Custom search request header format is invalid",
                 ),
             )
         }
@@ -170,7 +170,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_custom_fetch_url_required,
-                    "请填写自定义读取接口地址",
+                    "Please enter the custom fetch endpoint address",
                 ),
             )
         }
@@ -181,7 +181,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 AppStrings.get(
                     R.string.ui_misc_web_custom_fetch_url_invalid,
-                    "自定义读取接口须为合法的 HTTP(S) 地址",
+                    "Custom fetch endpoint must be a valid HTTP(S) address",
                 ),
             )
         }
@@ -194,7 +194,7 @@ internal fun validateWebToolsSettings(
             throw WebToolsValidationFailure(
                 it.message ?: AppStrings.get(
                     R.string.ui_misc_web_custom_fetch_headers_invalid,
-                    "自定义读取请求头格式无效",
+                    "Custom fetch request header format is invalid",
                 ),
             )
         }

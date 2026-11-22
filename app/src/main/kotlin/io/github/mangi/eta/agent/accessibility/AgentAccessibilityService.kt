@@ -540,20 +540,20 @@ class AgentAccessibilityService : AccessibilityService() {
             if (indexed.clickTarget != null && actionable == null) {
                 NodeActionResult.failure(
                     "STALE_ACTION_TARGET",
-                    "节点的可点击目标已经变化，请重新观察屏幕",
+                    "The node's tappable target has changed; please re-observe the screen",
                 )
             } else if (actionable != null) {
                 when (performNodeAction(actionable, AccessibilityNodeInfo.ACTION_CLICK, connectionToken = snapshot.serviceToken)) {
                     ActionDispatch.ACCEPTED -> NodeActionResult.success(method = "ACTION_CLICK")
                     ActionDispatch.REJECTED ->
-                        NodeActionResult.failure("ACTION_FAILED", "目标节点拒绝点击动作")
-                    ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍动作未派发，请重新观察屏幕")
+                        NodeActionResult.failure("ACTION_FAILED", "Target node rejected the tap action")
+                    ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility action was not dispatched; please re-observe the screen")
                     ActionDispatch.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown()
                 }
             } else {
                 val bounds = clippedNodeBounds(node, snapshot.displayId)
                 if (bounds.isEmpty) {
-                    NodeActionResult.failure("INVALID_NODE_BOUNDS", "目标节点没有可点击区域")
+                    NodeActionResult.failure("INVALID_NODE_BOUNDS", "Target node has no tappable area")
                 } else gestureTapOnConnection(
                     bounds.centerX().toFloat(), bounds.centerY().toFloat(), 50L, snapshot.displayId, snapshot.serviceToken,
                 )
@@ -570,20 +570,20 @@ class AgentAccessibilityService : AccessibilityService() {
         if (indexed.longClickTarget != null && actionable == null) {
             NodeActionResult.failure(
                 "STALE_ACTION_TARGET",
-                "节点的可长按目标已经变化，请重新观察屏幕",
+                "The node's long-press target has changed; please re-observe the screen",
             )
         } else if (actionable != null) {
             when (performNodeAction(actionable, AccessibilityNodeInfo.ACTION_LONG_CLICK, connectionToken = snapshot.serviceToken)) {
                 ActionDispatch.ACCEPTED -> NodeActionResult.success(method = "ACTION_LONG_CLICK")
                 ActionDispatch.REJECTED ->
-                    NodeActionResult.failure("ACTION_FAILED", "目标节点拒绝长按动作")
-                ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍动作未派发，请重新观察屏幕")
+                    NodeActionResult.failure("ACTION_FAILED", "Target node rejected the long-press action")
+                ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility action was not dispatched; please re-observe the screen")
                 ActionDispatch.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown()
             }
         } else {
             val bounds = clippedNodeBounds(node, snapshot.displayId)
             if (bounds.isEmpty) {
-                NodeActionResult.failure("INVALID_NODE_BOUNDS", "目标节点没有可长按区域")
+                NodeActionResult.failure("INVALID_NODE_BOUNDS", "Target node has no long-pressable area")
             } else {
                 gestureTapOnConnection(
                     bounds.centerX().toFloat(),
@@ -608,7 +608,7 @@ class AgentAccessibilityService : AccessibilityService() {
             ?: return ScrollActionResult.failure(
                 direction = direction,
                 code = "SERVICE_TIMEOUT",
-                message = "无障碍节点查询未完成",
+                message = "Accessibility node query not completed",
                 targetIndex = index,
             )
         val validationNode = when (validation) {
@@ -625,14 +625,14 @@ class AgentAccessibilityService : AccessibilityService() {
             return ScrollActionResult.failure(
                 direction = direction,
                 code = "STALE_ACTION_TARGET",
-                message = "节点的滚动容器已经变化，请重新观察屏幕",
+                message = "The node's scroll container has changed; please re-observe the screen",
                 targetIndex = index,
             )
         }
         scrollable ?: return ScrollActionResult.failure(
             direction = direction,
             code = "NOT_SCROLLABLE",
-            message = "指定节点及其父节点不可滚动",
+            message = "The specified node and its parent are not scrollable",
             targetIndex = index,
         )
         return executeScroll(scrollable, direction, targetIndex = index, amount = amount, displayId = snapshot.displayId, connectionToken = snapshot.serviceToken)
@@ -649,7 +649,7 @@ class AgentAccessibilityService : AccessibilityService() {
         } ?: return ScrollActionResult.failure(
             direction = direction,
             code = "NO_ACTIVE_WINDOW",
-            message = "当前活动窗口不可访问",
+            message = "The current active window is inaccessible",
         )
         return executeScroll(target, direction, targetIndex = null, amount = amount, displayId = displayId, connectionToken = connectionToken)
     }
@@ -663,7 +663,7 @@ class AgentAccessibilityService : AccessibilityService() {
         connectionToken: Long,
     ): ScrollActionResult = scrollActionLock.withLock {
         if (instance !== this || connectionToken != serviceToken) {
-            return ScrollActionResult.failure(direction, "SERVICE_RECONNECTED", "无障碍连接已变化，请重新观察屏幕")
+            return ScrollActionResult.failure(direction, "SERVICE_RECONNECTED", "Accessibility connection has changed; please re-observe the screen")
         }
         val startedAt = SystemClock.elapsedRealtime()
         val refreshed = runAccessibilityQuery { target.refresh() } == true
@@ -671,7 +671,7 @@ class AgentAccessibilityService : AccessibilityService() {
             return ScrollActionResult.failure(
                 direction = direction,
                 code = "STALE_NODE",
-                message = "滚动目标已经失效，请重新观察屏幕",
+                message = "The scroll target is no longer valid; please re-observe the screen",
                 targetIndex = targetIndex,
             )
         }
@@ -679,7 +679,7 @@ class AgentAccessibilityService : AccessibilityService() {
             return ScrollActionResult.failure(
                 direction = direction,
                 code = "AXIS_MISMATCH",
-                message = "目标只支持另一滚动轴；为避免误触侧滑，本次未执行任何动作",
+                message = "The target only supports the other scroll axis; to avoid an accidental side swipe, no action was performed this time",
                 targetIndex = targetIndex,
                 elapsedMs = SystemClock.elapsedRealtime() - startedAt,
             )
@@ -697,13 +697,13 @@ class AgentAccessibilityService : AccessibilityService() {
                 performNodeAction(target, selected.actionId, selected.args, connectionToken)
             }
             if (nodeDispatch == ActionDispatch.NOT_DISPATCHED) {
-                return ScrollActionResult.failure(direction, "SERVICE_TIMEOUT", "滚动动作未派发，请重新观察屏幕")
+                return ScrollActionResult.failure(direction, "SERVICE_TIMEOUT", "Scroll action was not dispatched; please re-observe the screen")
             }
             if (nodeDispatch == ActionDispatch.OUTCOME_UNKNOWN) {
                 return ScrollActionResult.failure(
                     direction = direction,
                     code = "ACTION_OUTCOME_UNKNOWN",
-                    message = "滚动动作可能已提交，但系统未在时限内返回结果；请先重新观察，避免重复滚动",
+                    message = "The scroll action may have been submitted, but the system did not return a result in time; re-observe first to avoid repeating the scroll",
                     method = methodName,
                     targetIndex = targetIndex,
                     elapsedMs = SystemClock.elapsedRealtime() - startedAt,
@@ -728,7 +728,7 @@ class AgentAccessibilityService : AccessibilityService() {
                     ?: return ScrollActionResult.failure(
                         direction = direction,
                         code = "INVALID_NODE_BOUNDS",
-                        message = "滚动目标没有足够的可用区域",
+                        message = "The scroll target does not have enough usable area",
                         targetIndex = targetIndex,
                     )
                 methodName = "GESTURE_SWIPE"
@@ -768,7 +768,7 @@ class AgentAccessibilityService : AccessibilityService() {
                 return ScrollActionResult.failure(
                     direction = direction,
                     code = "ACTION_FAILED",
-                    message = "系统拒绝滚动动作",
+                    message = "System refused the scroll action",
                     method = methodName,
                     targetIndex = targetIndex,
                     elapsedMs = SystemClock.elapsedRealtime() - startedAt,
@@ -806,7 +806,7 @@ class AgentAccessibilityService : AccessibilityService() {
                 return ScrollActionResult.failure(
                     direction = direction,
                     code = "DIRECTION_MISMATCH",
-                    message = "界面向请求方向的反方向移动",
+                    message = "The UI moved in the opposite direction of the request",
                     method = methodName,
                     targetIndex = targetIndex,
                     deltaX = delta.takeIf { direction.axis == ScrollAxis.HORIZONTAL },
@@ -847,7 +847,7 @@ class AgentAccessibilityService : AccessibilityService() {
             return ScrollActionResult.failure(
                 direction = direction,
                 code = "ACTION_OUTCOME_UNKNOWN",
-                message = "滚动动作已经发出，但无法确认内容位移；请先重新观察，禁止直接重试",
+                message = "The scroll action was issued, but the content movement cannot be confirmed; re-observe first, do not blindly retry",
                 method = methodName,
                 targetIndex = targetIndex,
                 deltaX = delta.takeIf { direction.axis == ScrollAxis.HORIZONTAL },
@@ -889,7 +889,7 @@ class AgentAccessibilityService : AccessibilityService() {
         return runAccessibilityQuery {
             val node = findFocusedEditableNode(displayId)
                 ?: return@runAccessibilityQuery TextInsertionPreparation.Rejected(
-                    NodeActionResult.failure("NO_FOCUSED_EDITABLE", "没有获得输入焦点的可编辑节点"),
+                    NodeActionResult.failure("NO_FOCUSED_EDITABLE", "No editable node has input focus"),
                 )
             node.incrementalTextValidationError()?.let { error ->
                 return@runAccessibilityQuery TextInsertionPreparation.Rejected(error)
@@ -900,11 +900,11 @@ class AgentAccessibilityService : AccessibilityService() {
                 selectionStart = node.textSelectionStart,
                 selectionEnd = node.textSelectionEnd,
             ) ?: return@runAccessibilityQuery TextInsertionPreparation.Rejected(
-                NodeActionResult.failure("TEXT_SELECTION_UNAVAILABLE", "当前输入框未提供可靠光标或选区；请用 replace_text 提供完整值"),
+                NodeActionResult.failure("TEXT_SELECTION_UNAVAILABLE", "The current input does not provide a reliable cursor or selection; use replace_text to provide the full value"),
             )
             TextInsertionPreparation.Ready(node, plan.text, plan.cursor, connectionToken)
         } ?: TextInsertionPreparation.Rejected(
-            NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍查询未完成，本次未修改文本"),
+            NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility query not completed; text was not modified this time"),
         )
     }
 
@@ -924,10 +924,10 @@ class AgentAccessibilityService : AccessibilityService() {
     ): NodeActionResult {
         if (index != null) {
             val requiredSnapshot = snapshot
-                ?: return NodeActionResult.failure("NO_OBSERVATION", "指定 index 需要有效观察快照")
+                ?: return NodeActionResult.failure("NO_OBSERVATION", "The specified index requires a valid observation snapshot")
             return withValidatedNode(requiredSnapshot, index) { node ->
                 if (!node.isEditable) {
-                    NodeActionResult.failure("NOT_EDITABLE", "指定节点不可编辑")
+                    NodeActionResult.failure("NOT_EDITABLE", "The specified node is not editable")
                 } else {
                     setNodeText(node, text, text.length, requiredSnapshot.serviceToken)
                 }
@@ -935,7 +935,7 @@ class AgentAccessibilityService : AccessibilityService() {
         }
         val connectionToken = serviceToken
         val node = runAccessibilityQuery { findFocusedEditableNode(snapshot?.displayId ?: displayId) }
-            ?: return NodeActionResult.failure("NO_FOCUSED_EDITABLE", "没有获得输入焦点的可编辑节点")
+            ?: return NodeActionResult.failure("NO_FOCUSED_EDITABLE", "No editable node has input focus")
         return setNodeText(node, text, text.length, connectionToken)
     }
 
@@ -956,7 +956,7 @@ class AgentAccessibilityService : AccessibilityService() {
         }) {
             is MainThreadCallResult.Completed -> result.value ?: NodeActionResult.outcomeUnknown()
             MainThreadCallResult.NOT_STARTED ->
-                NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍动作未派发，请重新观察屏幕")
+                NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility action was not dispatched; please re-observe the screen")
             MainThreadCallResult.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown().copy(clipboardWritten = true)
         }
         if (!dispatched.ok) return dispatched
@@ -975,13 +975,13 @@ class AgentAccessibilityService : AccessibilityService() {
             }
         }
         val copied = runCatching { clipboard.setPrimaryClip(temporaryClip) }.isSuccess
-        if (!copied) return NodeActionResult.failure("CLIPBOARD_WRITE_FAILED", "写入剪贴板失败")
+        if (!copied) return NodeActionResult.failure("CLIPBOARD_WRITE_FAILED", "Failed to write to the clipboard")
         var restored = false
         val result = try {
             if (node.performAction(AccessibilityNodeInfo.ACTION_PASTE)) {
                 NodeActionResult.success(method = "ACTION_PASTE")
             } else {
-                NodeActionResult.failure("ACTION_FAILED", "输入节点拒绝粘贴动作")
+                NodeActionResult.failure("ACTION_FAILED", "Input node rejected the paste action")
             }
         } catch (_: Throwable) {
             NodeActionResult.outcomeUnknown()
@@ -1017,11 +1017,11 @@ class AgentAccessibilityService : AccessibilityService() {
     ): NodeActionResult {
         val connectionToken = serviceToken
         val node = runAccessibilityQuery { findFocusedEditableNode(displayId) }
-            ?: return NodeActionResult.failure("NO_FOCUSED_EDITABLE", "没有获得输入焦点的可编辑节点")
+            ?: return NodeActionResult.failure("NO_FOCUSED_EDITABLE", "No editable node has input focus")
         return when (performNodeAction(node, AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.id, connectionToken = connectionToken)) {
             ActionDispatch.ACCEPTED -> NodeActionResult.success(method = "ACTION_IME_ENTER")
-            ActionDispatch.REJECTED -> NodeActionResult.failure("ACTION_FAILED", "输入节点拒绝回车动作")
-            ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍动作未派发，请重新观察屏幕")
+            ActionDispatch.REJECTED -> NodeActionResult.failure("ACTION_FAILED", "Input node rejected the enter action")
+            ActionDispatch.NOT_DISPATCHED -> NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility action was not dispatched; please re-observe the screen")
             ActionDispatch.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown()
         }
     }
@@ -1087,13 +1087,13 @@ class AgentAccessibilityService : AccessibilityService() {
             "RECENTS" -> GLOBAL_ACTION_RECENTS
             "NOTIFICATIONS" -> GLOBAL_ACTION_NOTIFICATIONS
             "QUICK_SETTINGS" -> GLOBAL_ACTION_QUICK_SETTINGS
-            else -> return NodeActionResult.failure("INVALID_ARGUMENT", "不支持的系统动作")
+            else -> return NodeActionResult.failure("INVALID_ARGUMENT", "Unsupported system action")
         }
         return runNodeActionOnMainSync {
             if (performGlobalAction(action)) {
                 NodeActionResult.success(method = "GLOBAL_ACTION_${name.uppercase()}")
             } else {
-                NodeActionResult.failure("ACTION_FAILED", "系统拒绝全局动作")
+                NodeActionResult.failure("ACTION_FAILED", "System refused the global action")
             }
         }
     }
@@ -1449,8 +1449,8 @@ class AgentAccessibilityService : AccessibilityService() {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
         }
         when (performNodeAction(node, AccessibilityNodeInfo.ACTION_SET_TEXT, setTextArgs, connectionToken)) {
-            ActionDispatch.REJECTED -> return NodeActionResult.failure("ACTION_FAILED", "输入节点拒绝文本修改动作")
-            ActionDispatch.NOT_DISPATCHED -> return NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍动作未派发，请重新观察屏幕")
+            ActionDispatch.REJECTED -> return NodeActionResult.failure("ACTION_FAILED", "Input node rejected the text modification action")
+            ActionDispatch.NOT_DISPATCHED -> return NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility action was not dispatched; please re-observe the screen")
             ActionDispatch.OUTCOME_UNKNOWN -> return NodeActionResult.outcomeUnknown()
             ActionDispatch.ACCEPTED -> Unit
         }
@@ -1499,7 +1499,7 @@ class AgentAccessibilityService : AccessibilityService() {
         if (isPassword || currentText == null) {
             return NodeActionResult.failure(
                 "TEXT_CONTENT_UNAVAILABLE",
-                "当前输入框不允许可靠读取已有文本；请用 replace_text 提供完整值",
+                "The current input does not allow reliably reading existing text; use replace_text to provide the full value",
             )
         }
         if (
@@ -1513,7 +1513,7 @@ class AgentAccessibilityService : AccessibilityService() {
         ) {
             return NodeActionResult.failure(
                 "TEXT_SELECTION_UNAVAILABLE",
-                "当前输入框未提供可靠光标或选区；请用 replace_text 提供完整值",
+                "The current input does not provide a reliable cursor or selection; use replace_text to provide the full value",
             )
         }
         return null
@@ -1819,7 +1819,7 @@ class AgentAccessibilityService : AccessibilityService() {
         block: (IndexedNode) -> NodeActionResult,
     ): NodeActionResult {
         val validation = runAccessibilityQuery { validateNode(snapshot, index) }
-            ?: return NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍节点查询未完成")
+            ?: return NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility node query not completed")
         return when (validation) {
             is NodeValidation.Invalid -> validation.result
             is NodeValidation.Valid -> block(validation.indexedNode)
@@ -1829,21 +1829,21 @@ class AgentAccessibilityService : AccessibilityService() {
     private fun validateNode(snapshot: NodeSnapshot, index: Int): NodeValidation {
         if (snapshot.serviceToken != serviceToken) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("SERVICE_RECONNECTED", "无障碍服务已重连，请重新观察屏幕"),
+                NodeActionResult.failure("SERVICE_RECONNECTED", "Accessibility service has reconnected; please re-observe the screen"),
             )
         }
         val indexed = snapshot.indexedNodes.firstOrNull { it.index == index }
             ?: return NodeValidation.Invalid(
-                NodeActionResult.failure("INVALID_NODE_INDEX", "观察快照中不存在节点 index=$index"),
+                NodeActionResult.failure("INVALID_NODE_INDEX", "No node with index=$index exists in the observation snapshot"),
             )
         val activeRoot = activeRootOnDisplay(snapshot.displayId)
             ?: return NodeValidation.Invalid(
-                NodeActionResult.failure("STALE_WINDOW", "当前活动窗口不可访问，请重新观察屏幕"),
+                NodeActionResult.failure("STALE_WINDOW", "The current active window is inaccessible; please re-observe the screen"),
             )
         val activePackage = activeRoot.packageName?.toString().orEmpty()
         if (activeRoot.windowId != snapshot.windowId || activePackage != snapshot.packageName) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("STALE_WINDOW", "活动窗口已经变化，请重新观察屏幕"),
+                NodeActionResult.failure("STALE_WINDOW", "The active window has changed; please re-observe the screen"),
             )
         }
         if (
@@ -1851,24 +1851,24 @@ class AgentAccessibilityService : AccessibilityService() {
             !snapshot.hasUnambiguousIdentity(indexed)
         ) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("STALE_CONTENT", "窗口内容已经变化，请重新观察屏幕"),
+                NodeActionResult.failure("STALE_CONTENT", "The window content has changed; please re-observe the screen"),
             )
         }
         val node = indexed.node
         queryExecutor.ensureActive()
         if (!runCatching { node.refresh() }.getOrDefault(false)) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("STALE_NODE", "目标节点已经失效，请重新观察屏幕"),
+                NodeActionResult.failure("STALE_NODE", "The target node is no longer valid; please re-observe the screen"),
             )
         }
         if (!indexed.identityMatches(node)) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("IDENTITY_CHANGED", "目标节点内容或身份已经变化，请重新观察屏幕"),
+                NodeActionResult.failure("IDENTITY_CHANGED", "The target node's content or identity has changed; please re-observe the screen"),
             )
         }
         if (!node.isVisibleToUser || !node.isEnabled) {
             return NodeValidation.Invalid(
-                NodeActionResult.failure("NODE_NOT_ACTIONABLE", "目标节点当前不可见或不可用"),
+                NodeActionResult.failure("NODE_NOT_ACTIONABLE", "The target node is currently not visible or not actionable"),
             )
         }
         return NodeValidation.Valid(indexed)
@@ -2046,12 +2046,12 @@ class AgentAccessibilityService : AccessibilityService() {
         connectionToken: Long = serviceToken,
     ): NodeActionResult {
         if (instance !== this || connectionToken != serviceToken || Thread.currentThread().isInterrupted) {
-            return NodeActionResult.failure("SERVICE_RECONNECTED", "无障碍连接已失效，手势未执行")
+            return NodeActionResult.failure("SERVICE_RECONNECTED", "Accessibility connection is no longer valid; the gesture was not executed")
         }
         if (Looper.myLooper() == Looper.getMainLooper()) {
             return NodeActionResult.failure(
                 "GESTURE_NOT_DISPATCHED",
-                "不能在无障碍主线程同步等待手势",
+                "Cannot synchronously wait for a gesture on the accessibility main thread",
             )
         }
         val latch = CountDownLatch(1)
@@ -2113,7 +2113,7 @@ class AgentAccessibilityService : AccessibilityService() {
             }
         }
         if (!posted) {
-            return NodeActionResult.failure("GESTURE_NOT_DISPATCHED", "无障碍主线程拒绝手势任务")
+            return NodeActionResult.failure("GESTURE_NOT_DISPATCHED", "Accessibility main thread refused the gesture task")
         }
         val finishedInTime = try {
             latch.await(durationMs + GESTURE_CALLBACK_GRACE_MS, TimeUnit.MILLISECONDS)
@@ -2125,7 +2125,7 @@ class AgentAccessibilityService : AccessibilityService() {
             if (gate.cancelIfPending()) {
                 return NodeActionResult.failure(
                     "GESTURE_NOT_DISPATCHED",
-                    "无障碍主线程繁忙，手势已在执行前取消",
+                    "Accessibility main thread is busy; the gesture was canceled before execution",
                 )
             }
             return NodeActionResult.outcomeUnknown()
@@ -2135,16 +2135,16 @@ class AgentAccessibilityService : AccessibilityService() {
             GestureDispatch.CANCELLED -> NodeActionResult.outcomeUnknown()
             GestureDispatch.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown()
             GestureDispatch.NOT_DISPATCHED,
-            null -> NodeActionResult.failure("GESTURE_NOT_DISPATCHED", "系统拒绝手势任务")
+            null -> NodeActionResult.failure("GESTURE_NOT_DISPATCHED", "System refused the gesture task")
         }
     }
 
     private fun runNodeActionOnMainSync(block: () -> NodeActionResult): NodeActionResult =
         when (val result = callOnMainSync(block = block)) {
             is MainThreadCallResult.Completed -> result.value
-                ?: NodeActionResult.failure("ACTION_FAILED", "无障碍动作执行异常")
+                ?: NodeActionResult.failure("ACTION_FAILED", "Accessibility action execution error")
             MainThreadCallResult.NOT_STARTED ->
-                NodeActionResult.failure("SERVICE_TIMEOUT", "无障碍服务主线程无响应，动作未执行")
+                NodeActionResult.failure("SERVICE_TIMEOUT", "Accessibility service main thread is unresponsive; the action was not executed")
             MainThreadCallResult.OUTCOME_UNKNOWN -> NodeActionResult.outcomeUnknown()
         }
 
@@ -2222,7 +2222,7 @@ class AgentAccessibilityService : AccessibilityService() {
 
             fun outcomeUnknown(): NodeActionResult = failure(
                 code = "ACTION_OUTCOME_UNKNOWN",
-                message = "动作可能已执行，但系统未在时限内返回结果；请先重新观察，避免重复操作",
+                message = "The action may have executed, but the system did not return a result in time; re-observe first to avoid repeating it",
             )
         }
     }

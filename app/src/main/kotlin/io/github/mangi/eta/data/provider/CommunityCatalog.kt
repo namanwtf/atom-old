@@ -53,7 +53,7 @@ internal object CommunityCatalogParser {
                 parseProvider(id, item)?.let(::add)
             }
         }.sortedWith(compareBy(CommunityCatalogProvider::name, CommunityCatalogProvider::id))
-        require(providers.isNotEmpty()) { "目录中没有可导入的对话提供商" }
+        require(providers.isNotEmpty()) { "There is no importable chat provider in the catalog" }
         return CommunityCatalog(providers, source, fetchedAt)
     }
 

@@ -51,7 +51,7 @@ internal object ConfigurableWebBackends {
         val trimmedQuery = validateQuery(query)
         val key = apiKey.trim()
         if (key.isEmpty()) {
-            throw WebSearchException("SEARCH_AUTH_REQUIRED", "DeepSeek 搜索未配置 API Key，请在网页搜索与读取设置或 DeepSeek 提供商中配置")
+            throw WebSearchException("SEARCH_AUTH_REQUIRED", "DeepSeek search is not configured with an API Key; configure it in the web search and reading settings or the DeepSeek provider")
         }
         val endpoint = deepSeekEndpoint(baseUrl, "search")
         val reasons = linkedSetOf<String>()
@@ -79,17 +79,17 @@ internal object ConfigurableWebBackends {
         )
         requireSearchApiSuccess(response, "DeepSeek")
         if (response.truncated) {
-            throw WebRequestException("SEARCH_RESPONSE_TOO_LARGE", "搜索响应超过大小限制，请缩小查询范围")
+            throw WebRequestException("SEARCH_RESPONSE_TOO_LARGE", "Search response exceeds the size limit; narrow the query scope")
         }
         val decoded = WebResponseDecoder.decode(response)
         if (decoded.lossy) {
-            throw WebRequestException("SEARCH_ENCODING_ERROR", "搜索响应包含无法可靠解码的内容")
+            throw WebRequestException("SEARCH_ENCODING_ERROR", "The search response contains content that cannot be decoded reliably")
         }
         val root = runCatching { JSONObject(decoded.text) }.getOrElse {
-            throw WebSearchException("SEARCH_PARSE_FAILED", "DeepSeek 搜索返回了无效的 JSON 响应")
+            throw WebSearchException("SEARCH_PARSE_FAILED", "DeepSeek search returned an invalid JSON response")
         }
         val array = root.optJSONArray("results")
-            ?: throw WebSearchException("SEARCH_PARSE_FAILED", "DeepSeek 搜索响应缺少 results 字段")
+            ?: throw WebSearchException("SEARCH_PARSE_FAILED", "DeepSeek search response is missing the results field")
         return parseJsonSearchResults(
             provider = "deepseek",
             searchUrl = endpoint,
@@ -115,7 +115,7 @@ internal object ConfigurableWebBackends {
         val trimmedQuery = validateQuery(query)
         val rawUrlTemplate = config.url.trim()
         if (rawUrlTemplate.isEmpty()) {
-            throw WebSearchException("SEARCH_CONFIG_INCOMPLETE", "自定义搜索未配置接口地址")
+            throw WebSearchException("SEARCH_CONFIG_INCOMPLETE", "Custom search has no endpoint URL configured")
         }
         val targetUrl = buildCustomSearchUrl(rawUrlTemplate, config.method, trimmedQuery, maxResults)
         val headers = parseCustomHeaders(config.headersText, apiKey)
@@ -132,20 +132,20 @@ internal object ConfigurableWebBackends {
             body = bodyBytes,
             contentType = if (config.method == WebHttpMethod.POST) "application/json; charset=utf-8" else null,
         )
-        requireSearchApiSuccess(response, "自定义")
+        requireSearchApiSuccess(response, "Custom")
         if (response.truncated) {
-            throw WebRequestException("SEARCH_RESPONSE_TOO_LARGE", "搜索响应超过大小限制，请缩小查询范围")
+            throw WebRequestException("SEARCH_RESPONSE_TOO_LARGE", "Search response exceeds the size limit; narrow the query scope")
         }
         val decoded = WebResponseDecoder.decode(response)
         if (decoded.lossy) {
-            throw WebRequestException("SEARCH_ENCODING_ERROR", "搜索响应包含无法可靠解码的内容")
+            throw WebRequestException("SEARCH_ENCODING_ERROR", "The search response contains content that cannot be decoded reliably")
         }
         val parsedRoot = runCatching { JSONTokener(decoded.text).nextValue() }.getOrElse {
-            throw WebSearchException("SEARCH_PARSE_FAILED", "自定义搜索接口未返回有效的 JSON")
+            throw WebSearchException("SEARCH_PARSE_FAILED", "Custom search endpoint did not return valid JSON")
         }
         val resultsNode = resolveJsonPath(parsedRoot, config.resultsPath.trim().ifEmpty { "results" })
         val array = resultsNode as? JSONArray
-            ?: throw WebSearchException("SEARCH_PARSE_FAILED", "未在自定义搜索响应路径中找到结果数组")
+            ?: throw WebSearchException("SEARCH_PARSE_FAILED", "No results array found at the custom search response path")
         return parseJsonSearchResults(
             provider = "custom",
             searchUrl = response.finalUrl,
@@ -169,7 +169,7 @@ internal object ConfigurableWebBackends {
         val validatedUrl = WebHttpTransport.validateUrl(targetUrl).toString()
         val key = apiKey.trim()
         if (key.isEmpty()) {
-            throw WebRequestException("WEB_AUTH_REQUIRED", "DeepSeek 网页读取未配置 API Key")
+            throw WebRequestException("WEB_AUTH_REQUIRED", "DeepSeek web reading is not configured with an API Key")
         }
         val endpoint = deepSeekEndpoint(baseUrl, "fetch")
         val body = JSONObject().put("url", validatedUrl).toString().toByteArray(Charsets.UTF_8)
@@ -187,11 +187,11 @@ internal object ConfigurableWebBackends {
         val decoded = WebResponseDecoder.decode(response)
         ensureActive()
         val json = runCatching { JSONObject(decoded.text) }.getOrElse {
-            throw WebPageContentException("WEB_PARSE_FAILED", "DeepSeek 读取返回了无效的 JSON")
+            throw WebPageContentException("WEB_PARSE_FAILED", "DeepSeek reading returned invalid JSON")
         }
         val content = json.optString("content", "").trim()
         if (content.isEmpty()) {
-            throw WebPageContentException("EMPTY_PAGE_CONTENT", "DeepSeek 未提取到可用的网页正文")
+            throw WebPageContentException("EMPTY_PAGE_CONTENT", "DeepSeek did not extract usable web page content")
         }
         val rawTitle = json.optString("title", "").trim().takeIf { it.isNotEmpty() }
         val document = buildMarkdownDocument(
@@ -221,7 +221,7 @@ internal object ConfigurableWebBackends {
         val validatedUrl = WebHttpTransport.validateUrl(targetUrl).toString()
         val rawUrlTemplate = config.url.trim()
         if (rawUrlTemplate.isEmpty()) {
-            throw WebRequestException("WEB_CONFIG_INCOMPLETE", "自定义网页读取未配置接口地址")
+            throw WebRequestException("WEB_CONFIG_INCOMPLETE", "Custom web reading has no endpoint URL configured")
         }
         val requestUrl = buildCustomFetchUrl(rawUrlTemplate, config.method, validatedUrl)
         val headers = parseCustomHeaders(config.headersText, apiKey)
@@ -251,7 +251,7 @@ internal object ConfigurableWebBackends {
         val document = if (parsedJson != null && contentField.isNotEmpty()) {
             val content = (resolveJsonPath(parsedJson, contentField) as? String)?.trim().orEmpty()
             if (content.isEmpty()) {
-                throw WebPageContentException("EMPTY_PAGE_CONTENT", "自定义读取接口未返回有效正文")
+                throw WebPageContentException("EMPTY_PAGE_CONTENT", "Custom reading endpoint did not return valid content")
             }
             val titleField = config.titleField.trim()
             val rawTitle = if (titleField.isNotEmpty()) {
@@ -276,7 +276,7 @@ internal object ConfigurableWebBackends {
                 ensureActive = ensureActive,
             )
             if ( extracted.content.isBlank()) {
-                throw WebPageContentException("EMPTY_PAGE_CONTENT", "自定义读取接口返回的正文为空")
+                throw WebPageContentException("EMPTY_PAGE_CONTENT", "Custom reading endpoint returned empty content")
             }
             if (decoded.lossy) {
                 extracted.copy(
@@ -314,12 +314,12 @@ internal object ConfigurableWebBackends {
             if (line.isEmpty()) return@forEach
             val separator = line.indexOf(':')
             if (separator <= 0) {
-                throw WebRequestException("INVALID_ARGUMENT", "自定义请求头格式应为 Header: Value")
+                throw WebRequestException("INVALID_ARGUMENT", "Custom header format should be Header: Value")
             }
             val name = line.substring(0, separator).trim()
             val value = line.substring(separator + 1).trim()
             if (name.isEmpty()) {
-                throw WebRequestException("INVALID_ARGUMENT", "自定义请求头名称不能为空")
+                throw WebRequestException("INVALID_ARGUMENT", "Custom header name must not be empty")
             }
             result[name] = value
         }
@@ -544,25 +544,25 @@ internal object ConfigurableWebBackends {
     private fun requireSearchApiSuccess(response: WebHttpResponse, providerLabel: String) {
         if (response.status in 200..299) return
         throw when (response.status) {
-            400 -> WebRequestException("SEARCH_INVALID_REQUEST", "${providerLabel}搜索请求参数无效（HTTP 400）", 400)
-            401 -> WebRequestException("SEARCH_AUTH_FAILED", "${providerLabel}搜索鉴权失败，请检查 API Key（HTTP 401）", 401)
-            402 -> WebRequestException("SEARCH_INSUFFICIENT_BALANCE", "${providerLabel}账号余额不足（HTTP 402）", 402)
-            403 -> WebRequestException("WEB_ACCESS_DENIED", "${providerLabel}搜索请求被拒绝（HTTP 403）", 403)
-            408, 504 -> WebRequestException("WEB_TIMEOUT", "${providerLabel}搜索服务响应超时（HTTP ${response.status}）", response.status)
-            429 -> WebRequestException("SEARCH_RATE_LIMITED", "${providerLabel}搜索请求触发限流，请稍后重试（HTTP 429）", 429)
-            else -> WebRequestException("WEB_HTTP_ERROR", "${providerLabel}搜索请求失败（HTTP ${response.status}）", response.status)
+            400 -> WebRequestException("SEARCH_INVALID_REQUEST", "${providerLabel} search request has invalid parameters (HTTP 400)", 400)
+            401 -> WebRequestException("SEARCH_AUTH_FAILED", "${providerLabel} search authentication failed; check the API Key (HTTP 401)", 401)
+            402 -> WebRequestException("SEARCH_INSUFFICIENT_BALANCE", "${providerLabel} account has insufficient balance (HTTP 402)", 402)
+            403 -> WebRequestException("WEB_ACCESS_DENIED", "${providerLabel} search request was denied (HTTP 403)", 403)
+            408, 504 -> WebRequestException("WEB_TIMEOUT", "${providerLabel} search service timed out (HTTP ${response.status})", response.status)
+            429 -> WebRequestException("SEARCH_RATE_LIMITED", "${providerLabel} search request was rate-limited; retry later (HTTP 429)", 429)
+            else -> WebRequestException("WEB_HTTP_ERROR", "${providerLabel} search request failed (HTTP ${response.status})", response.status)
         }
     }
 
     private fun requireFetchApiSuccess(response: WebHttpResponse) {
         if (response.status in 200..299) return
         throw when (response.status) {
-            401, 403 -> WebRequestException("WEB_ACCESS_DENIED", "网页读取服务拒绝访问（HTTP ${response.status}）", response.status)
-            402 -> WebRequestException("WEB_INSUFFICIENT_BALANCE", "网页读取服务账号余额不足（HTTP 402）", 402)
-            404 -> WebRequestException("WEB_NOT_FOUND", "网页读取服务未能提取该网址的正文（HTTP 404）", 404)
-            408, 504 -> WebRequestException("WEB_TIMEOUT", "网页读取服务超时（HTTP ${response.status}）", response.status)
-            429 -> WebRequestException("WEB_RATE_LIMITED", "网页读取服务触发限流（HTTP 429）", 429)
-            else -> WebRequestException("WEB_HTTP_ERROR", "网页读取服务请求失败（HTTP ${response.status}）", response.status)
+            401, 403 -> WebRequestException("WEB_ACCESS_DENIED", "Web reading service denied access (HTTP ${response.status})", response.status)
+            402 -> WebRequestException("WEB_INSUFFICIENT_BALANCE", "Web reading service account has insufficient balance (HTTP 402)", 402)
+            404 -> WebRequestException("WEB_NOT_FOUND", "Web reading service could not extract content for this URL (HTTP 404)", 404)
+            408, 504 -> WebRequestException("WEB_TIMEOUT", "Web reading service timed out (HTTP ${response.status})", response.status)
+            429 -> WebRequestException("WEB_RATE_LIMITED", "Web reading service was rate-limited (HTTP 429)", 429)
+            else -> WebRequestException("WEB_HTTP_ERROR", "Web reading service request failed (HTTP ${response.status})", response.status)
         }
     }
 
@@ -570,14 +570,14 @@ internal object ConfigurableWebBackends {
         if (query.isBlank() || query.length > PublicWebSearch.MAX_QUERY_CHARS || '\u0000' in query ||
             !Charsets.UTF_8.newEncoder().canEncode(query)
         ) {
-            throw WebSearchException("INVALID_ARGUMENT", "query 必须为 1 到 2000 个字符的有效文本")
+            throw WebSearchException("INVALID_ARGUMENT", "query must be valid text of 1 to 2000 characters")
         }
         return query.trim()
     }
 
     private fun validateLimit(maxResults: Int) {
         if (maxResults !in 1..10) {
-            throw WebSearchException("INVALID_ARGUMENT", "max_results 必须为 1 到 10")
+            throw WebSearchException("INVALID_ARGUMENT", "max_results must be between 1 and 10")
         }
     }
 }

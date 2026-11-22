@@ -13,13 +13,13 @@ internal object SignedToolContext {
             AgentModelFailure(
                 "GEMINI_THINKING_CONTEXT_LOCKED",
                 false,
-                "当前 Gemini 工具链尚未完成，提交工具结果前无法压缩带签名的上下文。",
+                "The current Gemini tool chain is not yet complete; the signed context cannot be compacted before tool results are submitted.",
             )
         } else {
             AgentModelFailure(
                 "ANTHROPIC_THINKING_CONTEXT_LOCKED",
                 false,
-                "当前 Anthropic 工具回合的思考签名绑定原始上下文，提交工具结果前无法压缩上下文。",
+                "The reasoning signature of the current Anthropic tool turn is bound to the original context; the context cannot be compacted before tool results are submitted.",
             )
         }
 }

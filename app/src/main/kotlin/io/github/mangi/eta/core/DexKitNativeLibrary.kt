@@ -16,7 +16,7 @@ internal object DexKitNativeLibrary {
             loaded = true
             return
         } catch (error: UnsatisfiedLinkError) {
-            logger.debug { "DexKit 标准加载不可用: reason=${nativeLoadFailureReason(error)}" }
+            logger.debug { "DexKit standard loading unavailable: reason=${nativeLoadFailureReason(error)}" }
         }
         if (!nativeDirectory.isNullOrBlank()) {
             try {
@@ -24,7 +24,7 @@ internal object DexKitNativeLibrary {
                 loaded = true
                 return
             } catch (error: UnsatisfiedLinkError) {
-                logger.debug { "DexKit 安装目录加载不可用: reason=${nativeLoadFailureReason(error)}" }
+                logger.debug { "DexKit install directory loading unavailable: reason=${nativeLoadFailureReason(error)}" }
             }
         }
         // 压缩 APK 条目无法直接 dlopen；框架提供的安装目录也可能不可用于当前进程。
@@ -32,7 +32,7 @@ internal object DexKitNativeLibrary {
         val library = DexKitNativeLibraryFile.extract(moduleApkPath, cacheDirectory, abis.toList())
         System.load(library.absolutePath)
         loaded = true
-        logger.info("DexKit 已从模块 APK 加载原生库")
+        logger.info("DexKit native library loaded from module APK")
     }
 }
 

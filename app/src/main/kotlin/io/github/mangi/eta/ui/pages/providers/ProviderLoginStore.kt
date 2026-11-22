@@ -64,7 +64,7 @@ internal class ProviderLoginStore(
             val account = withContext(ioDispatcher) { operations.account(providerId, authMode) }
             mutableState.value = mutableState.value.copy(
                 account = account,
-                message = if (interrupted) AppStrings.get(R.string.provider_i18n_login_interrupted, "登录已中断，请重试") else null,
+                message = if (interrupted) AppStrings.get(R.string.provider_i18n_login_interrupted, "Login interrupted, please retry") else null,
             )
         }
     }
@@ -92,8 +92,8 @@ internal class ProviderLoginStore(
                 message = AppStrings.quantity(
                     R.plurals.provider_i18n_login_synced_models,
                     count,
-                    "已登录，已同步 %1\$d 个远端模型",
-                    "已登录，已同步 %1\$d 个远端模型",
+                    "Logged in, %1\$d remote models synced",
+                    "Logged in, %1\$d remote models synced",
                     count,
                 ),
             )
@@ -108,9 +108,9 @@ internal class ProviderLoginStore(
             mutableState.value = mutableState.value.copy(
                 account = null,
                 message = if (revoked == false) {
-                    AppStrings.get(R.string.provider_i18n_logout_unconfirmed, "已退出登录，远端撤销未确认")
+                    AppStrings.get(R.string.provider_i18n_logout_unconfirmed, "Logged out, remote revocation unconfirmed")
                 } else {
-                    AppStrings.get(R.string.provider_i18n_logout_done, "已退出登录")
+                    AppStrings.get(R.string.provider_i18n_logout_done, "Logged out")
                 },
             )
         }
@@ -150,20 +150,20 @@ internal class ProviderLoginStore(
                         message = when (mutableState.value.phase) {
                             ProviderLoginPhase.SyncingModels -> AppStrings.get(
                                 R.string.provider_i18n_login_sync_failed,
-                                "已登录，模型同步失败，请在模型页重新拉取",
+                                "Logged in, model sync failed, please re-fetch on the models page",
                             )
                             else -> (error as? ProviderAuthException)?.message ?: when (phase) {
                                 ProviderLoginPhase.Loading -> AppStrings.get(
                                     R.string.provider_i18n_login_load_failed,
-                                    "无法读取登录状态，请重试",
+                                    "Cannot read login state, please retry",
                                 )
                                 ProviderLoginPhase.Disconnecting -> AppStrings.get(
                                     R.string.provider_i18n_logout_failed,
-                                    "退出登录失败，请重试",
+                                    "Logout failed, please retry",
                                 )
                                 else -> AppStrings.get(
                                     R.string.provider_i18n_login_failed,
-                                    "登录失败，请重试",
+                                    "Login failed, please retry",
                                 )
                             }
                         },
@@ -211,12 +211,12 @@ private object RepositoryProviderLoginOperations : ProviderLoginOperations {
 
     override suspend fun syncModels(providerId: String, authMode: String): Int {
         val provider = requireNotNull(ProviderRepository.providerById(providerId)) {
-            AppStrings.get(R.string.provider_i18n_connection_missing, "服务商连接不存在")
+            AppStrings.get(R.string.provider_i18n_connection_missing, "Provider connection does not exist")
         }
         if (provider.authMode != authMode) {
             throw ProviderAuthException(
                 "oauth_session_changed",
-                AppStrings.get(R.string.provider_i18n_auth_mode_changed, "服务商登录方式已变更，请重新拉取模型"),
+                AppStrings.get(R.string.provider_i18n_auth_mode_changed, "Provider sign-in method has changed, please re-fetch models"),
             )
         }
         val catalog = RemoteModelFetcher.fetchCatalog(provider).getOrThrow()

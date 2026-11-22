@@ -51,10 +51,10 @@ internal object GitHubSkillRepositoryParser {
     fun parse(value: String): GitHubSkillRepository {
         val input = value.trim()
         if (input.isBlank()) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_repo_empty, "GitHub 仓库不能为空"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_repo_empty, "GitHub repository cannot be empty"))
         }
         if (input.length > MAX_SOURCE_LENGTH) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_repo_too_long, "GitHub 仓库地址过长"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_repo_too_long, "GitHub repository URL is too long"))
         }
         return if (input.contains("://")) parseUrl(input) else parseSlug(input)
     }
@@ -68,10 +68,10 @@ internal object GitHubSkillRepositoryParser {
         val normalizedRef = explicitRef?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeRef)
         val normalizedPath = explicitPath?.let(::normalizeRelativePath)
         if (parsed.ref != null && normalizedRef != null && parsed.ref != normalizedRef) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_ref_mismatch, "URL 中的 ref 与 ref 参数不一致"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_ref_mismatch, "The ref in the URL does not match the ref parameter"))
         }
         if (parsed.path != null && normalizedPath != null && parsed.path != normalizedPath) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_path_mismatch, "URL 中的路径与 path 参数不一致"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_path_mismatch, "The path in the URL does not match the path parameter"))
         }
         return parsed.copy(
             ref = normalizedRef ?: parsed.ref,
@@ -93,7 +93,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_path_must_be_relative,
-                    "Skill 路径必须是仓库内的相对路径",
+                    "The Skill path must be a relative path within the repository",
                 ),
             )
         }
@@ -102,7 +102,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_path_invalid_segment,
-                    "Skill 路径包含无效片段",
+                    "The Skill path contains an invalid segment",
                 ),
             )
         }
@@ -120,7 +120,7 @@ internal object GitHubSkillRepositoryParser {
             "@{" in normalized ||
             segments.any { it == "." || it == ".." || it.endsWith(".lock") }
         ) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_invalid_ref, "GitHub ref 无效"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_invalid_ref, "GitHub ref is invalid"))
         }
         return normalized
     }
@@ -128,17 +128,17 @@ internal object GitHubSkillRepositoryParser {
     private fun parseUrl(input: String): GitHubSkillRepository {
         val uri = runCatching { URI(input) }
             .getOrElse {
-                invalid(AppStrings.get(R.string.skill_i18n_github_invalid_url, "GitHub URL 无效"))
+                invalid(AppStrings.get(R.string.skill_i18n_github_invalid_url, "GitHub URL is invalid"))
             }
         if (!uri.scheme.equals("https", ignoreCase = true)) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_https_only, "仅支持 HTTPS GitHub URL"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_https_only, "Only HTTPS GitHub URLs are supported"))
         }
         val host = uri.host?.lowercase(Locale.ROOT)
         if (host !in ALLOWED_GITHUB_HOSTS || uri.rawUserInfo != null || uri.port != -1) {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_public_host_only,
-                    "仅支持 github.com 公共仓库 URL",
+                    "Only github.com public repository URLs are supported",
                 ),
             )
         }
@@ -146,7 +146,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_url_no_query_or_fragment,
-                    "GitHub URL 不能包含查询参数或片段",
+                    "GitHub URL must not contain query parameters or fragments",
                 ),
             )
         }
@@ -154,7 +154,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_invalid_url_path,
-                    "GitHub URL 路径无效",
+                    "GitHub URL path is invalid",
                 ),
             )
         }
@@ -163,7 +163,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_url_missing_owner_repo,
-                    "GitHub URL 缺少 owner/repository",
+                    "GitHub URL is missing owner/repository",
                 ),
             )
         }
@@ -174,7 +174,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_url_type_unsupported,
-                    "仅支持 GitHub 仓库、tree 或 blob URL",
+                    "Only GitHub repository、tree or blob URLs are supported",
                 ),
             )
         }
@@ -193,7 +193,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_invalid_slug,
-                    "仓库应为 owner/repository 或 github.com URL",
+                    "The repository should be owner/repository or a github.com URL",
                 ),
             )
         }
@@ -205,7 +205,7 @@ internal object GitHubSkillRepositoryParser {
 
     private fun validateOwner(value: String): String {
         if (!OWNER_PATTERN.matches(value)) {
-            invalid(AppStrings.get(R.string.skill_i18n_github_invalid_owner, "GitHub owner 无效"))
+            invalid(AppStrings.get(R.string.skill_i18n_github_invalid_owner, "GitHub owner is invalid"))
         }
         return value
     }
@@ -215,7 +215,7 @@ internal object GitHubSkillRepositoryParser {
             invalid(
                 AppStrings.get(
                     R.string.skill_i18n_github_invalid_repository,
-                    "GitHub repository 无效",
+                    "GitHub repository is invalid",
                 ),
             )
         }
@@ -282,7 +282,7 @@ internal class PublicGitHubSkillSource(
                 "REPOSITORY_TREE_TOO_LARGE",
                 AppStrings.get(
                     R.string.skill_i18n_github_tree_too_large,
-                    "仓库目录过大，GitHub 未返回完整结果；请提供明确的 Skill 路径",
+                    "The repository directory is too large，GitHub did not return complete results；please provide an explicit Skill path",
                 ),
             )
         }
@@ -312,7 +312,7 @@ internal class PublicGitHubSkillSource(
                         "TOO_MANY_SKILL_CANDIDATES",
                         AppStrings.get(
                             R.string.skill_i18n_github_too_many_candidates,
-                            "候选 Skill 超过 %1\$d 个，请缩小仓库路径",
+                            "Candidate Skills exceed %1\$d，please narrow the repository path",
                             MAX_CANDIDATES,
                         ),
                     )
@@ -340,7 +340,7 @@ internal class PublicGitHubSkillSource(
                 "GITHUB_COMMIT_MISMATCH",
                 AppStrings.get(
                     R.string.skill_i18n_github_commit_mismatch,
-                    "GitHub 返回的 commit 与已检查版本不一致",
+                    "The commit returned by GitHub does not match the inspected version",
                 ),
             )
         }
@@ -381,7 +381,7 @@ internal class PublicGitHubSkillSource(
                 "INVALID_GITHUB_RESPONSE",
                 AppStrings.get(
                     R.string.skill_i18n_github_missing_default_branch,
-                    "GitHub 未返回默认分支",
+                    "GitHub did not return a default branch",
                 ),
             )
     }
@@ -401,7 +401,7 @@ internal class PublicGitHubSkillSource(
                 "INVALID_GITHUB_RESPONSE",
                 AppStrings.get(
                     R.string.skill_i18n_github_invalid_commit_sha,
-                    "GitHub 未返回有效 commit/tree SHA",
+                    "GitHub did not return a valid commit/tree SHA",
                 ),
             )
         }
@@ -432,7 +432,7 @@ internal class PublicGitHubSkillSource(
                     "INVALID_GITHUB_RESPONSE",
                     AppStrings.get(
                         R.string.skill_i18n_github_invalid_json,
-                        "GitHub 返回了无效 JSON",
+                        "GitHub returned invalid JSON",
                     ),
                     throwable,
                 )
@@ -481,7 +481,7 @@ internal class PublicGitHubSkillSource(
                         "GITHUB_REDIRECT_REJECTED",
                         AppStrings.get(
                             R.string.skill_i18n_github_redirect_rejected,
-                            "GitHub 下载发生重定向，已拒绝访问其他主机",
+                            "The GitHub download was redirected，access to other hosts was rejected",
                         ),
                     )
                 }
@@ -494,15 +494,15 @@ internal class PublicGitHubSkillSource(
                     val message = when (code) {
                         "GITHUB_RATE_LIMITED" -> AppStrings.get(
                             R.string.skill_i18n_github_rate_limited,
-                            "GitHub 请求受限，请稍后重试",
+                            "The GitHub request is rate-limited，please retry later",
                         )
                         "GITHUB_NOT_FOUND" -> AppStrings.get(
                             R.string.skill_i18n_github_not_found,
-                            "未找到公开 GitHub 仓库、ref 或路径",
+                            "Public GitHub repository、ref or path not found",
                         )
                         else -> AppStrings.get(
                             R.string.skill_i18n_github_request_failed,
-                            "GitHub 请求失败（HTTP %1\$d）",
+                            "GitHub request failed（HTTP %1\$d）",
                             response.code,
                         )
                     }
@@ -519,12 +519,12 @@ internal class PublicGitHubSkillSource(
                 message = if (isCancelled) {
                     AppStrings.get(
                         R.string.skill_i18n_github_request_cancelled,
-                        "GitHub 请求已取消",
+                        "GitHub request was cancelled",
                     )
                 } else {
                     AppStrings.get(
                         R.string.skill_i18n_github_network_error,
-                        "无法访问 GitHub 公共仓库",
+                        "Unable to access the public GitHub repository",
                     )
                 },
                 cause = failure,
@@ -560,7 +560,7 @@ internal class PublicGitHubSkillSource(
                 "GITHUB_REQUEST_CANCELLED",
                 AppStrings.get(
                     R.string.skill_i18n_github_request_cancelled,
-                    "GitHub 请求已取消",
+                    "GitHub request was cancelled",
                 ),
             )
         }
@@ -574,7 +574,7 @@ internal class PublicGitHubSkillSource(
                     "CACHE_UNAVAILABLE",
                     AppStrings.get(
                         R.string.skill_i18n_cache_dir_unsafe,
-                        "Skill 下载缓存目录不安全",
+                        "Skill download cache directory is unsafe",
                     ),
                 )
             }
@@ -585,7 +585,7 @@ internal class PublicGitHubSkillSource(
                 "CACHE_UNAVAILABLE",
                 AppStrings.get(
                     R.string.skill_i18n_cache_dir_create_failed,
-                    "无法创建 Skill 下载缓存",
+                    "Unable to create the Skill download cache",
                 ),
             )
         }
@@ -609,7 +609,7 @@ internal class PublicGitHubSkillSource(
             "GITHUB_RESPONSE_TOO_LARGE",
             AppStrings.get(
                 R.string.skill_i18n_github_response_too_large,
-                "GitHub 响应超过安全上限",
+                "GitHub response exceeds the safe limit",
             ),
         )
 
@@ -618,7 +618,7 @@ internal class PublicGitHubSkillSource(
             "GITHUB_ARCHIVE_TOO_LARGE",
             AppStrings.get(
                 R.string.skill_i18n_github_archive_too_large,
-                "GitHub 仓库归档超过 %1\$d MiB 上限",
+                "GitHub repository archive exceeds the %1\$d MiB limit",
                 MAX_ARCHIVE_BYTES / 1024 / 1024,
             ),
         )

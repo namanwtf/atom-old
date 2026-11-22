@@ -119,7 +119,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_READ_FAILED",
                 message = AppStrings.get(
                     R.string.repo_err_memory_read_failed,
-                    "无法读取记忆文件",
+                    "Cannot read the memory file",
                 ),
                 cause = throwable,
             )
@@ -129,7 +129,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_TOO_LARGE",
                 message = AppStrings.get(
                     R.string.repo_err_memory_file_exceeds_limit,
-                    "记忆文件超过 1 MiB 安全上限",
+                    "Memory file exceeds the 1 MiB safety limit",
                 ),
             )
         }
@@ -144,7 +144,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_TOO_LARGE",
                 message = AppStrings.get(
                     R.string.repo_err_memory_write_exceeds_limit,
-                    "记忆文件不能超过 1 MiB UTF-8 字节",
+                    "Memory file cannot exceed 1 MiB of UTF-8 bytes",
                 ),
             )
         }
@@ -153,7 +153,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_WRITE_FAILED",
                 message = AppStrings.get(
                     R.string.repo_err_memory_dir_create_failed,
-                    "无法创建记忆目录",
+                    "Cannot create the memory directory",
                 ),
             )
         }
@@ -164,7 +164,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_WRITE_FAILED",
                 message = AppStrings.get(
                     R.string.repo_err_memory_write_start_failed,
-                    "无法开始写入记忆文件",
+                    "Cannot start writing the memory file",
                 ),
                 cause = throwable,
             )
@@ -178,7 +178,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_WRITE_FAILED",
                 message = AppStrings.get(
                     R.string.repo_err_memory_save_failed,
-                    "无法保存记忆文件",
+                    "Cannot save the memory file",
                 ),
                 cause = throwable,
             )
@@ -199,7 +199,7 @@ internal class AgentMemoryStore(
                 code = "MEMORY_RANGE_INVALID",
                 message = AppStrings.get(
                     R.string.repo_err_memory_invalid_replace_range,
-                    "替换行范围无效；请重新读取记忆后再试",
+                    "Replacement line range is invalid；please re-read the memory and try again",
                 ),
             )
         }

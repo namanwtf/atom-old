@@ -77,9 +77,9 @@ internal data class SubagentProfile(
         const val DEFAULT_TYPE = TYPE_EXPLORE
 
         private const val SUBAGENT_ROLE_PREFIX =
-            "你当前作为 Subagent（子智能体）运行。你收到的 user 消息均由主 Agent 派发，而非终端用户直接输入。" +
-                "主 Agent 看不到你的中间思考与工具调用过程，只能看到你结束时的最后一条回复（final message）。" +
-                "不要向终端用户直接提问；如果任务存在歧义或缺少前置条件，请在最终回复中向主 Agent 清晰说明。"
+            "You are running as a subagent. The user messages you receive are dispatched by the main agent, not entered directly by the end user." +
+                "The main agent cannot see your intermediate thinking or tool-call process, only the final message you produce at the end." +
+                "Do not ask the end user questions directly; if the task is ambiguous or lacks prerequisites, clearly explain this to the main agent in your final message."
 
         val FORBIDDEN_TOOLS = setOf(
             AgentSubagentToolCatalog.TOOL_NAME,
@@ -195,11 +195,11 @@ internal data class SubagentProfile(
 
         val EXPLORE = SubagentProfile(
             name = TYPE_EXPLORE,
-            summary = "只读探索与多源信息检索",
+            summary = "read-only exploration and multi-source information retrieval",
             whenToUse = "Fast read-only agent specialized for exploring files, personal device data (calendar, notes, messages, notifications, bills, media, system memories), logs, and web pages. Specify desired thoroughness in the prompt: \"quick\", \"medium\", or \"thorough\".",
             toolHighlights = listOf("read_file", "glob_files", "grep_files", "web_search", "fetch_url", "personal_data", "get_logcat"),
-            roleInstruction = "你是只读探索 Subagent（explore）。你的职责是快速、准确地检索文件、设备个人数据、系统状态或网页资料，" +
-                "严禁尝试修改任何文件或设备状态。在最终回复中直接给出结构化证据、关键路径/时间点与结论摘要。",
+            roleInstruction = "You are a read-only exploration subagent (explore). Your job is to quickly and accurately retrieve files, device personal data, system state, or web content," +
+                "You must never attempt to modify any file or device state. In your final message, give structured evidence, key paths/timestamps, and a summary of conclusions directly.",
             allowWriteFilesAndTerminal = false,
             builtin = true,
             summaryRes = R.string.subagent_i18n_explore_summary,
@@ -207,11 +207,11 @@ internal data class SubagentProfile(
 
         val CODER = SubagentProfile(
             name = TYPE_CODER,
-            summary = "工程执行、文件编辑与终端任务",
+            summary = "engineering execution, file editing, and terminal tasks",
             whenToUse = "General engineering and terminal agent with file-editing and shell execution tools; use it for delegated tasks that run commands, analyze APKs, edit files, or execute scripts.",
             toolHighlights = listOf("terminal", "read_file", "write_file", "edit_file", "glob_files", "grep_files", "web_search"),
-            roleInstruction = "你是工程与终端执行 Subagent（coder）。执行代码开发、Git、Python/Node 脚本、文本处理或 APK 分析时，终端与文件工具均应显式使用 environment=\"linux\"；操作 Android 系统命令或设备状态时使用 environment=\"android\"；工作区与共享目录在两端对应同一物理文件夹，按操作性质选择环境与对应路径，无需重复搬运文件。你的最后一条消息就是交给主 Agent 的完整交接报告：" +
-                "请清楚说明你执行了哪些命令或修改了哪些文件、关键输出与验证结果，以及任何未完成或需后续处理的事项。",
+            roleInstruction = "You are an engineering and terminal execution subagent (coder). When doing code development, Git, Python/Node scripts, text processing, or APK analysis, explicitly use environment=\"linux\" for terminal and file tools; when operating Android system commands or device state, use environment=\"android\"; the workspace and shared directories map to the same physical folder on both sides, so choose the environment and corresponding path by the nature of the operation and do not copy files back and forth. Your last message is the complete handoff report to the main agent:" +
+                "clearly state which commands you ran or which files you modified, key output and verification results, and anything unfinished or requiring follow-up.",
             allowWriteFilesAndTerminal = true,
             builtin = true,
             summaryRes = R.string.subagent_i18n_coder_summary,
@@ -219,11 +219,11 @@ internal data class SubagentProfile(
 
         val PLAN = SubagentProfile(
             name = TYPE_PLAN,
-            summary = "只读架构分析与分步方案设计",
+            summary = "read-only architecture analysis and step-by-step plan design",
             whenToUse = "Read-only planning agent. Use when you need a step-by-step implementation or execution plan, key file/data identification, and trade-off analysis before making changes.",
             toolHighlights = listOf("read_file", "glob_files", "grep_files", "web_search", "fetch_url", "skills_read"),
-            roleInstruction = "你是只读规划 Subagent（plan）。你拥有只读检索能力，不得修改文件或执行破坏性操作。" +
-                "请在最终回复中清晰列出：1. 已确认的上下文事实；2. 仍待核实的关键问题；3. 分步执行方案与风险权衡。",
+            roleInstruction = "You are a read-only planning subagent (plan). You have read-only retrieval abilities and must not modify files or perform destructive operations." +
+                "In your final message, clearly list: 1. confirmed context facts; 2. key questions still to verify; 3. a step-by-step execution plan with risk trade-offs.",
             allowWriteFilesAndTerminal = false,
             builtin = true,
             summaryRes = R.string.subagent_i18n_plan_summary,
@@ -267,7 +267,7 @@ internal data class SubagentProfile(
                 if (cleanRole.isEmpty() && narrowedTools.isEmpty()) return matched
                 return matched.copy(
                     roleInstruction = if (cleanRole.isNotEmpty()) {
-                        "${matched.roleInstruction}\n\n补充角色要求：$cleanRole"
+                        "${matched.roleInstruction}\n\nAdditional role requirements: $cleanRole"
                     } else {
                         matched.roleInstruction
                     },
@@ -279,12 +279,12 @@ internal data class SubagentProfile(
             // 未命中预设时，当场创建仅用于本次会话的临时专职 Subagent，不落盘保存。
             val ephemeralName = normalized.ifEmpty { "general" }
             val instruction = cleanRole.ifEmpty {
-                "你是专职处理当前子任务的 Subagent（$ephemeralName）。请高效利用可用工具收集证据或完成操作，" +
-                    "并在最后一条消息中向主 Agent 返回结构化、完整的结论摘要。"
+                "You are a subagent ($ephemeralName) dedicated to the current subtask. Use available tools efficiently to gather evidence or complete the operation," +
+                    "and return a structured, complete summary of conclusions to the main agent in your final message."
             }
             return SubagentProfile(
                 name = ephemeralName,
-                summary = cleanRole.ifEmpty { "临时专职 Subagent" },
+                summary = cleanRole.ifEmpty { "temporary dedicated subagent" },
                 whenToUse = cleanRole,
                 toolHighlights = if (cleanTools.isNotEmpty()) {
                     cleanTools.take(8)

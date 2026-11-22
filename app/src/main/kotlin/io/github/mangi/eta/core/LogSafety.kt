@@ -30,7 +30,7 @@ internal fun Throwable.safeStackTrace(): String = buildString {
  * 将外部或模型生成的标识约束为低基数、单行的日志 token。
  */
 internal fun String?.toSafeLogToken(maxLength: Int = 64): String {
-    require(maxLength > 0) { "maxLength 必须大于 0" }
+    require(maxLength > 0) { "maxLength must be greater than 0" }
     val value = this ?: return UNKNOWN_LOG_TOKEN
     if (value.isEmpty() || value.length > maxLength) return UNKNOWN_LOG_TOKEN
     return value.takeIf { token ->

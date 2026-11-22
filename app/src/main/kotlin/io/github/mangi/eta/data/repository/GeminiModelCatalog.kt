@@ -43,41 +43,41 @@ internal object GeminiModelCatalog {
             json.parseToJsonElement(body) as? JsonObject ?: error(
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_invalid_format,
-                    "Gemini 模型目录格式无效",
+                    "Gemini model catalog format is invalid",
                 ),
             )
         } catch (_: SerializationException) {
             error(
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_invalid_json,
-                    "Gemini 模型目录不是有效的 JSON",
+                    "Gemini model catalog is not valid JSON",
                 ),
             )
         }
         require(root["error"] == null || root["error"] == JsonNull) {
             AppStrings.get(
                 R.string.repo_err_gemini_catalog_error,
-                "Gemini 返回了模型目录错误",
+                "Gemini returned a model catalog error",
             )
         }
         val entries = (root["models"] as? JsonArray) ?: error(
             AppStrings.get(
                 R.string.repo_err_gemini_catalog_missing_models,
-                "Gemini 模型目录缺少 models 列表",
+                "Gemini model catalog is missing the models list",
             ),
         )
         val models = entries.mapNotNull { entry ->
             val row = (entry as? JsonObject) ?: error(
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_invalid_entry,
-                    "Gemini 模型目录包含无效模型项",
+                    "Gemini model catalog contains an invalid model entry",
                 ),
             )
             val modelId = row.string("name")?.trim()?.removePrefix("models/")
                 ?.takeIf(String::isNotBlank) ?: error(
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_missing_model_name,
-                    "Gemini 模型目录缺少模型名称",
+                    "Gemini model catalog is missing a model name",
                 ),
             )
             val methods = row.stringList("supportedGenerationMethods").orEmpty()
@@ -105,7 +105,7 @@ internal object GeminiModelCatalog {
             require(value is JsonPrimitive && value.isString) {
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_invalid_page_token,
-                    "Gemini 模型目录分页令牌格式无效",
+                    "Gemini model catalog pagination token format is invalid",
                 )
             }
             value.content.takeIf(String::isNotBlank)
@@ -123,7 +123,7 @@ internal object GeminiModelCatalog {
             throw IllegalStateException(
                 AppStrings.get(
                     R.string.repo_err_vertex_remote_fetch_unsupported,
-                    "Vertex AI API Key 不支持拉取远端模型列表，请使用内置预设或手动添加模型。",
+                    "Vertex AI API Key does not support fetching the remote model list，use built-in presets or add models manually。",
                 ),
             )
         }
@@ -153,7 +153,7 @@ internal object GeminiModelCatalog {
             require(remainingBytes >= 0) {
                 AppStrings.get(
                     R.string.repo_err_provider_catalog_size_limit,
-                    "服务商模型目录超过大小限制",
+                    "Provider model catalog exceeds the size limit",
                 )
             }
             val page = parsePage(body)
@@ -162,7 +162,7 @@ internal object GeminiModelCatalog {
             require(token == null || seenTokens.add(token)) {
                 AppStrings.get(
                     R.string.repo_err_gemini_catalog_duplicate_page_token,
-                    "Gemini 模型目录返回重复分页令牌",
+                    "Gemini model catalog returned a duplicate pagination token",
                 )
             }
             nextPageToken = token
@@ -179,7 +179,7 @@ internal object GeminiModelCatalog {
         preferredModelId: String?,
     ): String {
         require(provider.apiKey.isNotBlank()) {
-            AppStrings.get(R.string.repo_err_api_key_required, "请先填写 API Key")
+            AppStrings.get(R.string.repo_err_api_key_required, "Please enter the API Key first")
         }
         ProviderUrls.validateVertexChatEndpoint(provider.baseUrl, provider.vertexProject, provider.vertexLocation)
         val model = if (provider.models.isEmpty()) OfficialModelCatalog.modelsForProvider(provider).firstOrNull()
@@ -187,7 +187,7 @@ internal object GeminiModelCatalog {
         requireNotNull(model) {
             AppStrings.get(
                 R.string.repo_err_vertex_model_required,
-                "请先保存连接并为当前地域添加或启用一个 Gemini 4 模型。",
+                "Please save the connection first and add or enable a Gemini 4 model for the current region。",
             )
         }
         val url = ProviderUrls.vertexCountTokensUrl(
@@ -225,7 +225,7 @@ internal object GeminiModelCatalog {
                         false,
                         AppStrings.get(
                             R.string.repo_err_vertex_invalid_token_count,
-                            "Vertex AI 返回了无效的 token 计数响应。",
+                            "Vertex AI returned an invalid token count response。",
                         ),
                     )
                 }

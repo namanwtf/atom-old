@@ -31,7 +31,7 @@ internal class SpeechPcmOutput : SpeechAudioOutput {
                 if (count < 0) {
                     throw SpeechFailure(
                         SpeechErrorCode.AUDIO,
-                        AppStrings.get(R.string.voice_i18n_audio_playback_failed, "音频播放失败"),
+                        AppStrings.get(R.string.voice_i18n_audio_playback_failed, "Audio playback failed"),
                     )
                 }
                 frames += count / BYTES_PER_FRAME

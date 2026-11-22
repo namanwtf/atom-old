@@ -64,7 +64,7 @@ internal fun reconcileRemoteModels(
                 require(remote.id.isNotBlank()) {
                     AppStrings.get(
                         R.string.repo_err_remote_model_missing_local_id,
-                        "远端模型缺少本地标识",
+                        "Remote model is missing a local identifier",
                     )
                 }
                 add(remote.copy(

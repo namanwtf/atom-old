@@ -36,7 +36,7 @@ internal object HyperOsScreenSearchHooks {
                 missing(
                     "hyperos.screen-search-service",
                     "VoiceService.onStartCommand",
-                    "HyperOS: 未找到匹配签名的小爱识屏服务入口",
+                    "HyperOS: no matching Xiaoai screen-recognition service entry found",
                 )
                 return@install
             }
@@ -51,7 +51,7 @@ internal object HyperOsScreenSearchHooks {
                     HyperOsScreenSearchRequest.matches(intent)
                 } catch (exception: Exception) {
                     hooks.logger.warnThrottled("hyperos_screen_search_invalid_intent") {
-                        "HyperOS: 无法读取识屏请求，保留原逻辑，type=${exception.safeLogType()}"
+                        "HyperOS: cannot read screen-recognition request, keeping original logic, type=${exception.safeLogType()}"
                     }
                     false
                 }
@@ -59,12 +59,12 @@ internal object HyperOsScreenSearchHooks {
                 val service = chain.getThisObject() as Service
                 if (!HyperOsSearchTrigger.trigger(service, hooks.logger)) {
                     hooks.logger.warnThrottled("hyperos_screen_search_dispatch_failed") {
-                        "HyperOS: 导航识屏搜索请求未发出，回退小爱识屏"
+                        "HyperOS: navbar screen-recognition search request not sent, falling back to Xiaoai screen recognition"
                     }
                     return@intercept chain.proceed()
                 }
                 finishHandledStart(service, chain.getArg(2) as Int, hooks.logger)
-                hooks.logger.debug { "HyperOS: 导航识屏请求已交给 contextual_search" }
+                hooks.logger.debug { "HyperOS: navbar screen-recognition request handed to contextual_search" }
                 Service.START_NOT_STICKY
             }
         }
@@ -79,7 +79,7 @@ internal object HyperOsScreenSearchHooks {
         } catch (exception: Exception) {
             // 搜索已经发出，清理失败也不能再执行原识屏入口导致双重唤起。
             logger.warnThrottled("hyperos_screen_search_cleanup_failed") {
-                "HyperOS: 识屏服务启动清理失败，type=${exception.safeLogType()}"
+                "HyperOS: screen-recognition service startup cleanup failed, type=${exception.safeLogType()}"
             }
         }
     }

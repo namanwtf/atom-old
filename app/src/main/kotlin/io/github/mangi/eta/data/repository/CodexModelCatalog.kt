@@ -18,7 +18,7 @@ internal object CodexModelCatalog {
         val item = element as? JsonObject ?: error(
             AppStrings.get(
                 R.string.repo_err_codex_catalog_invalid_entry,
-                "Codex 模型目录包含无效模型项",
+                "Codex model catalog contains an invalid model entry",
             ),
         )
         when (item.string("visibility")) {
@@ -27,7 +27,7 @@ internal object CodexModelCatalog {
             else -> error(
                 AppStrings.get(
                     R.string.repo_err_codex_catalog_invalid_visibility,
-                    "Codex 模型目录缺少有效的可见性信息",
+                    "Codex model catalog is missing valid visibility information",
                 ),
             )
         }
@@ -35,14 +35,14 @@ internal object CodexModelCatalog {
             ?: error(
                 AppStrings.get(
                     R.string.repo_err_codex_catalog_missing_model_id,
-                    "Codex 模型目录缺少模型标识",
+                    "Codex model catalog is missing a model identifier",
                 ),
             )
         val levels = item["supported_reasoning_levels"]?.let { raw ->
             require(raw is JsonArray) {
                 AppStrings.get(
                     R.string.repo_err_codex_catalog_invalid_reasoning_levels,
-                    "Codex 模型目录的推理档位无效",
+                    "Codex model catalog has an invalid reasoning tier",
                 )
             }
             raw.mapNotNull { option -> effort((option as? JsonObject)?.string("effort")) }.distinct()
@@ -53,14 +53,14 @@ internal object CodexModelCatalog {
             require(raw is JsonArray) {
                 AppStrings.get(
                     R.string.repo_err_codex_catalog_invalid_input_modalities,
-                    "Codex 模型目录的输入类型无效",
+                    "Codex model catalog has an invalid input type",
                 )
             }
             raw.map { value ->
                 require(value is JsonPrimitive && value.isString) {
                     AppStrings.get(
                         R.string.repo_err_codex_catalog_invalid_input_modalities,
-                        "Codex 模型目录的输入类型无效",
+                        "Codex model catalog has an invalid input type",
                     )
                 }
                 value.content

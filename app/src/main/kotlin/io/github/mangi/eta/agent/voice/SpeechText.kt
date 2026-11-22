@@ -33,7 +33,7 @@ internal object SpeechText {
                         append(
                             AppStrings.get(
                                 R.string.voice_i18n_speech_text_ordered_item,
-                                "第 %1\$d 项：",
+                                "Item %1\$d：",
                                 start + index,
                             ),
                         )
@@ -45,9 +45,9 @@ internal object SpeechText {
                     val marker = markdown.substring(node.startOffset, node.endOffset)
                     append(
                         if ('x' in marker || 'X' in marker) {
-                            AppStrings.get(R.string.voice_i18n_speech_text_task_done, "已完成：")
+                            AppStrings.get(R.string.voice_i18n_speech_text_task_done, "Done：")
                         } else {
-                            AppStrings.get(R.string.voice_i18n_speech_text_task_todo, "未完成：")
+                            AppStrings.get(R.string.voice_i18n_speech_text_task_todo, "Not done：")
                         },
                     )
                 }

@@ -36,12 +36,12 @@ internal suspend fun streamSpeech(
         TtsProvider.DEEPSEEK -> streamDeepSeekSpeech(settings.deepseekTts, credentials.deepseekTts, chunks, onAudio)
         TtsProvider.NONE -> throw SpeechFailure(
             SpeechErrorCode.CONFIGURATION,
-            AppStrings.get(R.string.voice_i18n_tts_provider_not_selected, "请先选择语音播报服务"),
+            AppStrings.get(R.string.voice_i18n_tts_provider_not_selected, "Please select a voice read-aloud service first"),
         )
         TtsProvider.GEMINI, TtsProvider.MINIMAX, TtsProvider.MIMO ->
             throw SpeechFailure(
                 SpeechErrorCode.CONFIGURATION,
-                AppStrings.get(R.string.voice_i18n_tts_uses_segmented_streaming, "当前语音服务使用逐段流式合成"),
+                AppStrings.get(R.string.voice_i18n_tts_uses_segmented_streaming, "The current voice service uses segmented streaming synthesis"),
             )
     }
 }
@@ -81,20 +81,20 @@ private suspend fun streamQwen(
                     if (audioBytes == 0L) {
                         throw SpeechFailure(
                             SpeechErrorCode.PROTOCOL,
-                            AppStrings.get(R.string.voice_i18n_audio_incomplete, "语音音频不完整，请重试"),
+                            AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
                         )
                     }
                     return@coroutineScope
                 }
                 "error" -> throw SpeechFailure(
                     SpeechErrorCode.SERVER,
-                    AppStrings.get(R.string.voice_i18n_qwen_tts_stream_failed, "千问语音合成失败，请检查模型权限和配置"),
+                    AppStrings.get(R.string.voice_i18n_qwen_tts_stream_failed, "Qwen voice synthesis failed，please check model permissions and configuration"),
                 )
             }
         }
         throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,
-            AppStrings.get(R.string.voice_i18n_qwen_tts_connection_ended_early, "千问语音合成连接提前结束"),
+            AppStrings.get(R.string.voice_i18n_qwen_tts_connection_ended_early, "Qwen voice synthesis connection ended early"),
         )
     }
 }
@@ -134,7 +134,7 @@ private suspend fun streamDoubao(
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_doubao_tts_failed_code,
-                            "豆包语音合成失败（%1\$d）",
+                            "Doubao voice synthesis failed（%1\$d）",
                             frame.errorCode,
                         ),
                     )
@@ -153,7 +153,7 @@ private suspend fun streamDoubao(
                         if (audioBytes == 0L) {
                             throw SpeechFailure(
                                 SpeechErrorCode.PROTOCOL,
-                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "语音音频不完整，请重试"),
+                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
                             )
                         }
                         return@coroutineScope
@@ -161,13 +161,13 @@ private suspend fun streamDoubao(
                     DoubaoTtsCodec.CONNECTION_FAILED, DoubaoTtsCodec.SESSION_FAILED ->
                         throw SpeechFailure(
                             SpeechErrorCode.SERVER,
-                            AppStrings.get(R.string.voice_i18n_doubao_tts_stream_failed, "豆包语音合成失败，请检查音色和服务配置"),
+                            AppStrings.get(R.string.voice_i18n_doubao_tts_stream_failed, "Doubao voice synthesis failed，please check the voice and service configuration"),
                         )
                 }
             }
             throw SpeechFailure(
                 SpeechErrorCode.PROTOCOL,
-                AppStrings.get(R.string.voice_i18n_doubao_tts_connection_ended_early, "豆包语音合成连接提前结束"),
+                AppStrings.get(R.string.voice_i18n_doubao_tts_connection_ended_early, "Doubao voice synthesis connection ended early"),
             )
         } finally {
             sender.cancel()
@@ -180,7 +180,7 @@ private fun checkedAudio(total: Long, added: Int): Long {
     if (next > MAX_AUDIO_BYTES) {
         throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,
-            AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "语音音频格式或长度无效"),
+            AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "voice audio format or length invalid"),
         )
     }
     return next

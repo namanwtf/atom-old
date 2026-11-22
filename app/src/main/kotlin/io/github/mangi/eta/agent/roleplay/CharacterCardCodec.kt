@@ -22,42 +22,42 @@ internal object CharacterCardCodec {
     fun create(name: String): CharacterCard = decodeJson(JsonObject(mapOf("name" to JsonPrimitive(name))).toString())
 
     fun decodeBytes(bytes: ByteArray): CharacterCard {
-        if (bytes.size > MAX_CARD_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "角色卡超过 16 MiB 限制")
+        if (bytes.size > MAX_CARD_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "character card exceeds 16 MiB limit")
         val source = try {
             Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
         } catch (failure: CharacterCodingException) {
-            throw CharacterCardException("CARD_INVALID_UTF8", "角色卡必须使用有效的 UTF-8 编码", failure)
+            throw CharacterCardException("CARD_INVALID_UTF8", "character card must use valid UTF-8 encoding", failure)
         }
         return decodeJson(source)
     }
 
     fun decodeJson(source: String): CharacterCard {
-        if (source.toByteArray(Charsets.UTF_8).size > MAX_CARD_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "角色卡超过 16 MiB 限制")
+        if (source.toByteArray(Charsets.UTF_8).size > MAX_CARD_BYTES) throw CharacterCardException("CARD_TOO_LARGE", "character card exceeds 16 MiB limit")
         val root = try {
             json.parseToJsonElement(source.removePrefix("\uFEFF")) as? JsonObject
         } catch (failure: IllegalArgumentException) {
-            throw CharacterCardException("CARD_INVALID_JSON", "角色卡 JSON 格式无效", failure)
-        } ?: throw CharacterCardException("CARD_INVALID_JSON", "角色卡必须是 JSON 对象")
+            throw CharacterCardException("CARD_INVALID_JSON", "character card has invalid JSON", failure)
+        } ?: throw CharacterCardException("CARD_INVALID_JSON", "character card must be a JSON object")
         val spec = root.text("spec")
         if (spec.isNotEmpty() && spec !in setOf("chara_card_v2", "chara_card_v3")) {
-            throw CharacterCardException("CARD_UNSUPPORTED_SPEC", "不支持的角色卡规范")
+            throw CharacterCardException("CARD_UNSUPPORTED_SPEC", "unsupported character card spec")
         }
         val originalData = if (spec.isEmpty()) root else root["data"] as? JsonObject
-            ?: throw IllegalArgumentException("角色卡缺少 data 对象")
-        require(originalData.text("name").isNotBlank()) { "角色卡缺少名称" }
+            ?: throw IllegalArgumentException("character card is missing the data object")
+        require(originalData.text("name").isNotBlank()) { "character card is missing a name" }
         textFields.forEach { field ->
             val value = originalData[field]
-            require(value == null || value is JsonPrimitive && value.isString) { "角色卡字段 $field 必须是文本" }
+            require(value == null || value is JsonPrimitive && value.isString) { "character card field $field must be text" }
         }
         listOf("tags", "alternate_greetings", "group_only_greetings").forEach { field ->
             val value = originalData[field]
             require(value == null || value is JsonArray && value.all { it is JsonPrimitive && it.isString }) {
-                "角色卡字段 $field 必须是文本数组"
+                "character card field $field must be a text array"
             }
         }
-        require(originalData["extensions"] == null || originalData["extensions"] is JsonObject) { "角色扩展格式无效" }
-        require(originalData["character_book"] == null || originalData["character_book"] is JsonObject) { "角色世界书格式无效" }
+        require(originalData["extensions"] == null || originalData["extensions"] is JsonObject) { "invalid character extension format" }
+        require(originalData["character_book"] == null || originalData["character_book"] is JsonObject) { "invalid character worldbook format" }
         (originalData["character_book"] as? JsonObject)?.let(::validateBook)
         if (spec.isNotEmpty()) return CharacterCard(root)
         val data = originalData.toMutableMap().apply {
@@ -99,30 +99,30 @@ internal object CharacterCardCodec {
     private fun validateBook(book: JsonObject) {
         listOf("scan_depth", "token_budget").forEach { field ->
             book[field]?.let { value ->
-                require(value is JsonPrimitive && !value.isString && value.intOrNull?.let { it >= 0 } == true) { "世界书 $field 必须为非负整数" }
+                require(value is JsonPrimitive && !value.isString && value.intOrNull?.let { it >= 0 } == true) { "worldbook $field must be a non-negative integer" }
             }
         }
         book["recursive_scanning"]?.let { value ->
-            require(value is JsonPrimitive && !value.isString && value.booleanOrNull != null) { "世界书递归设置无效" }
+            require(value is JsonPrimitive && !value.isString && value.booleanOrNull != null) { "invalid worldbook recursive setting" }
         }
-        require(book["extensions"] == null || book["extensions"] is JsonObject) { "世界书扩展格式无效" }
+        require(book["extensions"] == null || book["extensions"] is JsonObject) { "invalid worldbook extension format" }
         val entries = book["entries"] ?: return
-        require(entries is JsonArray) { "世界书条目必须为数组" }
+        require(entries is JsonArray) { "worldbook entries must be an array" }
         entries.forEachIndexed { index, value ->
-            require(value is JsonObject) { "世界书第 ${index + 1} 项不是对象" }
+            require(value is JsonObject) { "worldbook entry ${index + 1} is not an object" }
             listOf("keys", "secondary_keys").forEach { field ->
                 value[field]?.let { keys ->
-                    require(keys is JsonArray && keys.all { it is JsonPrimitive && it.isString }) { "世界书第 ${index + 1} 项关键字格式无效" }
+                    require(keys is JsonArray && keys.all { it is JsonPrimitive && it.isString }) { "worldbook entry ${index + 1} has invalid keyword format" }
                 }
             }
-            value["content"]?.let { require(it is JsonPrimitive && it.isString) { "世界书正文必须为文本" } }
+            value["content"]?.let { require(it is JsonPrimitive && it.isString) { "worldbook content must be text" } }
             listOf("enabled", "constant", "selective", "case_sensitive", "use_regex").forEach { field ->
-                value[field]?.let { flag -> require(flag is JsonPrimitive && !flag.isString && flag.booleanOrNull != null) { "世界书第 ${index + 1} 项开关格式无效" } }
+                value[field]?.let { flag -> require(flag is JsonPrimitive && !flag.isString && flag.booleanOrNull != null) { "worldbook entry ${index + 1} has invalid flag format" } }
             }
             listOf("insertion_order", "priority").forEach { field ->
-                value[field]?.let { number -> require(number is JsonPrimitive && !number.isString && number.doubleOrNull?.isFinite() == true) { "世界书第 ${index + 1} 项顺序或优先级无效" } }
+                value[field]?.let { number -> require(number is JsonPrimitive && !number.isString && number.doubleOrNull?.isFinite() == true) { "worldbook entry ${index + 1} has invalid order or priority" } }
             }
-            require(value["extensions"] == null || value["extensions"] is JsonObject) { "世界书条目扩展格式无效" }
+            require(value["extensions"] == null || value["extensions"] is JsonObject) { "invalid worldbook entry extension format" }
         }
     }
 }

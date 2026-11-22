@@ -25,12 +25,12 @@ internal object HyperOsPowerHooks {
         return hooks.install {
             val type = HookSupport.findClassOrNull(loader, "com.miui.server.input.util.ShortCutActionsUtils")
             if (type == null) {
-                skipped("hyperos.power-shortcut", "ShortCutActionsUtils", "当前系统未提供 HyperOS 快捷动作分发器")
+                skipped("hyperos.power-shortcut", "ShortCutActionsUtils", "current system does not provide the HyperOS shortcut-action dispatcher")
                 return@install
             }
             val contextField = HookSupport.findField(type, "mContext")
             if (contextField == null || !Context::class.java.isAssignableFrom(contextField.type)) {
-                missing("hyperos.power-shortcut", "ShortCutActionsUtils.mContext", "HyperOS: 快捷动作分发器缺少 Context")
+                missing("hyperos.power-shortcut", "ShortCutActionsUtils.mContext", "HyperOS: shortcut-action dispatcher lacks Context")
                 return@install
             }
             val parameters = arrayOf(String::class.java, String::class.java, Bundle::class.java, Boolean::class.javaPrimitiveType!!)
@@ -38,7 +38,7 @@ internal object HyperOsPowerHooks {
                 val method = HookSupport.findMethod(type, "triggerFunction", *signature)
                 val id = "hyperos.power-shortcut-${signature.size}"
                 if (method == null || method.returnType != Boolean::class.javaPrimitiveType) {
-                    missing(id, "ShortCutActionsUtils.triggerFunction/${signature.size}", "HyperOS: 快捷动作分发签名 ${signature.size} 不匹配")
+                    missing(id, "ShortCutActionsUtils.triggerFunction/${signature.size}", "HyperOS: shortcut-action dispatch signature ${signature.size} mismatch")
                     continue
                 }
                 intercept(id, method, "ShortCutActionsUtils.triggerFunction/${signature.size}") { chain ->
@@ -55,7 +55,7 @@ internal object HyperOsPowerHooks {
                     if (dispatchGate.shouldSuppressDuplicate(now)) {
                         // HyperOS 同一次按压会派发 imperceptible 与 long_press 等多路触发，命中窗口直接消费，
                         // 避免重复唤起会话并阻止后续路径回落到系统原生助手。
-                        hooks.logger.debug { "HyperOsPower: 命中去重窗口，吞掉重复电源键助理触发 ($source)" }
+                        hooks.logger.debug { "HyperOsPower: hit dedup window, swallowing duplicate power-key assistant trigger ($source)" }
                         return@intercept true
                     }
                     if (AssistantManager.showAssistantSession(context, target, hooks.logger, "HyperOsPower", logFailures = true)) {

@@ -36,7 +36,7 @@ internal object ScheduledTaskToolCatalog {
                     .put("enum", JSONArray(listOf("list", "create", "update", "delete", "run_now")))
                     .put(
                         "description",
-                        "操作类型：list 列出全部定时任务；create 创建新定时任务；update 修改已有任务或切换开关；delete 删除任务；run_now 立即试跑一次。",
+                        "Action type：list lists all scheduled tasks；create creates a new scheduled task；update modifies an existing task or toggles it；delete removes a task；run_now runs it once immediately。",
                     ),
             )
             .put(
@@ -44,28 +44,28 @@ internal object ScheduledTaskToolCatalog {
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 128)
-                    .put("description", "目标任务 ID（update / delete / run_now 必填）。"),
+                    .put("description", "Target task ID（required for update / delete / run_now）。"),
             )
             .put(
                 "name",
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 80)
-                    .put("description", "简短清晰的任务名称（如“每日晚间简报”、“商品补货监控”）。"),
+                    .put("description", "A short, clear task name（e.g. “daily evening briefing”、“product restock monitoring”）。"),
             )
             .put(
                 "prompt",
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 8000)
-                    .put("description", "每次触发时交由后台 Eta 执行的完整自包含指令；尽量写清目标、数据源与交付格式。"),
+                    .put("description", "The complete self-contained instruction for background Eta to run on each trigger；state the goal, data source and delivery format clearly。"),
             )
             .put(
                 "trigger_kind",
                 JSONObject()
                     .put("type", "string")
                     .put("enum", JSONArray(listOf("once", "daily", "weekdays", "weekly", "interval", "cron")))
-                    .put("description", "触发频率：once 一次性、daily 每天、weekdays 工作日、weekly 按星期、interval 固定间隔、cron 自定义 5 段表达式。"),
+                    .put("description", "Trigger frequency：once one-time、daily every day、weekdays workdays、weekly by weekday、interval fixed interval、cron custom 5-field expression。"),
             )
             .put(
                 "hour",
@@ -73,7 +73,7 @@ internal object ScheduledTaskToolCatalog {
                     .put("type", "integer")
                     .put("minimum", 0)
                     .put("maximum", 23)
-                    .put("description", "本地小时（0-23），用于 daily / weekdays / weekly。"),
+                    .put("description", "Local hour（0-23），used for daily / weekdays / weekly。"),
             )
             .put(
                 "minute",
@@ -81,14 +81,14 @@ internal object ScheduledTaskToolCatalog {
                     .put("type", "integer")
                     .put("minimum", 0)
                     .put("maximum", 59)
-                    .put("description", "本地分钟（0-59），用于 daily / weekdays / weekly。"),
+                    .put("description", "Local minute（0-59），used for daily / weekdays / weekly。"),
             )
             .put(
                 "days_of_week",
                 JSONObject()
                     .put("type", "array")
                     .put("items", JSONObject().put("type", "integer").put("minimum", 1).put("maximum", 7))
-                    .put("description", "重复星期列表（1=周一 .. 7=周日），用于 weekly。"),
+                    .put("description", "List of repeat weekdays（1=Mon .. 7=Sun），used for weekly。"),
             )
             .put(
                 "interval_minutes",
@@ -96,7 +96,7 @@ internal object ScheduledTaskToolCatalog {
                     .put("type", "integer")
                     .put("minimum", ScheduledTaskScheduleCalculator.MIN_INTERVAL_MINUTES)
                     .put("maximum", ScheduledTaskScheduleCalculator.MAX_INTERVAL_MINUTES)
-                    .put("description", "固定间隔分钟数（最少 5 分钟），用于 interval。"),
+                    .put("description", "Fixed interval in minutes（minimum 5 minutes），used for interval。"),
             )
             .put(
                 "delay_minutes",
@@ -104,53 +104,53 @@ internal object ScheduledTaskToolCatalog {
                     .put("type", "integer")
                     .put("minimum", 1)
                     .put("maximum", 43_200)
-                    .put("description", "一次性任务的相对延迟分钟数（如 60 表示 1 小时后），用于 once。"),
+                    .put("description", "Relative delay in minutes for a one-time task（e.g. 60 means 1 hour later），used for once。"),
             )
             .put(
                 "trigger_at",
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 64)
-                    .put("description", "一次性任务的绝对触发时间（ISO-8601 或本地 yyyy-MM-dd HH:mm），用于 once。"),
+                    .put("description", "Absolute trigger time for a one-time task（ISO-8601 or local yyyy-MM-dd HH:mm），used for once。"),
             )
             .put(
                 "cron",
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 80)
-                    .put("description", "标准 5 段 Cron 表达式（分 时 日 月 周，如 '0 9 * * 1-5'），用于 cron。"),
+                    .put("description", "Standard 5-field Cron expression（minute hour day month weekday，e.g. '0 9 * * 1-5'），used for cron。"),
             )
             .put(
                 "delivery_mode",
                 JSONObject()
                     .put("type", "string")
                     .put("enum", JSONArray(listOf("always", "on_change", "silent")))
-                    .put("description", "通知方式：always 每次完成后通知（早报/提醒）；on_change 仅发现变化时通知（监控/巡检）；silent 静默归档。"),
+                    .put("description", "Notification mode：always notify after each completion（morning briefing/reminder）；on_change notify only when a change is found（monitoring/inspection）；silent archive without notifying。"),
             )
             .put(
                 "show_running_notification",
                 JSONObject()
                     .put("type", "boolean")
-                    .put("description", "任务运行期间是否显示前台进度通知与状态栏胶囊；默认 false（静默后台运行，仅在完成后按 delivery_mode 发送结果通知）。"),
+                    .put("description", "Whether to show a foreground progress notification and status bar pill while the task runs；default false（run silently in the background and only send a result notification per delivery_mode after completion）。"),
             )
             .put(
                 "session_mode",
                 JSONObject()
                     .put("type", "string")
                     .put("enum", JSONArray(listOf("isolated", "dedicated")))
-                    .put("description", "会话归属：isolated 每次独立归档不刷主聊天（默认）；dedicated 归入固定专属对话频道。"),
+                    .put("description", "Session ownership：isolated archives each run independently without refreshing the main chat（default）；dedicated places it into a fixed dedicated conversation channel。"),
             )
             .put(
                 "enabled",
                 JSONObject()
                     .put("type", "boolean")
-                    .put("description", "是否启用该定时任务（create 默认 true，update 可用于暂停或恢复）。"),
+                    .put("description", "Whether to enable this scheduled task（create defaults to true；update can pause or resume）。"),
             )
             .put(
                 "allow_gui",
                 JSONObject()
                     .put("type", "boolean")
-                    .put("description", "是否允许后台操作第三方应用界面（GUI），默认 false 以确保锁屏时静默安全执行。"),
+                    .put("description", "Whether to allow background interaction with third-party app UIs（GUI）；defaults to false to ensure silent, safe execution while the screen is locked。"),
             )
             .put(
                 "timeout_seconds",
@@ -158,14 +158,14 @@ internal object ScheduledTaskToolCatalog {
                     .put("type", "integer")
                     .put("minimum", 30)
                     .put("maximum", 1800)
-                    .put("description", "单次运行墙钟超时秒数（默认 300）。"),
+                    .put("description", "Wall-clock timeout in seconds for a single run（default 300）。"),
             )
 
         return AgentToolSchema.function(
             name = TOOL_MANAGE,
-            description = "管理本机的 Eta 定时任务：列出、创建、修改、开关、删除或立即试跑定时任务。" +
-                "当用户要求定时/每天/每周/每隔一段时间/稍后几分钟或几点自动执行某项工作，或者要求把刚才完成的工作转为定时任务时使用本工具。" +
-                "创建前若时间不明确再简短确认；创建或修改完成后，用通俗中文告知排期、通知方式和下一次执行时间。",
+            description = "Manage the Eta scheduled tasks on this device：list, create, modify, toggle, delete, or immediately trial-run a scheduled task。" +
+                "Use this tool when the user asks to schedule/daily/weekly/every so often/auto-run some work in a few minutes or at a specific time，or asks to turn the work just completed into a scheduled task。" +
+                "If the time is unclear before creating，briefly confirm first；after creating or modifying，explain the schedule, notification mode, and next run time in plain language。",
             parameters = JSONObject()
                 .put("type", "object")
                 .put("properties", properties)
@@ -180,11 +180,11 @@ internal object ScheduledTaskToolCatalog {
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 16_000)
-                    .put("description", "要保存为本任务最新私有小记事本的完整文本（如上次检查时间戳、最新条目 ID 或价格基线；传空字符串清空）。"),
+                    .put("description", "The full text to save as the latest private memo of this task（e.g. the last check timestamp, latest entry ID, or price baseline；pass an empty string to clear）。"),
             )
         return AgentToolSchema.function(
             name = TOOL_UPDATE_MEMO,
-            description = "更新当前定时任务的私有小记事本（Task Memo），用于持久化本次检查的游标、状态或已播报摘要，供下次定时运行对比避免重复提醒。严禁写入密钥或敏感凭据。",
+            description = "Update the private memo（Task Memo）of the current scheduled task to persist this run's cursor, status, or announced summary for comparison on the next scheduled run to avoid duplicate reminders. Never write secrets or sensitive credentials。",
             parameters = JSONObject()
                 .put("type", "object")
                 .put("properties", properties)
@@ -199,18 +199,18 @@ internal object ScheduledTaskToolCatalog {
                 JSONObject()
                     .put("type", "string")
                     .put("enum", JSONArray(listOf("deliver", "no_change")))
-                    .put("description", "deliver 表示有结果需要通知用户；no_change 表示巡检未发现值得关注的变化，系统将保持静默不发通知。"),
+                    .put("description", "deliver means there is a result to notify the user about；no_change means the inspection found no noteworthy change，and the system will stay silent and not send a notification。"),
             )
             .put(
                 "summary",
                 JSONObject()
                     .put("type", "string")
                     .put("maxLength", 300)
-                    .put("description", "1 到 2 句精炼结论摘要，用于通知栏预览和运行时间线展示。"),
+                    .put("description", "A concise 1-2 sentence summary of the conclusion，used for the notification preview and the run timeline display。"),
             )
         return AgentToolSchema.function(
             name = TOOL_REPORT,
-            description = "向定时任务调度器上报本次执行的结构化交付结论：在「仅变动提醒」模式下无变化时务必传 outcome=\"no_change\" 以静默；需要通知用户时可传 outcome=\"deliver\" 并提供精炼通知摘要。",
+            description = "Report the structured delivery conclusion of this run to the scheduled task scheduler：in 「notify on change only」 mode, when there is no change be sure to pass outcome=\"no_change\" to stay silent；when the user needs to be notified, pass outcome=\"deliver\" and provide a concise notification summary。",
             parameters = JSONObject()
                 .put("type", "object")
                 .put("properties", properties)

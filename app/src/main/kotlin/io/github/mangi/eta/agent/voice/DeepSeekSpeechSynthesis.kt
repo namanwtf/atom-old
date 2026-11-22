@@ -76,7 +76,7 @@ internal suspend fun streamDeepSeekSpeech(
     if (totalBillingChars > MAX_WS_BILLING_CHARS || totalBytes > MAX_WS_UTF8_BYTES) {
         throw SpeechFailure(
             SpeechErrorCode.CONFIGURATION,
-            AppStrings.get(R.string.voice_i18n_deepseek_tts_stream_char_limit, "正文超过 DeepSeek 流式会话字符上限"),
+            AppStrings.get(R.string.voice_i18n_deepseek_tts_stream_char_limit, "Text exceeds DeepSeek streaming session character limit"),
         )
     }
     SpeechSocket(deepSeekTtsStreamRequest(config, key), typed = true).use { socket ->
@@ -94,7 +94,7 @@ internal suspend fun streamDeepSeekSpeech(
                     if (audioBytes > MAX_DEEPSEEK_STREAM_AUDIO_BYTES) {
                         throw SpeechFailure(
                             SpeechErrorCode.PROTOCOL,
-                            AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "语音音频格式或长度无效"),
+                            AppStrings.get(R.string.voice_i18n_audio_format_or_length_invalid, "voice audio format or length invalid"),
                         )
                     }
                     pcm.write(frame.bytes)
@@ -108,7 +108,7 @@ internal suspend fun streamDeepSeekSpeech(
                         if (audioBytes == 0L) {
                             throw SpeechFailure(
                                 SpeechErrorCode.PROTOCOL,
-                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "语音音频不完整，请重试"),
+                                AppStrings.get(R.string.voice_i18n_audio_incomplete, "voice audio incomplete，please retry"),
                             )
                         }
                         pcm.end()
@@ -116,17 +116,17 @@ internal suspend fun streamDeepSeekSpeech(
                     }
                     "content_filter" -> throw SpeechFailure(
                         SpeechErrorCode.SERVER,
-                        AppStrings.get(R.string.voice_i18n_deepseek_tts_content_filter, "DeepSeek 未能合成这段文本，请调整后重试"),
+                        AppStrings.get(R.string.voice_i18n_deepseek_tts_content_filter, "DeepSeek could not synthesize this text，please adjust and retry"),
                     )
                     "invalid_input" -> throw SpeechFailure(
                         SpeechErrorCode.CONFIGURATION,
-                        AppStrings.get(R.string.voice_i18n_deepseek_tts_invalid_input, "DeepSeek 语音合成参数或文本无效"),
+                        AppStrings.get(R.string.voice_i18n_deepseek_tts_invalid_input, "DeepSeek voice synthesis parameters or text invalid"),
                     )
                     else -> throw SpeechFailure(
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_deepseek_tts_failed_code,
-                            "DeepSeek 语音合成失败（%1\$s）",
+                            "DeepSeek voice synthesis failed（%1\$s）",
                             code.ifBlank { "unknown" },
                         ),
                     )
@@ -135,7 +135,7 @@ internal suspend fun streamDeepSeekSpeech(
         }
         throw SpeechFailure(
             SpeechErrorCode.PROTOCOL,
-            AppStrings.get(R.string.voice_i18n_deepseek_tts_connection_ended_early, "DeepSeek 语音合成连接提前结束"),
+            AppStrings.get(R.string.voice_i18n_deepseek_tts_connection_ended_early, "DeepSeek voice synthesis connection ended early"),
         )
     }
 }

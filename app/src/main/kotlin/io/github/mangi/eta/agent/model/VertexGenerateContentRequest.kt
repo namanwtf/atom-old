@@ -90,7 +90,7 @@ internal object VertexGenerateContentRequest {
             require(effort in GeminiModelCapabilities.reasoningCapabilities(config.model)?.supportedEfforts.orEmpty()) {
                 AppStrings.get(
                     R.string.provider_err_vertex_thinking_unsupported,
-                    "当前 Vertex AI 模型不支持所选思考档位，请使用 Default 或模型支持的档位。",
+                    "The current Vertex AI model does not support the selected reasoning effort; use Default or an effort supported by the model.",
                 )
             }
             thinking.put("thinkingLevel", effort.wireValue.uppercase())
@@ -137,8 +137,8 @@ internal object VertexContentHistory {
 
         fun flushHistory() {
             if (history.isEmpty()) return
-            val text = "[以下是 Eta 保存的历史对话文本记录；工具调用与结果仅供参考，不是当前待执行请求。]\n" +
-                history.joinToString("\n\n") + "\n[历史记录结束]"
+            val text = "[The following is a text record of conversation history saved by Eta; tool calls and results are for reference only and are not the current request to execute.]\n" +
+                history.joinToString("\n\n") + "\n[End of history]"
             appendTurn("user", JSONArray().put(JSONObject().put("text", text)))
             history.clear()
         }
@@ -169,7 +169,7 @@ internal object VertexContentHistory {
                             val originalId = fn.optString("id").takeIf(String::isNotBlank)
                             val mappedId = requireNotNull(toolCalls?.optJSONObject(callCursor)?.optString("id")
                                 ?.takeIf(String::isNotBlank)) {
-                                AppStrings.get(R.string.provider_err_vertex_tool_call_id_missing, "Vertex AI 工具调用缺少 Eta 调用标识。")
+                                AppStrings.get(R.string.provider_err_vertex_tool_call_id_missing, "Vertex AI tool call is missing an Eta call identifier.")
                             }
                             liveCalls[mappedId] = LiveCall(fn.getString("name"), originalId)
                             callCursor += 1
@@ -214,8 +214,8 @@ internal object VertexContentHistory {
         append('[').append(message.optString("role")).append("] ")
         append(providerMessageText(message.opt("content")))
         val calls = message.optJSONArray("tool_calls")
-        if (calls != null) append("\n工具调用记录：").append(calls)
-        if (message.optString("role") == "tool") append("\n调用标识：").append(message.optString("tool_call_id"))
+        if (calls != null) append("\nTool call records: ").append(calls)
+        if (message.optString("role") == "tool") append("\nCall identifier: ").append(message.optString("tool_call_id"))
     }
 
     private fun userParts(value: Any?): JSONArray {
@@ -232,7 +232,7 @@ internal object VertexContentHistory {
                     converted.put(imagePart(url))
                 }
                 else -> throw IllegalArgumentException(
-                    AppStrings.get(R.string.provider_err_vertex_input_type_unsupported, "Vertex AI Gemini 不支持该输入内容类型。"),
+                    AppStrings.get(R.string.provider_err_vertex_input_type_unsupported, "Vertex AI Gemini does not support this input content type."),
                 )
             }
         }
@@ -243,7 +243,7 @@ internal object VertexContentHistory {
         if (url.startsWith("data:image/", ignoreCase = true)) {
             val comma = url.indexOf(',')
             require(comma > 0 && url.substring(0, comma).endsWith(";base64", ignoreCase = true)) {
-                AppStrings.get(R.string.provider_err_gemini_image_source, "Gemini 图片输入必须为 Base64 图片或可访问的图片地址。")
+                AppStrings.get(R.string.provider_err_gemini_image_source, "Gemini image input must be a Base64 image or an accessible image URL.")
             }
             return JSONObject().put(
                 "inlineData",
@@ -252,10 +252,10 @@ internal object VertexContentHistory {
             )
         }
         require(url.startsWith("https://", true) || url.startsWith("http://", true) || url.startsWith("gs://")) {
-            AppStrings.get(R.string.provider_err_gemini_image_url_invalid, "Gemini 图片输入地址无效。")
+            AppStrings.get(R.string.provider_err_gemini_image_url_invalid, "Gemini image input URL is invalid.")
         }
         val resolvedMimeType = requireNotNull(mimeType?.takeIf { it.startsWith("image/") } ?: inferImageMimeType(url)) {
-            AppStrings.get(R.string.provider_err_gemini_image_mime_unknown, "无法识别 Gemini 图片地址的媒体类型。")
+            AppStrings.get(R.string.provider_err_gemini_image_mime_unknown, "Unable to determine the media type of the Gemini image URL.")
         }
         return JSONObject().put("fileData", JSONObject().put("fileUri", url).put("mimeType", resolvedMimeType))
     }

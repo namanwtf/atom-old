@@ -54,34 +54,34 @@ internal data class ScheduledTaskRunContext(
     fun buildSystemGuidance(zone: ZoneId = ZoneId.systemDefault()): String {
         val nowText = Instant.ofEpochMilli(startedAt).atZone(zone).format(DATETIME_FORMATTER)
         val triggerDesc = when (triggerSource) {
-            ScheduledTaskTriggerSource.SCHEDULE -> "按计划准点自动触发"
-            ScheduledTaskTriggerSource.MANUAL -> "由用户手动点击「立即试跑」触发"
+            ScheduledTaskTriggerSource.SCHEDULE -> "Triggered automatically on schedule"
+            ScheduledTaskTriggerSource.MANUAL -> "Triggered by the user manually tapping「Run now」"
             ScheduledTaskTriggerSource.MISFIRE_CATCHUP -> {
                 val scheduledText = scheduledForAt?.let {
                     Instant.ofEpochMilli(it).atZone(zone).format(DATETIME_FORMATTER)
                 }.orEmpty()
-                "因设备先前休眠/离线，当前为延迟补跑（原计划时间：$scheduledText）"
+                "The device was previously asleep/offline，this is a delayed catch-up run（originally scheduled：$scheduledText）"
             }
         }
         val deliveryDesc = when (deliveryMode) {
             ScheduledTaskDeliveryMode.ALWAYS ->
-                "本任务为「每次完成后通知」：请直接给出简洁清晰、重点前置的最终结果。"
+                "This task uses「notify after every completion」：please give a concise, clear final result with the key points first。"
             ScheduledTaskDeliveryMode.ON_CHANGE ->
-                "本任务为「仅发现变化时通知」：若与任务小记事本中的上次记录相比没有任何值得用户关注的变化或新情况，" +
-                    "请调用 scheduled_task_report(outcome=\"no_change\", summary=\"简短说明无变化\") 并结束回复，系统将保持静默不打扰用户；" +
-                    "若发现实质变化或需要提醒的事项，请先按需更新任务小记事本，再调用 scheduled_task_report(outcome=\"deliver\", summary=\"1到2句通知摘要\") 并输出完整结论。"
+                "This task uses「notify only when a change is found」：if there is no change or new development worth attention from the user compared to the last record in the task memo，" +
+                    "please call scheduled_task_report(outcome=\"no_change\", summary=\"brief note that nothing changed\") and end the reply；the system will stay silent and not disturb the user；" +
+                    "If you find a material change or something that needs a reminder，first update the task memo as needed，then call scheduled_task_report(outcome=\"deliver\", summary=\"1-2 sentence notification summary\") and output the full conclusion。"
             ScheduledTaskDeliveryMode.SILENT ->
-                "本任务为「静默归档」：仅在后台完成工作与记录，系统不会发送常规完成通知。"
+                "This task uses「silent archive」：only complete the work and record it in the background；the system will not send a regular completion notification。"
         }
         return buildString {
-            append("【无人值守定时任务模式】\n")
-            append("当前正在后台自动执行用户预设的定时任务「").append(taskName).append("」（触发方式：").append(triggerDesc).append("；当前本地时间：").append(nowText).append("）。\n")
-            append("执行规则：\n")
-            append("1. 这是无人值守运行，没有人在屏幕前回复追问。请直接交付最终结论，不要只给计划、不要说“好的我来查”、不要向用户反问澄清；确实缺少关键条件或权限时，直接简洁说明阻塞原因。\n")
+            append("【Unattended scheduled task mode】\n")
+            append("Currently running the user preset scheduled task「").append(taskName).append("」（trigger type：").append(triggerDesc).append("；current local time：").append(nowText).append("）。\n")
+            append("Execution rules：\n")
+            append("1. This is an unattended run，no one is at the screen to answer follow-ups. Deliver the final conclusion directly；do not just give a plan，do not say “OK I will look into it”，do not ask the user for clarification；if a key condition or permission is truly missing，briefly state the blocking reason.\n")
             append("2. ").append(deliveryDesc).append('\n')
-            append("3. 可使用 scheduled_task_update_memo 更新本任务的私有小记事本（用于保存上次检查游标、已播报条目或关键状态，供下次定时运行对比，严禁写入密钥或敏感凭据）。\n")
+            append("3. You can use scheduled_task_update_memo to update the private memo of this task（to save the last check cursor，already announced items，or key state for comparison on the next scheduled run；never write secrets or sensitive credentials）.\n")
             if (!capabilities.guiTools) {
-                append("4. 本任务未启用应用界面（GUI）操作，请仅使用当前公开的后台工具完成任务。\n")
+                append("4. This task has no app UI（GUI）access enabled，please use only the currently available background tools to complete the task.\n")
             }
             if (memo.isNotBlank()) {
                 append("\n<scheduled_task_memo>\n")

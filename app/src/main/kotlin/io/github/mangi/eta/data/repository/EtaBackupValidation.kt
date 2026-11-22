@@ -19,7 +19,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_invalid_conversation_id,
-                            "备份中的会话存在重复或无效 ID",
+                            "A conversation in the backup has a duplicate or invalid ID",
                         ),
                     )
                 }
@@ -30,7 +30,7 @@ internal object EtaBackupValidation {
                 throw EtaBackupException(
                     AppStrings.get(
                         R.string.backup_err_selected_conversation_missing,
-                        "备份中的当前会话不存在",
+                        "The current conversation in the backup does not exist",
                     ),
                 )
             }
@@ -43,7 +43,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_message_missing_conversation,
-                            "备份中的消息缺少所属会话",
+                            "A message in the backup is missing its conversation",
                         ),
                     )
                 }
@@ -51,7 +51,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_duplicate_message_id,
-                            "备份中的消息 ID 重复",
+                            "Duplicate message ID in the backup",
                         ),
                     )
                 }
@@ -59,7 +59,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_duplicate_message_order,
-                            "备份中的消息顺序重复",
+                            "Duplicate message order in the backup",
                         ),
                     )
                 }
@@ -77,7 +77,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_checkpoint_missing_conversation,
-                            "备份中的上下文检查点缺少所属会话",
+                            "A context checkpoint in the backup is missing its conversation",
                         ),
                     )
                 }
@@ -85,7 +85,7 @@ internal object EtaBackupValidation {
                     throw EtaBackupException(
                         AppStrings.get(
                             R.string.backup_err_duplicate_checkpoint,
-                            "备份中的上下文检查点重复",
+                            "Duplicate context checkpoint in the backup",
                         ),
                     )
                 }
@@ -104,7 +104,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_invalid_records_or_characters,
-                    "备份中的记录或角色数据无效",
+                    "A record or character data in the backup is invalid",
                 ),
                 failure,
             )
@@ -114,14 +114,14 @@ internal object EtaBackupValidation {
     private fun validateHeader(document: EtaBackupDocument) {
         if (document.format != EtaBackupDocument.FORMAT) {
             throw EtaBackupException(
-                AppStrings.get(R.string.backup_err_not_eta_backup, "这不是 Eta 备份文件"),
+                AppStrings.get(R.string.backup_err_not_eta_backup, "This is not an Eta backup file"),
             )
         }
         if (document.schemaVersion !in 1..EtaBackupDocument.SCHEMA_VERSION) {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_unsupported_version,
-                    "不支持的 Eta 备份版本：%1\$d",
+                    "Unsupported Eta backup version：%1\$d",
                     document.schemaVersion,
                 ),
             )
@@ -130,7 +130,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_invalid_catalog_revision,
-                    "备份中的模型目录版本无效",
+                    "The model catalog version in the backup is invalid",
                 ),
             )
         }
@@ -139,7 +139,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_invalid_provider_id,
-                    "备份中的模型提供商存在重复或无效 ID",
+                    "A model provider in the backup has a duplicate or invalid ID",
                 ),
             )
         }
@@ -150,7 +150,7 @@ internal object EtaBackupValidation {
                 throw EtaBackupException(
                     AppStrings.get(
                         R.string.backup_err_unsupported_provider_auth,
-                        "备份中的服务商认证方式不受支持",
+                        "The provider authentication method in the backup is unsupported",
                     ),
                 )
             }
@@ -159,7 +159,7 @@ internal object EtaBackupValidation {
                 throw EtaBackupException(
                     AppStrings.get(
                         R.string.backup_err_invalid_model_id,
-                        "备份中的模型存在重复或无效 ID",
+                        "A model in the backup has a duplicate or invalid ID",
                     ),
                 )
             }
@@ -167,7 +167,7 @@ internal object EtaBackupValidation {
                 throw EtaBackupException(
                     AppStrings.get(
                         R.string.backup_err_model_provider_mismatch,
-                        "备份中的模型与提供商不匹配",
+                        "A model in the backup does not match its provider",
                     ),
                 )
             }
@@ -177,7 +177,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_duplicate_model_id,
-                    "备份中的模型 ID 重复",
+                    "Duplicate model ID in the backup",
                 ),
             )
         }
@@ -185,7 +185,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_selected_provider_missing,
-                    "备份中的当前提供商不存在",
+                    "The current provider in the backup does not exist",
                 ),
             )
         }
@@ -194,7 +194,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_selected_model_missing,
-                    "备份中的当前模型不存在",
+                    "The current model in the backup does not exist",
                 ),
             )
         }
@@ -202,7 +202,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_selected_model_provider_mismatch,
-                    "备份中的当前模型与提供商不匹配",
+                    "The current model in the backup does not match its provider",
                 ),
             )
         }
@@ -210,7 +210,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_invalid_conversation_state,
-                    "备份中的会话状态无效",
+                    "The conversation state in the backup is invalid",
                 ),
             )
         }
@@ -218,7 +218,7 @@ internal object EtaBackupValidation {
             throw EtaBackupException(
                 AppStrings.get(
                     R.string.backup_err_memory_too_large,
-                    "MEMORY.md 超过 1 MiB 限制",
+                    "MEMORY.md exceeds the 1 MiB limit",
                 ),
             )
         }

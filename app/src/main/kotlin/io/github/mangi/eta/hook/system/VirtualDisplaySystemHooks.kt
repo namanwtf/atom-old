@@ -57,7 +57,7 @@ internal object VirtualDisplaySystemHooks {
             hooks.missing(
                 id = "system.virtual-display-create",
                 description = "DisplayManagerService.createVirtualDisplay",
-                detail = "未找到 DisplayManagerService\$BinderService.createVirtualDisplay",
+                detail = "DisplayManagerService\$BinderService.createVirtualDisplay not found",
             )
             return
         }
@@ -69,7 +69,7 @@ internal object VirtualDisplaySystemHooks {
             hooks.missing(
                 id = "system.virtual-display-release",
                 description = "DisplayManagerService.releaseVirtualDisplay",
-                detail = "未找到虚拟屏创建失败后的回收入口",
+                detail = "virtual display creation failure recovery entry not found",
             )
             return
         }

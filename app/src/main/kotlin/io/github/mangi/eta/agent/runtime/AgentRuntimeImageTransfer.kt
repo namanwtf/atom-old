@@ -61,7 +61,7 @@ internal object AgentRuntimeImageTransfer {
             throw ImageTransferException(
                 AppStrings.get(
                     R.string.runtime_err_image_max_count,
-                    "一次最多支持 %1\$d 张图片",
+                    "Supports at most %1\$d images at a time",
                     MAX_IMAGE_COUNT,
                 )
             )
@@ -70,7 +70,7 @@ internal object AgentRuntimeImageTransfer {
         val cacheDirectory = File(context.cacheDir, CACHE_DIRECTORY)
         if (!cacheDirectory.isDirectory && !cacheDirectory.mkdirs()) {
             throw ImageTransferException(
-                AppStrings.get(R.string.runtime_err_image_cache_create, "无法创建图片传输缓存")
+                AppStrings.get(R.string.runtime_err_image_cache_create, "Unable to create image transfer cache")
             )
         }
         cleanupStaleFiles(cacheDirectory)
@@ -83,7 +83,7 @@ internal object AgentRuntimeImageTransfer {
                 if (image.reference.isRemoteUrl()) {
                     if (image.reference.length > MAX_REMOTE_URL_CHARS) {
                         throw ImageTransferException(
-                            AppStrings.get(R.string.runtime_err_image_remote_url_long, "远程图片链接过长")
+                            AppStrings.get(R.string.runtime_err_image_remote_url_long, "Remote image URL is too long")
                         )
                     }
                     wireImages += image.toWireImage(remoteUrl = image.reference)
@@ -97,7 +97,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_single_too_large,
-                            "单张图片不能超过 %1\$d MiB",
+                            "A single image must not exceed %1\$d MiB",
                             MAX_IMAGE_BYTES / 1024 / 1024,
                         )
                     )
@@ -124,7 +124,7 @@ internal object AgentRuntimeImageTransfer {
                 if (imageBytes <= 0L) {
                     descriptor.close()
                     throw ImageTransferException(
-                        AppStrings.get(R.string.runtime_err_image_empty, "图片内容为空")
+                        AppStrings.get(R.string.runtime_err_image_empty, "Image content is empty")
                     )
                 }
                 if (imageBytes > MAX_IMAGE_BYTES) {
@@ -132,7 +132,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_single_too_large,
-                            "单张图片不能超过 %1\$d MiB",
+                            "A single image must not exceed %1\$d MiB",
                             MAX_IMAGE_BYTES / 1024 / 1024,
                         )
                     )
@@ -143,7 +143,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_total_too_large,
-                            "图片总大小不能超过 %1\$d MiB",
+                            "Total image size must not exceed %1\$d MiB",
                             MAX_TOTAL_IMAGE_BYTES / 1024 / 1024,
                         )
                     )
@@ -158,7 +158,7 @@ internal object AgentRuntimeImageTransfer {
             PreparedImages(wireImages, files).close()
             if (throwable is ImageTransferException) throw throwable
             throw ImageTransferException(
-                AppStrings.get(R.string.runtime_err_image_read_outgoing, "无法读取待发送图片"),
+                AppStrings.get(R.string.runtime_err_image_read_outgoing, "Unable to read the image to send"),
                 throwable,
             )
         }
@@ -172,7 +172,7 @@ internal object AgentRuntimeImageTransfer {
             throw ImageTransferException(
                 AppStrings.get(
                     R.string.runtime_err_image_max_count,
-                    "一次最多支持 %1\$d 张图片",
+                    "Supports at most %1\$d images at a time",
                     MAX_IMAGE_COUNT,
                 )
             )
@@ -187,7 +187,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_fd_invalid_size,
-                            "图片文件描述符无有效大小",
+                            "Image file descriptor has no valid size",
                         )
                     )
                 }
@@ -195,7 +195,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_single_too_large,
-                            "单张图片不能超过 %1\$d MiB",
+                            "A single image must not exceed %1\$d MiB",
                             MAX_IMAGE_BYTES / 1024 / 1024,
                         )
                     )
@@ -205,7 +205,7 @@ internal object AgentRuntimeImageTransfer {
                 }
                 if (bytes.size.toLong() != statSize) {
                     throw ImageTransferException(
-                        AppStrings.get(R.string.runtime_err_image_incomplete, "图片传输不完整")
+                        AppStrings.get(R.string.runtime_err_image_incomplete, "Image transfer is incomplete")
                     )
                 }
                 totalBytes += bytes.size
@@ -213,7 +213,7 @@ internal object AgentRuntimeImageTransfer {
                     throw ImageTransferException(
                         AppStrings.get(
                             R.string.runtime_err_image_total_too_large,
-                            "图片总大小不能超过 %1\$d MiB",
+                            "Total image size must not exceed %1\$d MiB",
                             MAX_TOTAL_IMAGE_BYTES / 1024 / 1024,
                         )
                     )
@@ -237,7 +237,7 @@ internal object AgentRuntimeImageTransfer {
             if (reference.isRemoteUrl()) {
                 if (reference.length > MAX_REMOTE_URL_CHARS) {
                     throw ImageTransferException(
-                        AppStrings.get(R.string.runtime_err_image_remote_url_long, "远程图片链接过长")
+                        AppStrings.get(R.string.runtime_err_image_remote_url_long, "Remote image URL is too long")
                     )
                 }
                 return@mapIndexed AgentModelClient.ModelImage(
@@ -252,7 +252,7 @@ internal object AgentRuntimeImageTransfer {
             }
             if (reference.length > MAX_ENCODED_IMAGE_CHARS) {
                 throw ImageTransferException(
-                    AppStrings.get(R.string.runtime_err_image_inline_too_large, "内联图片数据过大")
+                    AppStrings.get(R.string.runtime_err_image_inline_too_large, "Inline image data is too large")
                 )
             }
             AgentImageCodec.fromReference(
@@ -261,7 +261,7 @@ internal object AgentRuntimeImageTransfer {
                 source = image.source,
                 preserveOriginal = image.preserveOriginal,
             ) ?: throw ImageTransferException(
-                AppStrings.get(R.string.runtime_err_image_legacy_unreadable, "无法读取旧协议中的图片")
+                AppStrings.get(R.string.runtime_err_image_legacy_unreadable, "Unable to read the image in the legacy protocol")
             )
         }
         request.materializeText().copy(images = images)
@@ -294,14 +294,14 @@ internal object AgentRuntimeImageTransfer {
             Uri.parse(reference).scheme in setOf("content", "file") ->
                 context.contentResolver.openInputStream(Uri.parse(reference))
                     ?: throw ImageTransferException(
-                        AppStrings.get(R.string.runtime_err_image_open_local, "无法打开本地图片")
+                        AppStrings.get(R.string.runtime_err_image_open_local, "Unable to open the local image")
                     )
 
             else -> {
                 val file = File(reference)
                 if (!file.isFile) {
                     throw ImageTransferException(
-                        AppStrings.get(R.string.runtime_err_image_ref_unreadable, "图片引用不可读")
+                        AppStrings.get(R.string.runtime_err_image_ref_unreadable, "Image reference is not readable")
                     )
                 }
                 file.inputStream()
@@ -340,13 +340,13 @@ internal object AgentRuntimeImageTransfer {
         val separator = indexOf(',')
         if (separator <= 0 || !substring(0, separator).endsWith(";base64", ignoreCase = true)) {
             throw ImageTransferException(
-                AppStrings.get(R.string.runtime_err_image_inline_unsupported, "不支持的内联图片格式")
+                AppStrings.get(R.string.runtime_err_image_inline_unsupported, "Unsupported inline image format")
             )
         }
         val encoded = substring(separator + 1)
         if (encoded.length > MAX_ENCODED_IMAGE_CHARS) {
             throw ImageTransferException(
-                AppStrings.get(R.string.runtime_err_image_inline_too_large, "内联图片数据过大")
+                AppStrings.get(R.string.runtime_err_image_inline_too_large, "Inline image data is too large")
             )
         }
         return Base64InputStream(
@@ -369,7 +369,7 @@ internal object AgentRuntimeImageTransfer {
                 throw ImageTransferException(
                     AppStrings.get(
                         R.string.runtime_err_image_single_too_large,
-                        "单张图片不能超过 %1\$d MiB",
+                        "A single image must not exceed %1\$d MiB",
                         maxBytes / 1024 / 1024,
                     )
                 )
@@ -390,7 +390,7 @@ internal object AgentRuntimeImageTransfer {
                 throw ImageTransferException(
                     AppStrings.get(
                         R.string.runtime_err_image_single_too_large,
-                        "单张图片不能超过 %1\$d MiB",
+                        "A single image must not exceed %1\$d MiB",
                         maxBytes / 1024 / 1024,
                     )
                 )

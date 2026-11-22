@@ -119,7 +119,7 @@ internal object ImageGenClient {
                 "IMAGE_GEN_MISSING_API_KEY",
                 AppStrings.get(
                     R.string.imagegen_error_missing_api_key,
-                    "未配置 AI 生图 API Key，请前往「设置 → AI 生图」填写或关联已有服务商",
+                    "AI image generation API key is not configured; go to \"Settings → AI Image Generation\" to enter one or link an existing provider",
                 ),
             )
         }
@@ -128,7 +128,7 @@ internal object ImageGenClient {
                 "IMAGE_GEN_MISSING_MODEL",
                 AppStrings.get(
                     R.string.imagegen_error_missing_model,
-                    "未配置生图模型 ID，请前往「设置 → AI 生图」检查模型设置",
+                    "Image generation model ID is not configured; go to \"Settings → AI Image Generation\" to check the model settings",
                 ),
             )
         }
@@ -139,7 +139,7 @@ internal object ImageGenClient {
         if (normalizedPrompt.isEmpty()) {
             throw ImageGenException(
                 "IMAGE_GEN_EMPTY_PROMPT",
-                AppStrings.get(R.string.imagegen_error_empty_prompt, "生图提示词不能为空"),
+                AppStrings.get(R.string.imagegen_error_empty_prompt, "Image generation prompt must not be empty"),
             )
         }
 
@@ -149,7 +149,7 @@ internal object ImageGenClient {
                 "IMAGE_GEN_EDIT_UNSUPPORTED",
                 AppStrings.get(
                     R.string.imagegen_error_edit_unsupported,
-                    "当前生图模型（%1\$s）不支持图生图编辑，请切换支持图像编辑的模型",
+                    "The current image generation model (%1\$s) does not support image-to-image editing; switch to a model that supports image editing",
                     config.model,
                 ),
             )
@@ -159,7 +159,7 @@ internal object ImageGenClient {
                 "TOO_MANY_REFERENCE_IMAGES",
                 AppStrings.get(
                     R.string.imagegen_error_too_many_reference_images,
-                    "当前模型（%1\$s）最多支持 %2\$d 张参考图，本次传入了 %3\$d 张",
+                    "The current model (%1\$s) supports at most %2\$d reference images, but %3\$d were provided",
                     config.model,
                     capability.maxReferenceImages,
                     request.referenceImages.size,
@@ -211,7 +211,7 @@ internal object ImageGenClient {
                 "IMAGE_GEN_EMPTY_OUTPUT",
                 AppStrings.get(
                     R.string.imagegen_error_gemini_empty_output,
-                    "Gemini 未返回图像数据，请检查模型是否支持生图或调整提示词",
+                    "Gemini returned no image data; check whether the model supports image generation or adjust the prompt",
                 ),
             )
         }
@@ -475,7 +475,7 @@ internal object ImageGenClient {
         }
         val responseText = executeForJsonBody(
             httpReq,
-            AppStrings.get(R.string.imagegen_client_label_openai, "OpenAI 生图"),
+            AppStrings.get(R.string.imagegen_client_label_openai, "OpenAI image generation"),
             runController,
             httpClient,
         )
@@ -634,7 +634,7 @@ internal object ImageGenClient {
                 .build()
             val responseText = executeForJsonBody(
                 httpReq,
-                AppStrings.get(R.string.imagegen_client_label_siliconflow, "硅基流动生图"),
+                AppStrings.get(R.string.imagegen_client_label_siliconflow, "SiliconFlow image generation"),
                 runController,
                 httpClient,
             )
@@ -669,7 +669,7 @@ internal object ImageGenClient {
         val array = root.optJSONArray("data") ?: root.optJSONArray("images")
             ?: throw ImageGenException(
                 "IMAGE_GEN_EMPTY_OUTPUT",
-                AppStrings.get(R.string.imagegen_error_missing_image_array, "接口未返回图像数组（data / images）"),
+                AppStrings.get(R.string.imagegen_error_missing_image_array, "The API did not return an image array (data / images)"),
             )
         val results = mutableListOf<ImageGenOutputImage>()
         for (i in 0 until array.length()) {
@@ -695,7 +695,7 @@ internal object ImageGenClient {
         if (results.isEmpty()) {
             throw ImageGenException(
                 "IMAGE_GEN_EMPTY_OUTPUT",
-                AppStrings.get(R.string.imagegen_error_empty_output, "生图接口未返回有效图片"),
+                AppStrings.get(R.string.imagegen_error_empty_output, "The image generation API returned no valid images"),
             )
         }
         return results
@@ -726,7 +726,7 @@ internal object ImageGenClient {
                 .build()
             val responseText = executeForJsonBody(
                 httpReq,
-                AppStrings.get(R.string.imagegen_client_label_doubao, "豆包 Seedream"),
+                AppStrings.get(R.string.imagegen_client_label_doubao, "Doubao Seedream"),
                 runController,
                 httpClient,
             )
@@ -779,7 +779,7 @@ internal object ImageGenClient {
             .build()
         val responseText = executeForJsonBody(
             httpReq,
-            AppStrings.get(R.string.imagegen_client_label_qwen, "千问 Qwen-Image"),
+            AppStrings.get(R.string.imagegen_client_label_qwen, "Qwen Qwen-Image"),
             runController,
             httpClient,
             isDashScope = true,
@@ -833,7 +833,7 @@ internal object ImageGenClient {
             val safeCode = sanitizeToken(errCode) ?: "ERROR"
             val reqId = sanitizeToken(root.optString("request_id"))
             val detail = buildString {
-                append(AppStrings.get(R.string.imagegen_error_qwen_failed, "千问生图失败（%1\$s）", safeCode))
+                append(AppStrings.get(R.string.imagegen_error_qwen_failed, "Qwen image generation failed (%1\$s)", safeCode))
                 if (reqId != null) append(" [req=").append(reqId).append("]")
             }
             throw ImageGenException("QWEN_$safeCode", detail)
@@ -841,7 +841,7 @@ internal object ImageGenClient {
         val choices = root.optJSONObject("output")?.optJSONArray("choices")
             ?: throw ImageGenException(
                 "IMAGE_GEN_EMPTY_OUTPUT",
-                AppStrings.get(R.string.imagegen_error_qwen_missing_choices, "千问接口未返回 output.choices"),
+                AppStrings.get(R.string.imagegen_error_qwen_missing_choices, "Qwen API did not return output.choices"),
             )
         val results = mutableListOf<ImageGenOutputImage>()
         for (i in 0 until choices.length()) {
@@ -861,7 +861,7 @@ internal object ImageGenClient {
         if (results.isEmpty()) {
             throw ImageGenException(
                 "IMAGE_GEN_EMPTY_OUTPUT",
-                AppStrings.get(R.string.imagegen_error_qwen_missing_image_url, "千问接口未返回有效图片 URL"),
+                AppStrings.get(R.string.imagegen_error_qwen_missing_image_url, "Qwen API did not return a valid image URL"),
             )
         }
         return results
@@ -887,7 +887,7 @@ internal object ImageGenClient {
                         code = "HTTP_${response.code}_REDIRECT_BLOCKED",
                         message = AppStrings.get(
                             R.string.imagegen_error_redirect_blocked,
-                            "%1\$s 接口返回重定向（HTTP %2\$d），出于凭据安全已拦截，请检查 Base URL 是否准确",
+                            "%1\$s API returned a redirect (HTTP %2\$d), blocked for credential safety; check that the Base URL is correct",
                             label,
                             response.code,
                         ),
@@ -903,7 +903,7 @@ internal object ImageGenClient {
                 if (rawBody.isBlank()) {
                     throw ImageGenException(
                         "IMAGE_GEN_EMPTY_BODY",
-                        AppStrings.get(R.string.imagegen_error_empty_body, "%1\$s 返回了空响应", label),
+                        AppStrings.get(R.string.imagegen_error_empty_body, "%1\$s returned an empty response", label),
                     )
                 }
                 return rawBody
@@ -914,7 +914,7 @@ internal object ImageGenClient {
             }
             throw ImageGenException(
                 "IMAGE_GEN_NETWORK_ERROR",
-                AppStrings.get(R.string.imagegen_error_network, "%1\$s 请求失败：网络连接异常或超时", label),
+                AppStrings.get(R.string.imagegen_error_network, "%1\$s request failed: network connection error or timeout", label),
             )
         } finally {
             binding?.close()
@@ -936,7 +936,7 @@ internal object ImageGenClient {
                         "IMAGE_DOWNLOAD_FAILED",
                         AppStrings.get(
                             R.string.imagegen_error_download_http,
-                            "下载生成图片失败（HTTP %1\$d）",
+                            "Failed to download the generated image (HTTP %1\$d)",
                             response.code,
                         ),
                         response.code,
@@ -947,7 +947,7 @@ internal object ImageGenClient {
                 if (contentLength > MAX_DOWNLOAD_BYTES) {
                     throw ImageGenException(
                         "IMAGE_TOO_LARGE",
-                        AppStrings.get(R.string.imagegen_error_image_too_large, "生成的图片体积过大，超过本地缓存限制"),
+                        AppStrings.get(R.string.imagegen_error_image_too_large, "The generated image is too large, exceeding the local cache limit"),
                     )
                 }
                 val out = ByteArrayOutputStream()
@@ -960,7 +960,7 @@ internal object ImageGenClient {
                         if (out.size() + read > MAX_DOWNLOAD_BYTES) {
                             throw ImageGenException(
                                 "IMAGE_TOO_LARGE",
-                                AppStrings.get(R.string.imagegen_error_image_too_large, "生成的图片体积过大，超过本地缓存限制"),
+                                AppStrings.get(R.string.imagegen_error_image_too_large, "The generated image is too large, exceeding the local cache limit"),
                             )
                         }
                         out.write(buffer, 0, read)
@@ -970,7 +970,7 @@ internal object ImageGenClient {
                 if (bytes.isEmpty()) {
                     throw ImageGenException(
                         "IMAGE_DOWNLOAD_EMPTY",
-                        AppStrings.get(R.string.imagegen_error_download_empty, "下载的图片内容为空"),
+                        AppStrings.get(R.string.imagegen_error_download_empty, "The downloaded image content is empty"),
                     )
                 }
                 val headerMime = response.header("Content-Type")?.substringBefore(';')?.trim().orEmpty()
@@ -982,7 +982,7 @@ internal object ImageGenClient {
             }
             throw ImageGenException(
                 "IMAGE_DOWNLOAD_ERROR",
-                AppStrings.get(R.string.imagegen_error_download_network, "下载生成图片时发生网络错误"),
+                AppStrings.get(R.string.imagegen_error_download_network, "A network error occurred while downloading the generated image"),
             )
         } finally {
             binding?.close()
@@ -1002,7 +1002,7 @@ internal object ImageGenClient {
         if (w <= 0 || h <= 0 || !detectedMime.startsWith("image/")) {
             throw ImageGenException(
                 "INVALID_REFERENCE_IMAGE",
-                AppStrings.get(R.string.imagegen_error_invalid_reference_image, "参考文件不是有效的图片格式，已拒绝上传"),
+                AppStrings.get(R.string.imagegen_error_invalid_reference_image, "The reference file is not a valid image format; upload rejected"),
             )
         }
         val normalizedMime = GeneratedImageStore.normalizeMimeType(detectedMime.ifEmpty { rawMimeType }, rawBytes)
@@ -1020,7 +1020,7 @@ internal object ImageGenClient {
             BitmapFactory.Options().apply { inSampleSize = sampleSize },
         ) ?: throw ImageGenException(
             "INVALID_REFERENCE_IMAGE",
-            AppStrings.get(R.string.imagegen_error_reference_decode_failed, "参考图片解码失败，无法用于图生图编辑"),
+            AppStrings.get(R.string.imagegen_error_reference_decode_failed, "Failed to decode the reference image; cannot use it for image-to-image editing"),
         )
         val scaled = try {
             val maxSide = maxOf(decoded.width, decoded.height)
@@ -1075,7 +1075,7 @@ internal object ImageGenClient {
         if (declaredLength > maxBytes) {
             throw ImageGenException(
                 "IMAGE_GEN_RESPONSE_TOO_LARGE",
-                AppStrings.get(R.string.imagegen_error_response_too_large, "服务端返回数据过大，超出本地安全限制"),
+                AppStrings.get(R.string.imagegen_error_response_too_large, "The server returned data that is too large, exceeding the local safety limit"),
             )
         }
         val out = ByteArrayOutputStream()
@@ -1090,7 +1090,7 @@ internal object ImageGenClient {
                     if (maxBytes == MAX_ERROR_BODY_BYTES) break
                     throw ImageGenException(
                         "IMAGE_GEN_RESPONSE_TOO_LARGE",
-                        AppStrings.get(R.string.imagegen_error_response_too_large, "服务端返回数据过大，超出本地安全限制"),
+                        AppStrings.get(R.string.imagegen_error_response_too_large, "The server returned data that is too large, exceeding the local safety limit"),
                     )
                 }
                 val toWrite = minOf(read, remaining)
@@ -1099,7 +1099,7 @@ internal object ImageGenClient {
                     if (maxBytes == MAX_ERROR_BODY_BYTES) break
                     throw ImageGenException(
                         "IMAGE_GEN_RESPONSE_TOO_LARGE",
-                        AppStrings.get(R.string.imagegen_error_response_too_large, "服务端返回数据过大，超出本地安全限制"),
+                        AppStrings.get(R.string.imagegen_error_response_too_large, "The server returned data that is too large, exceeding the local safety limit"),
                     )
                 }
             }
@@ -1114,7 +1114,7 @@ internal object ImageGenClient {
                 "IMAGE_BATCH_TOO_LARGE",
                 AppStrings.get(
                     R.string.imagegen_error_batch_too_large,
-                    "本次生成的图片总体积超出安全内存预算，请减少单次生成张数或降低分辨率",
+                    "The total size of images generated this time exceeds the safe memory budget; reduce the number of images or the resolution",
                 ),
             )
         }
@@ -1148,18 +1148,18 @@ internal object ImageGenClient {
             else -> "HTTP_$httpCode"
         }
         val hint = when (httpCode) {
-            400, 422 -> AppStrings.get(R.string.imagegen_http_error_bad_request, "请求参数、模型规格或提示词内容不受支持")
-            401 -> AppStrings.get(R.string.imagegen_http_error_unauthorized, "API Key 无效或未授权")
-            403 -> AppStrings.get(R.string.imagegen_http_error_forbidden, "无权访问该生图模型或账号权限不足")
-            404 -> AppStrings.get(R.string.imagegen_http_error_not_found, "模型 ID 或接口路径不存在")
-            429 -> AppStrings.get(R.string.imagegen_http_error_rate_limit, "请求过于频繁或额度已用尽，请稍后重试")
-            in 500..599 -> AppStrings.get(R.string.imagegen_http_error_server, "上游生图服务暂时异常，请稍后重试")
-            else -> AppStrings.get(R.string.imagegen_http_error_generic, "服务返回错误")
+            400, 422 -> AppStrings.get(R.string.imagegen_http_error_bad_request, "Unsupported request parameters, model spec, or prompt content")
+            401 -> AppStrings.get(R.string.imagegen_http_error_unauthorized, "The API key is invalid or unauthorized")
+            403 -> AppStrings.get(R.string.imagegen_http_error_forbidden, "No access to this image generation model, or the account lacks permission")
+            404 -> AppStrings.get(R.string.imagegen_http_error_not_found, "The model ID or API path does not exist")
+            429 -> AppStrings.get(R.string.imagegen_http_error_rate_limit, "Requests are too frequent or the quota is exhausted; try again later")
+            in 500..599 -> AppStrings.get(R.string.imagegen_http_error_server, "The upstream image generation service is temporarily unavailable; try again later")
+            else -> AppStrings.get(R.string.imagegen_http_error_generic, "The service returned an error")
         }
         val summary = if (safeCode != null) {
             AppStrings.get(
                 R.string.imagegen_http_error_summary_with_code,
-                "%1\$s请求失败（HTTP %2\$d / %3\$s）：%4\$s",
+                "%1\$s request failed (HTTP %2\$d / %3\$s): %4\$s",
                 label,
                 httpCode,
                 safeCode,
@@ -1168,7 +1168,7 @@ internal object ImageGenClient {
         } else {
             AppStrings.get(
                 R.string.imagegen_http_error_summary,
-                "%1\$s请求失败（HTTP %2\$d）：%3\$s",
+                "%1\$s request failed (HTTP %2\$d): %3\$s",
                 label,
                 httpCode,
                 hint,

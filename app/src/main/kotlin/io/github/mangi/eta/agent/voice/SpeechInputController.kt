@@ -79,7 +79,7 @@ internal class SpeechInputController(
         val session = generation
         mutableState.value = SpeechInputState(
             phase = EtaSpeechPhase.STARTING,
-            progress = AppStrings.get(R.string.voice_i18n_progress_connecting, "正在连接"),
+            progress = AppStrings.get(R.string.voice_i18n_progress_connecting, "Connecting"),
             holdToTalk = holdToTalk,
         )
         job = scope.launch(Dispatchers.Main.immediate) {
@@ -114,12 +114,12 @@ internal class SpeechInputController(
                                                     progress = if (it.holdToTalk) {
                                                         AppStrings.get(
                                                             R.string.voice_i18n_progress_hold_to_talk,
-                                                            "松开发送，移出取消",
+                                                            "Release to send，move away to cancel",
                                                         )
                                                     } else {
                                                         AppStrings.get(
                                                             R.string.voice_i18n_progress_listening_tap_done,
-                                                            "正在聆听，点击完成结束",
+                                                            "Listening，tap done to finish",
                                                         )
                                                     },
                                                 )
@@ -137,10 +137,10 @@ internal class SpeechInputController(
                                         progress = if (it.holdToTalk) {
                                             AppStrings.get(
                                                 R.string.voice_i18n_progress_recognizing_and_sending,
-                                                "正在识别并发送",
+                                                "Recognizing and sending",
                                             )
                                         } else {
-                                            AppStrings.get(R.string.voice_i18n_progress_recognizing, "正在识别")
+                                            AppStrings.get(R.string.voice_i18n_progress_recognizing, "Recognizing")
                                         },
                                     )
                                 }
@@ -177,7 +177,7 @@ internal class SpeechInputController(
                 if (text.isBlank()) {
                     throw SpeechFailure(
                         SpeechErrorCode.NO_SPEECH,
-                        AppStrings.get(R.string.voice_i18n_no_speech_recognized, "没有识别到语音，请重试"),
+                        AppStrings.get(R.string.voice_i18n_no_speech_recognized, "No speech recognized，please retry"),
                     )
                 }
                 val final = refined(session, config.refineTranscript, text)
@@ -215,7 +215,7 @@ internal class SpeechInputController(
         mutableState.value = mutableState.value.copy(
             phase = EtaSpeechPhase.RECOGNIZING,
             preview = text,
-            progress = AppStrings.get(R.string.voice_i18n_progress_refining, "正在校对"),
+            progress = AppStrings.get(R.string.voice_i18n_progress_refining, "Proofreading"),
             level = 0f,
         )
         return try {
@@ -234,9 +234,9 @@ internal class SpeechInputController(
         if (mutableState.value.phase == EtaSpeechPhase.STARTING) { cancel(); return }
         recorder?.finish()
         val progressText = if (mutableState.value.holdToTalk) {
-            AppStrings.get(R.string.voice_i18n_progress_recognizing_and_sending, "正在识别并发送")
+            AppStrings.get(R.string.voice_i18n_progress_recognizing_and_sending, "Recognizing and sending")
         } else {
-            AppStrings.get(R.string.voice_i18n_progress_recognizing, "正在识别")
+            AppStrings.get(R.string.voice_i18n_progress_recognizing, "Recognizing")
         }
         mutableState.value = mutableState.value.copy(phase = EtaSpeechPhase.RECOGNIZING, progress = progressText, level = 0f)
     }

@@ -12,15 +12,15 @@ internal object HyperOsSearchTrigger {
     fun trigger(context: Context?, logger: ModuleLogger): Boolean {
         if (!isEnabled()) return false
         if (context == null) {
-            logger.warnThrottled("hyperos_search_context_missing") { "HyperOS: 搜索入口缺少 Context，保留系统行为" }
+            logger.warnThrottled("hyperos_search_context_missing") { "HyperOS: search entry lacks Context, keeping system behavior" }
             return false
         }
         return try {
-            CircleToSearchInvoker.isAvailable(context, logger, "HyperOS", "保留系统行为") &&
+            CircleToSearchInvoker.isAvailable(context, logger, "HyperOS", "keep system behavior") &&
                 CircleToSearchInvoker.trigger(logger, "HyperOS", entryPoint = 1)
         } catch (exception: Exception) {
             logger.warnThrottled("hyperos_search_failed") {
-                "HyperOS: 搜索触发失败，type=${exception.safeLogType()}"
+                "HyperOS: search trigger failed, type=${exception.safeLogType()}"
             }
             false
         }

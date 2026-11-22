@@ -233,14 +233,14 @@ internal object CacheUsageDiagnostics {
 
     private fun isCompactionFailureDetail(detail: String?): Boolean {
         if (detail.isNullOrBlank()) return false
-        return detail.contains("失败") ||
-            detail.contains("失敗") ||
-            detail.contains("中断") ||
-            detail.contains("中斷") ||
+        return detail.contains("failed") ||
+            detail.contains("failed") ||
+            detail.contains("interrupted") ||
+            detail.contains("interrupted") ||
             detail.contains("fail", ignoreCase = true) ||
             detail.contains("interrupt", ignoreCase = true) ||
-            detail == AppStrings.get(R.string.ui_misc_compaction_failed, "上下文压缩失败") ||
-            detail == AppStrings.get(R.string.ui_misc_compaction_interrupted, "上下文压缩已中断") ||
-            detail == AppStrings.get(R.string.ui_misc_compaction_stopped, "上下文压缩已停止")
+            detail == AppStrings.get(R.string.ui_misc_compaction_failed, "Context compaction failed") ||
+            detail == AppStrings.get(R.string.ui_misc_compaction_interrupted, "Context compaction interrupted") ||
+            detail == AppStrings.get(R.string.ui_misc_compaction_stopped, "Context compaction stopped")
     }
 }

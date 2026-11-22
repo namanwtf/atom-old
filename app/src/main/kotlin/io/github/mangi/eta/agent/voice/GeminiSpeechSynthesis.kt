@@ -69,7 +69,7 @@ internal class GeminiSpeechDecoder(onAudio: (ByteArray) -> Unit) {
                         SpeechErrorCode.PROTOCOL,
                         AppStrings.get(
                             R.string.voice_i18n_gemini_tts_unsupported_audio_format,
-                            "Gemini 返回了不支持的音频格式",
+                            "Gemini returned an unsupported audio format",
                         ),
                     )
                     val encoded = delta.optString("data")
@@ -82,7 +82,7 @@ internal class GeminiSpeechDecoder(onAudio: (ByteArray) -> Unit) {
                         SpeechErrorCode.SERVER,
                         AppStrings.get(
                             R.string.voice_i18n_gemini_tts_incomplete,
-                            "Gemini 未完成朗读，请缩短文本或调整朗读风格后重试",
+                            "Gemini did not finish reading aloud，please shorten the text or adjust the reading style and retry",
                         ),
                     )
                 }
@@ -101,21 +101,21 @@ private fun geminiFailure(error: JSONObject?): SpeechFailure = when (error?.optS
         SpeechErrorCode.AUTHENTICATION,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_auth_failed,
-            "Gemini 认证失败，请检查 API Key、地区和模型权限",
+            "Gemini authentication failed，please check API Key、region and model permissions",
         ),
     )
     "RESOURCE_EXHAUSTED" -> SpeechFailure(
         SpeechErrorCode.RATE_LIMITED,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_rate_limited,
-            "Gemini 额度不足或请求过于频繁，请稍后重试",
+            "Gemini quota exhausted or requests too frequent，please retry later",
         ),
     )
     else -> SpeechFailure(
         SpeechErrorCode.SERVER,
         AppStrings.get(
             R.string.voice_i18n_gemini_tts_failed,
-            "Gemini 语音合成失败，请检查模型权限和配置",
+            "Gemini voice synthesis failed，please check model permissions and configuration",
         ),
     )
 }

@@ -37,59 +37,59 @@ internal data class PersonalContextRequest(
         private val idPattern = Regex("^[0-9]{1,19}$")
 
         fun parse(arguments: JSONObject): PersonalContextRequest {
-            val actionName = requiredString(arguments, "action", "必须提供有效的 action")
+            val actionName = requiredString(arguments, "action", "A valid action must be provided")
             val action = PersonalContextAction.entries.firstOrNull { it.wireName == actionName }
-                ?: invalid("不支持此个人上下文操作")
+                ?: invalid("This personal context operation is not supported")
             val source = if (arguments.has("source")) {
-                PersonalContextSources.find(requiredString(arguments, "source", "source 必须是有效的数据源名称"))
-                    ?: invalid("不支持此个人上下文数据源")
+                PersonalContextSources.find(requiredString(arguments, "source", "source must be a valid data source name"))
+                    ?: invalid("This personal context data source is not supported")
             } else null
-            if (action != PersonalContextAction.SOURCES && source == null) invalid("当前操作必须提供 source")
-            if (action == PersonalContextAction.BILL_SUMMARY && source?.id != "bills") invalid("bill_summary 仅支持 bills 数据源")
+            if (action != PersonalContextAction.SOURCES && source == null) invalid("This operation requires a source")
+            if (action == PersonalContextAction.BILL_SUMMARY && source?.id != "bills") invalid("bill_summary only supports the bills data source")
 
-            val query = optionalString(arguments, "query", "query 必须是文本")?.let { value ->
-                if (value.codePointCount(0, value.length) > MAX_QUERY_CHARACTERS) invalid("query 超过 200 个字符")
-                if ('\u0000' in value || !Charsets.UTF_8.newEncoder().canEncode(value)) invalid("query 包含无效字符")
+            val query = optionalString(arguments, "query", "query must be text")?.let { value ->
+                if (value.codePointCount(0, value.length) > MAX_QUERY_CHARACTERS) invalid("query exceeds 200 characters")
+                if ('\u0000' in value || !Charsets.UTF_8.newEncoder().canEncode(value)) invalid("query contains invalid characters")
                 value.trim().takeIf(String::isNotEmpty)
             }
             val start = parseTime(arguments, "start_time")
             val end = parseTime(arguments, "end_time")
-            if (start != null && end != null && start >= end) invalid("时间范围必须满足 start_time 早于 end_time")
-            if ((start != null || end != null) && source?.timeField == null) invalid("此数据源没有已确认的业务时间字段，不能按时间筛选")
+            if (start != null && end != null && start >= end) invalid("The time range must have start_time earlier than end_time")
+            if ((start != null || end != null) && source?.timeField == null) invalid("This data source has no confirmed business time field and cannot be filtered by time")
             source?.timeUnit?.toBounds(start, end)
             val limit = optionalInteger(arguments, "limit", 10, 1, MAX_LIMIT)
             val offset = optionalInteger(arguments, "offset", 0, 0, MAX_OFFSET)
-            val sort = optionalString(arguments, "sort", "sort 必须是 newest 或 oldest")?.let { value ->
-                PersonalContextSort.entries.firstOrNull { it.wireName == value } ?: invalid("sort 必须是 newest 或 oldest")
+            val sort = optionalString(arguments, "sort", "sort must be newest or oldest")?.let { value ->
+                PersonalContextSort.entries.firstOrNull { it.wireName == value } ?: invalid("sort must be newest or oldest")
             } ?: PersonalContextSort.NEWEST
             val id = if (action == PersonalContextAction.READ) {
-                val value = requiredString(arguments, "id", "read 必须提供整数文本 id")
-                if (!idPattern.matches(value)) invalid("id 必须是最多 19 位的非负整数文本")
-                value.toLongOrNull()?.toString() ?: invalid("id 超过支持的整数范围")
+                val value = requiredString(arguments, "id", "read requires an integer-text id")
+                if (!idPattern.matches(value)) invalid("id must be a non-negative integer text of at most 19 digits")
+                value.toLongOrNull()?.toString() ?: invalid("id exceeds the supported integer range")
             } else null
             return PersonalContextRequest(action, source, query, start, end, limit, offset, sort, id)
         }
 
         private fun parseTime(arguments: JSONObject, name: String): Instant? {
-            val value = optionalString(arguments, name, "时间参数必须是带时区偏移的 ISO 8601 文本") ?: return null
-            if (!timePattern.matches(value)) invalid("时间参数必须包含 ISO 8601 日期、时间及 Z 或时区偏移")
+            val value = optionalString(arguments, name, "The time argument must be ISO 8601 text with a timezone offset") ?: return null
+            if (!timePattern.matches(value)) invalid("The time argument must contain an ISO 8601 date, time, and Z or a timezone offset")
             return try {
                 OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME).toInstant()
             } catch (_: DateTimeException) {
-                invalid("时间参数不是有效的日期或时区偏移")
+                invalid("The time argument is not a valid date or timezone offset")
             }
         }
 
         private fun optionalInteger(arguments: JSONObject, name: String, default: Int, minimum: Int, maximum: Int): Int {
             if (!arguments.has(name)) return default
             val value = arguments.opt(name)
-            if (value !is Number) invalid("分页参数必须是 JSON 整数")
+            if (value !is Number) invalid("The pagination argument must be a JSON integer")
             val integer = try { BigDecimal(value.toString()).intValueExact() } catch (_: NumberFormatException) {
-                invalid("分页参数必须是有限整数")
+                invalid("The pagination argument must be a finite integer")
             } catch (_: ArithmeticException) {
-                invalid("分页参数必须是范围内的整数")
+                invalid("The pagination argument must be an integer within range")
             }
-            if (integer !in minimum..maximum) invalid("分页参数超出允许范围")
+            if (integer !in minimum..maximum) invalid("The pagination argument is out of the allowed range")
             return integer
         }
 

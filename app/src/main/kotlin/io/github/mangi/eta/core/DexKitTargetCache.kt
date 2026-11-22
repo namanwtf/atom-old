@@ -23,7 +23,7 @@ internal class DexKitTargetCache(
             val values = Properties().apply { file.inputStream().use(::load) }
             if (values.getProperty("source") == identity) values.getProperty("method") else null
         } catch (exception: Exception) {
-            logger.warn("DexKit 目标缓存读取失败: key=$key, type=${exception.safeLogType()}")
+            logger.warn("DexKit target cache read failed: key=$key, type=${exception.safeLogType()}")
             null
         }
     }
@@ -33,7 +33,7 @@ internal class DexKitTargetCache(
         var temporary: File? = null
         try {
             if (!directory.isDirectory && !directory.mkdirs()) {
-                logger.warn("DexKit 目标缓存目录不可用")
+                logger.warn("DexKit target cache directory is unavailable")
                 return
             }
             temporary = File.createTempFile("eta-target-", ".tmp", directory)
@@ -50,10 +50,10 @@ internal class DexKitTargetCache(
                 StandardCopyOption.REPLACE_EXISTING,
             )
         } catch (exception: Exception) {
-            logger.warn("DexKit 目标缓存写入失败: key=$key, type=${exception.safeLogType()}")
+            logger.warn("DexKit target cache write failed: key=$key, type=${exception.safeLogType()}")
         } finally {
             temporary?.let {
-                if (it.exists() && !it.delete()) logger.warn("DexKit 临时缓存清理失败")
+                if (it.exists() && !it.delete()) logger.warn("DexKit temporary cache cleanup failed")
             }
         }
     }
@@ -76,7 +76,7 @@ internal class DexKitTargetCache(
             digest(listOf("1", apkPath, apk.length(), apk.lastModified(), dexEntries).joinToString("|"))
         }
     } catch (exception: Exception) {
-        logger.warn("DexKit 无法读取 APK 标识: type=${exception.safeLogType()}")
+        logger.warn("DexKit cannot read APK identity: type=${exception.safeLogType()}")
         null
     }
 

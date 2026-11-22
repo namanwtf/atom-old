@@ -33,9 +33,9 @@ internal object AgentAfterActionSummary {
                 ScreenObservationMetadata.uiTreeNote(status, observation.image != null)
             }
         } else if (changed) {
-            "以上为动作后的新界面，可直接用该 observation_id 继续操作；需要更多节点或截图时再调用 observe_screen"
+            "This is the new UI after the action; you can continue using this observation_id, and call observe_screen again when more nodes or a screenshot are needed"
         } else {
-            "界面没有可见变化，动作可能未生效；请换目标或方式，不要原样重复"
+            "The UI shows no visible change, so the action may not have taken effect; try a different target or approach instead of repeating it unchanged"
         }
         return JSONObject()
             .put("observation_id", after?.id ?: JSONObject.NULL)

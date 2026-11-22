@@ -27,7 +27,7 @@ internal object GrokModelCatalog {
             val item = element.jsonObjectOrNull() ?: error(
                 AppStrings.get(
                     R.string.repo_err_grok_catalog_invalid_entry,
-                    "Grok 模型目录包含无效模型项",
+                    "Grok model catalog contains an invalid model entry",
                 ),
             )
             val meta = item["_meta"]?.jsonObjectOrNull()
@@ -45,7 +45,7 @@ internal object GrokModelCatalog {
                 ?: error(
                     AppStrings.get(
                         R.string.repo_err_grok_catalog_missing_model_id,
-                        "Grok 模型目录缺少模型标识",
+                        "Grok model catalog is missing a model identifier",
                     ),
                 )
             val normalized = JsonObject(item + ("id" to JsonPrimitive(id)))
@@ -64,7 +64,7 @@ internal object GrokModelCatalog {
         require(visible == 0 || unsupported != visible) {
             AppStrings.get(
                 R.string.repo_err_grok_catalog_unsupported_protocol,
-                "当前订阅连接不使用目录指定的模型协议，无法导入这些模型",
+                "The current subscription connection does not use the model protocol specified by the catalog，so these models cannot be imported",
             )
         }
         return models

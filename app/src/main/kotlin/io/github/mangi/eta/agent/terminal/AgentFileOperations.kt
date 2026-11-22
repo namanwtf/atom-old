@@ -92,7 +92,7 @@ internal class AgentFileOperations(
             .put("truncated", false).put("has_more", false).put("stop_reason", "output_limit")
         // 先保留最长状态字段的空间，分页必须停在尚未发布的条目前，不能截断完整 JSON。
         var outputChars = result.toString().length
-        if (outputChars > MAX_DIRECTORY_JSON_CHARS) throw FileToolException("FILE_OUTPUT_LIMIT", "目录路径和元数据超过输出预算")
+        if (outputChars > MAX_DIRECTORY_JSON_CHARS) throw FileToolException("FILE_OUTPUT_LIMIT", "Directory path and metadata exceed the output budget")
         var consumed = 0
         var outputLimited = false
         for (entry in page.entries) {
@@ -101,7 +101,7 @@ internal class AgentFileOperations(
             val item = entry.toJson()
             val cost = item.toString().length + if (entries.length() == 0) 0 else 1
             if (outputChars + cost > MAX_DIRECTORY_JSON_CHARS) {
-                if (entries.length() == 0) throw FileToolException("FILE_OUTPUT_LIMIT", "单个目录条目超过输出预算")
+                if (entries.length() == 0) throw FileToolException("FILE_OUTPUT_LIMIT", "A single directory entry exceeds the output budget")
                 outputLimited = true
                 break
             }
@@ -131,11 +131,11 @@ internal class AgentFileOperations(
         replaceAll: Boolean = false,
         expectedRevision: String? = null,
     ): String = fileToolOperation("edit_file") {
-        if (oldText.isEmpty()) throw FileToolException("EMPTY_MATCH", "old_text 不能为空；创建文件请使用 write_file")
+        if (oldText.isEmpty()) throw FileToolException("EMPTY_MATCH", "old_text must not be empty；use write_file to create files")
         encodeBounded(oldText)
         encodeBounded(newText)
         val stat = regularFile(path, expectedRevision)
-        if (stat.sizeBytes > MAX_EDIT_BYTES) throw FileToolException("FILE_TOO_LARGE", "精确编辑仅支持不超过 512 KiB 的文本文件")
+        if (stat.sizeBytes > MAX_EDIT_BYTES) throw FileToolException("FILE_TOO_LARGE", "Precise editing supports only text files no larger than 512 KiB")
         val buffer = ByteArrayOutputStream(stat.sizeBytes.toInt())
         var offset = 0L
         while (offset < stat.sizeBytes) {
@@ -153,12 +153,12 @@ internal class AgentFileOperations(
             val found = original.indexOf(oldText, position)
             if (found < 0) break
             count++
-            if (!replaceAll && count > 1) throw FileToolException("AMBIGUOUS_MATCH", "old_text 命中多处，请提供更多上下文或明确 replace_all=true")
+            if (!replaceAll && count > 1) throw FileToolException("AMBIGUOUS_MATCH", "old_text matched multiple places; provide more context or explicitly set replace_all=true")
             position = found + oldText.length
         }
-        if (count == 0) throw FileToolException("MATCH_NOT_FOUND", "未找到 old_text，文件未修改；请重新读取并使用原文")
+        if (count == 0) throw FileToolException("MATCH_NOT_FOUND", "old_text not found, file unchanged；re-read and use the original text")
         val estimatedChars = original.length.toLong() + count.toLong() * (newText.length - oldText.length)
-        if (estimatedChars > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "替换后的文本超过编辑大小限制")
+        if (estimatedChars > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "The replaced text exceeds the edit size limit")
         val replacement = encodeBounded(original.replace(oldText, newText))
         verifyUnchanged(stat)
         val sha256 = MessageDigest.getInstance("SHA-256").digest(originalBytes)
@@ -183,20 +183,20 @@ internal class AgentFileOperations(
 
     private fun regularFile(path: String, expectedRevision: String?): FileToolStat {
         val stat = backend.stat(backend.resolve(path))
-        if (stat.kind != FileToolKind.FILE) throw FileToolException("NOT_REGULAR_FILE", "目标不是普通文件")
-        if (expectedRevision != null && stat.revision != expectedRevision) throw FileToolException("FILE_CHANGED", "文件已变化，请重新读取")
+        if (stat.kind != FileToolKind.FILE) throw FileToolException("NOT_REGULAR_FILE", "Target is not a regular file")
+        if (expectedRevision != null && stat.revision != expectedRevision) throw FileToolException("FILE_CHANGED", "File has changed; re-read")
         return stat
     }
 
     private fun verifyUnchanged(stat: FileToolStat) {
-        if (backend.stat(stat.path).revision != stat.revision) throw FileToolException("FILE_CHANGED", "文件在操作期间已变化，请重试")
+        if (backend.stat(stat.path).revision != stat.revision) throw FileToolException("FILE_CHANGED", "File changed during the operation; retry")
     }
 
     private fun encodeBounded(content: String): ByteArray {
-        if (content.length > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "文本超过 512 KiB 大小限制")
-        if (!Charsets.UTF_8.newEncoder().canEncode(content)) throw FileToolException("NOT_UTF8_TEXT", "文本包含无效 Unicode 字符")
+        if (content.length > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "Text exceeds the 512 KiB size limit")
+        if (!Charsets.UTF_8.newEncoder().canEncode(content)) throw FileToolException("NOT_UTF8_TEXT", "Text contains invalid Unicode characters")
         return content.toByteArray(Charsets.UTF_8).also {
-            if (it.size > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "文本超过 512 KiB 大小限制")
+            if (it.size > MAX_EDIT_BYTES) throw FileToolException("CONTENT_TOO_LARGE", "Text exceeds the 512 KiB size limit")
         }
     }
 
@@ -218,13 +218,13 @@ internal inline fun fileToolOperation(tool: String, block: () -> JSONObject): St
 } catch (error: FileToolException) {
     JSONObject().put("ok", false).put("tool", tool).put("code", error.code).put("message", error.message).toString()
 } catch (_: NoSuchFileException) {
-    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_NOT_FOUND").put("message", "文件或目录不存在").toString()
+    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_NOT_FOUND").put("message", "File or directory does not exist").toString()
 } catch (_: AccessDeniedException) {
-    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_ACCESS_DENIED").put("message", "文件访问未授权").toString()
+    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_ACCESS_DENIED").put("message", "File access is not authorized").toString()
 } catch (_: SecurityException) {
-    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_ACCESS_DENIED").put("message", "文件访问未授权").toString()
+    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_ACCESS_DENIED").put("message", "File access is not authorized").toString()
 } catch (_: IllegalArgumentException) {
-    JSONObject().put("ok", false).put("tool", tool).put("code", "INVALID_ARGUMENT").put("message", "文件工具参数无效").toString()
+    JSONObject().put("ok", false).put("tool", tool).put("code", "INVALID_ARGUMENT").put("message", "File tool arguments are invalid").toString()
 } catch (_: IOException) {
-    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_IO_ERROR").put("message", "文件读写失败，请检查当前授权和文件状态").toString()
+    JSONObject().put("ok", false).put("tool", tool).put("code", "FILE_IO_ERROR").put("message", "File read/write failed; check the current authorization and file state").toString()
 }

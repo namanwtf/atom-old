@@ -52,8 +52,8 @@ internal class EtaAssistantScreenContext(
             val text = try {
                 EtaAssistContentReader.read(context, state)
             } catch (exception: Exception) {
-                AndroidAgentLogger.warn("助理应用上下文解析失败: type=${exception.javaClass.simpleName}")
-                "应用内容读取失败"
+                AndroidAgentLogger.warn("Assistant app context parse failed: type=${exception.javaClass.simpleName}")
+                "Failed to read app content"
             }
             synchronized(this@EtaAssistantScreenContext) {
                 if (closed) return@synchronized
@@ -77,7 +77,7 @@ internal class EtaAssistantScreenContext(
             val capturedImage = try {
                 bitmap?.let { AgentImageCodec.fromScreenContextBitmap(it, source = "assistant_screen_context") }
             } catch (exception: Exception) {
-                AndroidAgentLogger.warn("助理截图编码失败: type=${exception.javaClass.simpleName}")
+                AndroidAgentLogger.warn("Assistant screenshot encoding failed: type=${exception.javaClass.simpleName}")
                 null
             }
             synchronized(this@EtaAssistantScreenContext) {
@@ -97,13 +97,13 @@ internal class EtaAssistantScreenContext(
         return synchronized(this) {
             if (closed) return@synchronized Snapshot()
             val text = buildString {
-                appendLine("采集时间（Unix 毫秒）：$capturedAt；这是助理唤醒时的画面，不代表操作后的实时状态。")
+                appendLine("Captured at（Unix ms）：$capturedAt；this is the screen at the time the assistant woke up，not the live state after actions。")
                 if (foregroundApps.isNotEmpty()) {
-                    appendLine("前台应用：" + foregroundApps.take(MAX_ACTIVITIES)
+                    appendLine("Foreground apps：" + foregroundApps.take(MAX_ACTIVITIES)
                         .joinToString { it.flattenToShortString().take(512) })
                 }
-                appendLine(if (image != null) "本次已附屏幕截图。" else "系统未提供可用截图。")
-                if (activities.isEmpty()) appendLine("系统尚未提供应用内容。")
+                appendLine(if (image != null) "A screenshot is attached。" else "The system did not provide a usable screenshot。")
+                if (activities.isEmpty()) appendLine("The system has not provided app content。")
                 activities.entries.sortedWith(compareByDescending<Map.Entry<Int, Pair<Boolean, String>>> { it.value.first }
                     .thenBy { it.key }).take(MAX_ACTIVITIES).forEach { appendLine(it.value.second) }
             }

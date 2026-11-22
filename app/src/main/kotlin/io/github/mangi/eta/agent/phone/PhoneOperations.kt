@@ -56,14 +56,14 @@ internal object PhoneOperations {
                                 markMutation,
                             )
                             .execute(tool, args)
-                    else -> PhoneOperation.failure("UNKNOWN_TOOL", "未知一方应用操作")
+                    else -> PhoneOperation.failure("UNKNOWN_TOOL", "unknown first-party app operation")
                 }
             } catch (failure: PhoneOperationFailure) {
-                PhoneOperation.failure(failure.code, failure.message ?: "操作失败")
+                PhoneOperation.failure(failure.code, failure.message ?: "operation failed")
             } catch (_: SecurityException) {
-                PhoneOperation.failure("PHONE_ACCESS_DENIED", "系统未授予此操作所需权限")
+                PhoneOperation.failure("PHONE_ACCESS_DENIED", "the system has not granted the permission required for this operation")
             } catch (_: Exception) {
-                PhoneOperation.failure("PHONE_OPERATION_FAILED", "应用接口执行或结果读取失败")
+                PhoneOperation.failure("PHONE_OPERATION_FAILED", "app interface execution or result reading failed")
             }
             .also { result ->
                 result.put("tool", tool)
@@ -71,7 +71,7 @@ internal object PhoneOperations {
                     result
                         .put("status", "unconfirmed")
                         .put("verified", false)
-                        .put("message", "操作可能已执行，但未能确认完整结果；请先查询状态，不要重复创建")
+                        .put("message", "the operation may have executed, but the full result could not be confirmed; check the status first and do not create duplicates")
             }
     }
 }
