@@ -114,7 +114,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 AgentAppTheme(appearance = appearance, systemOverlay = true) {
                     var expanded by remember(bubbleReset.value) { mutableStateOf(false) }
                     AgentOverlayBubble(
-                        state = AgentOverlayState.Initial,
+                        // Idle: the persistent bubble is not attached to a run, so it
+                        // must not draw the working ring.
+                        state = AgentOverlayState(phase = AgentOverlayPhase.FINISHED),
                         expanded = expanded,
                         labels = labels,
                         onToggleExpanded = { expanded = !expanded },
