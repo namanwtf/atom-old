@@ -12,9 +12,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import io.github.namanwtf.atom.R
 import io.github.namanwtf.atom.agent.voice.AtomAssistantOverlayService
@@ -28,15 +32,29 @@ import kotlinx.coroutines.launch
  * Persistent floating bubble (the "Atom") — an always-on nucleus with an
  * electron orbit and electric arcs, independent of any agent run.
  *
- * Hosted here as a [LifecycleService] so the Compose window gets real
- * lifecycle/saved-state owners. Started and stopped from Settings; Hide
- * detaches the window and flips the setting off.
+ * Tap opens the full chat app; Talk starts the assistant voice overlay; Hide
+ * detaches the window and turns the setting off.
  */
-class AtomBubbleService : LifecycleService() {
+class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
+
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val savedStateRegistry: android.savedstate.SavedStateRegistry
+        get() = savedStateRegistryController.savedStateRegistry
 
     private var windowManager: WindowManager? = null
     private var bubbleView: ComposeView? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        savedStateRegistryController.performRestore(null)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         observeBubbleSetting()
@@ -47,6 +65,8 @@ class AtomBubbleService : LifecycleService() {
 
     override fun onDestroy() {
         hideBubble()
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         super.onDestroy()
     }
 
