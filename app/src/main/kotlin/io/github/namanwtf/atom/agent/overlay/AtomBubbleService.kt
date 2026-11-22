@@ -4,8 +4,8 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
+import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
@@ -59,9 +59,6 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var windowManager: WindowManager? = null
     private var bubbleView: ComposeView? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
-    private var orbGeometry: AtomOrbGeometry? = null
-    private val uiHandler = Handler(Looper.getMainLooper())
-    private var collapseResize: Runnable? = null
     private var chatView: ComposeView? = null
     private var chatParams: WindowManager.LayoutParams? = null
 
@@ -120,21 +117,22 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         state = AgentOverlayState.Initial,
                         expanded = expanded,
                         labels = labels,
-                        onToggleExpanded = {
-                            expanded = !expanded
-                            setBubbleExpanded(expanded)
+                        onToggleExpanded = { expanded = !expanded },
+                        onAction = { action ->
+                            expanded = false
+                            handleAction(action)
                         },
-                        onAction = { action -> handleAction(action) },
                         onDrag = { dx, dy -> moveBubble(dx, dy) },
                     )
                 }
             }
         }
-        val geometry = wm.atomOrbGeometry(this, resources.displayMetrics.density)
-        val (startX, startY) = geometry.initialPlacement(false)
+        // Anchored to the right edge: the hold menu and the status pill grow
+        // towards the middle of the screen instead of off it.
+        val metrics = wm.currentWindowMetrics
         val lp = WindowManager.LayoutParams(
-            geometry.width(false),
-            geometry.height(false),
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -142,50 +140,42 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            x = startX
-            y = startY
+            gravity = Gravity.TOP or Gravity.END
+            x = dpToPx(6)
+            y = (metrics.bounds.height() * 0.55f).toInt()
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
         windowManager = wm
         bubbleView = view
         bubbleParams = lp
-        orbGeometry = geometry
-    }
-
-    /**
-     * The collapsed window is only as large as the orb, so it never swallows
-     * touches meant for the app underneath. Opening the arc grows the window
-     * first; collapsing shrinks it back once the animation has finished.
-     */
-    private fun setBubbleExpanded(expanded: Boolean) {
-        val view = bubbleView ?: return
-        val lp = bubbleParams ?: return
-        val wm = windowManager ?: return
-        val geometry = orbGeometry ?: return
-        collapseResize?.let(uiHandler::removeCallbacks)
-        collapseResize = null
-        if (expanded) {
-            wm.resizeOrbWindow(view, lp, geometry, expanded = true)
-            return
-        }
-        val shrink = Runnable {
-            if (bubbleView === view) {
-                wm.resizeOrbWindow(view, lp, geometry, expanded = false)
-            }
-        }
-        collapseResize = shrink
-        uiHandler.postDelayed(shrink, 320L)
     }
 
     private fun moveBubble(dx: Float, dy: Float) {
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
-        val geometry = orbGeometry ?: return
-        wm.moveOrbWindow(view, lp, geometry, dx, dy, expanded = lp.width > geometry.width(false))
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val height = view.height.takeIf { it > 0 } ?: (74 * density).toInt()
+
+        // x counts from the right edge because the window is END-anchored.
+        lp.x -= dx.toInt()
+        lp.y += dy.toInt()
+
+        val margin = dpToPx(6)
+        val bottomInset = navBarInset(wm)
+        lp.x = lp.x.coerceIn(margin, maxOf(margin, metrics.bounds.width() - width - margin))
+        lp.y = lp.y.coerceIn(margin, maxOf(margin, metrics.bounds.height() - bottomInset - height - margin))
+        runCatching { wm.updateViewLayout(view, lp) }
     }
+
+    private fun navBarInset(wm: WindowManager): Int = runCatching {
+        wm.currentWindowMetrics.windowInsets
+            .getInsetsIgnoringVisibility(android.view.WindowInsets.Type.systemBars())
+            .bottom
+    }.getOrDefault(dpToPx(48)).let { if (it > 0) it else dpToPx(48) }
 
     private fun handleAction(action: AgentOrbAction) {
         when (action) {
@@ -229,41 +219,48 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 }
             }
         }
-        val geometry = orbGeometry ?: wm.atomOrbGeometry(this, resources.displayMetrics.density)
+        // Buddy's panel geometry: between the status bar and the navigation bar,
+        // full height, the screen behind dimmed and blurred.
         val metrics = wm.currentWindowMetrics
-        val density = resources.displayMetrics.density
-        val margin = (16 * density).toInt()
-        val panelCap = (320 * density).toInt()
-        val screenWidth = metrics.bounds.width()
-        val screenHeight = metrics.bounds.height()
-        val chatWidth = minOf(screenWidth - margin * 2, panelCap)
-        val chatHeight = minOf(
-            (460 * density).toInt(),
-            (screenHeight * 0.48f).toInt(),
-        )
+        val bounds = metrics.bounds
+        val insets = runCatching {
+            metrics.windowInsets.getInsetsIgnoringVisibility(android.view.WindowInsets.Type.systemBars())
+        }.getOrNull()
+        val topInset = insets?.top ?: 0
+        val bottomInset = insets?.bottom ?: dpToPx(48)
+        val gap = dpToPx(8)
+        val chatWidth = (bounds.width() - gap * 2).coerceAtLeast(dpToPx(240))
+        val chatHeight = (bounds.height() - topInset - bottomInset - gap * 2)
+            .coerceAtLeast(dpToPx(220))
+        val flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
+            WindowManager.LayoutParams.FLAG_DIM_BEHIND
         val lp = WindowManager.LayoutParams(
             chatWidth,
             chatHeight,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            flags,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.BOTTOM or Gravity.END
-            x = margin
-            y = margin + geometry.safeBottomInset
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            x = 0
+            y = topInset + gap
+            dimAmount = 0.45f
             windowAnimations = 0
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                runCatching { blurBehindRadius = dpToPx(16) }
+            }
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
         windowManager = wm
         chatView = view
         chatParams = lp
-        // The panel is the focused surface: hide the orb and close its arc so
-        // the two never fight for the same corner of the screen.
+        // The panel is the focused surface: hide the bubble so the two never
+        // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
-        if (bubbleParams != null) setBubbleExpanded(false)
         bubbleReset.value++
     }
 
@@ -334,12 +331,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     private fun hideBubble() {
-        collapseResize?.let(uiHandler::removeCallbacks)
-        collapseResize = null
         bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         bubbleView = null
         bubbleParams = null
-        orbGeometry = null
         windowManager = null
     }
 

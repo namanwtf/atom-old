@@ -147,3 +147,13 @@ Atom does not bundle the following tools into the APK. When the user actively in
 The license of JADX's distribution package is retained together with the required CLI files; the licenses and third-party notices of Apktool, smali, and baksmali are retained within their respective JAR artifacts. Atom only provides verified installation, command entry points, and capability boundaries, and does not re-license these tools.
 
 When GitHub's actual artifact domain is unreachable or slow, the installer may request the same public Release URL through `gh-proxy.com`; Node.js artifacts may be requested through `cdn.npmmirror.com` first. The download entry learns the user's network address and the requested public artifact; Atom does not send it accounts, cookies, API keys, or other Atom data, and continues to verify the built-in official artifact size and SHA-256 before writing to disk. Users who do not want to use the download entry can simply not install the corresponding optional profile.
+
+## Floating Bubble Design
+
+The floating bubble's geometry and look (60dp face inside a 74dp orbit ring, hold
+menu, status pill, full-height panel with a dimmed, blurred backdrop behind it) are
+adapted from [Buddy](https://github.com/ghorbelhamdi/buddy-android), copyright the
+Buddy contributors, licensed under the Apache License 2.0. The vector face drawable
+`app/src/main/res/drawable/atom_bubble_face.xml` is a copy of Buddy's
+`bubble_face.xml`; Atom uses it as the bubble's face and as the panel's empty state.
+The adapted source stays under Apache-2.0; the rest of Atom remains GPL-3.0.
