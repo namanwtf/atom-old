@@ -705,24 +705,17 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     /**
-     * After the panel closes the bubble comes back at the bottom of the screen on
-     * the edge it was parked on, which is where the thumb expects it.
+     * Brings the bubble back after the panel closes — exactly where the user
+     * left it. It used to jump to the bottom edge, which undid every drag.
      */
     private fun dockBubbleToBottom() {
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
-        val metrics = wm.currentWindowMetrics
-        val width = bubbleWidth()
-        val height = bubbleHeight()
-        val margin = dpToPx(6)
-        val leftmost = metrics.bounds.width() - width - margin
-        lp.x = if (lp.x > leftmost / 2) leftmost else margin
-        lp.y = (metrics.bounds.height() - navBarInset(wm) - height - dpToPx(24))
-            .coerceIn(margin, bubbleBottomLimit(wm, height))
         view.visibility = View.VISIBLE
-        restingY = lp.y
-        saveBubblePosition(lp)
+        val margin = dpToPx(6)
+        restingY = restingY.coerceIn(margin, bubbleBottomLimit(wm, bubbleHeight()))
+        lp.y = restingY
         runCatching { wm.updateViewLayout(view, lp) }
     }
 

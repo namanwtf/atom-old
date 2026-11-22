@@ -232,28 +232,15 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                                         update { current -> current.copy(pureBlackEnabled = enabled) }
                                     },
                                 )
-                                SwitchPreference(
-                                    title = stringResource(R.string.appearance_floating_bubble),
-                                    summary = stringResource(R.string.appearance_floating_bubble_summary),
-                                    checked = appearance.floatingBubbleEnabled,
-                                    onCheckedChange = { enabled ->
-                                        update { current -> current.copy(floatingBubbleEnabled = enabled) }
-                                        val ctx = context
-                                        if (enabled) {
-                                            ctx.startService(Intent(ctx, AtomBubbleService::class.java))
-                                        } else {
-                                            ctx.stopService(Intent(ctx, AtomBubbleService::class.java))
-                                        }
-                                    },
-                                )
                             }
                         }
                     }
                 }
 
-                // Pure black and the floating bubble have nothing to do with
-                // Monet, but they lived inside the Monet-only block, so they
-                // disappeared whenever Monet colours were off.
+                // Pure black has nothing to do with Monet, but it lived inside
+                // the Monet-only block, so it disappeared whenever Monet
+                // colours were turned off. The floating bubble now has its own
+                // screen under "Floating assistant".
                 item(key = "appearance_bubble") {
                     Card(
                         modifier = Modifier
@@ -266,20 +253,6 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                             checked = appearance.pureBlackEnabled,
                             onCheckedChange = { enabled ->
                                 update { current -> current.copy(pureBlackEnabled = enabled) }
-                            },
-                        )
-                        SwitchPreference(
-                            title = stringResource(R.string.appearance_floating_bubble),
-                            summary = stringResource(R.string.appearance_floating_bubble_summary),
-                            checked = appearance.floatingBubbleEnabled,
-                            onCheckedChange = { enabled ->
-                                update { current -> current.copy(floatingBubbleEnabled = enabled) }
-                                val ctx = context
-                                if (enabled) {
-                                    ctx.startService(Intent(ctx, AtomBubbleService::class.java))
-                                } else {
-                                    ctx.stopService(Intent(ctx, AtomBubbleService::class.java))
-                                }
                             },
                         )
                     }

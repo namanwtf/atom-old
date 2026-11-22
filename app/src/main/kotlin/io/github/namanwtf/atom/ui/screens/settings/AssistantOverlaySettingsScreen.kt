@@ -10,17 +10,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import io.github.namanwtf.atom.AtomApp
 import io.github.namanwtf.atom.R
 import io.github.namanwtf.atom.data.model.AppearanceUiStyle
+import io.github.namanwtf.atom.data.model.AppearanceSettings
 import io.github.namanwtf.atom.data.model.AssistantOverlaySettings
 import io.github.namanwtf.atom.data.model.ReasoningEffort
 import io.github.namanwtf.atom.data.model.enabledModel
+import io.github.namanwtf.atom.data.repository.AppearanceSettingsRepository
 import io.github.namanwtf.atom.data.repository.ProviderRepository
 import io.github.namanwtf.atom.data.repository.RuntimeConfigRepository
+import io.github.namanwtf.atom.agent.overlay.AtomBubbleService
 import io.github.namanwtf.atom.ui.app.LocalUiStyle
 import io.github.namanwtf.atom.ui.components.MiuixScaffoldPage
 import io.github.namanwtf.atom.ui.components.OptionalModelPickerContent
@@ -31,7 +35,9 @@ import io.github.namanwtf.atom.ui.components.coui.CouiPreference
 import io.github.namanwtf.atom.ui.components.coui.CouiPreferenceFooter
 import io.github.namanwtf.atom.ui.components.coui.CouiPreferenceGroup
 import io.github.namanwtf.atom.ui.components.coui.CouiScaffoldPage
+import io.github.namanwtf.atom.ui.components.coui.CouiSwitchPreference
 import io.github.namanwtf.atom.ui.components.currentGlassOverlayBackdrop
+import android.content.Intent
 import io.github.namanwtf.atom.ui.model.AgentModelPickerProjector
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -41,6 +47,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.glass.GlassBottomSheet
 import top.yukonga.miuix.kmp.glass.GlassDropdownPreference
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -133,6 +140,20 @@ internal fun AssistantOverlaySettingsScreen(
         }
     }
 
+    // The floating bubble lives here now, not under Appearance.
+    val appearance by AppearanceSettingsRepository.settingsFlow()
+        .collectAsState(initial = AppearanceSettings())
+    val context = LocalContext.current
+    val bubbleTitle = stringResource(R.string.appearance_floating_bubble)
+    val bubbleSummary = stringResource(R.string.appearance_floating_bubble_summary)
+    val onBubbleToggle: (Boolean) -> Unit = { enabled ->
+        scope.launch {
+            AppearanceSettingsRepository.update { it.copy(floatingBubbleEnabled = enabled) }
+            val intent = Intent(context, AtomBubbleService::class.java)
+            if (enabled) context.startService(intent) else context.stopService(intent)
+        }
+    }
+
     val pageTitle = stringResource(R.string.assistant_overlay_settings_title)
     val groupTitle = stringResource(R.string.assistant_overlay_settings_group)
     val modelTitle = stringResource(R.string.assistant_overlay_settings_model)
@@ -167,6 +188,14 @@ internal fun AssistantOverlaySettingsScreen(
                             title = modelTitle,
                             summary = modelSummary,
                             onClick = { showModelSheet = true },
+                        )
+                    }
+                    item {
+                        CouiSwitchPreference(
+                            title = bubbleTitle,
+                            summary = bubbleSummary,
+                            checked = appearance.floatingBubbleEnabled,
+                            onCheckedChange = onBubbleToggle,
                         )
                     }
                     if (effortOptions.size > 1) {
@@ -227,6 +256,12 @@ internal fun AssistantOverlaySettingsScreen(
                             title = modelTitle,
                             summary = modelSummary,
                             onClick = { showModelSheet = true },
+                        )
+                        SwitchPreference(
+                            title = bubbleTitle,
+                            summary = bubbleSummary,
+                            checked = appearance.floatingBubbleEnabled,
+                            onCheckedChange = onBubbleToggle,
                         )
                         if (effortOptions.size > 1) {
                             GlassDropdownPreference(
