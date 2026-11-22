@@ -151,6 +151,8 @@ Directions, not promises. Anything shipped first appears in the commit log.
 
 ## Credits
 
-Atom is a fork of [Eta](https://github.com/Mangi-11/Eta) by Mangi-11, released under GPL-3.0 — the agent foundation, the accessibility and root layers, and the virtual display design come from there. The English-first rewrite, Atom's identity, its own update and privacy posture, the floating bubble, the mini-chat and everything built on top are Atom's own work.
+Atom's agent foundation grows out of [Eta](https://github.com/Mangi-11/Eta) by Mangi-11 (GPL-3.0): its accessibility and root layers and the virtual display design. The floating bubble's face, geometry and its Tesla-coil drag effect are adapted from [Buddy](https://github.com/ghorbelhamdi/buddy-android) (Apache-2.0), attributed in [`docs/THIRD_PARTY_NOTICES.md`](docs/THIRD_PARTY_NOTICES.md).
+
+Everything that makes Atom Atom — the English-first product, its identity, the update channel, the mini-chat panel, the model and privacy posture — is this project's own work.
 
 GPL-3.0 — see [LICENSE](LICENSE).

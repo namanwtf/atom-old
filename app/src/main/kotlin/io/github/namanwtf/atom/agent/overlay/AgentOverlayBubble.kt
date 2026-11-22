@@ -127,7 +127,7 @@ internal fun AgentOverlayBubble(
             }
 
             Image(
-                painter = painterResource(R.drawable.atom_bubble_face),
+                painter = painterResource(faceFor(state.phase, dragging, working)),
                 contentDescription = "Atom",
                 modifier = Modifier
                     .size(60.dp)
@@ -140,6 +140,18 @@ internal fun AgentOverlayBubble(
             )
         }
     }
+}
+
+/**
+ * Buddy ships five faces and swaps them by state; Atom only ever drew one.
+ * idle = the closed-eyes smile, thinking = working, paused = stopped,
+ * fired = being dragged.
+ */
+private fun faceFor(phase: AgentOverlayPhase, dragging: Boolean, working: Boolean): Int = when {
+    dragging -> R.drawable.atom_bubble_face_fired
+    phase == AgentOverlayPhase.PAUSED -> R.drawable.atom_bubble_face_paused
+    working -> R.drawable.atom_bubble_face_thinking
+    else -> R.drawable.atom_bubble_face
 }
 
 /** Localized labels for the hold menu, resolved by the host. */
