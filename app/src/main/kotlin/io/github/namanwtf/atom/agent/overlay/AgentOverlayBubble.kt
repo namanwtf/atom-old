@@ -74,6 +74,7 @@ internal fun AgentOverlayBubble(
     onAction: (AgentOrbAction) -> Unit,
     onDrag: (x: Float, y: Float) -> Unit,
     onDragEnd: () -> Unit = {},
+    dragging: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val working = state.phase == AgentOverlayPhase.RUNNING
@@ -121,14 +122,17 @@ internal fun AgentOverlayBubble(
                     drawWorkingRing(spin)
                 }
             }
+
             Image(
                 painter = painterResource(R.drawable.atom_bubble_face),
                 contentDescription = "Atom",
                 modifier = Modifier
                     .size(60.dp)
                     .graphicsLayer {
-                        scaleX = breath
-                        scaleY = breath
+                        // Buddy swells the face while it is being dragged.
+                        val drag = if (dragging) 1.14f else 1f
+                        scaleX = breath * drag
+                        scaleY = breath * drag
                     },
             )
         }

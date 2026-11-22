@@ -9,12 +9,24 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -66,6 +78,11 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var panelBaseY: Int = 0
     private var panelLifted = false
     private var panelMaxLift = 0
+    private val dragging = mutableStateOf(false)
+    private val dragBubbleCenter = mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
+    private val dragFused = mutableStateOf(false)
+    private var dismissView: ComposeView? = null
+    private var dismissParams: WindowManager.LayoutParams? = null
 
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
@@ -130,7 +147,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                             handleAction(action)
                         },
                         onDrag = { dx, dy -> moveBubble(dx, dy) },
-                        onDragEnd = { snapBubble() },
+                        onDragEnd = { endBubbleDrag() },
+                        dragging = dragging.value,
                     )
                 }
             }
@@ -161,6 +179,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private fun moveBubble(dx: Float, dy: Float) {
         hideMenu()
+        if (!dragging.value) {
+            dragging.value = true
+            showDismissTarget()
+        }
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
@@ -178,6 +200,11 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         lp.x = lp.x.coerceIn(margin, maxOf(margin, metrics.bounds.width() - width - margin))
         lp.y = lp.y.coerceIn(margin, maxOf(margin, metrics.bounds.height() - bottomInset - height - margin))
         runCatching { wm.updateViewLayout(view, lp) }
+        bubbleCenterOnScreen()?.let { center ->
+            dragBubbleCenter.value = center
+            val target = dismissTargetCenter(metrics)
+            dragFused.value = kotlin.math.hypot(center.x - target.x, center.y - target.y) <= 96 * density
+        }
     }
 
     // ── Radial hold menu (Buddy's RadialMenu) ──────────────────────────────
@@ -265,6 +292,111 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         menuView?.let { view -> runCatching { windowManager?.removeView(view) } }
         menuView = null
         menuParams = null
+    }
+
+    /**
+     * Ends a drag: dropped on the X the bubble goes away, otherwise it snaps to
+     * the nearest edge.
+     */
+    private fun endBubbleDrag() {
+        val overTarget = isOverDismissTarget()
+        dragging.value = false
+        hideDismissTarget()
+        if (overTarget) {
+            hideBubble()
+            lifecycleScope.launch {
+                AppearanceSettingsRepository.update { it.copy(floatingBubbleEnabled = false) }
+            }
+            stopSelf()
+        } else {
+            snapBubble()
+        }
+    }
+
+    /** The X target plus the Tesla-coil arcs to the bubble, in one not-touchable canvas. */
+    private fun showDismissTarget() {
+        if (dismissView != null) return
+        val wm = windowManager ?: return
+        val metrics = wm.currentWindowMetrics
+        dragBubbleCenter.value = bubbleCenterOnScreen() ?: return
+        dragFused.value = false
+        val target = dismissTargetCenter(metrics)
+        val view = ComposeView(this).apply {
+            setViewTreeLifecycleOwner(this@AtomBubbleService)
+            setViewTreeSavedStateRegistryOwner(this@AtomBubbleService)
+            setContent {
+                AtomDragTargetOverlay(
+                    bubble = dragBubbleCenter.value,
+                    target = target,
+                    fused = dragFused.value,
+                )
+            }
+        }
+        val lp = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 0
+            y = 0
+            windowAnimations = 0
+        }
+        runCatching { wm.addView(view, lp) }.onFailure { return }
+        dismissView = view
+        dismissParams = lp
+    }
+
+    private fun bubbleCenterOnScreen(): androidx.compose.ui.geometry.Offset? {
+        val wm = windowManager ?: return null
+        val lp = bubbleParams ?: return null
+        val bubble = bubbleView ?: return null
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val width = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val height = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val left = metrics.bounds.width() - lp.x - width
+        return androidx.compose.ui.geometry.Offset(
+            left + width / 2f,
+            lp.y + height / 2f,
+        )
+    }
+
+    private fun dismissTargetCenter(metrics: android.view.WindowMetrics): androidx.compose.ui.geometry.Offset {
+        val density = resources.displayMetrics.density
+        val bottomInset = windowManager?.let { navBarInset(it) } ?: dpToPx(48)
+        return androidx.compose.ui.geometry.Offset(
+            metrics.bounds.width() / 2f,
+            metrics.bounds.height() - bottomInset - 120 * density,
+        )
+    }
+
+    private fun hideDismissTarget() {
+        dismissView?.let { view -> runCatching { windowManager?.removeView(view) } }
+        dismissView = null
+        dismissParams = null
+    }
+
+    private fun isOverDismissTarget(): Boolean {
+        val wm = windowManager ?: return false
+        val lp = bubbleParams ?: return false
+        val bubble = bubbleView ?: return false
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val bubbleWidth = bubble.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val bubbleHeight = bubble.height.takeIf { it > 0 } ?: (74 * density).toInt()
+        val centerX = metrics.bounds.width() - lp.x - bubbleWidth + bubbleWidth / 2f
+        val centerY = lp.y + bubbleHeight / 2f
+        val targetX = metrics.bounds.width() / 2f
+        val targetY = metrics.bounds.height() - navBarInset(wm) - 120 * density
+        val reach = 96 * density
+        return kotlin.math.hypot(centerX - targetX, centerY - targetY) <= reach
     }
 
     /**
@@ -500,6 +632,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private fun hideBubble() {
         hideMenu()
+        hideDismissTarget()
+        dragging.value = false
         bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         bubbleView = null
         bubbleParams = null
