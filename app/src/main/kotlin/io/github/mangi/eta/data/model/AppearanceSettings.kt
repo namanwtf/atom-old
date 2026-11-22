@@ -9,7 +9,7 @@ data class AppearanceSettings(
     val monetEnabled: Boolean = false,
     val paletteStyle: AppearancePaletteStyle = AppearancePaletteStyle.TONAL_SPOT,
     val accentColor: AppearanceAccentColor = AppearanceAccentColor.SYSTEM,
-    val pureBlackEnabled: Boolean = false,
+    val pureBlackEnabled: Boolean = true,
     val blurEnabled: Boolean = true,
     val progressiveBlurEnabled: Boolean = true,
     val topBarBlurStyle: AppearanceTopBarBlurStyle = AppearanceTopBarBlurStyle.GAUSSIAN,
