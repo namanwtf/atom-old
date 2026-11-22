@@ -7,8 +7,9 @@ Everything a future maintainer (human or AI) needs to continue this fork without
 **Atom** is an English-first fork of [Eta](https://github.com/Mangi-11/Eta), a system-level Android AI agent.
 
 - **App id (applicationId):** `io.github.namanwtf.atom`
-- **Code namespace:** `io.github.mangi.eta` — deliberately **not** renamed (keeps the `R` class, all class FQNs, and the LSPosed entry `io.github.mangi.eta.ModuleMain` valid).
+- **Code namespace:** `io.github.namanwtf.atom` (same value) — the entire codebase was renamed; no "Eta" remains in the app (package, classes, resources, gradle, internal thread/temp/cache names).
 - **Repo:** `github.com/namanwtf/atom`, branch `main`
+- **Latest release:** `v3.4.4-atom.1` (signed APK) — `github.com/namanwtf/atom/releases`
 - **Upstream:** `https://github.com/Mangi-11/Eta` (remote `upstream`)
 
 Because the app id differs from the original Eta, Atom **installs alongside** Eta and has its own data. The original `io.github.mangi.eta` can be uninstalled without touching Atom.
@@ -53,3 +54,12 @@ Our changes are ordinary commits on top of upstream, so the fork can rebase onto
 - **[Eta](https://github.com/Mangi-11/Eta)** by **Mangi-11** (GPL-3.0) — the entire core engine.
 - **Claude / Anthropic** — the original project was built with substantial AI assistance.
 - Atom's fork work: English pass, OLED theme, floating orb, independent identity, CI + privacy hardening. Bugs in those are ours.
+
+## Current state
+
+- **No "Eta" in the app.** Package, classes, resources, gradle props and internal thread/temp/cache names were all renamed to Atom. CI build of the rename passed (`44993339986`), APK installed and launching.
+- **First release:** `v3.4.4-atom.1` with signed `Atom-v3.4.4.apk`; the download link works.
+- **Still manual (need a token with Administration/Secrets scope, or the GitHub web UI):**
+  - Repo description + topics.
+  - CI signing secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) so future CI builds are signed automatically. Until then, sign locally with `uber-apk-signer` + `atom-release.jks`.
+- **Dormant/optional:** a few CJK-width unit tests assert byte counts (tests do not run in CI); the LSPosed module is not e2e-tested on the new package.
