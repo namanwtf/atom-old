@@ -658,24 +658,23 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = chatParams ?: return
         val wm = windowManager ?: return
         val gap = dpToPx(6)
-        val target = when {
-            !panelLifted -> panelFullHeight
-            // A full-height sheet cannot move up, so it gets shorter instead: the
-            // composer then sits just above the keyboard.
-            keyboardTopPx > 0 ->
-                (keyboardTopPx - gap - lp.y).coerceIn(dpToPx(280), panelFullHeight)
-            else -> {
-                // Prefer the real IME inset; fall back to the measured keyboard
-                // share (32% of this display) because an application overlay
-                // does not receive IME insets on this ROM.
-                val ime = runCatching {
-                    wm.currentWindowMetrics.windowInsets
-                        .getInsets(android.view.WindowInsets.Type.ime()).bottom
-                }.getOrDefault(0)
-                val keyboard = if (ime > 0) ime else (resources.displayMetrics.heightPixels * 0.32f).toInt()
-                panelFullHeight - keyboard
-            }
-                .coerceAtLeast(dpToPx(280))
+        // Prefer the real IME inset; fall back to the measured keyboard share
+        // (32% of this display) because an application overlay does not receive
+        // IME insets on this ROM. A full-height sheet cannot move up, so it gets
+        // shorter instead, and the composer ends up just above the keys.
+        val imeInset = runCatching {
+            wm.currentWindowMetrics.windowInsets
+                .getInsets(android.view.WindowInsets.Type.ime()).bottom
+        }.getOrDefault(0)
+        val keyboard = when {
+            keyboardTopPx > 0 -> (wm.currentWindowMetrics.bounds.height() - keyboardTopPx)
+            imeInset > 0 -> imeInset
+            else -> (resources.displayMetrics.heightPixels * 0.32f).toInt()
+        }
+        val target = if (!panelLifted) {
+            panelFullHeight
+        } else {
+            (panelFullHeight - keyboard - gap).coerceIn(dpToPx(280), panelFullHeight)
         }
         if (lp.height == target) return
         lp.height = target
