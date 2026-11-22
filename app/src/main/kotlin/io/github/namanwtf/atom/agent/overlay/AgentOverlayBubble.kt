@@ -52,6 +52,9 @@ internal object AtomOverlayColors {
     val Text = Color(0xFFF3EFE8)
     val Muted = Color(0xFFA39D93)
     val Accent = Color(0xFFD97757)
+    /** Overlay accent: Buddy's bubble, menu and arcs are blue, not clay. */
+    val Bolt = Color(0xFF4F8BFF)
+    val Spark = Color(0xFF7DF9FF)
     val OnAccent = Color(0xFF1A1714)
     val Outline = Color(0xFF2E2A26)
     val User = Color(0xFF4A3A2E)

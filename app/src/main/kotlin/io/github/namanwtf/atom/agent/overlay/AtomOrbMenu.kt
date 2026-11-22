@@ -143,7 +143,7 @@ internal fun AtomOrbMenu(
 
 @Composable
 private fun MenuItem(action: AgentOrbAction, label: String, onClick: () -> Unit) {
-    val tint = if (action == AgentOrbAction.HIDE) Color(0xFFE58A7A) else AtomOverlayColors.Accent
+    val tint = if (action == AgentOrbAction.HIDE) Color(0xFFE58A7A) else AtomOverlayColors.Bolt
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(ITEM_W_DP.dp)) {
         Box(
             modifier = Modifier
@@ -181,7 +181,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                AtomOverlayColors.Accent.copy(alpha = 0.20f),
+                AtomOverlayColors.Bolt.copy(alpha = 0.26f),
                 Color.Transparent,
             ),
             center = center,
@@ -195,7 +195,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
     repeat(2) { k ->
         val p = (pulse + k * 0.5f) % 1f
         drawCircle(
-            color = AtomOverlayColors.Accent.copy(alpha = 0.5f * (1f - p)),
+            color = AtomOverlayColors.Bolt.copy(alpha = 0.55f * (1f - p)),
             radius = 38.dp.toPx() + p * 70.dp.toPx(),
             center = center,
             style = Stroke(width = 2.dp.toPx()),
@@ -214,7 +214,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
         val ey = target.y - dy / length * 28.dp.toPx()
         val alpha = (0.4f * progress).coerceIn(0f, 1f)
         drawLine(
-            color = AtomOverlayColors.Accent.copy(alpha = alpha),
+            color = AtomOverlayColors.Bolt.copy(alpha = alpha),
             start = Offset(sx, sy),
             end = Offset(ex, ey),
             strokeWidth = 1.5.dp.toPx(),

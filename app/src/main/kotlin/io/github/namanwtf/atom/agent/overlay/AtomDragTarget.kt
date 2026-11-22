@@ -66,7 +66,7 @@ internal fun AtomDragTargetOverlay(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        AtomOverlayColors.Accent.copy(alpha = 0.28f * (0.4f + closeness)),
+                        AtomOverlayColors.Bolt.copy(alpha = 0.30f * (0.4f + closeness)),
                         Color.Transparent,
                     ),
                     center = target,
@@ -107,12 +107,12 @@ internal fun AtomDragTargetOverlay(
                 }
                 .size(64.dp)
                 .background(
-                    if (fused) Color(0xFF2A1A16) else Color(0xF0121614),
+                    if (fused) Color(0xFF14203C) else Color(0xF0121614),
                     CircleShape,
                 )
                 .border(
                     2.dp,
-                    if (fused) Color.White else AtomOverlayColors.Accent.copy(alpha = 0.9f),
+                    if (fused) Color.White else AtomOverlayColors.Bolt.copy(alpha = 0.95f),
                     CircleShape,
                 ),
             contentAlignment = Alignment.Center,
