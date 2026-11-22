@@ -148,9 +148,37 @@ internal fun AgentOverlayBubble(
                 center = orb,
             )
 
-            // Electric ring: broken arcs rotating at two speeds.
+            // Electric ring: broken arcs rotating at two speeds (the "energy" effect).
             drawElectricRing(orb, orbRadius.toPx() * 1.42f, accent, spin, sweep, 0.95f)
             drawElectricRing(orb, orbRadius.toPx() * 1.78f, accent, -spin * 0.62f, 1f - sweep, 0.45f)
+
+            // Electron orbit: a tilted elliptical ring with two orbiting electrons,
+            // so the whole thing reads as an atom diagram.
+            val orbitA = orbRadius.toPx() * 2.15f
+            val orbitB = orbRadius.toPx() * 1.15f
+            val electronRadius = 4.5.dp.toPx()
+            drawOval(
+                color = accent.copy(alpha = 0.30f),
+                topLeft = Offset(orb.x - orbitA, orb.y - orbitB),
+                size = Size(orbitA * 2f, orbitB * 2f),
+                style = Stroke(width = 1.2.dp.toPx()),
+            )
+            for (phase in listOf(0f, 180f)) {
+                val angle = Math.toRadians((spin + phase).toDouble())
+                val e = Offset(
+                    x = orb.x + (cos(angle) * orbitA).toFloat(),
+                    y = orb.y + (sin(angle) * orbitB).toFloat(),
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.95f), accent.copy(alpha = 0.85f)),
+                        center = e,
+                        radius = electronRadius * 2.2f,
+                    ),
+                    radius = electronRadius,
+                    center = e,
+                )
+            }
 
             // Core body.
             drawCircle(
