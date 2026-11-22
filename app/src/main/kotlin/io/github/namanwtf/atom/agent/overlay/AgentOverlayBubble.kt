@@ -57,7 +57,7 @@ internal object AtomOverlayColors {
     val Spark = Color(0xFF7DF9FF)
     val OnAccent = Color(0xFF1A1714)
     val Outline = Color(0xFF2E2A26)
-    val User = Color(0xFF4A3A2E)
+    val User = Color(0xFF2B3A6B)
 }
 
 /**

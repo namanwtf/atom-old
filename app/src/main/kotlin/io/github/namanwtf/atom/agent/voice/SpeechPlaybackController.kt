@@ -47,6 +47,7 @@ internal class SpeechPlaybackController(
     fun speak(messageId: String, text: String, settings: SpeechSettings? = null, credentials: SpeechCredentials? = null) {
         stop()
         val session = generation
+        var fallbackText: String? = null
         mutableState.value = SpeechPlaybackState(messageId, loading = true)
         job = scope.launch(Dispatchers.Main.immediate) {
             try {
@@ -56,6 +57,7 @@ internal class SpeechPlaybackController(
                 val (config, secrets) = SpeechSettingsRepository.resolveDeepSeekFallback(rawConfig, rawSecrets)
                 validateSpeechSettings(config, secrets, synthesis = true)
                 val readable = withContext(Dispatchers.Default) { SpeechText.readable(text) }
+                fallbackText = readable
                 if (readable.isBlank()) {
                     throw SpeechFailure(
                         SpeechErrorCode.NO_SPEECH,
@@ -84,6 +86,22 @@ internal class SpeechPlaybackController(
                 if (session == generation) {
                     val failure = error.speechFailure()
                     AndroidAgentLogger.warn("Atom speech playback failed: code=${failure.code} type=${error.javaClass.simpleName}")
+                    // A provider failure (a bad Qwen key, a timeout, a refused
+                    // request) must not read as a crash: hand the text to the
+                    // device's own voice instead.
+                    val text = fallbackText
+                    if (text != null && SystemTts.isAvailable(context)) {
+                        stop()
+                        mutableState.value = SpeechPlaybackState(messageId)
+                        SystemTts.speak(context, text) {
+                            scope.launch(Dispatchers.Main.immediate) {
+                                if (session == generation) {
+                                    mutableState.value = SpeechPlaybackState(messageId)
+                                }
+                            }
+                        }
+                        return@launch
+                    }
                     stop()
                     mutableState.value = SpeechPlaybackState(error = failure.userMessage)
                 }

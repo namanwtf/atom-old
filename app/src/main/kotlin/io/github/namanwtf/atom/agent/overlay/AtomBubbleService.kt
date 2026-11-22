@@ -84,6 +84,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var dismissView: ComposeView? = null
     private var dismissParams: WindowManager.LayoutParams? = null
 
+    private val prefs by lazy { getSharedPreferences("atom_overlay", MODE_PRIVATE) }
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
     private val bubbleReset = mutableStateOf(0)
@@ -167,8 +168,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.END
-            x = dpToPx(6)
-            y = (metrics.bounds.height() * 0.78f).toInt()
+            // Come back where the user left it, not where we first put it.
+            x = prefs.getInt(KEY_BUBBLE_X, -1).takeIf { it >= 0 } ?: dpToPx(6)
+            y = prefs.getInt(KEY_BUBBLE_Y, -1).takeIf { it >= 0 }
+                ?: (metrics.bounds.height() * 0.78f).toInt()
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
@@ -414,7 +417,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val margin = dpToPx(6)
         val leftmost = metrics.bounds.width() - width - margin
         lp.x = if (lp.x > leftmost / 2) leftmost else margin
+        saveBubblePosition(lp)
         runCatching { wm.updateViewLayout(view, lp) }
+    }
+
+    private fun saveBubblePosition(lp: WindowManager.LayoutParams) {
+        prefs.edit().putInt(KEY_BUBBLE_X, lp.x).putInt(KEY_BUBBLE_Y, lp.y).apply()
     }
 
     private fun navBarInset(wm: WindowManager): Int = runCatching {
@@ -575,6 +583,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         lp.y = (metrics.bounds.height() - navBarInset(wm) - height - dpToPx(24))
             .coerceAtLeast(margin)
         view.visibility = View.VISIBLE
+        saveBubblePosition(lp)
         runCatching { wm.updateViewLayout(view, lp) }
     }
 
@@ -645,6 +654,11 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         bubbleView = null
         bubbleParams = null
         windowManager = null
+    }
+
+    private companion object {
+        const val KEY_BUBBLE_X = "bubble_x"
+        const val KEY_BUBBLE_Y = "bubble_y"
     }
 
     private fun dpToPx(dp: Int): Int =
