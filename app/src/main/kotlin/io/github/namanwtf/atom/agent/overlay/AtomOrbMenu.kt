@@ -47,7 +47,7 @@ import kotlin.math.roundToInt
 
 /** Window side for the radial menu: Buddy's 344dp box. */
 internal const val ATOM_MENU_SIZE_DP = 344f
-private const val RADIUS_DP = 112f
+private const val RADIUS_DP = 132f
 private const val ITEM_W_DP = 72f
 private const val ITEM_H_DP = 92f
 private const val ICON_DP = 52f
@@ -73,7 +73,7 @@ internal fun AtomOrbMenu(
     val center = anchor
 
     val actions = AgentOrbAction.entries
-    val span = min(170f, 44f * (actions.size - 1))
+    val span = min(170f, 52f * (actions.size - 1))
     val mid = if (dockedRight) 180f else 0f
 
     val targets = remember(dockedRight, anchor) {

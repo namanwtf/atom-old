@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -58,6 +59,7 @@ internal fun AtomBubbleChat(
     onSend: (String) -> Unit,
     onClose: () -> Unit,
     title: String = "Atom",
+    onInputFocusChanged: (Boolean) -> Unit = {},
 ) {
     var input by remember { mutableStateOf(TextFieldValue()) }
     val scroll = rememberScrollState()
@@ -128,7 +130,9 @@ internal fun AtomBubbleChat(
                     onValueChange = { input = it },
                     textStyle = TextStyle(color = AtomOverlayColors.Text, fontSize = 14.sp),
                     cursorBrush = SolidColor(AtomOverlayColors.Accent),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { onInputFocusChanged(it.isFocused) },
                     decorationBox = { inner ->
                         if (input.text.isEmpty()) {
                             BasicText(

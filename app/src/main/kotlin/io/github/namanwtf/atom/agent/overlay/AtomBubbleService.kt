@@ -64,7 +64,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var menuView: ComposeView? = null
     private var menuParams: WindowManager.LayoutParams? = null
     private var panelBaseY: Int = 0
-    private var panelImeHeight: Int = 0
+    private var panelLifted = false
+    private var panelMaxLift = 0
 
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
@@ -149,7 +150,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         ).apply {
             gravity = Gravity.TOP or Gravity.END
             x = dpToPx(6)
-            y = (metrics.bounds.height() * 0.55f).toInt()
+            y = (metrics.bounds.height() * 0.78f).toInt()
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
@@ -328,6 +329,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         streaming = stream,
                         onSend = { sendChat(it) },
                         onClose = { hideChat() },
+                        onInputFocusChanged = { focused -> liftPanelForKeyboard(focused) },
                     )
                 }
             }
@@ -366,7 +368,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             y = bottomInset + gap
             dimAmount = 0.45f
             windowAnimations = 0
-            // The panel follows the keyboard itself (applyPanelIme), so the
+            // The panel lifts itself when the composer takes focus, so the
             // system must not try to resize an overlay window.
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
@@ -378,38 +380,33 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatView = view
         chatParams = lp
         panelBaseY = lp.y
-        panelImeHeight = 0
-        // An overlay window is never resized by the system, so the panel has to
-        // follow the keyboard itself or the composer ends up behind it.
-        view.setOnApplyWindowInsetsListener { _, insets ->
-            applyPanelIme(insets.getInsets(android.view.WindowInsets.Type.ime()).bottom)
-            insets
-        }
-        view.setWindowInsetsAnimationCallback(
-            object : android.view.WindowInsetsAnimation.Callback(DISPATCH_MODE_STOP) {
-                override fun onProgress(
-                    insets: android.view.WindowInsets,
-                    running: MutableList<android.view.WindowInsetsAnimation>,
-                ): android.view.WindowInsets {
-                    applyPanelIme(insets.getInsets(android.view.WindowInsets.Type.ime()).bottom)
-                    return insets
-                }
-            },
-        )
+        panelLifted = false
+        // The lift keeps the panel's top inside the usable area.
+        panelMaxLift = (bounds.height() - chatHeight - topInset - gap - panelBaseY)
+            .coerceAtLeast(0)
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
         bubbleReset.value++
     }
 
-    /** Moves the panel so its composer stays above the keyboard. */
-    private fun applyPanelIme(imeHeight: Int) {
-        if (imeHeight == panelImeHeight) return
+    /**
+     * Lifts the panel while the composer has focus.
+     *
+     * An application overlay window never receives IME insets on this ROM (the
+     * listeners were installed and never fired), so the keyboard cannot tell us
+     * its height. Reserving the keyboard's share of the screen when the field
+     * takes focus is deterministic and keeps the composer visible either way.
+     */
+    private fun liftPanelForKeyboard(focused: Boolean) {
+        if (focused == panelLifted) return
         val view = chatView ?: return
         val lp = chatParams ?: return
         val wm = windowManager ?: return
-        panelImeHeight = imeHeight
-        lp.y = panelBaseY + imeHeight
+        panelLifted = focused
+        val keyboardShare = (resources.displayMetrics.heightPixels * 0.40f).toInt()
+        val lift = keyboardShare.coerceAtMost(panelMaxLift)
+        lp.y = panelBaseY + if (focused) lift else 0
         runCatching { wm.updateViewLayout(view, lp) }
     }
 
@@ -417,7 +414,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatView?.let { view -> runCatching { windowManager?.removeView(view) } }
         chatView = null
         chatParams = null
-        panelImeHeight = 0
+        panelLifted = false
         dockBubbleToBottom()
     }
 
