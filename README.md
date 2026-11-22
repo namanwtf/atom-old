@@ -1,39 +1,42 @@
 # Atom
 
-![minSdk 34](https://img.shields.io/badge/minSdk-34-3DDC84?logo=android&logoColor=white)
-[![GPL-3.0 License](https://img.shields.io/github/license/namanwtf/atom?color=1677FF)](LICENSE)
+**A system-level AI agent for Android.** Answer questions, control your phone, code in a terminal, and chat from a floating bubble — one app.
 
-**A system-level AI assistant and mobile agent for Android — an English-first fork of [Eta](https://github.com/Mangi-11/Eta).**
+![Atom home](docs/Screenshots/atom_home.png)
 
-Atom is built on top of **Eta**, the excellent system-level Android AI agent by [@Mangi-11](https://github.com/Mangi-11). We keep Eta's engine — accessibility-driven GUI control, the background virtual display, the mobile terminal and Linux environment, the personal-context tools and the model ecosystem — and rebuild the product around it:
+## Highlights
 
-- **English-first, end to end.** Every UI string, prompt, tool schema, doc and built-in skill ships in English. The Chinese-only locale is gone.
-- **True OLED black.** A real `#000000` chat and app background (both Miuix and COUI styles), on by default in dark mode.
-- **A floating orb.** A draggable orb with an electric ring that expands into **Hide / Open chat / Talk**.
-- **Its own identity.** Ships as `io.github.namanwtf.atom`, so it installs **alongside** the original Eta.
-- **Hardened defaults.** No third-party download proxies, no CN-only mirrors, its own update channel, no telemetry SDKs.
+- **Floating Atom bubble** — an always-on glowing nucleus with orbiting electrons and electric arcs. Tap it to open a floating mini-chat, drag it anywhere, hide it or talk to it.
+- **True OLED black** — a real `#000000` theme, on by default in dark mode.
+- **English-first** — every string, prompt, and tool description is English.
+- **System-level control** — accessibility-driven screen reading and tapping, plus Root for deep control: brightness, volume, Wi-Fi, app freeze, protected settings, system logs.
+- **Background virtual display** — run cross-app tasks silently on a hidden screen (Root / LSPosed).
+- **Circle to Search** — circle anything on screen to search it (LSPosed module).
+- **Terminal + Linux** — a full mobile PTY terminal with Alpine/Debian Linux for on-device coding.
+- **Personal context** — notifications, SMS/OTP, calendar, contacts, photos, recordings, bills, orders, notes.
+- **Any model** — OpenAI, Anthropic, Gemini, DeepSeek, Qwen, Grok, and more; bring your key or use a subscription.
+- **Privacy hardened** — no telemetry SDKs, no third-party download proxies, its own update channel.
 
-![Atom home — pitch-black OLED chat](docs/Screenshots/atom_home.png)
+## Features
 
-## Credits
+### Agent & automation
+- Parallel subagents, scheduled tasks, cross-app GUI control, AI image generation, web search and a built-in browser.
+- Skills, MCP tools, long-term memory, and Tavern character roleplay.
 
-Atom would not exist without the original work:
+### Interface
+- Miuix and COUI native styles, OLED pure black, the floating bubble + mini chat, and native LaTeX rendering.
 
-- **[Eta](https://github.com/Mangi-11/Eta)** — the original Android system-level AI agent, by **Mangi-11** (GPL-3.0). The core engine, architecture and the overwhelming majority of the code are theirs.
-- **Claude / Anthropic** — the original project was developed with substantial AI assistance from Claude; much of the agent architecture and code owe their shape to it.
-
-Our contribution is the fork around that core: the full English pass, the OLED theme, the floating orb, the hardened CI and privacy defaults, and the independent app identity. Bugs introduced by those changes are ours; the core belongs to the Eta authors.
-
-## Features (inherited from Eta)
-
-- System-level assistant with native digital-assistant wake and screen context; personal data access (notifications, SMS/OTP, calendar, photos, recordings, bills, orders, notes…); cross-app GUI control.
-- Background virtual display (Root / LSPosed), parallel Subagents, scheduled tasks, a mobile PTY terminal + Alpine/Debian Linux, web search & browser, AI image generation, long-term memory, Skills, MCP, and Tavern character roleplay.
-- BYOK or Codex (ChatGPT) / Grok subscription sign-in. Requires Android 14+.
+### Voice
+- Push-to-talk and read-aloud, streaming ASR/TTS across multiple providers.
 
 ## Install
 
-Download the signed APK from [Releases](https://github.com/namanwtf/atom/releases), or build it yourself — CI (`.github/workflows/ci.yml`) compiles and (optionally) signs it on every push.
+Download the signed APK from [Releases](https://github.com/namanwtf/atom/releases), or build it with CI (`.github/workflows/ci.yml`).
+
+## Requirements
+
+Android 14+. Root and LSPosed unlock the virtual display and the deepest system features; the core works without root.
 
 ## License
 
-GPL-3.0 — see [LICENSE](LICENSE). Atom is a derivative work of Eta; the original copyright and license remain in force.
+GPL-3.0 — see [LICENSE](LICENSE). Built on the open-source agent [Eta](https://github.com/Mangi-11/Eta) by Mangi-11.

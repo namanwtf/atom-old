@@ -1,6 +1,8 @@
 package io.github.namanwtf.atom.agent.overlay
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,8 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,13 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.input.TextFieldValue
 
 internal data class AtomChatMessage(val fromUser: Boolean, val text: String)
 
@@ -54,12 +55,14 @@ internal fun AtomBubbleChat(
     ) {
         // Header
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Atom", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            BasicText(
+                "Atom",
+                style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold),
+            )
             Spacer(Modifier.weight(1f))
-            Text(
+            BasicText(
                 "✕",
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 18.sp,
+                style = TextStyle(color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp),
                 modifier = Modifier
                     .clickable { onClose() }
                     .padding(horizontal = 8.dp),
@@ -86,7 +89,10 @@ internal fun AtomBubbleChat(
                             )
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
-                        Text(m.text, color = Color.White, fontSize = 14.sp)
+                        BasicText(
+                            m.text,
+                            style = TextStyle(color = Color.White, fontSize = 14.sp),
+                        )
                     }
                 }
             }
@@ -96,7 +102,10 @@ internal fun AtomBubbleChat(
                         .background(Color(0xFF1A1A22), RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
-                    Text(streaming, color = Color.White, fontSize = 14.sp)
+                    BasicText(
+                        streaming,
+                        style = TextStyle(color = Color.White, fontSize = 14.sp),
+                    )
                 }
             }
         }
@@ -108,20 +117,19 @@ internal fun AtomBubbleChat(
             BasicTextField(
                 value = input,
                 onValueChange = { input = it },
-                textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 14.sp),
+                textStyle = TextStyle(color = Color.White, fontSize = 14.sp),
                 modifier = Modifier
                     .weight(1f)
                     .background(Color(0xFF1A1A22), RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 decorationBox = { inner ->
-                    Box { if (input.text.isEmpty()) Text("Ask Atom…", color = Color.White.copy(alpha = 0.4f)); inner() }
+                    Box { if (input.text.isEmpty()) BasicText("Ask Atom…", style = TextStyle(color = Color.White.copy(alpha = 0.4f))); inner() }
                 },
             )
             Spacer(Modifier.width(8.dp))
-            Text(
+            BasicText(
                 "Send",
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
+                style = TextStyle(color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                 modifier = Modifier
                     .clickable {
                         val t = input.text.trim()
