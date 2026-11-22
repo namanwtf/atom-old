@@ -89,24 +89,6 @@ internal fun AtomBubbleChat(
                     fontWeight = FontWeight.Bold,
                 ),
             )
-            Spacer(Modifier.width(5.dp))
-            Canvas(Modifier.size(7.dp)) {
-                val stroke = 1.5.dp.toPx()
-                drawLine(
-                    AtomOverlayColors.Muted,
-                    Offset(0f, 0f),
-                    Offset(size.width / 2f, size.height),
-                    stroke,
-                    StrokeCap.Round,
-                )
-                drawLine(
-                    AtomOverlayColors.Muted,
-                    Offset(size.width / 2f, size.height),
-                    Offset(size.width, 0f),
-                    stroke,
-                    StrokeCap.Round,
-                )
-            }
             Spacer(Modifier.weight(1f))
             ToolIcon(ToolGlyph.NEW) { onNewChat() }
             Spacer(Modifier.width(4.dp))
@@ -134,24 +116,6 @@ internal fun AtomBubbleChat(
                     fontWeight = FontWeight.SemiBold,
                 ),
             )
-            Spacer(Modifier.width(4.dp))
-            Canvas(Modifier.size(7.dp)) {
-                val stroke = 1.6.dp.toPx()
-                drawLine(
-                    AtomOverlayColors.Muted,
-                    Offset(0f, 0f),
-                    Offset(size.width / 2f, size.height),
-                    stroke,
-                    StrokeCap.Round,
-                )
-                drawLine(
-                    AtomOverlayColors.Muted,
-                    Offset(size.width / 2f, size.height),
-                    Offset(size.width, 0f),
-                    stroke,
-                    StrokeCap.Round,
-                )
-            }
         }
 
         Spacer(Modifier.height(8.dp))
