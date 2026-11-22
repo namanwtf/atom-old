@@ -462,6 +462,15 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         onSend = { sendChat(it) },
                         onClose = { hideChat() },
                         onInputFocusChanged = { focused -> liftPanelForKeyboard(focused) },
+                        onNewChat = {
+                            messages.value = emptyList()
+                            streaming.value = ""
+                        },
+                        onOpenInApp = {
+                            val intent = Intent(this@AtomBubbleService, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            runCatching { startActivity(intent) }
+                        },
                     )
                 }
             }

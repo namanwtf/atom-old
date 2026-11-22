@@ -60,6 +60,8 @@ internal fun AtomBubbleChat(
     onClose: () -> Unit,
     title: String = "Atom",
     onInputFocusChanged: (Boolean) -> Unit = {},
+    onNewChat: () -> Unit = {},
+    onOpenInApp: () -> Unit = {},
 ) {
     var input by remember { mutableStateOf(TextFieldValue()) }
     val scroll = rememberScrollState()
@@ -74,28 +76,52 @@ internal fun AtomBubbleChat(
             .padding(start = 12.dp, top = 10.dp, end = 12.dp, bottom = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                BasicText(
-                    title,
-                    style = TextStyle(
-                        color = AtomOverlayColors.Text,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
+            BasicText(
+                title,
+                style = TextStyle(
+                    color = AtomOverlayColors.Text,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            )
+            Spacer(Modifier.width(6.dp))
+            Canvas(Modifier.size(10.dp)) {
+                val stroke = 1.8.dp.toPx()
+                drawLine(
+                    AtomOverlayColors.Muted,
+                    Offset(0f, 0f),
+                    Offset(size.width / 2f, size.height),
+                    stroke,
+                    StrokeCap.Round,
                 )
-                Spacer(Modifier.height(3.dp))
-                Box(
-                    modifier = Modifier
-                        .background(AtomOverlayColors.Card2, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                ) {
-                    BasicText(
-                        if (replying) "Replying…" else "Ready",
-                        style = TextStyle(color = AtomOverlayColors.Muted, fontSize = 11.sp),
-                    )
-                }
+                drawLine(
+                    AtomOverlayColors.Muted,
+                    Offset(size.width / 2f, size.height),
+                    Offset(size.width, 0f),
+                    stroke,
+                    StrokeCap.Round,
+                )
             }
-            CloseButton(onClose)
+            Spacer(Modifier.weight(1f))
+            ToolIcon(ToolGlyph.NEW) { onNewChat() }
+            Spacer(Modifier.width(10.dp))
+            ToolIcon(ToolGlyph.EXPAND) { onOpenInApp() }
+            Spacer(Modifier.width(10.dp))
+            ToolIcon(ToolGlyph.CLOSE) { onClose() }
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        // Model / status chip, like Buddy's "Claude Code · Sonnet 5.5".
+        Box(
+            modifier = Modifier
+                .background(AtomOverlayColors.Card2, RoundedCornerShape(12.dp))
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+        ) {
+            BasicText(
+                if (replying) "$title · replying…" else "$title · ready",
+                style = TextStyle(color = AtomOverlayColors.Muted, fontSize = 12.sp),
+            )
         }
 
         Spacer(Modifier.height(8.dp))
@@ -163,31 +189,33 @@ internal fun AtomBubbleChat(
     }
 }
 
+private enum class ToolGlyph { NEW, EXPAND, CLOSE }
+
 @Composable
-private fun CloseButton(onClose: () -> Unit) {
+private fun ToolIcon(glyph: ToolGlyph, onClick: () -> Unit) {
     Box(
-        modifier = Modifier
-            .size(40.dp)
-            .background(AtomOverlayColors.Card2, CircleShape)
-            .clickable { onClose() },
+        modifier = Modifier.size(34.dp).clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(13.dp)) {
+        Canvas(Modifier.size(18.dp)) {
             val stroke = 1.8.dp.toPx()
-            drawLine(
-                AtomOverlayColors.Text,
-                Offset(0f, 0f),
-                Offset(size.width, size.height),
-                stroke,
-                StrokeCap.Round,
-            )
-            drawLine(
-                AtomOverlayColors.Text,
-                Offset(size.width, 0f),
-                Offset(0f, size.height),
-                stroke,
-                StrokeCap.Round,
-            )
+            val tint = Color.White.copy(alpha = 0.85f)
+            when (glyph) {
+                ToolGlyph.NEW -> {
+                    drawLine(tint, Offset(size.width / 2f, 0f), Offset(size.width / 2f, size.height), stroke, StrokeCap.Round)
+                    drawLine(tint, Offset(0f, size.height / 2f), Offset(size.width, size.height / 2f), stroke, StrokeCap.Round)
+                }
+                ToolGlyph.EXPAND -> {
+                    drawLine(tint, Offset(0f, 0f), Offset(size.width * 0.42f, 0f), stroke, StrokeCap.Round)
+                    drawLine(tint, Offset(0f, 0f), Offset(0f, size.height * 0.42f), stroke, StrokeCap.Round)
+                    drawLine(tint, Offset(size.width, size.height), Offset(size.width * 0.58f, size.height), stroke, StrokeCap.Round)
+                    drawLine(tint, Offset(size.width, size.height), Offset(size.width, size.height * 0.58f), stroke, StrokeCap.Round)
+                }
+                ToolGlyph.CLOSE -> {
+                    drawLine(tint, Offset(0f, 0f), Offset(size.width, size.height), stroke, StrokeCap.Round)
+                    drawLine(tint, Offset(size.width, 0f), Offset(0f, size.height), stroke, StrokeCap.Round)
+                }
+            }
         }
     }
 }
