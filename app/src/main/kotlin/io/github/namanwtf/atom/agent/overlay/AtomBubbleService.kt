@@ -58,6 +58,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var windowManager: WindowManager? = null
     private var bubbleView: ComposeView? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
+    private var orbGeometry: AtomOrbGeometry? = null
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private var collapseResize: Runnable? = null
     private var chatView: ComposeView? = null
     private var chatParams: WindowManager.LayoutParams? = null
 
@@ -115,16 +118,21 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         state = AgentOverlayState.Initial,
                         expanded = expanded,
                         labels = labels,
-                        onToggleExpanded = { expanded = !expanded },
+                        onToggleExpanded = {
+                            expanded = !expanded
+                            setBubbleExpanded(expanded)
+                        },
                         onAction = { action -> handleAction(action) },
                         onDrag = { dx, dy -> moveBubble(dx, dy) },
                     )
                 }
             }
         }
+        val geometry = wm.atomOrbGeometry(this, resources.displayMetrics.density)
+        val (startX, startY) = geometry.initialPlacement(false)
         val lp = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            geometry.width(false),
+            geometry.height(false),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -133,24 +141,48 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            val metrics = wm.currentWindowMetrics
-            x = (metrics.bounds.width() - dpToPx(232)).coerceAtLeast(0)
-            y = (metrics.bounds.height() * 0.55f).toInt()
+            x = startX
+            y = startY
             windowAnimations = 0
         }
         runCatching { wm.addView(view, lp) }.onFailure { return }
         windowManager = wm
         bubbleView = view
         bubbleParams = lp
+        orbGeometry = geometry
+    }
+
+    /**
+     * The collapsed window is only as large as the orb, so it never swallows
+     * touches meant for the app underneath. Opening the arc grows the window
+     * first; collapsing shrinks it back once the animation has finished.
+     */
+    private fun setBubbleExpanded(expanded: Boolean) {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val geometry = orbGeometry ?: return
+        collapseResize?.let(uiHandler::removeCallbacks)
+        collapseResize = null
+        if (expanded) {
+            wm.resizeOrbWindow(view, lp, geometry, expanded = true)
+            return
+        }
+        val shrink = Runnable {
+            if (bubbleView === view) {
+                wm.resizeOrbWindow(view, lp, geometry, expanded = false)
+            }
+        }
+        collapseResize = shrink
+        uiHandler.postDelayed(shrink, 320L)
     }
 
     private fun moveBubble(dx: Float, dy: Float) {
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
-        lp.x += dx.toInt()
-        lp.y += dy.toInt()
-        runCatching { wm.updateViewLayout(view, lp) }
+        val geometry = orbGeometry ?: return
+        wm.moveOrbWindow(view, lp, geometry, dx, dy, expanded = lp.width > geometry.width(false))
     }
 
     private fun handleAction(action: AgentOrbAction) {
@@ -195,9 +227,20 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 }
             }
         }
+        val geometry = orbGeometry ?: wm.atomOrbGeometry(this, resources.displayMetrics.density)
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val margin = (12 * density).toInt()
+        val screenWidth = metrics.bounds.width()
+        val screenHeight = metrics.bounds.height()
+        val chatWidth = minOf(screenWidth - margin * 2, (380 * density).toInt())
+        val chatHeight = minOf(
+            (480 * density).toInt(),
+            (screenHeight * 0.55f).toInt(),
+        )
         val lp = WindowManager.LayoutParams(
-            dpToPx(340),
-            dpToPx(540),
+            chatWidth,
+            chatHeight,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -205,9 +248,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             PixelFormat.TRANSLUCENT,
         ).apply {
             gravity = Gravity.BOTTOM or Gravity.END
-            val metrics = wm.currentWindowMetrics
-            x = dpToPx(12)
-            y = dpToPx(12)
+            x = margin
+            y = margin + geometry.safeBottomInset
             windowAnimations = 0
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
@@ -283,9 +325,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     private fun hideBubble() {
+        collapseResize?.let(uiHandler::removeCallbacks)
+        collapseResize = null
         bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         bubbleView = null
         bubbleParams = null
+        orbGeometry = null
         windowManager = null
     }
 

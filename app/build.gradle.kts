@@ -46,8 +46,8 @@ android {
         minSdk = 34
         targetSdk = 37
         // versionCode rule: yyyyMMdd + a two-digit sequence number for the day (starting at 01), incremented manually together with versionName on release.
-        versionCode = 2026111302
-        versionName = "3.4.4"
+        versionCode = 2026112201
+        versionName = "3.4.5"
         buildConfigField("String", "UPDATE_REPO", "\"$updateRepo\"")
 
         ndk {

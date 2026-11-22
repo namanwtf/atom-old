@@ -54,6 +54,10 @@ import io.github.namanwtf.atom.agent.overlay.AgentOverlayCapsule
 import io.github.namanwtf.atom.agent.voice.AtomAssistantOverlayService
 import io.github.namanwtf.atom.agent.overlay.AgentOrbAction
 import io.github.namanwtf.atom.agent.overlay.AgentOrbLabels
+import io.github.namanwtf.atom.agent.overlay.AtomOrbGeometry
+import io.github.namanwtf.atom.agent.overlay.atomOrbGeometry
+import io.github.namanwtf.atom.agent.overlay.moveOrbWindow
+import io.github.namanwtf.atom.agent.overlay.resizeOrbWindow
 import io.github.namanwtf.atom.agent.overlay.AgentOverlayClearance
 import io.github.namanwtf.atom.agent.overlay.AgentResultCard
 import io.github.namanwtf.atom.agent.overlay.AgentOverlayPhase
@@ -116,6 +120,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private var capsuleView: ComposeView? = null
     private var bubbleView: ComposeView? = null
     private var bubbleParams: WindowManager.LayoutParams? = null
+    private var bubbleGeometry: AtomOrbGeometry? = null
+    private var bubbleCollapseResize: Runnable? = null
     private val bubbleExpanded = mutableStateOf(false)
     private var resultCardView: ComposeView? = null
     private var glowParams: WindowManager.LayoutParams? = null
@@ -1472,7 +1478,10 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 state = state.value,
                 expanded = bubbleExpanded.value,
                 labels = labels,
-                onToggleExpanded = { bubbleExpanded.value = !bubbleExpanded.value },
+                onToggleExpanded = {
+                    bubbleExpanded.value = !bubbleExpanded.value
+                    setBubbleWindowExpanded(bubbleExpanded.value)
+                },
                 onAction = { action ->
                     when (action) {
                         AgentOrbAction.HIDE -> {
@@ -1480,10 +1489,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                             hideBubble()
                         }
                         AgentOrbAction.OPEN_CHAT -> {
+                            setBubbleWindowExpanded(false)
                             bubbleExpanded.value = false
                             openAtomFromResult(displayedRun)
                         }
                         AgentOrbAction.TALK -> {
+                            setBubbleWindowExpanded(false)
                             bubbleExpanded.value = false
                             startAssistantVoice()
                         }
@@ -1492,7 +1503,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 onDrag = { dx, dy -> moveBubble(dx, dy) },
             )
         }
-        val lp = bubbleLayoutParams()
+        val lp = bubbleLayoutParams(wm)
         runCatching { wm.addView(view, lp) }.onFailure { throwable ->
             AndroidAgentLogger.warnThrottled("runtime_bubble_add_view_failed") {
                 "Agent runtime bubble addView failed: type=${throwable.safeLogType()}"
@@ -1503,7 +1514,33 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         bubbleParams = lp
     }
 
+    /**
+     * The collapsed window is only as large as the orb, so it never swallows
+     * touches meant for the app underneath. Opening the arc grows the window
+     * first; collapsing shrinks it back once the animation has finished.
+     */
+    private fun setBubbleWindowExpanded(expanded: Boolean) {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val geometry = bubbleGeometry ?: return
+        bubbleCollapseResize?.let(mainHandler::removeCallbacks)
+        bubbleCollapseResize = null
+        if (expanded) {
+            wm.resizeOrbWindow(view, lp, geometry, expanded = true)
+            return
+        }
+        val shrink = Runnable {
+            if (bubbleView === view) wm.resizeOrbWindow(view, lp, geometry, expanded = false)
+        }
+        bubbleCollapseResize = shrink
+        mainHandler.postDelayed(shrink, 320L)
+    }
+
     private fun hideBubble() {
+        bubbleCollapseResize?.let(mainHandler::removeCallbacks)
+        bubbleCollapseResize = null
+        bubbleGeometry = null
         bubbleExpanded.value = false
         bubbleView?.let { view -> runCatching { windowManager?.removeView(view) } }
         bubbleView = null
@@ -1514,9 +1551,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         val view = bubbleView ?: return
         val lp = bubbleParams ?: return
         val wm = windowManager ?: return
-        lp.x += dx.toInt()
-        lp.y += dy.toInt()
-        runCatching { wm.updateViewLayout(view, lp) }
+        val geometry = bubbleGeometry ?: return
+        wm.moveOrbWindow(view, lp, geometry, dx, dy, expanded = bubbleExpanded.value)
     }
 
     /** Talk hands off to the assistant voice overlay; chat is the fallback when it cannot start. */
@@ -1527,10 +1563,13 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             .onFailure { openAtomFromResult(displayedRun) }
     }
 
-    private fun bubbleLayoutParams(): WindowManager.LayoutParams =
-        WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+    private fun bubbleLayoutParams(wm: WindowManager): WindowManager.LayoutParams {
+        val geometry = wm.atomOrbGeometry(overlayContext(), resources.displayMetrics.density)
+        bubbleGeometry = geometry
+        val (startX, startY) = geometry.initialPlacement(expandedWindow = false)
+        return WindowManager.LayoutParams(
+            geometry.width(false),
+            geometry.height(false),
             overlayType(),
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED or
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -1541,13 +1580,12 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             // Top|Start with explicit offsets: dragging only mutates x/y, so the
             // window never re-centres mid-gesture.
             gravity = Gravity.TOP or Gravity.START
-            val metrics = (overlayContext().getSystemService(Context.WINDOW_SERVICE) as? WindowManager)
-                ?.currentWindowMetrics
-            x = ((metrics?.bounds?.width() ?: dpToPx(1080)) - dpToPx(232)).coerceAtLeast(0)
-            y = ((metrics?.bounds?.height() ?: dpToPx(2400)) * 0.62f).toInt()
+            x = startX
+            y = startY
             windowAnimations = 0
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
         }
+    }
 
     private fun createOverlayComposeView(content: @Composable () -> Unit): ComposeView =
         ComposeView(overlayContext()).apply {
