@@ -493,7 +493,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         }.getOrNull()
         val topInset = insets?.top ?: 0
         val bottomInset = insets?.bottom ?: dpToPx(48)
-        val gap = dpToPx(8)
+        val gap = dpToPx(6)
         val chatWidth = (bounds.width() - gap * 2).coerceAtLeast(dpToPx(240))
         // Buddy's panel is a full-height sheet between the bars.
         val chatHeight = (bounds.height() - topInset - bottomInset - gap * 2)

@@ -83,7 +83,7 @@ internal fun AtomBubbleChat(
                 title,
                 style = TextStyle(
                     color = AtomOverlayColors.Text,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                 ),
             )
@@ -107,9 +107,9 @@ internal fun AtomBubbleChat(
             }
             Spacer(Modifier.weight(1f))
             ToolIcon(ToolGlyph.NEW) { onNewChat() }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(4.dp))
             ToolIcon(ToolGlyph.EXPAND) { onOpenInApp() }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(4.dp))
             ToolIcon(ToolGlyph.CLOSE) { onClose() }
         }
 
@@ -237,11 +237,11 @@ private enum class ToolGlyph { NEW, EXPAND, CLOSE }
 @Composable
 private fun ToolIcon(glyph: ToolGlyph, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.size(40.dp).clickable { onClick() },
+        modifier = Modifier.size(36.dp).clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.size(22.dp)) {
-            val stroke = 2.dp.toPx()
+        Canvas(Modifier.size(16.dp)) {
+            val stroke = 1.8.dp.toPx()
             val tint = Color.White.copy(alpha = 0.85f)
             when (glyph) {
                 ToolGlyph.NEW -> {
