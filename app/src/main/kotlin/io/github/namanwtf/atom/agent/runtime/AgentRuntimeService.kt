@@ -1498,6 +1498,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     }
                 },
                 onDrag = { dx, dy -> moveBubble(dx, dy) },
+                onDragEnd = { snapBubble() },
             )
         }
         val lp = bubbleLayoutParams(wm)
@@ -1509,6 +1510,20 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         }
         bubbleView = view
         bubbleParams = lp
+    }
+
+    /** Parks the bubble against the nearest edge on release. */
+    private fun snapBubble() {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val margin = dpToPx(6)
+        val leftmost = metrics.bounds.width() - width - margin
+        lp.x = if (lp.x > leftmost / 2) leftmost else margin
+        runCatching { wm.updateViewLayout(view, lp) }
     }
 
     private fun hideBubble() {

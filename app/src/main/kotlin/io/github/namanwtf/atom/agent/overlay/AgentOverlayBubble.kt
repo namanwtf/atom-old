@@ -73,6 +73,7 @@ internal fun AgentOverlayBubble(
     onToggleExpanded: () -> Unit,
     onAction: (AgentOrbAction) -> Unit,
     onDrag: (x: Float, y: Float) -> Unit,
+    onDragEnd: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val working = state.phase == AgentOverlayPhase.RUNNING
@@ -108,10 +109,14 @@ internal fun AgentOverlayBubble(
                     )
                 }
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        onDrag(dragAmount.x, dragAmount.y)
-                    }
+                    detectDragGestures(
+                        onDragEnd = { onDragEnd() },
+                        onDragCancel = { onDragEnd() },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            onDrag(dragAmount.x, dragAmount.y)
+                        },
+                    )
                 },
             contentAlignment = Alignment.Center,
         ) {

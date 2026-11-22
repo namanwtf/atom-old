@@ -125,6 +125,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                             handleAction(action)
                         },
                         onDrag = { dx, dy -> moveBubble(dx, dy) },
+                        onDragEnd = { snapBubble() },
                     )
                 }
             }
@@ -170,6 +171,24 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val bottomInset = navBarInset(wm)
         lp.x = lp.x.coerceIn(margin, maxOf(margin, metrics.bounds.width() - width - margin))
         lp.y = lp.y.coerceIn(margin, maxOf(margin, metrics.bounds.height() - bottomInset - height - margin))
+        runCatching { wm.updateViewLayout(view, lp) }
+    }
+
+    /**
+     * Parks the bubble against the nearest edge on release. Without this a
+     * scroll that starts on the bubble drags it into the middle of the screen,
+     * where it covers the app and looks stuck.
+     */
+    private fun snapBubble() {
+        val view = bubbleView ?: return
+        val lp = bubbleParams ?: return
+        val wm = windowManager ?: return
+        val metrics = wm.currentWindowMetrics
+        val density = resources.displayMetrics.density
+        val width = view.width.takeIf { it > 0 } ?: (74 * density).toInt()
+        val margin = dpToPx(6)
+        val leftmost = metrics.bounds.width() - width - margin
+        lp.x = if (lp.x > leftmost / 2) leftmost else margin
         runCatching { wm.updateViewLayout(view, lp) }
     }
 
@@ -232,8 +251,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val bottomInset = insets?.bottom ?: dpToPx(48)
         val gap = dpToPx(8)
         val chatWidth = (bounds.width() - gap * 2).coerceAtLeast(dpToPx(240))
-        val chatHeight = (bounds.height() - topInset - bottomInset - gap * 2)
-            .coerceAtLeast(dpToPx(220))
+        // A card, not a takeover: tall enough to read a conversation, short
+        // enough that the app behind stays visible and reachable.
+        val chatHeight = minOf(
+            (bounds.height() * 0.62f).toInt(),
+            bounds.height() - topInset - bottomInset - gap * 2,
+        ).coerceAtLeast(dpToPx(220))
         val flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -246,9 +269,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             flags,
             PixelFormat.TRANSLUCENT,
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             x = 0
-            y = topInset + gap
+            y = bottomInset + gap
             dimAmount = 0.45f
             windowAnimations = 0
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
