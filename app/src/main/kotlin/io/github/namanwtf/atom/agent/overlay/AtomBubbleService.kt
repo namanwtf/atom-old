@@ -63,6 +63,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var chatParams: WindowManager.LayoutParams? = null
     private var menuView: ComposeView? = null
     private var menuParams: WindowManager.LayoutParams? = null
+    private var panelBaseY: Int = 0
+    private var panelImeHeight: Int = 0
 
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
@@ -255,14 +257,13 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         runCatching { wm.addView(view, lp) }.onFailure { return }
         menuView = view
         menuParams = lp
-        bubble.visibility = View.GONE
+        // The bubble stays visible: it is the pivot the arc radiates from.
     }
 
     private fun hideMenu() {
         menuView?.let { view -> runCatching { windowManager?.removeView(view) } }
         menuView = null
         menuParams = null
-        bubbleView?.visibility = View.VISIBLE
     }
 
     /**
@@ -365,7 +366,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             y = bottomInset + gap
             dimAmount = 0.45f
             windowAnimations = 0
-            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+            // The panel follows the keyboard itself (applyPanelIme), so the
+            // system must not try to resize an overlay window.
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 runCatching { blurBehindRadius = dpToPx(16) }
             }
@@ -374,16 +377,47 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         windowManager = wm
         chatView = view
         chatParams = lp
+        panelBaseY = lp.y
+        panelImeHeight = 0
+        // An overlay window is never resized by the system, so the panel has to
+        // follow the keyboard itself or the composer ends up behind it.
+        view.setOnApplyWindowInsetsListener { _, insets ->
+            applyPanelIme(insets.getInsets(android.view.WindowInsets.Type.ime()).bottom)
+            insets
+        }
+        view.setWindowInsetsAnimationCallback(
+            object : android.view.WindowInsetsAnimation.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: android.view.WindowInsets,
+                    running: MutableList<android.view.WindowInsetsAnimation>,
+                ): android.view.WindowInsets {
+                    applyPanelIme(insets.getInsets(android.view.WindowInsets.Type.ime()).bottom)
+                    return insets
+                }
+            },
+        )
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
         bubbleReset.value++
     }
 
+    /** Moves the panel so its composer stays above the keyboard. */
+    private fun applyPanelIme(imeHeight: Int) {
+        if (imeHeight == panelImeHeight) return
+        val view = chatView ?: return
+        val lp = chatParams ?: return
+        val wm = windowManager ?: return
+        panelImeHeight = imeHeight
+        lp.y = panelBaseY + imeHeight
+        runCatching { wm.updateViewLayout(view, lp) }
+    }
+
     private fun hideChat() {
         chatView?.let { view -> runCatching { windowManager?.removeView(view) } }
         chatView = null
         chatParams = null
+        panelImeHeight = 0
         dockBubbleToBottom()
     }
 
