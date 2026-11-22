@@ -28,10 +28,10 @@ class MarkdownInlineTest {
 
     @Test
     fun boldFollowedImmediatelyByCjkTextIsPairedByIntent() {
-        val paragraph = paragraphOf("**I suggest you don't turn your holiday into "memorizing the whole big-tech question bank".** first get ready:")
+        val paragraph = paragraphOf("**I suggest you don't turn your holiday into \"memorizing the whole big-tech question bank\".** first get ready:")
 
         assertFalse(paragraph.text.text.contains('*'))
-        assertTrue(paragraph.text.hasSpanCovering("I suggest you don't turn your holiday into "memorizing the whole big-tech question bank".") { it.fontWeight == FontWeight.Bold })
+        assertTrue(paragraph.text.hasSpanCovering("I suggest you don't turn your holiday into \"memorizing the whole big-tech question bank\".") { it.fontWeight == FontWeight.Bold })
         assertFalse(paragraph.text.hasSpanCovering("first get ready") { it.fontWeight == FontWeight.Bold })
     }
 

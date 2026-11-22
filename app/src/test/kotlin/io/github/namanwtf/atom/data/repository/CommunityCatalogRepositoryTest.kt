@@ -136,7 +136,7 @@ class CommunityCatalogRepositoryTest {
     @Test
     fun importedProviderDoesNotReplaceCurrentSelection() = runBlocking {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         SettingsDataStore.init(context)
         ProviderRepository.init(context)
         SettingsDataStore.setSelection(null, null)

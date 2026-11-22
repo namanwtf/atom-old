@@ -55,7 +55,7 @@ class RootShellTerminalControllerCancellationTest {
     @Test
     fun interruptAllStopsDescendantProcess() {
         val controller = RootShellTerminalController(NoOpLogger)
-        val childPidFile = File.createTempFile("eta-terminal-child-", ".pid")
+        val childPidFile = File.createTempFile("atom-terminal-child-", ".pid")
         val finished = CountDownLatch(1)
         val result = AtomicReference<String>()
         val worker = thread(name = "terminal-child-cancel-test", isDaemon = true) {
@@ -179,7 +179,7 @@ class RootShellTerminalControllerCancellationTest {
         }.getOrDefault(false)
 
     private fun newIsolatedGroupController(): RootShellTerminalController {
-        val setsid = File.createTempFile("eta-test-setsid-", ".py").apply {
+        val setsid = File.createTempFile("atom-test-setsid-", ".py").apply {
             writeText(
                 """
                 #!/usr/bin/python3
@@ -196,7 +196,7 @@ class RootShellTerminalControllerCancellationTest {
             check(setExecutable(true))
             deleteOnExit()
         }
-        val directory = java.nio.file.Files.createTempDirectory("eta-background-test").toFile().also { taskDirectories += it }
+        val directory = java.nio.file.Files.createTempDirectory("atom-background-test").toFile().also { taskDirectories += it }
         val supervisor = DetachedTaskSupervisor(NoOpLogger, File(directory, "tasks.json"),
             daemonDir = File(directory, "logs").path,
             oneShotSupervisor = ShellProcessSupervisor(allowTreeFallback = false, setsidCommand = setsid.absolutePath))

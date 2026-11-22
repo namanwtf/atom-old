@@ -32,7 +32,7 @@ class SkillPackageInstallerTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        RuntimeEnvironment.getApplication().deleteDatabase("eta.db")
+        RuntimeEnvironment.getApplication().deleteDatabase("atom.db")
     }
 
     @Test
@@ -389,7 +389,7 @@ class SkillPackageInstallerTest {
         val external = temporaryFolder.newFolder("symlinked-work-root-external")
         try {
             Files.createSymbolicLink(
-                File(parent, ".eta-skill-installer").toPath(),
+                File(parent, ".atom-skill-installer").toPath(),
                 external.toPath(),
             )
         } catch (error: Exception) {
@@ -505,7 +505,7 @@ class SkillPackageInstallerTest {
         assertFailureCode(result, SkillInstallErrorCode.COMMIT_FAILED)
         assertTrue((result as SkillInstallResult.Failure).recoveryRequired)
         assertTrue(File(fixture.skillsRoot, "alpha/SKILL.md").readText().contains("Recoverable old alpha"))
-        val recoveryRoot = File(fixture.skillsRoot.parentFile, ".eta-skill-installer")
+        val recoveryRoot = File(fixture.skillsRoot.parentFile, ".atom-skill-installer")
         val recoveryOperation = recoveryRoot.listFiles()
             .orEmpty()
             .filter { it.name.startsWith("operation-") }

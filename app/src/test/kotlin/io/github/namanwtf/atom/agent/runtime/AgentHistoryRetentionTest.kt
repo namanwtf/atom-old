@@ -41,12 +41,12 @@ class AgentHistoryRetentionTest {
     @Before fun setup() {
         context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
     }
 
     @After fun cleanup() {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
     }
 
     @Test fun fullHistoryAndLargeMessageSurviveDatabaseReopen() {
@@ -134,7 +134,7 @@ class AgentHistoryRetentionTest {
             contextSnapshot = AgentContextSnapshot(operationId = request.runId, messages = history))
         val resultBundle = AgentRuntimeWire.toBundle(result, context.cacheDir)
         assertEquals(result, AgentRuntimeWire.runResultFromBundle(resultBundle))
-        assertTrue(context.cacheDir.listFiles().orEmpty().none { it.name.startsWith("eta-context-") })
+        assertTrue(context.cacheDir.listFiles().orEmpty().none { it.name.startsWith("atom-context-") })
     }
 
     @Test fun localMessengerOwnsIndependentDescriptorUntilReceiverConsumesIt() {

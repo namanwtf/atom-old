@@ -74,7 +74,7 @@ class SubagentTest {
 
     @Test
     fun customSubagentProfileCanBeSavedDiscoveredAndFilteredSafely() {
-        val tempDir = java.nio.file.Files.createTempDirectory("eta-subagent-test").toFile()
+        val tempDir = java.nio.file.Files.createTempDirectory("atom-subagent-test").toFile()
         try {
             val saved = SubagentProfileCatalog.saveCustomProfile(
                 name = "bill-analyzer",
@@ -454,7 +454,7 @@ class SubagentTest {
 
     @Test
     fun customProfileYamlQuotesAndBackslashesRoundTripWithoutDuplication() {
-        val tempDir = java.nio.file.Files.createTempDirectory("eta-subagent-yaml-test").toFile()
+        val tempDir = java.nio.file.Files.createTempDirectory("atom-subagent-yaml-test").toFile()
         try {
             val description = "specifically parse \"JSON\" and paths C:\\work\\logs: quickly locate"
             val whenToUse = "when you need to analyze \"error\" or C:\\temp"

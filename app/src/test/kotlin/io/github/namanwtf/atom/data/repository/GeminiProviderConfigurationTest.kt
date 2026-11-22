@@ -48,7 +48,7 @@ class GeminiProviderConfigurationTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         SettingsDataStore.init(context)
         ProviderRepository.init(context)
         AgentMemoryRepository.init(context)

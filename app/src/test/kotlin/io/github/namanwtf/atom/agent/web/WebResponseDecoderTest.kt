@@ -132,7 +132,7 @@ class WebResponseDecoderTest {
         for (type in listOf("application/pdf", "image/png", "application/octet-stream", "application/zip")) {
             assertFailure("UNSUPPORTED_CONTENT_TYPE") { decode("sample".toByteArray(), type) }
         }
-        assertFailure("UNSUPPORTED_CHARSET") { decode("text".toByteArray(), "text/plain; charset=eta-nonexistent") }
+        assertFailure("UNSUPPORTED_CHARSET") { decode("text".toByteArray(), "text/plain; charset=atom-nonexistent") }
     }
 
     @Test fun jsonBomIsRemovedButOriginalSpacingIsPreserved() {

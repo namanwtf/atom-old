@@ -13,7 +13,7 @@ class ShellProcessSupervisorTest {
     fun missingSetsidFailsClosedWhenTreeFallbackIsDisabled() {
         val supervisor = ShellProcessSupervisor(
             allowTreeFallback = false,
-            setsidCommand = "eta-test-missing-setsid",
+            setsidCommand = "atom-test-missing-setsid",
         )
 
         val process = supervisor.startShellProcess(
@@ -67,11 +67,11 @@ class ShellProcessSupervisorTest {
 
     @Test
     fun ptyLauncherUsesNativePtyForEveryIdentity() {
-        val executable = File("/data/app/eta/lib/arm64/libatom_pty.so")
+        val executable = File("/data/app/atom/lib/arm64/libatom_pty.so")
         val supervisor = ShellProcessSupervisor(ptyExecutable = { executable })
         listOf("user", "root").forEach { identity ->
             val launcher = supervisor.buildTrackedShellLauncher(
-                ownershipFile = File(System.getProperty("java.io.tmpdir"), "eta-pty-test.owner"),
+                ownershipFile = File(System.getProperty("java.io.tmpdir"), "atom-pty-test.owner"),
                 ownershipToken = "token123",
                 command = null,
                 identity = identity,
@@ -92,7 +92,7 @@ class ShellProcessSupervisorTest {
     @Test(expected = IOException::class)
     fun ptyLauncherRejectsMissingNativePty() {
         ShellProcessSupervisor(ptyExecutable = { null }).buildTrackedShellLauncher(
-            ownershipFile = File(System.getProperty("java.io.tmpdir"), "eta-pty-test.owner"),
+            ownershipFile = File(System.getProperty("java.io.tmpdir"), "atom-pty-test.owner"),
             ownershipToken = "token123",
             command = null,
             identity = "user",

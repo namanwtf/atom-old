@@ -21,7 +21,7 @@ class AgentRuntimePreparationFailureTest {
     fun failureWithoutCheckpointIsPersistedBeforeTerminalDelivery() {
         val context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         val serviceController = Robolectric.buildService(AgentRuntimeService::class.java).create()
         try {
             val delivered = CountDownLatch(1)

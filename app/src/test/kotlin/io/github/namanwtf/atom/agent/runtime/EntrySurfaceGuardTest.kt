@@ -22,7 +22,7 @@ class EntrySurfaceGuardTest {
     }
 
     @Test
-    fun etaVoiceGuardExcludesAtomUntilTheVoiceWindowIsDismissed() {
+    fun atomVoiceGuardExcludesAtomUntilTheVoiceWindowIsDismissed() {
         val dismissCalls = AtomicInteger()
         val guard = EntrySurfaceGuard.from(
             handoff = handoff(
@@ -30,7 +30,7 @@ class EntrySurfaceGuardTest {
                 dismiss = true,
             ),
             logger = NoOpLogger,
-            etaVoiceSurfaceDismissal = {
+            atomVoiceSurfaceDismissal = {
                 dismissCalls.incrementAndGet()
                 true
             },
@@ -45,7 +45,7 @@ class EntrySurfaceGuardTest {
     }
 
     @Test
-    fun etaVoiceOwnedDismissalCanRetryWithoutSendingBackToTheUnderlyingApp() {
+    fun atomVoiceOwnedDismissalCanRetryWithoutSendingBackToTheUnderlyingApp() {
         val dismissCalls = AtomicInteger()
         val guard = EntrySurfaceGuard.from(
             handoff = handoff(
@@ -53,7 +53,7 @@ class EntrySurfaceGuardTest {
                 dismiss = true,
             ),
             logger = NoOpLogger,
-            etaVoiceSurfaceDismissal = {
+            atomVoiceSurfaceDismissal = {
                 dismissCalls.incrementAndGet() >= 2
             },
         )

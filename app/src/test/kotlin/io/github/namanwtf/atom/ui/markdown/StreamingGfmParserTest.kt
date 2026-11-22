@@ -157,7 +157,7 @@ class StreamingGfmParserTest {
 
     @Test
     fun completedSnapshotIncludesReferenceLinksBeforeStableHandoff() {
-        val content = "see [docs][eta]\n\n[eta]: https://example.com/docs"
+        val content = "see [docs][atom]\n\n[atom]: https://example.com/docs"
         val snapshot = StreamingGfmParserSession().parse(content, isComplete = true)
 
         // link definitions produce no block; in the completed snapshot the reference is resolved into a clickable Url annotation.
@@ -169,12 +169,12 @@ class StreamingGfmParserTest {
     @Test
     fun correctedSnapshotDoesNotRetainOrMutatePreviousLinkDefinitions() {
         val parser = StreamingGfmParserSession()
-        val original = parser.parse("[docs][eta]\n\n[eta]: https://example.com/docs", isComplete = true)
-        val replacement = parser.parse("[docs][eta]", isComplete = true)
+        val original = parser.parse("[docs][atom]\n\n[atom]: https://example.com/docs", isComplete = true)
+        val replacement = parser.parse("[docs][atom]", isComplete = true)
 
         // references without a matching definition keep their original text and carry no link annotation.
         val replacementParagraph = replacement.document.blocks.single() as MarkdownParagraph
-        assertEquals("[docs][eta]", replacementParagraph.text.text)
+        assertEquals("[docs][atom]", replacementParagraph.text.text)
         assertTrue(replacementParagraph.text.linkUrls().isEmpty())
 
         val originalParagraph = original.document.blocks.single() as MarkdownParagraph

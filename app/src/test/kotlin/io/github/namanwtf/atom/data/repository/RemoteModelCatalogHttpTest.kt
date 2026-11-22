@@ -43,7 +43,7 @@ class RemoteModelCatalogHttpTest {
             assertEquals(credentials.binding, result.accountBinding)
             assertEquals(2, credentials.rejectedTokens.size)
             assertEquals(listOf("workspace-old", "workspace-new"), seen.map { it.accountId })
-            assertTrue(seen.all { it.originator == "eta" && it.authorization?.startsWith("Bearer ") == true })
+            assertTrue(seen.all { it.originator == "atom" && it.authorization?.startsWith("Bearer ") == true })
             assertEquals(listOf(ProviderConnectionProfile.OPENAI_CODEX.modelsUrl, ProviderConnectionProfile.OPENAI_CODEX.modelsUrl), targets)
             val target = targets.first().toHttpUrl()
             assertEquals("https", target.scheme)

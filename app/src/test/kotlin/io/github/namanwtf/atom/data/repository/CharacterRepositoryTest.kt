@@ -23,7 +23,7 @@ class CharacterRepositoryTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         context.getSharedPreferences("atom_roleplay", 0).edit().clear().commit()
         CharacterRepository.initialize(context)
     }
@@ -45,7 +45,7 @@ class CharacterRepositoryTest {
             "SELECT card_json FROM roleplay_characters WHERE id = ?", arrayOf(profile.id),
         ).use { cursor ->
             assertTrue(cursor.moveToFirst())
-            assertTrue(cursor.getString(0).startsWith("@eta:chunks:v1:"))
+            assertTrue(cursor.getString(0).startsWith("@atom:chunks:v1:"))
         }
         val copy = CharacterRepository.duplicate(profile.id)
         assertEquals(description, copy.card.description)

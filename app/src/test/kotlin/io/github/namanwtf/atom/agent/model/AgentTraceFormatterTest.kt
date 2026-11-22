@@ -369,7 +369,7 @@ class AgentTraceFormatterTest {
 
         assertTrue(success.contains("opened"))
         assertTrue(success.contains("example.com"))
-        assertTrue(success.contains(""Example Domain""))
+        assertTrue(success.contains("\"Example Domain\""))
         assertFalse(success.contains("ok="))
         assertFalse(success.contains("token=secret-query"))
 

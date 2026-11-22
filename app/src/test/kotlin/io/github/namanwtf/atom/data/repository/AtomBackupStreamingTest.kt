@@ -37,7 +37,7 @@ class AtomBackupStreamingTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         SettingsDataStore.init(context)
         ProviderRepository.init(context)
         AgentMemoryRepository.init(context)
@@ -82,7 +82,7 @@ class AtomBackupStreamingTest {
             "messages":[{"id":"m","conversationId":"c","sortIndex":0,"type":"user","content":"hello😀"}],
             "unknown":{"nested":[1,true,null,{"text":"ignore"}]},
             "conversations":[{"id":"c","title":"old backup","thinkingEnabled":false,"createdAt":1,"updatedAt":2}],
-            "exportedAt":0,"schemaVersion":1,"format":"eta-backup"
+            "exportedAt":0,"schemaVersion":1,"format":"atom-backup"
         }""".toByteArray()
 
         val summary = AtomBackupRepository.import(context, ByteArrayInputStream(bytes))
@@ -131,7 +131,7 @@ class AtomBackupStreamingTest {
         )
         val encoded = Json.encodeToString(document)
         val invalid = listOf(encoded, encoded.dropLast(2), "$encoded {}",
-            """{"format":"eta-backup","format":"other","exportedAt":0}""")
+            """{"format":"atom-backup","format":"other","exportedAt":0}""")
         for (source in invalid) {
             var rejected = false
             try {

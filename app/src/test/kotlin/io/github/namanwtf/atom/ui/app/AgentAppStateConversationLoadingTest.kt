@@ -41,7 +41,7 @@ class AgentAppStateConversationLoadingTest {
         context = RuntimeEnvironment.getApplication()
         shadowOf(RuntimeEnvironment.getApplication()).declareActionUnbindable(AgentRuntimeWire.ACTION_BIND)
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
     }
 
     @After

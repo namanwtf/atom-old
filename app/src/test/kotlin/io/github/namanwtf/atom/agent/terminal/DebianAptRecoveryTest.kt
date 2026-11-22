@@ -130,7 +130,7 @@ class DebianAptRecoveryTest {
         fun flag(path: String) = file(path).writeText("")
 
         fun install(): InstallerCommandResult {
-            val script = file("eta-apt").apply {
+            val script = file("atom-apt").apply {
                 writeText(DebianEnvironmentInstaller.aptMirrorScript().replace("/etc/apt/sources.list", file("sources.list").absolutePath))
             }
             val output = file("output")

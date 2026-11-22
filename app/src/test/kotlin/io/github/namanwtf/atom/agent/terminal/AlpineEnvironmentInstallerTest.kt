@@ -122,7 +122,7 @@ class AlpineEnvironmentInstallerTest {
             assertTrue(LinuxPackageProfiles.SSH.spec(distribution).packages.isNotEmpty())
         }
         LinuxPackageProfiles.ALL.forEach { profile ->
-            assertTrue(profile.markerName.startsWith(".eta-"))
+            assertTrue(profile.markerName.startsWith(".atom-"))
             profile.specs.values.forEach { spec ->
                 assertEquals(spec.packages.distinct(), spec.packages)
             }

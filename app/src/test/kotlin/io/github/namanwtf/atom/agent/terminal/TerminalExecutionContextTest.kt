@@ -13,10 +13,10 @@ class TerminalExecutionContextTest {
     @get:Rule val temporary = TemporaryFolder()
 
     @Test fun rootChangesDefaultIdentityWithoutMovingTheWorkspace() {
-        val context = TerminalExecutionContext(TerminalEnvironment.DEBIAN, null, "/eta/workspace")
+        val context = TerminalExecutionContext(TerminalEnvironment.DEBIAN, null, "/atom/workspace")
         assertEquals("root", context.identityFor(TerminalEnvironment.ANDROID, true))
         assertEquals("user", context.identityFor(TerminalEnvironment.ANDROID, false))
-        assertEquals("/eta/workspace", context.androidWorkspacePath)
+        assertEquals("/atom/workspace", context.androidWorkspacePath)
         assertTrue(context.description(true).contains("identity=root"))
         assertTrue(context.description(false).contains("identity=user"))
     }
@@ -94,7 +94,7 @@ class TerminalExecutionContextTest {
         val context = TerminalExecutionContext(
             linuxEnvironment = TerminalEnvironment.DEBIAN,
             linuxRootfsPath = File(temporary.root, "terminal-user/proot/debian/rootfs").path,
-            userWorkspacePath = "/eta/workspace",
+            userWorkspacePath = "/atom/workspace",
             sharedMounts = listOf(
                 SharedFolderMount(name = "Download", sourcePath = "/sdcard/Download"),
                 SharedFolderMount(name = "repos", sourcePath = "/sdcard/Projects"),

@@ -47,10 +47,10 @@ class AgentPromptBuilderTest {
             skillContext = SkillContext.EMPTY,
             memoryContext = AgentMemoryContext.DISABLED,
             rootAvailable = false,
-            executionContext = TerminalExecutionContext(TerminalEnvironment.DEBIAN, null, "/eta/custom workspace"),
+            executionContext = TerminalExecutionContext(TerminalEnvironment.DEBIAN, null, "/atom/custom workspace"),
         )
         val terminal = messages.systemContents().single { it.contains("Atom built-in file and terminal tools") }
-        assertTrue(terminal.contains("/eta/custom workspace"))
+        assertTrue(terminal.contains("/atom/custom workspace"))
         assertTrue(terminal.contains("debian"))
         assertTrue(terminal.contains("identity=user"))
         assertTrue(terminal.contains("don't use & start background processes"))

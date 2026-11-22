@@ -56,30 +56,30 @@ class AgentOverlayVisibilityPolicyTest {
     }
 
     @Test
-    fun etaUiRunsSuppressOverlayAndResultCardOnlyWhileAtomIsInForeground() {
+    fun atomUiRunsSuppressOverlayAndResultCardOnlyWhileAtomIsInForeground() {
         assertTrue(
             AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
                 handoffSource = AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE,
-                etaUiInForeground = true,
+                atomUiInForeground = true,
             ),
         )
         assertFalse(
             AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
                 handoffSource = AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE,
-                etaUiInForeground = true,
+                atomUiInForeground = true,
                 virtualDisplayActive = true,
             ),
         )
         assertFalse(
             AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
                 handoffSource = AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE,
-                etaUiInForeground = false,
+                atomUiInForeground = false,
             ),
         )
         assertFalse(
             AgentOverlayVisibilityPolicy.shouldSuppressOverlayInAtomUi(
                 handoffSource = AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE,
-                etaUiInForeground = true,
+                atomUiInForeground = true,
             ),
         )
 
@@ -87,28 +87,28 @@ class AgentOverlayVisibilityPolicyTest {
             AgentOverlayVisibilityPolicy.shouldShowResultCard(
                 hasExecutedForegroundTool = true,
                 handoffSource = AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE,
-                etaUiInForeground = true,
+                atomUiInForeground = true,
             ),
         )
         assertTrue(
             AgentOverlayVisibilityPolicy.shouldShowResultCard(
                 hasExecutedForegroundTool = true,
                 handoffSource = AgentRuntimeWire.AGENT_UI_HANDOFF_SOURCE,
-                etaUiInForeground = false,
+                atomUiInForeground = false,
             ),
         )
         assertTrue(
             AgentOverlayVisibilityPolicy.shouldShowResultCard(
                 hasExecutedForegroundTool = true,
                 handoffSource = AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE,
-                etaUiInForeground = true,
+                atomUiInForeground = true,
             ),
         )
         assertFalse(
             AgentOverlayVisibilityPolicy.shouldShowResultCard(
                 hasExecutedForegroundTool = false,
                 handoffSource = AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE,
-                etaUiInForeground = false,
+                atomUiInForeground = false,
             ),
         )
     }

@@ -227,7 +227,7 @@ class OpenAiResponsesProviderTest {
                     canDisable = true,
                 ),
                 reasoningEffort = ReasoningEffort.HIGH,
-                extraBodyJson = """{"model":"wrong","store":true,"metadata":{"source":"eta"}}""",
+                extraBodyJson = """{"model":"wrong","store":true,"metadata":{"source":"atom"}}""",
                 customBody = listOf(CustomBody("stream", JsonPrimitive(false))),
             ),
             messages = messages,
@@ -239,7 +239,7 @@ class OpenAiResponsesProviderTest {
         assertTrue(request.getBoolean("stream"))
         assertFalse(request.getBoolean("store"))
         assertFalse(request.has("previous_response_id"))
-        assertEquals("eta", request.getJSONObject("metadata").getString("source"))
+        assertEquals("atom", request.getJSONObject("metadata").getString("source"))
         assertEquals("high", request.getJSONObject("reasoning").getString("effort"))
         assertEquals("auto", request.getJSONObject("reasoning").getString("summary"))
         assertEquals("input_image", request.getJSONArray("input").getJSONObject(0)

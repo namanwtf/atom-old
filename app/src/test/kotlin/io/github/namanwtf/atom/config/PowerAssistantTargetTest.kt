@@ -16,7 +16,7 @@ class PowerAssistantTargetTest {
         )
         assertEquals(
             PowerAssistantTarget.ATOM,
-            PowerAssistantTarget.resolve("eta", legacyPowerKeyTakeover = false),
+            PowerAssistantTarget.resolve("atom", legacyPowerKeyTakeover = false),
         )
     }
 

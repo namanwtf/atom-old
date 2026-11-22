@@ -23,26 +23,26 @@ class AssistantBindingTest {
     @Test
     fun `Gemini and Atom use their own packages and components`() {
         val gemini = requireNotNull(assistantBindingFor(PowerAssistantTarget.GEMINI))
-        val eta = requireNotNull(assistantBindingFor(PowerAssistantTarget.ATOM))
+        val atom = requireNotNull(assistantBindingFor(PowerAssistantTarget.ATOM))
 
         assertEquals(ModuleConfig.GOOGLE_PACKAGE, gemini.packageName)
         assertEquals(ModuleConfig.GOOGLE_ASSISTANT_COMPONENT, gemini.componentName)
-        assertEquals(ModuleConfig.ATOM_PACKAGE, eta.packageName)
-        assertEquals(ModuleConfig.ATOM_VOICE_INTERACTION_COMPONENT, eta.componentName)
+        assertEquals(ModuleConfig.ATOM_PACKAGE, atom.packageName)
+        assertEquals(ModuleConfig.ATOM_VOICE_INTERACTION_COMPONENT, atom.componentName)
         assertEquals(
             "io.github.namanwtf.atom/.agent.voice.AtomVoiceInteractionService",
-            eta.shortComponentName,
+            atom.shortComponentName,
         )
         assertEquals(ModuleConfig.GOOGLE_ASSISTANT_COMPONENT, gemini.shortComponentName)
         assertTrue(
             isSameComponentName(
-                eta.componentName,
+                atom.componentName,
                 "io.github.namanwtf.atom/.agent.voice.AtomVoiceInteractionService",
             ),
         )
         assertFalse(
             isSameComponentName(
-                eta.componentName,
+                atom.componentName,
                 gemini.componentName,
             ),
         )

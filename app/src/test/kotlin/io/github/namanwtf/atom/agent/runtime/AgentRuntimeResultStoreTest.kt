@@ -70,7 +70,7 @@ class AgentRuntimeResultStoreTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
     }
 
     @Test

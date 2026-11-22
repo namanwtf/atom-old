@@ -27,7 +27,7 @@ class SkillRuntimeTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        RuntimeEnvironment.getApplication().deleteDatabase("eta.db")
+        RuntimeEnvironment.getApplication().deleteDatabase("atom.db")
     }
 
     @Test

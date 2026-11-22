@@ -255,7 +255,7 @@ class GlassComponentsTest {
     }
 
     @Test
-    fun etaGlassSpinnerPreference_displaysSummaryRespectsDisabledOptionAndUpdatesSelection() {
+    fun atomGlassSpinnerPreference_displaysSummaryRespectsDisabledOptionAndUpdatesSelection() {
         val controller = Robolectric.buildActivity(ComponentActivity::class.java).setup().visible()
         val activity = controller.get()
         val frameClock = BroadcastFrameClock()
@@ -313,7 +313,7 @@ class GlassComponentsTest {
     }
 
     @Test
-    fun etaGlassSpinnerPreference_worksInStandaloneScaffoldPopupLayoutFallback() {
+    fun atomGlassSpinnerPreference_worksInStandaloneScaffoldPopupLayoutFallback() {
         val controller = Robolectric.buildActivity(ComponentActivity::class.java).setup().visible()
         val activity = controller.get()
         val frameClock = BroadcastFrameClock()

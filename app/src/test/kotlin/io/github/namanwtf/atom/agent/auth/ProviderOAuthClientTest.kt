@@ -143,7 +143,7 @@ class ProviderOAuthClientTest {
                 assertEquals("S256", authorization.queryParameter("code_challenge_method"))
                 assertEquals("true", authorization.queryParameter("codex_cli_simplified_flow"))
                 assertEquals("true", authorization.queryParameter("id_token_add_organizations"))
-                assertEquals("eta", authorization.queryParameter("originator"))
+                assertEquals("atom", authorization.queryParameter("originator"))
                 assertNull(authorization.queryParameter("resource"))
                 callback = executor.submit<Int> {
                     val uri = authorization.queryParameter("redirect_uri")!!.toHttpUrl().newBuilder()

@@ -33,7 +33,7 @@ class AgentRuntimeRunExecutorCompactionTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         Prefs.initLocal(context)
         SettingsDataStore.init(context)
         AgentMemoryRepository.init(context)

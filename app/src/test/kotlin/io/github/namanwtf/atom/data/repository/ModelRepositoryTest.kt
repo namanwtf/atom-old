@@ -30,7 +30,7 @@ class ModelRepositoryTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         SettingsDataStore.init(context)
         ProviderRepository.init(context)
         runBlocking {

@@ -83,7 +83,7 @@ class AgentRuntimeRequestConfigResolverTest {
     }
 
     @Test
-    fun etaVoiceRequestUsesRuntimeConfigAndUpdatesArchiveMetadata() {
+    fun atomVoiceRequestUsesRuntimeConfigAndUpdatesArchiveMetadata() {
         val runtimeConfig = modelConfig("runtime-key", ReasoningEffort.HIGH)
         val request = request(
             source = AgentRuntimeWire.ATOM_VOICE_HANDOFF_SOURCE,
@@ -101,7 +101,7 @@ class AgentRuntimeRequestConfigResolverTest {
     }
 
     @Test
-    fun etaVoiceRequestKeepsEntryToolSwitchesWhileTakingRuntimeModel() {
+    fun atomVoiceRequestKeepsEntryToolSwitchesWhileTakingRuntimeModel() {
         val entry = modelConfig("entry-key", ReasoningEffort.OFF).copy(
             terminalTools = true,
             deviceSensitiveReadTools = true,

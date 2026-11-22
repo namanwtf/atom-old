@@ -16,7 +16,7 @@ class ProviderRequestHeadersTest {
         ProviderRequestHeaders.mergeInto(builder, "https://chatgpt.com/backend-api/codex", emptyList(),
             sessionId = "conversation-fixture", authMode = ProviderAuthModes.OPENAI_CHATGPT)
         val headers = builder.build()
-        assertEquals("eta", headers["originator"])
+        assertEquals("atom", headers["originator"])
         assertEquals("conversation-fixture", headers["session-id"])
         assertEquals("responses=experimental", headers["OpenAI-Beta"])
     }

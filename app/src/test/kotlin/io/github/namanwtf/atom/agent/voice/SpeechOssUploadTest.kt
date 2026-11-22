@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34], application = Application::class)
 class SpeechOssUploadTest {
     private val context: Context get() = RuntimeEnvironment.getApplication()
-    private val config = SpeechOssConfig(bucket = "eta-test")
+    private val config = SpeechOssConfig(bucket = "atom-test")
     private val secrets = SpeechCredentials(ossAccessKeyId = "test-id", ossAccessKeySecret = "test-secret")
     private fun pending() = context.getSharedPreferences("atom_speech_oss_cleanup", Context.MODE_PRIVATE).getStringSet("pending", emptySet())!!
     @Before fun reset() { context.getSharedPreferences("atom_speech_oss_cleanup", Context.MODE_PRIVATE).edit().clear().commit() }
@@ -31,7 +31,7 @@ class SpeechOssUploadTest {
         val methods = mutableListOf<String>()
         val upload = SpeechOssUpload(context) { methods += it.method }
         val text = upload.withAudio(config, secrets, byteArrayOf(1, 2)) { url ->
-            assertTrue(url.startsWith("https://eta-test.oss-cn-beijing.aliyuncs.com/eta-speech/"))
+            assertTrue(url.startsWith("https://atom-test.oss-cn-beijing.aliyuncs.com/atom-speech/"))
             assertEquals(1, pending().size)
             "transcript result"
         }

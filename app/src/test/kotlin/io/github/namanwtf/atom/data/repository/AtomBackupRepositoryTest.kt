@@ -45,7 +45,7 @@ class AtomBackupRepositoryTest {
     @Before
     fun setUp() {
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
         SettingsDataStore.init(context)
         runBlocking {
             SettingsDataStore.setSelection(null, null)
@@ -300,7 +300,7 @@ class AtomBackupRepositoryTest {
     @Test
     fun versionOneBackupRemainsReadable() = runBlocking {
         val summary = AtomBackupRepository.inspect(context, ByteArrayInputStream(
-            """{"format":"eta-backup","schemaVersion":1,"exportedAt":0}""".toByteArray(),
+            """{"format":"atom-backup","schemaVersion":1,"exportedAt":0}""".toByteArray(),
         ))
         assertEquals(0, summary.characterCount)
     }

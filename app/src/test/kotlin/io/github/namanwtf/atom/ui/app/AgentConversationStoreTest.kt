@@ -45,7 +45,7 @@ class AgentConversationStoreTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         AtomDatabase.closeForTests()
-        context.deleteDatabase("eta.db")
+        context.deleteDatabase("atom.db")
     }
 
     @Test
@@ -402,7 +402,7 @@ class AgentConversationStoreTest {
         assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "cross boundary"))
         assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "%_"))
         assertEquals(setOf("literal"), AgentConversationStore.searchConversationIds(context, "DONE"))
-        assertEquals(emptySet<String>(), AgentConversationStore.searchConversationIds(context, "eta:chunks"))
+        assertEquals(emptySet<String>(), AgentConversationStore.searchConversationIds(context, "atom:chunks"))
         assertEquals(emptySet<String>(), AgentConversationStore.searchConversationIds(context, "[]"))
     }
 
