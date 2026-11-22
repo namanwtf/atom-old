@@ -41,7 +41,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private val savedStateRegistryController = SavedStateRegistryController.create(this)
 
     override val lifecycle: Lifecycle get() = lifecycleRegistry
-    override val savedStateRegistry: android.savedstate.SavedStateRegistry
+    override val savedStateRegistry: androidx.savedstate.SavedStateRegistry
         get() = savedStateRegistryController.savedStateRegistry
 
     private var windowManager: WindowManager? = null

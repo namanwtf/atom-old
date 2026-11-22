@@ -44,6 +44,7 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
 internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
     val appearance = LocalAppearanceSettings.current
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     fun update(transform: (AppearanceSettings) -> AppearanceSettings) {
         coroutineScope.launch {
@@ -237,7 +238,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                                     checked = appearance.floatingBubbleEnabled,
                                     onCheckedChange = { enabled ->
                                         update { current -> current.copy(floatingBubbleEnabled = enabled) }
-                                        val ctx = LocalContext.current
+                                        val ctx = context
                                         if (enabled) {
                                             ctx.startService(Intent(ctx, AtomBubbleService::class.java))
                                         } else {
