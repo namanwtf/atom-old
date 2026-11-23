@@ -50,6 +50,7 @@ import io.github.namanwtf.atom.agent.model.ProviderEvent
 import io.github.namanwtf.atom.agent.model.ProviderRequest
 import io.github.namanwtf.atom.agent.runtime.AgentEvent
 import io.github.namanwtf.atom.agent.runtime.AgentRunController
+import io.github.namanwtf.atom.agent.runtime.AgentExternalArchivePayload
 import io.github.namanwtf.atom.agent.runtime.AgentRuntimeClient
 import io.github.namanwtf.atom.agent.runtime.AgentRuntimeWire
 import io.github.namanwtf.atom.core.AndroidAgentLogger
@@ -66,6 +67,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /**
  * Persistent floating bubble (the "Atom") — an always-on nucleus with an
@@ -100,6 +102,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private val prefs by lazy { getSharedPreferences("atom_overlay", MODE_PRIVATE) }
     private val modelLabel = mutableStateOf("")
+    private var conversationKey = ""
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
     private val bubbleReset = mutableStateOf(0)
@@ -767,16 +770,26 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 // Route through the real agent runtime, not a bare model call:
                 // the bubble now has the full tool surface and streams the same
                 // events the app's chat does.
+                // One stable conversation key so every bubble message lands in
+                // the same chat, and an external archive payload so the app
+                // materialises the finished run into its conversation list.
+                val key = ensureConversationKey()
                 val runId = "bubble-${System.currentTimeMillis()}"
+                val payload = AgentExternalArchivePayload(
+                    userText = text,
+                    conversationKey = key,
+                    title = text.take(40),
+                )
                 val request = AgentRuntimeWire.RunRequest(
                     runId = runId,
                     prompt = text,
                     config = config,
                     images = emptyList(),
+                    modelSessionId = key,
                     handoff = AgentRuntimeWire.EntryHandoff(
-                        id = runId,
+                        id = "$key:$runId",
                         source = AgentRuntimeWire.ATOM_BUBBLE_HANDOFF_SOURCE,
-                        payload = "{}",
+                        payload = payload.toJson(),
                     ),
                 )
                 val handler = Handler(Looper.getMainLooper())
