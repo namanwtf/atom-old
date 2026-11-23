@@ -93,6 +93,23 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var panelBaseY: Int = 0
     private var panelLifted = false
     private var imeWatchJob: Job? = null
+
+    /** Real IME height in px, delivered only to accessibility overlays. */
+    private var measuredImePx = 0
+
+    private fun overlayService(): AgentAccessibilityService? =
+        runCatching { AgentAccessibilityService.current() }.getOrNull()
+
+    private fun overlayType(): Int =
+        if (overlayService() != null) {
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+        } else {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        }
+
+    private fun overlayWindowManager(): WindowManager? =
+        (overlayService()?.let { it.getSystemService(WINDOW_SERVICE) } ?: getSystemService(WINDOW_SERVICE))
+            as? WindowManager
     private var panelFullHeight = 0
     private val dragging = mutableStateOf(false)
     private val dragBubbleCenter = mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
@@ -162,7 +179,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private fun showBubble() {
         if (bubbleView != null) return
-        val wm = getSystemService(WINDOW_SERVICE) as? WindowManager ?: return
+        val wm = overlayWindowManager() ?: return
         val labels = AgentOrbLabels(
             hide = getString(R.string.bubble_hide),
             openChat = getString(R.string.bubble_open_chat),
@@ -218,7 +235,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -373,7 +390,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = WindowManager.LayoutParams(
             size,
             size,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
@@ -451,7 +468,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            overlayType(),
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
@@ -565,7 +582,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
 
     private fun showChat() {
         if (chatView != null) return
-        val wm = getSystemService(WINDOW_SERVICE) as? WindowManager ?: return
+        val wm = overlayWindowManager() ?: return
         val view = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@AtomBubbleService)
             setViewTreeSavedStateRegistryOwner(this@AtomBubbleService)
@@ -619,7 +636,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val lp = WindowManager.LayoutParams(
             chatWidth,
             chatHeight,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            overlayType(),
             flags,
             PixelFormat.TRANSLUCENT,
         ).apply {
@@ -644,6 +661,33 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         panelFullHeight = chatHeight
         refreshModelLabel()
         startImeWatch()
+        // With an accessibility overlay the IME inset actually arrives; follow it
+        // frame by frame and the panel lands exactly on the keyboard.
+        view.setOnApplyWindowInsetsListener { _, insets ->
+            val ime = insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
+            if (ime != measuredImePx) {
+                measuredImePx = ime
+                panelLifted = ime > 0
+                refitPanelForKeyboard()
+            }
+            insets
+        }
+        view.setWindowInsetsAnimationCallback(
+            object : android.view.WindowInsetsAnimation.Callback(DISPATCH_MODE_STOP) {
+                override fun onProgress(
+                    insets: android.view.WindowInsets,
+                    running: MutableList<android.view.WindowInsetsAnimation>,
+                ): android.view.WindowInsets {
+                    val ime = insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
+                    if (ime != measuredImePx) {
+                        measuredImePx = ime
+                        panelLifted = ime > 0
+                        refitPanelForKeyboard()
+                    }
+                    return insets
+                }
+            },
+        )
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
@@ -702,6 +746,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 .getInsets(android.view.WindowInsets.Type.ime()).bottom
         }.getOrDefault(0)
         val keyboard = when {
+            measuredImePx > 0 -> measuredImePx
             keyboardTopPx > 0 -> (wm.currentWindowMetrics.bounds.height() - keyboardTopPx)
             imeInset > 0 -> imeInset
             else -> (resources.displayMetrics.heightPixels * 0.32f).toInt()
