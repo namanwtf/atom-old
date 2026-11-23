@@ -669,7 +669,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         if (imeWatchJob?.isActive == true) return
         imeWatchJob = lifecycleScope.launch {
             val imm = getSystemService(InputMethodManager::class.java)
-            while (isActive) {
+            while (true) {
                 if (panelLifted && chatView != null && Build.VERSION.SDK_INT >= 33 &&
                     imm != null && !imm.isActive()
                 ) {
@@ -832,10 +832,23 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         windowManager = null
     }
 
+    /** One stable conversation for the whole bubble, so its runs land together. */
+    private fun ensureConversationKey(): String {
+        if (conversationKey.isBlank()) {
+            conversationKey = prefs.getString(KEY_BUBBLE_CONVERSATION, "")
+                .takeIf { it.isNotBlank() }
+                ?: "atom_bubble_${UUID.randomUUID()}".also { key ->
+                    prefs.edit().putString(KEY_BUBBLE_CONVERSATION, key).apply()
+                }
+        }
+        return conversationKey
+    }
+
     private companion object {
         const val KEY_BUBBLE_X = "bubble_x"
         const val KEY_BUBBLE_Y = "bubble_y"
         const val KEY_MENU_HINT_SEEN = "menu_hint_seen"
+        const val KEY_BUBBLE_CONVERSATION = "bubble_conversation"
     }
 
     private fun dpToPx(dp: Int): Int =
