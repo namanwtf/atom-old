@@ -39,7 +39,7 @@ tags are `v3.4.5-atom.<n>` and each tag ships a signed APK.
   continuous frame-rate overlay that cost ~13% CPU at idle.
 
 ## Unreleased / next
-- Route the bubble chat through the agent runtime (tools + persistence) instead
-  of a bare model call.
+- Route the bubble chat through the agent runtime (tools + streaming) instead of
+  a bare model call.
 - Release the keep-screen-on wake lock between GUI steps.
 - Battery and thermal guardrails for long runs.

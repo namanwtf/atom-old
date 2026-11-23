@@ -41,6 +41,7 @@ internal object AgentRuntimeWire {
 
     const val AGENT_UI_HANDOFF_SOURCE = "agent_ui"
     const val ATOM_VOICE_HANDOFF_SOURCE = "atom_voice"
+    const val ATOM_BUBBLE_HANDOFF_SOURCE = "atom_bubble"
     const val SCHEDULED_TASK_HANDOFF_SOURCE = "scheduled_task"
 
     internal class PayloadTooLargeException(sizeBytes: Int) : IllegalArgumentException(

@@ -46,7 +46,11 @@ import io.github.namanwtf.atom.agent.model.AssistantBlockKind
 import io.github.namanwtf.atom.agent.model.ProviderClientFactory
 import io.github.namanwtf.atom.agent.model.ProviderEvent
 import io.github.namanwtf.atom.agent.model.ProviderRequest
+import io.github.namanwtf.atom.agent.runtime.AgentEvent
 import io.github.namanwtf.atom.agent.runtime.AgentRunController
+import io.github.namanwtf.atom.agent.runtime.AgentRuntimeClient
+import io.github.namanwtf.atom.agent.runtime.AgentRuntimeWire
+import io.github.namanwtf.atom.core.AndroidAgentLogger
 import io.github.namanwtf.atom.agent.voice.AtomAssistantOverlayService
 import io.github.namanwtf.atom.data.model.AppearanceSettings
 import io.github.namanwtf.atom.data.repository.AppearanceSettingsRepository
@@ -732,36 +736,36 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     )
                     return@launch
                 }
-                val controller = AgentRunController()
-                val requestMessages = JSONArray()
-                    .put(JSONObject().put("role", "system").put(
-                        "content",
-                        "You are Atom, a helpful AI assistant on Android. Reply concisely in the user's language.",
-                    ))
-                    .put(AgentConversationCodec.userTextMessage(text))
-                val client = ProviderClientFactory.getClient(config)
+                // Route through the real agent runtime, not a bare model call:
+                // the bubble now has the full tool surface and streams the same
+                // events the app's chat does.
+                val runId = "bubble-${System.currentTimeMillis()}"
+                val request = AgentRuntimeWire.RunRequest(
+                    runId = runId,
+                    prompt = text,
+                    config = config,
+                    images = emptyList(),
+                    handoff = AgentRuntimeWire.EntryHandoff(
+                        id = runId,
+                        source = AgentRuntimeWire.ATOM_BUBBLE_HANDOFF_SOURCE,
+                        payload = "{}",
+                    ),
+                )
                 val handler = Handler(Looper.getMainLooper())
                 val buffer = StringBuilder()
-                val response = withContext(Dispatchers.IO) {
-                    client.complete(
-                        ProviderRequest(
-                            config = config,
-                            messages = requestMessages,
-                            tools = JSONArray(),
-                        ),
-                        controller,
-                    ) { event ->
-                        if (event is ProviderEvent.BlockDelta &&
-                            event.kind == AssistantBlockKind.TEXT
-                        ) {
-                            buffer.append(event.delta)
-                            val snapshot = buffer.toString()
-                            handler.post { streaming.value = snapshot }
+                val result = withContext(Dispatchers.IO) {
+                    AgentRuntimeClient(this@AtomBubbleService, AndroidAgentLogger)
+                        .run(request) { event ->
+                            if (event is AgentEvent.BlockDelta &&
+                                event.kind == AssistantBlockKind.TEXT
+                            ) {
+                                buffer.append(event.delta)
+                                val snapshot = buffer.toString()
+                                handler.post { streaming.value = snapshot }
+                            }
                         }
-                    }
                 }
-                val final = response.assistantMessage.optString("content")
-                    .ifBlank { buffer.toString() }
+                val final = result.content.ifBlank { buffer.toString() }
                 handler.post {
                     messages.value = messages.value +
                         AtomChatMessage(fromUser = false, text = final)
