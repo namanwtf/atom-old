@@ -122,6 +122,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private val modelLabel = mutableStateOf("")
     private var conversationKey = ""
     private var conversationHistory: List<AgentModelClient.ConversationMessage> = emptyList()
+    private val historyFile by lazy { java.io.File(filesDir, "bubble_history.json") }
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
     private val bubbleReset = mutableStateOf(0)
@@ -146,6 +147,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         menuHintPending.value = !prefs.getBoolean(KEY_MENU_HINT_SEEN, false)
+        conversationHistory = loadHistory()
         lifecycleScope.launch {
             AgentAccessibilityService.keyboardTop.collect { top ->
                 if (top == keyboardTopPx) return@collect
@@ -605,6 +607,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                             streaming.value = ""
                             conversationHistory = emptyList()
                             conversationKey = ""
+                            runCatching { historyFile.delete() }
                         },
                         onMic = { handleAction(AgentOrbAction.TALK) },
                         modelLabel = modelLabel.value,
@@ -865,6 +868,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         AgentModelClient.buildUserHistoryMessage(text, emptyList()) +
                         result.transcript
                 }
+                saveHistory()
                 val final = result.content.ifBlank { buffer.toString() }
                 handler.post {
                     messages.value = messages.value +
@@ -889,6 +893,29 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         bubbleView = null
         bubbleParams = null
         windowManager = null
+    }
+
+    /**
+     * The bubble is one long conversation: it persists to a file so a service
+     * restart, a reboot or an update does not lose the thread. Only the explicit
+     * "new chat" action clears it.
+     */
+    private fun loadHistory(): List<AgentModelClient.ConversationMessage> = runCatching {
+        if (!historyFile.exists()) return emptyList()
+        val array = org.json.JSONArray(historyFile.readText())
+        buildList {
+            for (i in 0 until array.length()) {
+                add(AgentConversationCodec.fromJsonObject(array.getJSONObject(i)))
+            }
+        }
+    }.getOrDefault(emptyList())
+
+    private fun saveHistory() {
+        runCatching {
+            val array = org.json.JSONArray()
+            conversationHistory.forEach { array.put(AgentConversationCodec.toJsonObject(it)) }
+            historyFile.writeText(array.toString())
+        }
     }
 
     /** One stable conversation for the whole bubble, so its runs land together. */
