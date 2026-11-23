@@ -33,7 +33,16 @@ internal object AgentPromptBuilder {
         history.forEach { item ->
             runCatching { AgentConversationCodec.toJsonObject(item) }.getOrNull()?.let(messages::put)
         }
-        messages.put(AgentConversationCodec.userMessage(prompt, images))
+        // The model ignored a language rule buried in the system prompt and
+        // answered an English "open uber" in Chinese. Repeating it on the user
+        // turn — the position models weight most — is what actually holds.
+        val languageTail = if (roleplayContext == null) {
+            "\n\n[Language: reply in the same language as this message. " +
+                "If this message is English, the whole reply is English.]"
+        } else {
+            ""
+        }
+        messages.put(AgentConversationCodec.userMessage(prompt + languageTail, images))
         return messages
     }
 
@@ -52,6 +61,15 @@ internal object AgentPromptBuilder {
         extraSystemContext: String = "",
     ): JSONArray {
         val messages = JSONArray()
+        if (roleplayContext == null) {
+            messages.put(
+                systemMessage(
+                    "LANGUAGE RULE: reply in the language of the user's latest message. " +
+                        "An English message gets an English reply, always — not Chinese, " +
+                        "not a translation, regardless of history, titles, tool output or the model's defaults.",
+                ),
+            )
+        }
         if (roleplayContext == null && config.systemPrompt.isNotBlank()) {
             messages.put(systemMessage(config.systemPrompt))
         }
