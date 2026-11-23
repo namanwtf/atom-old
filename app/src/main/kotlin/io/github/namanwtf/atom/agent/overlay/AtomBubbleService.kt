@@ -835,7 +835,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     /** One stable conversation for the whole bubble, so its runs land together. */
     private fun ensureConversationKey(): String {
         if (conversationKey.isBlank()) {
-            conversationKey = prefs.getString(KEY_BUBBLE_CONVERSATION, "")
+            conversationKey = (prefs.getString(KEY_BUBBLE_CONVERSATION, "") ?: "")
                 .takeIf { it.isNotBlank() }
                 ?: "atom_bubble_${UUID.randomUUID()}".also { key ->
                     prefs.edit().putString(KEY_BUBBLE_CONVERSATION, key).apply()
