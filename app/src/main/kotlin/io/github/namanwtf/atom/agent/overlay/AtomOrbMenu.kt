@@ -48,8 +48,8 @@ import kotlin.math.roundToInt
 /** Window side for the radial menu: Buddy's 344dp box. */
 internal const val ATOM_MENU_SIZE_DP = 344f
 private const val RADIUS_DP = 132f
-private const val ITEM_W_DP = 72f
-private const val ITEM_H_DP = 92f
+private const val ITEM_W_DP = 52f
+private const val ITEM_H_DP = 52f
 private const val ICON_DP = 52f
 
 /**
@@ -150,24 +150,13 @@ private fun MenuItem(action: AgentOrbAction, label: String, onClick: () -> Unit)
                 .size(ICON_DP.dp)
                 .background(Color(0xF0181614), CircleShape)
                 .border(1.5.dp, tint.copy(alpha = 0.8f), CircleShape)
-                .clickable { onClick() },
+                .clickable(onClickLabel = label) { onClick() },
             contentAlignment = Alignment.Center,
         ) {
-            Canvas(Modifier.size(22.dp)) {
+            Canvas(Modifier.size(24.dp)) {
                 drawActionGlyph(action, tint)
             }
         }
-        BasicText(
-            label,
-            modifier = Modifier.width(ITEM_W_DP.dp),
-            style = TextStyle(
-                color = AtomOverlayColors.Text,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                lineHeight = 13.sp,
-            ),
-        )
     }
 }
 

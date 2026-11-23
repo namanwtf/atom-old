@@ -5,7 +5,11 @@
 It reads the screen, taps the button, runs the command, remembers the context,
 and keeps working while you do something else.
 
-![Atom home](docs/Screenshots/atom_home.png)
+| The bubble | The panel | Composing |
+| --- | --- | --- |
+| ![Atom's floating bubble](docs/Screenshots/atom_bubble.png) | ![The mini chat panel](docs/Screenshots/atom_panel.png) | ![The panel above the keyboard](docs/Screenshots/atom_panel_keyboard.png) |
+
+Real screenshots, taken on a phone running 3.4.5 — none of them mockups.
 
 ---
 
