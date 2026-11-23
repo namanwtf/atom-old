@@ -81,19 +81,6 @@ internal fun AgentOverlayBubble(
     modifier: Modifier = Modifier,
 ) {
     val working = state.phase == AgentOverlayPhase.RUNNING
-    val transition = rememberInfiniteTransition(label = "bubble")
-    val breath by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
-        label = "breath",
-    )
-    val spin by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
-        label = "spin",
-    )
 
     Row(
         modifier = modifier.padding(4.dp),
@@ -120,26 +107,58 @@ internal fun AgentOverlayBubble(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            if (working) {
-                Canvas(Modifier.size(74.dp)) {
-                    drawWorkingRing(spin)
-                }
+            // Idle cost is the whole point: a parked bubble is a static image,
+            // so there is no infinite animation ticking while nothing runs.
+            if (working || dragging) {
+                AnimatedFace(state = state, working = working, dragging = dragging)
+            } else {
+                Image(
+                    painter = painterResource(faceFor(state.phase, dragging, working)),
+                    contentDescription = "Atom",
+                    modifier = Modifier.size(60.dp),
+                )
             }
-
-            Image(
-                painter = painterResource(faceFor(state.phase, dragging, working)),
-                contentDescription = "Atom",
-                modifier = Modifier
-                    .size(60.dp)
-                    .graphicsLayer {
-                        // Buddy swells the face while it is being dragged.
-                        val drag = if (dragging) 1.14f else 1f
-                        scaleX = breath * drag
-                        scaleY = breath * drag
-                    },
-            )
         }
     }
+}
+
+/**
+ * The working / dragging state: breathing and the ring only exist while there is
+ * something to show. The infinite transition is created here and nowhere else, so
+ * an idle bubble composes down to a single static Image.
+ */
+@Composable
+private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: Boolean) {
+    val transition = rememberInfiniteTransition(label = "bubble")
+    val breath by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
+        label = "breath",
+    )
+    val spin by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart),
+        label = "spin",
+    )
+    if (working) {
+        Canvas(Modifier.size(74.dp)) {
+            drawWorkingRing(spin)
+        }
+    }
+    Image(
+        painter = painterResource(faceFor(state.phase, dragging, working)),
+        contentDescription = "Atom",
+        modifier = Modifier
+            .size(60.dp)
+            .graphicsLayer {
+                // Buddy swells the face while it is being dragged.
+                val drag = if (dragging) 1.14f else 1f
+                scaleX = breath * drag
+                scaleY = breath * drag
+            },
+    )
 }
 
 /**
@@ -178,7 +197,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWorkingRing(spi
     )
     specs.forEach { (speed, length, alpha) ->
         drawArc(
-            color = AtomOverlayColors.Accent.copy(alpha = alpha),
+            color = AtomOverlayColors.Bolt.copy(alpha = alpha),
             startAngle = spin * (speed / 260f),
             sweepAngle = length,
             useCenter = false,
