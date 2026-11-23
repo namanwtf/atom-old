@@ -152,6 +152,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             AgentAccessibilityService.keyboardTop.collect { top ->
                 if (top == keyboardTopPx) return@collect
                 keyboardTopPx = top
+                // The real keyboard state is authoritative when accessibility is
+                // up: top == 0 means the keyboard is gone, so the panel goes back
+                // to full height even though the composer keeps focus.
+                if (chatView != null) {
+                    panelLifted = top > 0
+                }
                 applyBubbleClearance()
                 refitPanelForKeyboard()
             }
