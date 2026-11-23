@@ -44,6 +44,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import io.github.namanwtf.atom.R
 import io.github.namanwtf.atom.agent.accessibility.AgentAccessibilityService
 import io.github.namanwtf.atom.agent.model.AgentConversationCodec
+import io.github.namanwtf.atom.agent.model.AgentModelClient
 import io.github.namanwtf.atom.agent.model.AssistantBlockKind
 import io.github.namanwtf.atom.agent.model.ProviderClientFactory
 import io.github.namanwtf.atom.agent.model.ProviderEvent
@@ -120,6 +121,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private val prefs by lazy { getSharedPreferences("atom_overlay", MODE_PRIVATE) }
     private val modelLabel = mutableStateOf("")
     private var conversationKey = ""
+    private var conversationHistory: List<AgentModelClient.ConversationMessage> = emptyList()
     private val messages = mutableStateOf<List<AtomChatMessage>>(emptyList())
     private val streaming = mutableStateOf("")
     private val bubbleReset = mutableStateOf(0)
@@ -601,6 +603,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         onNewChat = {
                             messages.value = emptyList()
                             streaming.value = ""
+                            conversationHistory = emptyList()
+                            conversationKey = ""
                         },
                         onMic = { handleAction(AgentOrbAction.TALK) },
                         modelLabel = modelLabel.value,
@@ -830,6 +834,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     prompt = text,
                     config = config,
                     images = emptyList(),
+                    history = conversationHistory,
                     modelSessionId = key,
                     handoff = AgentRuntimeWire.EntryHandoff(
                         id = "$key:$runId",
@@ -850,6 +855,15 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                                 handler.post { streaming.value = snapshot }
                             }
                         }
+                }
+                // Keep the conversation for the next message, the same way the
+                // voice assistant carries its history across runs.
+                if (result.contextSnapshot != null) {
+                    conversationHistory = result.contextSnapshot.messages
+                } else if (result.ok) {
+                    conversationHistory = conversationHistory +
+                        AgentModelClient.buildUserHistoryMessage(text, emptyList()) +
+                        result.transcript
                 }
                 val final = result.content.ifBlank { buffer.toString() }
                 handler.post {
