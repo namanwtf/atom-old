@@ -124,16 +124,26 @@ follow `v<versionName>-atom.<n>`.
 ## Keeping up with Eta
 
 - Remote `upstream` = `github.com/Mangi-11/Eta`. `.github/workflows/sync-upstream.yml`
-  runs weekly: `git fetch upstream && git rebase upstream/main`, opens a PR when
-  clean or an issue listing conflicts.
-- Expect conflicts in almost every file: this repo rewrote every string, comment
-  and prompt into English. Resolution: keep Atom's English text, take Eta's
-  structural change, then re-run the English pass —
+  runs weekly: fetch, **merge** (never rebase), open a PR when clean and the
+  invariants pass, otherwise an issue listing the conflicted files.
+- Merging is deliberate: Atom is 70 commits and an English pass ahead across
+  1,146 files, so a rebase replays every Atom commit over a rewritten tree,
+  conflicts on the Chinese resources we delete on purpose, and force-pushes
+  published history. Details, the measured divergence and the per-layer
+  resolution policy live in `docs/UPSTREAM_SYNC.md`.
+- Expect conflicts wherever upstream rewrote a file: keep Atom's English text and
+  product behaviour, take Eta's structure, then re-run the English pass —
   `git ls-files | xargs rg -l '[\p{Han}]'` must return nothing except the
   intentional third-party notices.
-- After a rebase re-check the rename invariants: no `io.github.mangi.eta`, no
+- After every merge re-check the rename invariants: no `io.github.mangi.eta`, no
   `Eta*` classes, no `/data/local/tmp/eta` paths, gradle property
   `atom.updateRepo`.
+- A clean textual merge does not mean it compiles or that the UI kept its
+  geometry. Compile in CI, install, and dump the bubble/panel/menu before
+  tagging.
+- An on-device scheduled task (`upstream watch: Eta → Atom`, Mondays 12:00)
+  reports the delta read-only, after the GitHub workflow's 03:00 UTC run. It
+  never merges; it exists so a stalled workflow cannot hide upstream movement.
 
 ## Open issues
 

@@ -1,7 +1,18 @@
 name: sync-upstream
 
-# Keeps the fork rebased on Mangi-11/Eta so upstream fixes are never missed.
-# Clean rebase -> push branch + open PR. Conflicts -> open an issue with the file list.
+# Keeps Atom aware of Mangi-11/Eta without ever force-rewriting main.
+#
+# Strategy: merge, not rebase. Atom carries ~70 commits and an English pass over
+# ~1,146 files, so replaying our commits on top of upstream produces a conflict
+# per upstream touch, including the Chinese resources we deliberately deleted.
+# A merge resolves the divergence once. It also never rewrites published history
+# (tags point at commits that must stay reachable).
+#
+# Clean merge  -> branch + PR (never auto-merged, never tagged).
+# Conflicts    -> issue with the file list and the exact local command.
+#
+# The English-only and rename invariants run on the merge result, because both
+# are easy to lose silently during a conflict resolution.
 
 on:
   schedule:
@@ -27,55 +38,108 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
 
       - name: Fetch upstream
+        id: fetch
         run: |
           git remote add upstream https://github.com/Mangi-11/Eta.git || true
           git fetch upstream main
-          echo "UPSTREAM_SHA=$(git rev-parse --short upstream/main)" >> "$GITHUB_ENV"
-          echo "BASE_SHA=$(git merge-base HEAD upstream/main | cut -c1-7)" >> "$GITHUB_ENV"
-
-      - name: Rebase onto upstream
-        id: rebase
-        run: |
+          echo "UPSTREAM_SHA=$(git rev-parse --short upstream/main)" >> "$GITHUB_OUTPUT"
+          echo "BASE_SHA=$(git merge-base HEAD upstream/main | cut -c1-7)" >> "$GITHUB_OUTPUT"
           if git merge-base --is-ancestor upstream/main HEAD; then
             echo "status=up-to-date" >> "$GITHUB_OUTPUT"
-            exit 0
+          else
+            echo "status=behind" >> "$GITHUB_OUTPUT"
+            echo "commits=$(git rev-list --count HEAD..upstream/main)" >> "$GITHUB_OUTPUT"
           fi
-          if git rebase upstream/main > /tmp/rebase.log 2>&1; then
+
+      - name: Attempt merge
+        id: merge
+        if: steps.fetch.outputs.status == 'behind'
+        run: |
+          if git merge --no-ff --no-commit upstream/main > /tmp/merge.log 2>&1; then
             echo "status=clean" >> "$GITHUB_OUTPUT"
           else
             echo "status=conflict" >> "$GITHUB_OUTPUT"
-            grep -E '^(CONFLICT|error:)' /tmp/rebase.log | head -40 > /tmp/conflicts.txt || true
-            git rebase --abort || true
-            {
-              printf 'Rebase onto `%s` hit conflicts.\n\nResolve locally:\n\n```\ngit fetch upstream && git rebase upstream/main\n```\n\nConflict log:\n\n```\n' "$UPSTREAM_SHA"
-              cat /tmp/conflicts.txt
-              printf '\n```\n'
-            } > /tmp/issue.md
+            git diff --name-only --diff-filter=U | sort > /tmp/conflicts.txt
+            echo "files=$(wc -l < /tmp/conflicts.txt)" >> "$GITHUB_OUTPUT"
+            git merge --abort
           fi
 
+      - name: Invariants (English only, rename, update channel)
+        id: invariants
+        if: steps.merge.outputs.status == 'clean'
+        run: |
+          fail=0
+          command -v rg > /dev/null || { echo "::error::ripgrep missing, cannot verify English-only"; exit 1; }
+          # rg is UTF-8 aware; `git grep -P '[\p{Han}]'` is not, and reports
+          # box-drawing glyphs in TerminalGlyphs.kt as matches. Restrict to text
+          # so icons, fonts and .tgz assets do not count either.
+          han=$(rg -l '[\p{Han}]' \
+            --glob '*.{kt,kts,java,xml,md,json,gradle,pro,txt,sh,yml,yaml}' \
+            --glob '!docs/THIRD_PARTY_NOTICES.md' . || true)
+          if [ -n "$han" ]; then
+            echo "::error::Han characters outside the notices:"; echo "$han"; fail=1
+          fi
+          # Docs legitimately mention the old id when explaining the invariant.
+          if git grep -n 'io\.github\.mangi\.eta' -- '*.kt' '*.java' '*.xml' '*.gradle' '*.gradle.kts' '*.pro' > /dev/null 2>&1; then
+            echo "::error::Eta package id survived the merge"; fail=1
+          fi
+          if git grep -n '/data/local/tmp/eta' -- '*.kt' '*.java' '*.sh' > /dev/null 2>&1; then
+            echo "::error::Eta path literal survived the merge"; fail=1
+          fi
+          if ! grep -q 'atom.updateRepo' gradle.properties; then
+            echo "::error::gradle.properties lost atom.updateRepo"; fail=1
+          fi
+          [ "$fail" -eq 0 ] && echo "status=ok" >> "$GITHUB_OUTPUT" || echo "status=failed" >> "$GITHUB_OUTPUT"
+
       - name: Push synced branch
-        if: steps.rebase.outputs.status == 'clean'
+        if: steps.merge.outputs.status == 'clean' && steps.invariants.outputs.status == 'ok'
+        id: branch
         run: |
           BRANCH="sync/upstream-${UPSTREAM_SHA}"
+          git commit -m "chore: merge upstream ${UPSTREAM_SHA}"
           git push origin "HEAD:refs/heads/${BRANCH}"
-          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Open pull request
-        if: steps.rebase.outputs.status == 'clean'
+        if: steps.branch.outputs.name != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create \
-            --title "chore: rebase onto upstream ${UPSTREAM_SHA}" \
-            --body "Automated upstream sync. Base \`${BASE_SHA}\` -> \`${UPSTREAM_SHA}\`. Review the diff and confirm the English/privacy/bubble patches still apply cleanly." \
-            --base main --head "$BRANCH" \
-            || gh pr list --head "$BRANCH" --json url -q '.[0].url'
+            --title "chore: merge upstream ${{ steps.fetch.outputs.UPSTREAM_SHA }}" \
+            --body "Automated upstream merge. Base \`${{ steps.fetch.outputs.BASE_SHA }}\` -> \`${{ steps.fetch.outputs.UPSTREAM_SHA }}\` (${{ steps.fetch.outputs.commits }} commits). Invariants passed. **Still requires a device check**: install the CI artifact, confirm the bubble position, the panel geometry with the IME up, and the hold menu before tagging." \
+            --base main --head "${{ steps.branch.outputs.name }}" \
+            || gh pr list --head "${{ steps.branch.outputs.name }}" --json url -q '.[0].url'
 
-      - name: Open conflict issue
-        if: steps.rebase.outputs.status == 'conflict'
+      - name: Open invariant issue
+        if: steps.merge.outputs.status == 'clean' && steps.invariants.outputs.status == 'failed'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          {
+            printf 'The merge onto `%s` applied cleanly, but the invariant checks failed.\n\n' \
+              "${{ steps.fetch.outputs.UPSTREAM_SHA }}"
+            printf 'See the "Invariants" step log. The usual causes: upstream reintroduced Chinese resources, '
+            printf 'or an English pass was lost in a conflict resolution.\n'
+          } > /tmp/invariants.md
           gh issue create \
-            --title "upstream sync conflict: ${UPSTREAM_SHA}" \
+            --title "upstream merge ${{ steps.fetch.outputs.UPSTREAM_SHA }}: invariants failed" \
+            --body-file /tmp/invariants.md
+
+      - name: Open conflict issue
+        if: steps.merge.outputs.status == 'conflict'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            printf 'Upstream moved to `%s` (%s commits). The merge conflicts in %s files.\n\n' \
+              "${{ steps.fetch.outputs.UPSTREAM_SHA }}" "${{ steps.fetch.outputs.commits }}" "${{ steps.merge.outputs.files }}"
+            printf 'Do **not** rebase: Atom would replay ~70 commits over a rewritten tree and force-push `main`.\n\n'
+            printf '```\ngit fetch upstream && git merge --no-ff upstream/main\n```\n\n'
+            printf 'Resolution policy: `docs/UPSTREAM_SYNC.md`.\n\nConflicted files:\n\n```\n'
+            cat /tmp/conflicts.txt
+            printf '```\n\nDevice check before tagging: bubble position, panel geometry with the IME up, hold menu.\n'
+          } > /tmp/issue.md
+          gh issue create \
+            --title "upstream sync conflict: ${{ steps.fetch.outputs.UPSTREAM_SHA }} (${{ steps.merge.outputs.files }} files)" \
             --body-file /tmp/issue.md
