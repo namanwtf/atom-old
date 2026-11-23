@@ -4,11 +4,13 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Handler
+import android.os.Build
 import android.os.Looper
 import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,6 +60,8 @@ import io.github.namanwtf.atom.data.repository.RuntimeConfigRepository
 import io.github.namanwtf.atom.ui.MainActivity
 import io.github.namanwtf.atom.ui.app.AgentAppTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -86,6 +90,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var menuParams: WindowManager.LayoutParams? = null
     private var panelBaseY: Int = 0
     private var panelLifted = false
+    private var imeWatchJob: Job? = null
     private var panelFullHeight = 0
     private val dragging = mutableStateOf(false)
     private val dragBubbleCenter = mutableStateOf(androidx.compose.ui.geometry.Offset.Zero)
@@ -635,6 +640,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         panelLifted = false
         panelFullHeight = chatHeight
         refreshModelLabel()
+        startImeWatch()
         // The panel is the focused surface: hide the bubble so the two never
         // fight for the same corner of the screen.
         bubbleView?.visibility = View.GONE
@@ -650,6 +656,28 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
      * unavailable (accessibility off) the old share-of-the-screen reserve stays as
      * the fallback, so the composer is never left under the keys.
      */
+    /**
+     * The keyboard shrinking is driven by composer focus, but focus is not
+     * cleared when the IME is dismissed on this ROM, so the panel used to stay
+     * at half height. While the panel is open and lifted, watch the IME's own
+     * active state and drop back to full height the moment it disappears.
+     */
+    private fun startImeWatch() {
+        if (imeWatchJob?.isActive == true) return
+        imeWatchJob = lifecycleScope.launch {
+            val imm = getSystemService(InputMethodManager::class.java)
+            while (isActive) {
+                if (panelLifted && chatView != null && Build.VERSION.SDK_INT >= 33 &&
+                    imm != null && !imm.isActive()
+                ) {
+                    panelLifted = false
+                    refitPanelForKeyboard()
+                }
+                delay(400)
+            }
+        }
+    }
+
     private fun liftPanelForKeyboard(focused: Boolean) {
         if (focused == panelLifted) return
         panelLifted = focused
