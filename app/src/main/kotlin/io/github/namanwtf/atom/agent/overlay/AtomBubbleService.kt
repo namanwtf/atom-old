@@ -756,8 +756,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 val result = withContext(Dispatchers.IO) {
                     AgentRuntimeClient(this@AtomBubbleService, AndroidAgentLogger)
                         .run(request) { event ->
-                            if (event is AgentEvent.BlockDelta &&
-                                event.kind == AssistantBlockKind.TEXT
+                            if (event is AgentEvent.AssistantBlockDelta &&
+                                event.kind == AgentEvent.AssistantBlockKind.TEXT
                             ) {
                                 buffer.append(event.delta)
                                 val snapshot = buffer.toString()
