@@ -67,15 +67,22 @@ display, voice, roleplay characters, image generation. See `docs/`:
   preinstalled Android SDK — do **not** reintroduce `android-actions/setup-android@v3`,
   it fails on the removed `tools` package. Then `assembleRelease`, non-blocking
   unit tests, signing with repo secrets, artifact upload.
-- **Publishing is tag-only.** `.github/workflows/ci.yml` has
-  `if: startsWith(github.ref, 'refs/tags/v')` on the release step, so pushes to
-  `main` produce a workflow artifact only. To publish an APK:
+- **Publishing is automatic on `main`.** A push/merge to `main` runs the
+  release job in `.github/workflows/ci.yml`: it computes the next
+  `v3.4.5-atom.N`, bumps `versionCode` (date-based, always increasing), builds,
+  signs, writes the changelog, and publishes the GitHub Release with the signed
+  `atom-<n>.apk`. Nothing to tag by hand. The tag is created by the Actions
+  token, which does not re-trigger CI, so there is no build loop.
+- **Manual publish (fallback)** still works for an off-`main` build:
 
   ```bash
   git tag -f v3.4.5-atom.N && git push origin refs/tags/v3.4.5-atom.N
   ```
 
-  The release then carries `atom-<n>.apk`.
+- **Changelog.** Each release auto-generates its notes from the commit subjects
+  since the previous release, puts them in the GitHub Release, and prepends a
+  dated section to `CHANGELOG.md` (best-effort commit back to `main`; if `main`
+  is protected against Action pushes the Release still carries the notes).
 - **Signing** uses `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`. Local keystore: `/workspace/tools/atom-release.jks`
   (alias `atom`; password is not written here). Certificate SHA-256:
