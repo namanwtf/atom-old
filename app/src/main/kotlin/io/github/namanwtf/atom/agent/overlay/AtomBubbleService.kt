@@ -793,6 +793,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatView = null
         chatParams = null
         panelLifted = false
+        // The IME watcher only has work to do while the panel is open. Stopping it
+        // here ends the 400ms poll instead of leaving it waking for the service's
+        // whole lifetime after the first time the chat was opened.
+        imeWatchJob?.cancel()
+        imeWatchJob = null
+        measuredImePx = 0
         dockBubbleToBottom()
     }
 
