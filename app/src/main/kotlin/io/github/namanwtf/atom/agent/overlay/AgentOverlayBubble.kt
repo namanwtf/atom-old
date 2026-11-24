@@ -29,8 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -116,8 +116,9 @@ internal fun AgentOverlayBubble(
                 Image(
                     painter = painterResource(R.drawable.atom_bubble_glyph),
                     contentDescription = "Atom",
-                    colorFilter = ColorFilter.tint(tintFor(state.phase, working)),
-                    modifier = Modifier.size(60.dp),
+                    modifier = Modifier
+                        .size(60.dp)
+                        .alpha(alphaFor(state.phase, working)),
                 )
             }
         }
@@ -152,7 +153,6 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
     Image(
         painter = painterResource(R.drawable.atom_bubble_glyph),
         contentDescription = "Atom",
-        colorFilter = ColorFilter.tint(tintFor(state.phase, working)),
         modifier = Modifier
             .size(60.dp)
             .graphicsLayer {
@@ -160,18 +160,21 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
                 val drag = if (dragging) 1.14f else 1f
                 scaleX = breath * drag
                 scaleY = breath * drag
-            },
+            }
+            .alpha(alphaFor(state.phase, working)),
     )
 }
 
 /**
- * One glyph, tinted by state instead of five separate cartoon-face drawables:
- * paused dims to the muted color, everything else reads as the bubble's own
- * accent (the working ring already carries the "thinking" distinction).
+ * One glyph instead of five separate cartoon-face drawables: its colors are
+ * fixed in the asset itself (a solid accent circle plus a bold white mark), so
+ * a uniform ColorFilter.tint would collapse that two-tone design into one flat
+ * color. Paused instead dims the whole badge; the working ring already carries
+ * the "thinking" distinction.
  */
-private fun tintFor(phase: AgentOverlayPhase, working: Boolean): Color = when {
-    phase == AgentOverlayPhase.PAUSED && !working -> AtomOverlayColors.Muted
-    else -> AtomOverlayColors.Bolt
+private fun alphaFor(phase: AgentOverlayPhase, working: Boolean): Float = when {
+    phase == AgentOverlayPhase.PAUSED && !working -> 0.55f
+    else -> 1f
 }
 
 /** Localized labels for the hold menu, resolved by the host. */

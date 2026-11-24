@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,6 +61,8 @@ import io.github.namanwtf.atom.data.repository.RuntimeConfigRepository
 import io.github.namanwtf.atom.ui.MainActivity
 import io.github.namanwtf.atom.ui.app.AgentAppTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -104,6 +107,22 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     /** The composer has focus — used only as a last-resort signal when no
      *  window actually measures the keyboard (see [currentKeyboardHeightPx]). */
     private var composerFocused = false
+
+    /**
+     * Corrects [composerFocused] back to false when the keyboard closes without
+     * Compose ever reporting a focus-loss event.
+     *
+     * On this device neither real signal above ever fires reliably (no IME
+     * insets land on this window, and the accessibility keyboardTop reads 0),
+     * and dismissing the keyboard via the system back key or by tapping outside
+     * the field does not always clear Compose's own focus state. Without this,
+     * the panel stayed shrunk forever once the keyboard was dismissed that way.
+     * Only runs while it is actually needed (no real signal available yet, and
+     * the composer still thinks it has focus), and stops itself the moment
+     * either condition changes — it never drives the panel height directly,
+     * only corrects this one input to [currentKeyboardHeightPx].
+     */
+    private var imeWatchJob: Job? = null
 
     private fun overlayService(): AgentAccessibilityService? =
         runCatching { AgentAccessibilityService.current() }.getOrNull()
@@ -611,6 +630,7 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         onInputFocusChanged = { focused ->
                             composerFocused = focused
                             onKeyboardSignalChanged()
+                            if (focused) startImeWatchIfNeeded()
                         },
                         onNewChat = {
                             messages.value = emptyList()
@@ -732,6 +752,9 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
      *    no IME inset has ever been observed for this window.
      * 3. A fixed share of the display — used only as a last resort, and only
      *    while the composer actually has focus, so it cannot fire on its own.
+     *    [startImeWatchIfNeeded] corrects that focus flag back to false when
+     *    this is the only available path and the keyboard closes without a
+     *    Compose focus-loss event.
      */
     private fun currentKeyboardHeightPx(): Int {
         val wm = windowManager
@@ -750,6 +773,27 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         val keyboard = currentKeyboardHeightPx()
         panelLifted = keyboard > 0
         refitPanelForKeyboard(keyboard)
+    }
+
+    /**
+     * Starts the fallback watch described on [imeWatchJob], but only when it is
+     * actually needed: a real signal (IME insets or accessibility keyboardTop)
+     * always wins once available, so this no-ops as soon as either shows up.
+     */
+    private fun startImeWatchIfNeeded() {
+        if (imeInsetsObserved || keyboardTopPx > 0) return
+        if (imeWatchJob?.isActive == true) return
+        imeWatchJob = lifecycleScope.launch {
+            val imm = getSystemService(InputMethodManager::class.java)
+            while (composerFocused && chatView != null && !imeInsetsObserved && keyboardTopPx <= 0) {
+                if (imm != null && !imm.isActive()) {
+                    composerFocused = false
+                    onKeyboardSignalChanged()
+                    break
+                }
+                delay(400)
+            }
+        }
     }
 
     /** Fits the panel between its top edge and the keyboard's top edge. */
@@ -792,6 +836,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         measuredImePx = 0
         imeInsetsObserved = false
         composerFocused = false
+        imeWatchJob?.cancel()
+        imeWatchJob = null
         dockBubbleToBottom()
     }
 
