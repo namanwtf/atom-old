@@ -9,7 +9,11 @@ and keeps working while you do something else.
 | --- | --- | --- |
 | ![Atom home](docs/Screenshots/atom_home.png) | ![The hold menu](docs/Screenshots/atom_bubble_menu.png) | ![The mini chat](docs/Screenshots/atom_panel.png) |
 
-Taken on a phone running 3.4.5, from a clean install — no personal data in them.
+| Models | Settings |
+| --- | --- |
+| ![Model providers](docs/Screenshots/atom_models.png) | ![Settings](docs/Screenshots/atom_settings.png) |
+
+Taken on a phone running 3.4.5, in Atom itself, from a clean state — no personal conversation in any of them.
 
 ---
 
