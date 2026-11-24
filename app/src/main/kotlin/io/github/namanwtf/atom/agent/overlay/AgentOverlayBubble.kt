@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -113,13 +114,7 @@ internal fun AgentOverlayBubble(
             if (working || dragging) {
                 AnimatedFace(state = state, working = working, dragging = dragging)
             } else {
-                Image(
-                    painter = painterResource(R.drawable.atom_bubble_glyph),
-                    contentDescription = "Atom",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .alpha(alphaFor(state.phase, working)),
-                )
+                BubbleFace(modifier = Modifier.alpha(alphaFor(state.phase, working)))
             }
         }
     }
@@ -150,11 +145,8 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
             drawWorkingRing(spin)
         }
     }
-    Image(
-        painter = painterResource(R.drawable.atom_bubble_glyph),
-        contentDescription = "Atom",
+    BubbleFace(
         modifier = Modifier
-            .size(60.dp)
             .graphicsLayer {
                 // Buddy swells the face while it is being dragged.
                 val drag = if (dragging) 1.14f else 1f
@@ -166,11 +158,30 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
 }
 
 /**
- * One glyph instead of five separate cartoon-face drawables: its colors are
- * fixed in the asset itself (a solid accent circle plus a bold white mark), so
- * a uniform ColorFilter.tint would collapse that two-tone design into one flat
- * color. Paused instead dims the whole badge; the working ring already carries
- * the "thinking" distinction.
+ * The bubble face: the real app emblem (the same asset the chat panel's empty
+ * state uses) on a dark circle, instead of either the Buddy-derived cartoon
+ * faces or an invented atom-symbol badge — both read as off-brand or thin.
+ * One brand mark everywhere, not a separate icon per surface.
+ */
+@Composable
+private fun BubbleFace(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(60.dp)
+            .background(AtomOverlayColors.Card, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.atom_octopus_emblem),
+            contentDescription = "Atom",
+            modifier = Modifier.size(44.dp),
+        )
+    }
+}
+
+/**
+ * Paused dims the whole face; the working ring already carries the
+ * "thinking" distinction.
  */
 private fun alphaFor(phase: AgentOverlayPhase, working: Boolean): Float = when {
     phase == AgentOverlayPhase.PAUSED && !working -> 0.55f
