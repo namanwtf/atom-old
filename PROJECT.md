@@ -13,12 +13,6 @@ apps, runs shell and Linux, keeps memory, and works in the background. Android
 - **Repo:** `github.com/namanwtf/atom`, branch `main`, GPL-3.0
 - **versionName / versionCode:** `3.4.5` / `2026112201` (see Versioning)
 - **Releases:** `github.com/namanwtf/atom/releases`
-- **Lineage:** the agent foundation comes from [Eta](https://github.com/Mangi-11/Eta)
-  (GPL-3.0). The floating bubble's face, geometry and drag effect come from
-  [Buddy](https://github.com/ghorbelhamdi/buddy-android) (Apache-2.0). Both are
-  attributed in `docs/THIRD_PARTY_NOTICES.md`; everything else in this repo is
-  its own work.
-
 ## Current state
 
 ### Floating bubble (the part with the most recent work)
@@ -120,30 +114,6 @@ rather than measured.
 `versionCode` is `yyyyMMdd` + a two-digit daily sequence, bumped by hand with
 `versionName` in `app/build.gradle.kts`. It must never decrease. Release tags
 follow `v<versionName>-atom.<n>`.
-
-## Keeping up with Eta
-
-- Remote `upstream` = `github.com/Mangi-11/Eta`. `.github/workflows/sync-upstream.yml`
-  runs weekly: fetch, **merge** (never rebase), open a PR when clean and the
-  invariants pass, otherwise an issue listing the conflicted files.
-- Merging is deliberate: Atom is 70 commits and an English pass ahead across
-  1,146 files, so a rebase replays every Atom commit over a rewritten tree,
-  conflicts on the Chinese resources we delete on purpose, and force-pushes
-  published history. Details, the measured divergence and the per-layer
-  resolution policy live in `docs/UPSTREAM_SYNC.md`.
-- Expect conflicts wherever upstream rewrote a file: keep Atom's English text and
-  product behaviour, take Eta's structure, then re-run the English pass —
-  `git ls-files | xargs rg -l '[\p{Han}]'` must return nothing except the
-  intentional third-party notices.
-- After every merge re-check the rename invariants: no `io.github.mangi.eta`, no
-  `Eta*` classes, no `/data/local/tmp/eta` paths, gradle property
-  `atom.updateRepo`.
-- A clean textual merge does not mean it compiles or that the UI kept its
-  geometry. Compile in CI, install, and dump the bubble/panel/menu before
-  tagging.
-- An on-device scheduled task (`upstream watch: Eta → Atom`, Mondays 12:00)
-  reports the delta read-only, after the GitHub workflow's 03:00 UTC run. It
-  never merges; it exists so a stalled workflow cannot hide upstream movement.
 
 ## Open issues
 
