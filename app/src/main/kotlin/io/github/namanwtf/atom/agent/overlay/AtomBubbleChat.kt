@@ -262,7 +262,10 @@ private fun EmptyState() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(R.drawable.atom_bubble_face),
+            // The Buddy-derived cartoon face reads off-brand here; the chat's
+            // empty state is simple enough to use the real emblem directly
+            // instead of waiting on the bubble face family's own redesign.
+            painter = painterResource(R.drawable.atom_octopus_emblem),
             contentDescription = null,
             modifier = Modifier.size(56.dp),
         )

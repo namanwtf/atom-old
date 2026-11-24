@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Atom's bubble mark: a nucleus and two crossing orbits, drawn once and tinted
+  per state in AgentOverlayBubble.kt instead of five separate cartoon faces.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="60dp" android:height="60dp"
+    android:viewportWidth="56" android:viewportHeight="56">
+    <group android:pivotX="28" android:pivotY="28" android:rotation="-30">
+        <group android:pivotX="28" android:pivotY="28" android:scaleY="0.42">
+            <path
+                android:strokeColor="#FFFFFFFF"
+                android:strokeWidth="2.6"
+                android:fillColor="#00000000"
+                android:pathData="M28,5 A23,23 0,1 1,27.99 5" />
+        </group>
+    </group>
+    <group android:pivotX="28" android:pivotY="28" android:rotation="30">
+        <group android:pivotX="28" android:pivotY="28" android:scaleY="0.42">
+            <path
+                android:strokeColor="#FFFFFFFF"
+                android:strokeWidth="2.6"
+                android:fillColor="#00000000"
+                android:pathData="M28,5 A23,23 0,1 1,27.99 5" />
+        </group>
+    </group>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M28,28m-5.2,0a5.2,5.2 0,1 1,10.4 0a5.2,5.2 0,1 1,-10.4 0" />
+</vector>

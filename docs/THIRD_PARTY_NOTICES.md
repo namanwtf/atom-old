@@ -150,10 +150,12 @@ When GitHub's actual artifact domain is unreachable or slow, the installer may r
 
 ## Floating Bubble Design
 
-The floating bubble's geometry and look (60dp face inside a 74dp orbit ring, hold
-menu, status pill, full-height panel with a dimmed, blurred backdrop behind it) are
+The floating bubble's geometry (60dp face inside a 74dp orbit ring, hold menu,
+status pill, full-height panel with a dimmed, blurred backdrop behind it) is
 adapted from [Buddy](https://github.com/ghorbelhamdi/buddy-android), copyright the
-Buddy contributors, licensed under the Apache License 2.0. The vector face drawable
-`app/src/main/res/drawable/atom_bubble_face.xml` is a copy of Buddy's
-`bubble_face.xml`; Atom uses it as the bubble's face and as the panel's empty state.
-The adapted source stays under Apache-2.0; the rest of Atom remains GPL-3.0.
+Buddy contributors, licensed under the Apache License 2.0. The bubble's face
+itself (`app/src/main/res/drawable/atom_bubble_glyph.xml`, a nucleus-and-orbits
+mark) and the panel's empty-state image (the bundled atom/octopus emblem) are
+original to Atom, replacing an earlier direct copy of Buddy's cartoon
+`bubble_face.xml`. The adapted Buddy source stays under Apache-2.0; the rest of
+Atom remains GPL-3.0.
