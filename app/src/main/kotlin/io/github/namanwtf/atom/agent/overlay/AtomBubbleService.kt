@@ -9,7 +9,6 @@ import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -783,20 +782,30 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
      * dismissal, so [imeInsetsObserved] (and [measuredImePx]) latch onto a
      * stale "open" reading forever once the real signal has fired even once.
      * The same can happen to [keyboardTopPx] from the accessibility service.
+     *
+     * `InputMethodManager.isActive()` cannot stand in for "is the keyboard
+     * visible": `dumpsys input_method` on this device shows `mActive=true`
+     * and a live served view/input connection well after `mInputShown=false`
+     * — back-dismissing the IME popup does not tear down the connection, so
+     * `isActive()` never flips. [isKeyboardVisibleNow] uses the older
+     * `getWindowVisibleDisplayFrame` measurement instead, which is a direct
+     * on-demand query of the window's actual visible area rather than a
+     * dispatched callback, so it does not depend on the same delivery path
+     * that is unreliable here.
+     *
      * This does not try to guess which signal is unreliable ahead of time —
      * it runs whenever any of them currently claims the keyboard is up, and
-     * corrects all three back to "closed" the moment the system's own
-     * `imm.isActive()` disagrees. A real update to any signal after that still
-     * overrides this correction immediately, same as before.
+     * corrects all three back to "closed" the moment that measurement
+     * disagrees. A real update to any signal after that still overrides this
+     * correction immediately, same as before.
      */
     private fun startImeWatchIfNeeded() {
         if (imeWatchJob?.isActive == true) return
         imeWatchJob = lifecycleScope.launch {
-            val imm = getSystemService(InputMethodManager::class.java)
             while (chatView != null) {
                 val trackedHeight = currentKeyboardHeightPx()
                 if (trackedHeight <= 0 && !composerFocused) break
-                if (trackedHeight > 0 && imm != null && !imm.isActive()) {
+                if (trackedHeight > 0 && !isKeyboardVisibleNow()) {
                     measuredImePx = 0
                     keyboardTopPx = 0
                     composerFocused = false
@@ -806,6 +815,20 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             }
             imeWatchJob = null
         }
+    }
+
+    /**
+     * Whether the IME is actually occupying screen space right now, measured
+     * directly rather than read from a signal this window may not receive
+     * reliably. A real keyboard reserves hundreds of px; the small slack below
+     * guards against system-bar/gesture-inset noise being mistaken for one.
+     */
+    private fun isKeyboardVisibleNow(): Boolean {
+        val view = chatView ?: return false
+        val frame = android.graphics.Rect()
+        view.getWindowVisibleDisplayFrame(frame)
+        val screenHeight = resources.displayMetrics.heightPixels
+        return (screenHeight - frame.bottom) > dpToPx(100)
     }
 
     /** Fits the panel between its top edge and the keyboard's top edge. */
