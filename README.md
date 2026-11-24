@@ -5,7 +5,11 @@
 It reads the screen, taps the button, runs the command, remembers the context,
 and keeps working while you do something else.
 
-![Atom home](docs/Screenshots/atom_home.png)
+| Atom | The bubble's hold menu | The mini chat |
+| --- | --- | --- |
+| ![Atom home](docs/Screenshots/atom_home.png) | ![The hold menu](docs/Screenshots/atom_bubble_menu.png) | ![The mini chat](docs/Screenshots/atom_panel.png) |
+
+Taken on a phone running 3.4.5, from a clean install — no personal data in them.
 
 ---
 
