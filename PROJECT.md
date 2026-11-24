@@ -92,8 +92,8 @@ display, voice, roleplay characters, image generation. See `docs/`:
 ## Install and verify on the device
 
 ```bash
-# Linux /workspace == Android /data/local/tmp/eta
-pm install -r -d /data/local/tmp/eta/<file>.apk
+# Linux /workspace == the app's terminal workspace on the device
+pm install -r -d /data/local/tmp/<workspace>/<file>.apk
 dumpsys package io.github.namanwtf.atom | grep lastUpdateTime
 dumpsys window windows | grep -A4 'Window{.*namanwtf.atom}'   # mAttrs = geometry
 screencap -p /data/local/tmp/x.png                            # then read the image
@@ -136,6 +136,6 @@ follow `v<versionName>-atom.<n>`.
 
 - English only: strings, prompts, tool schemas, comments, docs. No `values-zh`.
 - No telemetry, no third-party download proxies, own update channel.
-- Keep the Eta (GPL-3.0) and Buddy (Apache-2.0) attribution intact.
+- Keep the third-party attribution intact (see `docs/THIRD_PARTY_NOTICES.md`): the agent foundation is GPL-3.0, the bubble design is Apache-2.0.
 - Report partial results as partial; never present an attempted action as a
   completed one.
