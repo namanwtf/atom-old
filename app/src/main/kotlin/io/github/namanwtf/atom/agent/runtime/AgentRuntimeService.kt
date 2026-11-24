@@ -2,7 +2,6 @@ package io.github.namanwtf.atom.agent.runtime
 
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
-import android.annotation.SuppressLint
 import android.app.Service
 import android.app.ActivityOptions
 import android.app.PendingIntent
@@ -1197,7 +1196,6 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         return !scheduled.showRunningNotification
     }
 
-    @SuppressLint("WakelockTimeout")
     private fun setKeepScreenOn(enabled: Boolean) {
         keepScreenOnState.value = enabled
         capsuleView?.keepScreenOn = enabled
@@ -1209,7 +1207,11 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     ?.apply { setReferenceCounted(false) }
             }.getOrNull()?.also { screenWakeLock = it }
             if (wakeLock != null && !wakeLock.isHeld) {
-                runCatching { wakeLock.acquire() }
+                // Backstop timeout so a missed release can never pin the screen on
+                // indefinitely. The capsule window's own keepScreenOn flag keeps the
+                // screen awake during an active run, so this cap changes nothing in
+                // normal use and only bounds a leak.
+                runCatching { wakeLock.acquire(SCREEN_WAKE_LOCK_TIMEOUT_MS) }
             }
         } else {
             screenWakeLock?.let { wakeLock ->
@@ -1864,6 +1866,9 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
 
         private const val ACTION_KEEP_ALIVE = "io.github.namanwtf.atom.agent.runtime.KEEP_ALIVE"
         private const val WAKE_LOCK_TAG = "Atom:AgentRun"
+        // Safety cap only; the capsule window's keepScreenOn flag is the real
+        // mechanism during a run, so this never cuts normal use.
+        private const val SCREEN_WAKE_LOCK_TIMEOUT_MS = 30 * 60 * 1000L
         private const val LEGACY_STOPPED_ERROR = "Stopped"
         private const val SYNTHETIC_STOPPED_ERROR = "atom_status:stopped"
         private const val HIDE_DELAY_MS = 2_500L
