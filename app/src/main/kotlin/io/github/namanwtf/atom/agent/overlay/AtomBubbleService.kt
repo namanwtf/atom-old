@@ -776,23 +776,35 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     /**
-     * Starts the fallback watch described on [imeWatchJob], but only when it is
-     * actually needed: a real signal (IME insets or accessibility keyboardTop)
-     * always wins once available, so this no-ops as soon as either shows up.
+     * Starts the watch described on [imeWatchJob].
+     *
+     * Measured on device: this window's IME insets fire reliably for the
+     * keyboard *showing* but never redeliver a closing event for a back-key
+     * dismissal, so [imeInsetsObserved] (and [measuredImePx]) latch onto a
+     * stale "open" reading forever once the real signal has fired even once.
+     * The same can happen to [keyboardTopPx] from the accessibility service.
+     * This does not try to guess which signal is unreliable ahead of time —
+     * it runs whenever any of them currently claims the keyboard is up, and
+     * corrects all three back to "closed" the moment the system's own
+     * `imm.isActive()` disagrees. A real update to any signal after that still
+     * overrides this correction immediately, same as before.
      */
     private fun startImeWatchIfNeeded() {
-        if (imeInsetsObserved || keyboardTopPx > 0) return
         if (imeWatchJob?.isActive == true) return
         imeWatchJob = lifecycleScope.launch {
             val imm = getSystemService(InputMethodManager::class.java)
-            while (composerFocused && chatView != null && !imeInsetsObserved && keyboardTopPx <= 0) {
-                if (imm != null && !imm.isActive()) {
+            while (chatView != null) {
+                val trackedHeight = currentKeyboardHeightPx()
+                if (trackedHeight <= 0 && !composerFocused) break
+                if (trackedHeight > 0 && imm != null && !imm.isActive()) {
+                    measuredImePx = 0
+                    keyboardTopPx = 0
                     composerFocused = false
                     onKeyboardSignalChanged()
-                    break
                 }
                 delay(400)
             }
+            imeWatchJob = null
         }
     }
 
