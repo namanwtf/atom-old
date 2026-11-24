@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -113,8 +114,9 @@ internal fun AgentOverlayBubble(
                 AnimatedFace(state = state, working = working, dragging = dragging)
             } else {
                 Image(
-                    painter = painterResource(faceFor(state.phase, dragging, working)),
+                    painter = painterResource(R.drawable.atom_bubble_glyph),
                     contentDescription = "Atom",
+                    colorFilter = ColorFilter.tint(tintFor(state.phase, working)),
                     modifier = Modifier.size(60.dp),
                 )
             }
@@ -148,8 +150,9 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
         }
     }
     Image(
-        painter = painterResource(faceFor(state.phase, dragging, working)),
+        painter = painterResource(R.drawable.atom_bubble_glyph),
         contentDescription = "Atom",
+        colorFilter = ColorFilter.tint(tintFor(state.phase, working)),
         modifier = Modifier
             .size(60.dp)
             .graphicsLayer {
@@ -162,15 +165,13 @@ private fun AnimatedFace(state: AgentOverlayState, working: Boolean, dragging: B
 }
 
 /**
- * Buddy ships five faces and swaps them by state; Atom only ever drew one.
- * idle = the closed-eyes smile, thinking = working, paused = stopped,
- * fired = being dragged.
+ * One glyph, tinted by state instead of five separate cartoon-face drawables:
+ * paused dims to the muted color, everything else reads as the bubble's own
+ * accent (the working ring already carries the "thinking" distinction).
  */
-private fun faceFor(phase: AgentOverlayPhase, dragging: Boolean, working: Boolean): Int = when {
-    dragging -> R.drawable.atom_bubble_face_fired
-    phase == AgentOverlayPhase.PAUSED -> R.drawable.atom_bubble_face_paused
-    working -> R.drawable.atom_bubble_face_thinking
-    else -> R.drawable.atom_bubble_face
+private fun tintFor(phase: AgentOverlayPhase, working: Boolean): Color = when {
+    phase == AgentOverlayPhase.PAUSED && !working -> AtomOverlayColors.Muted
+    else -> AtomOverlayColors.Bolt
 }
 
 /** Localized labels for the hold menu, resolved by the host. */

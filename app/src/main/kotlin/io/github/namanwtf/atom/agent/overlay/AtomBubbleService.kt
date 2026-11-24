@@ -4,13 +4,11 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Handler
-import android.os.Build
 import android.os.Looper
 import android.os.IBinder
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
-import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,8 +60,6 @@ import io.github.namanwtf.atom.data.repository.RuntimeConfigRepository
 import io.github.namanwtf.atom.ui.MainActivity
 import io.github.namanwtf.atom.ui.app.AgentAppTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -93,10 +89,21 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private var menuParams: WindowManager.LayoutParams? = null
     private var panelBaseY: Int = 0
     private var panelLifted = false
-    private var imeWatchJob: Job? = null
 
-    /** Real IME height in px, delivered only to accessibility overlays. */
+    /** Real IME inset height in px, delivered only to accessibility overlays. */
     private var measuredImePx = 0
+
+    /**
+     * True once this chat window has reported a real IME inset at least once
+     * (even a zero one). Distinguishes "this window type never gets IME
+     * insets" from "it does, and the keyboard happens to be down right now" —
+     * see [currentKeyboardHeightPx].
+     */
+    private var imeInsetsObserved = false
+
+    /** The composer has focus — used only as a last-resort signal when no
+     *  window actually measures the keyboard (see [currentKeyboardHeightPx]). */
+    private var composerFocused = false
 
     private fun overlayService(): AgentAccessibilityService? =
         runCatching { AgentAccessibilityService.current() }.getOrNull()
@@ -152,14 +159,8 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             AgentAccessibilityService.keyboardTop.collect { top ->
                 if (top == keyboardTopPx) return@collect
                 keyboardTopPx = top
-                // The real keyboard state is authoritative when accessibility is
-                // up: top == 0 means the keyboard is gone, so the panel goes back
-                // to full height even though the composer keeps focus.
-                if (chatView != null) {
-                    panelLifted = top > 0
-                }
                 applyBubbleClearance()
-                refitPanelForKeyboard()
+                onKeyboardSignalChanged()
             }
         }
     }
@@ -607,7 +608,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                         streaming = stream,
                         onSend = { sendChat(it) },
                         onClose = { hideChat() },
-                        onInputFocusChanged = { focused -> liftPanelForKeyboard(focused) },
+                        onInputFocusChanged = { focused ->
+                            composerFocused = focused
+                            onKeyboardSignalChanged()
+                        },
                         onNewChat = {
                             messages.value = emptyList()
                             streaming.value = ""
@@ -673,15 +677,17 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         panelLifted = false
         panelFullHeight = chatHeight
         refreshModelLabel()
-        startImeWatch()
         // With an accessibility overlay the IME inset actually arrives; follow it
-        // frame by frame and the panel lands exactly on the keyboard.
+        // frame by frame (the animation callback) and at rest (the listener) and
+        // the panel lands exactly on the keyboard. Both write into the same
+        // single authoritative path (see [currentKeyboardHeightPx]), so they
+        // never disagree with each other the way the old four separate signals did.
         view.setOnApplyWindowInsetsListener { _, insets ->
             val ime = insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
+            imeInsetsObserved = true
             if (ime != measuredImePx) {
                 measuredImePx = ime
-                panelLifted = ime > 0
-                refitPanelForKeyboard()
+                onKeyboardSignalChanged()
             }
             insets
         }
@@ -692,10 +698,10 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     running: MutableList<android.view.WindowInsetsAnimation>,
                 ): android.view.WindowInsets {
                     val ime = insets.getInsets(android.view.WindowInsets.Type.ime()).bottom
+                    imeInsetsObserved = true
                     if (ime != measuredImePx) {
                         measuredImePx = ime
-                        panelLifted = ime > 0
-                        refitPanelForKeyboard()
+                        onKeyboardSignalChanged()
                     }
                     return insets
                 }
@@ -708,70 +714,57 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     }
 
     /**
-     * Lifts the panel while the composer has focus.
+     * The single authoritative keyboard height, in px (0 = hidden).
      *
-     * An application overlay window never receives IME insets on this ROM (the
-     * listeners were installed and never fired), so the keyboard's geometry comes
-     * from the accessibility service's window list instead. When that is
-     * unavailable (accessibility off) the old share-of-the-screen reserve stays as
-     * the fallback, so the composer is never left under the keys.
+     * Three independent signals used to each decide [panelLifted] and the panel
+     * geometry on their own (accessibility `keyboardTop`, the insets listener,
+     * the insets-animation callback, plus a 400ms `imm.isActive()` poll) and
+     * raced each other — whichever last wrote `panelLifted` won, regardless of
+     * whether its own measurement was still current. That cross-talk was the
+     * jitter and the stuck-half-height bug.
+     *
+     * This is the only place that decides the keyboard height now, picked by
+     * priority, never raced:
+     * 1. The real IME window inset, once this window has reported one (even a
+     *    zero one) — authoritative whenever it is delivered (accessibility
+     *    overlay windows get it; see [imeInsetsObserved]).
+     * 2. The accessibility service's measured keyboard top — used only while
+     *    no IME inset has ever been observed for this window.
+     * 3. A fixed share of the display — used only as a last resort, and only
+     *    while the composer actually has focus, so it cannot fire on its own.
      */
-    /**
-     * The keyboard shrinking is driven by composer focus, but focus is not
-     * cleared when the IME is dismissed on this ROM, so the panel used to stay
-     * at half height. While the panel is open and lifted, watch the IME's own
-     * active state and drop back to full height the moment it disappears.
-     */
-    private fun startImeWatch() {
-        if (imeWatchJob?.isActive == true) return
-        imeWatchJob = lifecycleScope.launch {
-            val imm = getSystemService(InputMethodManager::class.java)
-            while (true) {
-                if (panelLifted && chatView != null && Build.VERSION.SDK_INT >= 33 &&
-                    imm != null && !imm.isActive()
-                ) {
-                    panelLifted = false
-                    refitPanelForKeyboard()
-                }
-                delay(400)
-            }
+    private fun currentKeyboardHeightPx(): Int {
+        val wm = windowManager
+        return when {
+            imeInsetsObserved -> measuredImePx
+            keyboardTopPx > 0 && wm != null ->
+                (wm.currentWindowMetrics.bounds.height() - keyboardTopPx).coerceAtLeast(0)
+            composerFocused -> (resources.displayMetrics.heightPixels * KEYBOARD_FALLBACK_SHARE).toInt()
+            else -> 0
         }
     }
 
-    private fun liftPanelForKeyboard(focused: Boolean) {
-        if (focused == panelLifted) return
-        panelLifted = focused
-        refitPanelForKeyboard()
+    /** Call after any of the inputs to [currentKeyboardHeightPx] changes. */
+    private fun onKeyboardSignalChanged() {
+        if (chatView == null) return
+        val keyboard = currentKeyboardHeightPx()
+        panelLifted = keyboard > 0
+        refitPanelForKeyboard(keyboard)
     }
 
     /** Fits the panel between its top edge and the keyboard's top edge. */
-    private fun refitPanelForKeyboard() {
+    private fun refitPanelForKeyboard(keyboard: Int = currentKeyboardHeightPx()) {
         val view = chatView ?: return
         val lp = chatParams ?: return
-        val wm = windowManager ?: return
         val gap = dpToPx(6)
-        // Prefer the real IME inset; fall back to the measured keyboard share
-        // (32% of this display) because an application overlay does not receive
-        // IME insets on this ROM. A full-height sheet cannot move up, so it gets
-        // shorter instead, and the composer ends up just above the keys.
-        val imeInset = runCatching {
-            wm.currentWindowMetrics.windowInsets
-                .getInsets(android.view.WindowInsets.Type.ime()).bottom
-        }.getOrDefault(0)
-        val keyboard = when {
-            measuredImePx > 0 -> measuredImePx
-            keyboardTopPx > 0 -> (wm.currentWindowMetrics.bounds.height() - keyboardTopPx)
-            imeInset > 0 -> imeInset
-            else -> (resources.displayMetrics.heightPixels * 0.32f).toInt()
-        }
-        val target = if (!panelLifted) {
+        val target = if (keyboard <= 0) {
             panelFullHeight
         } else {
             (panelFullHeight - keyboard - gap).coerceIn(dpToPx(280), panelFullHeight)
         }
         if (lp.height == target) return
         lp.height = target
-        runCatching { wm.updateViewLayout(view, lp) }
+        runCatching { windowManager?.updateViewLayout(view, lp) }
     }
 
     /** Reads the configured model so the panel can name it. */
@@ -793,12 +786,12 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         chatView = null
         chatParams = null
         panelLifted = false
-        // The IME watcher only has work to do while the panel is open. Stopping it
-        // here ends the 400ms poll instead of leaving it waking for the service's
-        // whole lifetime after the first time the chat was opened.
-        imeWatchJob?.cancel()
-        imeWatchJob = null
+        // Reset every keyboard-signal input so a stale measurement from this
+        // session (e.g. a leftover IME inset) cannot leak into the next time
+        // the panel opens and start it already shrunk.
         measuredImePx = 0
+        imeInsetsObserved = false
+        composerFocused = false
         dockBubbleToBottom()
     }
 
@@ -947,6 +940,14 @@ class AtomBubbleService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         const val KEY_BUBBLE_Y = "bubble_y"
         const val KEY_MENU_HINT_SEEN = "menu_hint_seen"
         const val KEY_BUBBLE_CONVERSATION = "bubble_conversation"
+
+        /**
+         * Last-resort keyboard-height guess, as a share of the display, used only
+         * when no window on this device has ever measured the real keyboard (see
+         * [currentKeyboardHeightPx]). Not a bare fallback: it is gated on the
+         * composer actually having focus, never applied on its own.
+         */
+        const val KEYBOARD_FALLBACK_SHARE = 0.32f
     }
 
     private fun dpToPx(dp: Int): Int =

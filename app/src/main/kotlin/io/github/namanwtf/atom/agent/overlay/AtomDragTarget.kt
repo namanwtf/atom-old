@@ -24,16 +24,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
 import kotlin.math.hypot
-import kotlin.math.sin
-import kotlin.random.Random
 
 /**
- * The dismiss target and the Tesla-coil effect between it and the dragged
- * bubble, after Buddy's ArcView.java: both ends crackle, lightning reaches from
- * one to the other as they get closer, and it fuses into a continuous arc when
- * the bubble is over the target.
+ * The dismiss target and a calm connecting beam between it and the dragged
+ * bubble: a soft gradient line that brightens smoothly as they get closer and
+ * fuses solid when the bubble is over the target. An earlier version ported
+ * Buddy's Tesla-coil effect (ArcView.java) — random jagged lightning and
+ * crackling sparks regenerated every frame — which read as busy and arcade-like
+ * rather than matching the bubble's own minimal mark.
  *
  * Drawn in a full-screen, non-touchable overlay window; [bubble] and [target]
  * are screen coordinates.
@@ -44,17 +43,16 @@ internal fun AtomDragTargetOverlay(
     target: Offset,
     fused: Boolean,
 ) {
-    val transition = rememberInfiniteTransition(label = "arcs")
-    val phase by transition.animateFloat(
+    val transition = rememberInfiniteTransition(label = "beam")
+    val pulse by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(260, easing = LinearEasing), RepeatMode.Restart),
-        label = "flicker",
+        animationSpec = infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Reverse),
+        label = "pulse",
     )
 
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
-            val targetRadius = 32.dp.toPx()
             val closeness = if (fused) {
                 1f
             } else {
@@ -76,23 +74,25 @@ internal fun AtomDragTargetOverlay(
                 center = target,
             )
 
-            // Sparks crackling on both ends.
-            drawSparks(bubble, 44.dp.toPx(), phase, 0.55f + 0.35f * closeness)
-            drawSparks(target, targetRadius, phase + 0.4f, 0.6f)
-
-            // Lightning between the two, thicker and steadier as they close in.
+            // A single smooth beam, brightening and thickening as the bubble
+            // nears the target, with a gentle pulse instead of flicker.
             if (closeness > 0.02f) {
-                val bolts = if (fused) 5 else 3
-                repeat(bolts) { index ->
-                    drawBolt(
-                        from = bubble,
-                        to = target,
-                        seed = phase + index * 0.21f,
-                        width = (if (fused) 2.6f else 1.8f).dp.toPx(),
-                        alpha = (if (fused) 0.95f else 0.25f + 0.55f * closeness).coerceIn(0f, 1f),
-                        offset = if (index % 2 == 0) 1f else -1f,
-                    )
-                }
+                val width = ((if (fused) 3.2f else 1.8f) + pulse * 0.6f).dp.toPx()
+                val alpha = (if (fused) 0.95f else 0.2f + 0.55f * closeness).coerceIn(0f, 1f)
+                drawLine(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            AtomOverlayColors.Bolt.copy(alpha = alpha),
+                            AtomOverlayColors.Spark.copy(alpha = alpha),
+                        ),
+                        start = bubble,
+                        end = target,
+                    ),
+                    start = bubble,
+                    end = target,
+                    strokeWidth = width,
+                    cap = StrokeCap.Round,
+                )
             }
         }
 
@@ -124,77 +124,5 @@ internal fun AtomDragTargetOverlay(
                 drawLine(tint, Offset(size.width, 0f), Offset(0f, size.height), stroke, StrokeCap.Round)
             }
         }
-    }
-}
-
-/** Short bolts radiating from a point, regenerated every frame. */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSparks(
-    center: Offset,
-    radius: Float,
-    phase: Float,
-    alpha: Float,
-) {
-    val random = Random((phase * 1000).toInt())
-    repeat(6) {
-        val angle = random.nextFloat() * 6.2831f
-        val length = radius * (0.55f + random.nextFloat() * 0.9f)
-        val start = Offset(
-            center.x + cos(angle) * radius * 0.9f,
-            center.y + sin(angle) * radius * 0.9f,
-        )
-        val end = Offset(
-            center.x + cos(angle) * (radius * 0.9f + length),
-            center.y + sin(angle) * (radius * 0.9f + length),
-        )
-        drawLine(
-            color = Color(0xFFBBD7FF).copy(alpha = alpha * 0.8f),
-            start = start,
-            end = end,
-            strokeWidth = 1.4.dp.toPx(),
-            cap = StrokeCap.Round,
-        )
-    }
-}
-
-/** A jagged bolt between two points, with a perpendicular zig-zag. */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBolt(
-    from: Offset,
-    to: Offset,
-    seed: Float,
-    width: Float,
-    alpha: Float,
-    offset: Float,
-) {
-    val dx = to.x - from.x
-    val dy = to.y - from.y
-    val length = hypot(dx, dy)
-    if (length < 1f) return
-    val nx = -dy / length
-    val ny = dx / length
-    val random = Random((seed * 9973).toInt())
-    val steps = 9
-    var previous = from
-    for (i in 1..steps) {
-        val t = i / steps.toFloat()
-        val wobble = if (i == steps) 0f else (random.nextFloat() - 0.5f) * length * 0.16f * offset
-        val point = Offset(
-            from.x + dx * t + nx * wobble,
-            from.y + dy * t + ny * wobble,
-        )
-        drawLine(
-            color = Color(0xFF7DF9FF).copy(alpha = alpha),
-            start = previous,
-            end = point,
-            strokeWidth = width,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = Color.White.copy(alpha = alpha * 0.65f),
-            start = previous,
-            end = point,
-            strokeWidth = width * 0.45f,
-            cap = StrokeCap.Round,
-        )
-        previous = point
     }
 }

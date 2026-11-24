@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.cos
-import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.roundToInt
@@ -109,7 +108,7 @@ internal fun AtomOrbMenu(
         )
 
         Canvas(Modifier.fillMaxSize()) {
-            drawMenuGlow(center, targets, pulse, progress.value)
+            drawMenuGlow(center, pulse)
         }
 
         actions.forEachIndexed { index, action ->
@@ -160,17 +159,21 @@ private fun MenuItem(action: AgentOrbAction, label: String, onClick: () -> Unit)
     }
 }
 
+/**
+ * A calm backdrop for the fanned-out actions: one soft halo and one expanding
+ * ring behind the bubble. Earlier this also drew an energy line with a
+ * travelling spark to every action plus a second expanding ring — busier than
+ * the minimal mark the bubble itself now uses, so it is cut down to match.
+ */
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
     center: Offset,
-    targets: List<Offset>,
     pulse: Float,
-    progress: Float,
 ) {
     // Soft halo behind the bubble.
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                AtomOverlayColors.Bolt.copy(alpha = 0.26f),
+                AtomOverlayColors.Bolt.copy(alpha = 0.22f),
                 Color.Transparent,
             ),
             center = center,
@@ -180,42 +183,13 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMenuGlow(
         center = center,
     )
 
-    // Two expanding rings.
-    repeat(2) { k ->
-        val p = (pulse + k * 0.5f) % 1f
-        drawCircle(
-            color = AtomOverlayColors.Bolt.copy(alpha = 0.55f * (1f - p)),
-            radius = 38.dp.toPx() + p * 70.dp.toPx(),
-            center = center,
-            style = Stroke(width = 2.dp.toPx()),
-        )
-    }
-
-    // Energy lines with a spark running along each one.
-    targets.forEachIndexed { index, target ->
-        val dx = target.x - center.x
-        val dy = target.y - center.y
-        val length = hypot(dx, dy)
-        if (length < 40.dp.toPx()) return@forEachIndexed
-        val sx = center.x + dx / length * 36.dp.toPx()
-        val sy = center.y + dy / length * 36.dp.toPx()
-        val ex = target.x - dx / length * 28.dp.toPx()
-        val ey = target.y - dy / length * 28.dp.toPx()
-        val alpha = (0.4f * progress).coerceIn(0f, 1f)
-        drawLine(
-            color = AtomOverlayColors.Bolt.copy(alpha = alpha),
-            start = Offset(sx, sy),
-            end = Offset(ex, ey),
-            strokeWidth = 1.5.dp.toPx(),
-            cap = StrokeCap.Round,
-        )
-        val spark = (pulse * 1.6f + index * 0.17f) % 1f
-        drawCircle(
-            color = Color.White.copy(alpha = (0.8f * progress).coerceIn(0f, 1f)),
-            radius = 1.8.dp.toPx(),
-            center = Offset(sx + (ex - sx) * spark, sy + (ey - sy) * spark),
-        )
-    }
+    // One expanding ring, fading as it grows.
+    drawCircle(
+        color = AtomOverlayColors.Bolt.copy(alpha = 0.45f * (1f - pulse)),
+        radius = 38.dp.toPx() + pulse * 70.dp.toPx(),
+        center = center,
+        style = Stroke(width = 2.dp.toPx()),
+    )
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawActionGlyph(
