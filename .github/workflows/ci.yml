@@ -10,12 +10,21 @@ on:
 permissions:
   contents: write
 
+# Only one release pipeline runs at a time, so two quick merges can't race on
+# the version number or the changelog commit.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # fetch-depth 0 brings the tags and history the release/changelog steps need.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Project targets a Java 25 toolchain (see app/build.gradle.kts).
       - uses: actions/setup-java@v4
@@ -39,6 +48,47 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
+
+      # ── Autonomous release prep (only on a push to main) ──────────────────
+      # Decides the next build number and a monotonic versionCode, patches
+      # app/build.gradle.kts so the APK carries them, and collects the commit
+      # log since the last release for the changelog. Runs before the build so
+      # the artifact is already stamped with the right version.
+      - name: Prepare release
+        id: rel
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -e
+          # Next sequence: highest existing v3.4.5-atom.<N> plus one.
+          LAST_TAG=$(git tag -l 'v3.4.5-atom.*' | sort -V | tail -1)
+          LAST_N=$(printf '%s' "$LAST_TAG" | sed -n 's/.*atom\.\([0-9]\+\)$/\1/p')
+          N=$(( ${LAST_N:-30} + 1 ))
+          TAG="v3.4.5-atom.$N"
+
+          # versionCode: yyyyMMdd * 100 + a 0..95 intra-day slot (15-min steps).
+          # Date-led, so it always increases day to day; floored above the
+          # current value so it can never decrease within a day.
+          D=$(date -u +%Y%m%d)
+          SLOT=$(( 10#$(date -u +%H) * 4 + 10#$(date -u +%M) / 15 ))
+          VC=$(( D * 100 + SLOT ))
+          CUR=$(grep -oE 'versionCode = [0-9]+' app/build.gradle.kts | grep -oE '[0-9]+' | head -1)
+          if [ "$VC" -le "${CUR:-0}" ]; then VC=$(( CUR + 1 )); fi
+
+          sed -i -E "s/versionCode = [0-9]+/versionCode = $VC/" app/build.gradle.kts
+          echo "Release $TAG  versionCode=$VC (was ${CUR})"
+
+          # Changelog body: commit subjects since the last release.
+          if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD"; fi
+          {
+            git log "$RANGE" --no-merges --pretty='- %s'
+          } > "$RUNNER_TEMP/notes.md"
+          [ -s "$RUNNER_TEMP/notes.md" ] || echo "- Maintenance build (no code changes since the last release)." > "$RUNNER_TEMP/notes.md"
+
+          {
+            echo "tag=$TAG"
+            echo "vc=$VC"
+            echo "date=$(date -u +%Y-%m-%d)"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Assemble release
         run: |
@@ -86,10 +136,47 @@ jobs:
             app/build/outputs/apk/release/*.apk
           if-no-files-found: warn
 
-      - name: Publish release
+      # ── Changelog file (only on a push to main) ───────────────────────────
+      # Prepends the release section to CHANGELOG.md and commits it back with
+      # [skip ci] so it doesn't start another run. Best-effort: if main is
+      # protected against Action pushes it logs and carries on — the same notes
+      # still land in the GitHub Release below.
+      - name: Update CHANGELOG.md
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        run: |
+          set -e
+          TAG='${{ steps.rel.outputs.tag }}'
+          DATE='${{ steps.rel.outputs.date }}'
+          VC='${{ steps.rel.outputs.vc }}'
+          HEAD_NOTES=$(printf '## %s - %s (versionCode %s)\n\n' "$TAG" "$DATE" "$VC"; cat "$RUNNER_TEMP/notes.md"; printf '\n\n')
+          touch CHANGELOG.md
+          printf '%s%s' "$HEAD_NOTES" "$(cat CHANGELOG.md)" > CHANGELOG.md.new
+          mv CHANGELOG.md.new CHANGELOG.md
+          git config user.name "atom-release-bot"
+          git config user.email "noreply@github.com"
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): $TAG [skip ci]" || { echo "nothing to commit"; exit 0; }
+          git push origin HEAD:main || echo "note: could not push CHANGELOG (main may be protected); release notes still carry it."
+
+      - name: Publish release (manual tag)
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: 'atom-*.apk'
           fail_on_unmatched_files: false
           generate_release_notes: true
+
+      # ── Autonomous release (only on a push to main) ───────────────────────
+      # Creates the tag + GitHub Release with the signed APK and the changelog
+      # notes. The tag is made with the Actions token, which by design does not
+      # trigger another workflow run, so there is no build loop.
+      - name: Publish release (auto)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.rel.outputs.tag }}
+          name: ${{ steps.rel.outputs.tag }}
+          body_path: ${{ runner.temp }}/notes.md
+          files: 'atom-*.apk'
+          fail_on_unmatched_files: false
