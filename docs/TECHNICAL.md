@@ -28,7 +28,7 @@ At every level it is forbidden to log prompts, request or response bodies, API k
 
 Release stripping treats `app/proguard-rules.pro` as the single executable source of truth, with the following rule boundaries:
 
-- `-maximumremovedandroidloglevel 3 class io.github.mangi.eta.** { *; }` strips only Android `VERBOSE/DEBUG` in Atom's own code and does not affect dependency libraries.
+- `-maximumremovedandroidloglevel 3 class io.github.namanwtf.atom.** { *; }` strips only Android `VERBOSE/DEBUG` in Atom's own code and does not affect dependency libraries.
 - Precise `-assumenosideeffects` rules are used for `AgentLogger.debug(Function0)`, `AndroidAgentLogger.debug(Function0)`, and `ModuleLogger.debug(Function0)`, covering the Xposed logging backend that R8 cannot recognize.
 - No side-effect-free declarations are made for `INFO/WARN/ERROR`, and no wildcard stripping rules for `*Logger` or the global `android.util.Log` are used.
 - After each rule change, build both Debug and Release and check the R8 configuration/usage, DEX log calls, representative log strings, and Xposed entry metadata.

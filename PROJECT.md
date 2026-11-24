@@ -127,7 +127,9 @@ follow `v<versionName>-atom.<n>`.
    follow the user's language (prompt + a deterministic guard that rejects
    ideographs when the user wrote English), but stored titles are not rewritten.
 4. **Buddy's status pill** (working / hands-on / paused / waiting approval next
-   to the face) is not ported. It needs run state inside the bubble.
+   to the face) is implemented: `AtomBubbleStatusPill` renders beside the face,
+   driven by run state from `AtomBubbleStatusFeed`. Its on-device appearance and
+   the per-phase copy have not been captured in a screenshot yet.
 5. **LSPosed hooks** are not verified end-to-end under Atom's package id.
 6. **`AgentRuntimeService`'s bubble** is skipped when the persistent bubble is
    on, so that path is barely exercised.
